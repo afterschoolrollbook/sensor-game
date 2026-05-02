@@ -62,15 +62,19 @@
 .laps-val { font-family:var(--font-display); font-size:38px; min-width:52px; text-align:center; }
 
 /* STEP 3 */
-.vs-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px; }
-.vs-card { background:var(--card); border:2px solid var(--border); border-radius:12px; padding:36px 24px; cursor:pointer; transition:all .25s; text-align:center; }
-.vs-card:hover { border-color:var(--blue); transform:translateY(-4px); }
-.vs-card.selected { border-color:var(--red); background:rgba(230,57,70,.07); box-shadow:0 0 28px rgba(230,57,70,.18); }
-.vs-icon { font-size:44px; margin-bottom:14px; display:block; }
-.vs-name { font-family:var(--font-display); font-size:26px; letter-spacing:2px; margin-bottom:7px; }
-.vs-desc { font-size:13px; color:var(--text-dim); line-height:1.5; }
+.vs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:10px; }
+.vs-grid-team { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+.vs-section-label { font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px; margin-top:20px; }
+.vs-card { background:var(--card); border:2px solid var(--border); border-radius:10px; padding:20px 14px; cursor:pointer; transition:all .2s; text-align:center; }
+.vs-card:hover { border-color:var(--blue); transform:translateY(-3px); }
+.vs-card.selected { border-color:var(--red); background:rgba(230,57,70,.07); box-shadow:0 0 20px rgba(230,57,70,.15); }
+.vs-icon { font-size:32px; margin-bottom:10px; display:block; }
+.vs-name { font-size:15px; font-weight:800; margin-bottom:5px; }
+.vs-desc { font-size:11px; color:var(--text-dim); line-height:1.5; }
+
+/* 참가자 등록 공통 */
 .reg-area { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
-.reg-title { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:14px; }
+.reg-title { font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:14px; }
 .add-row { display:flex; gap:8px; }
 .add-row .form-input { flex:1; margin:0; }
 .p-list { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
@@ -80,11 +84,35 @@
 .p-iteam { font-size:12px; color:var(--text-dim); }
 .p-del { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:17px; line-height:1; transition:color .2s; padding:0; }
 .p-del:hover { color:var(--red); }
-.team-area { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:18px; }
-.team-item-w { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:11px 14px; margin-bottom:8px; }
-.team-item-hdr { display:flex; align-items:center; gap:9px; margin-bottom:5px; }
-.team-members-w { display:flex; flex-wrap:wrap; gap:5px; padding-left:20px; }
-.tmtag { font-size:11px; padding:2px 9px; border-radius:12px; background:var(--bg3); border:1px solid var(--border); }
+
+/* 체급/부문/팀 공통 블록 */
+.block-area { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:14px; }
+.block-item { background:var(--bg2); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; overflow:hidden; }
+.block-hdr { display:flex; align-items:center; gap:9px; padding:11px 14px; cursor:pointer; }
+.block-hdr:hover { background:rgba(76,201,240,.04); }
+.block-hdr-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.block-hdr-name { flex:1; font-weight:700; font-size:14px; }
+.block-hdr-badge { font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(76,201,240,.1); color:var(--blue); border:1px solid rgba(76,201,240,.2); }
+.block-body { padding:12px 14px; border-top:1px solid var(--border); display:none; }
+.block-body.open { display:block; }
+.block-members { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+.bmtag { font-size:11px; padding:2px 9px; border-radius:12px; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; gap:4px; }
+
+/* 부문 > 체급 중첩 */
+.division-item { background:var(--bg2); border:1px solid var(--border); border-radius:8px; margin-bottom:10px; overflow:hidden; }
+.division-hdr { display:flex; align-items:center; gap:9px; padding:12px 16px; cursor:pointer; background:rgba(123,47,255,.05); }
+.division-hdr:hover { background:rgba(123,47,255,.1); }
+.division-name { flex:1; font-weight:800; font-size:15px; }
+.division-body { padding:14px 16px; border-top:1px solid var(--border); display:none; }
+.division-body.open { display:block; }
+.class-item { background:var(--bg3); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; overflow:hidden; }
+.class-hdr { display:flex; align-items:center; gap:8px; padding:9px 13px; cursor:pointer; }
+.class-hdr:hover { background:rgba(76,201,240,.05); }
+.class-name { flex:1; font-weight:600; font-size:13px; }
+
+@media (max-width:640px) {
+  .vs-grid, .vs-grid-team { grid-template-columns:1fr; }
+}
 
 /* STEP 4 */
 .format-grid { display:flex; flex-direction:column; gap:10px; }
@@ -231,52 +259,53 @@
     </div>
   </div>
 
-  <!-- ─── STEP 3: 개인전 / 팀전 + 참가자 ─── -->
+  <!-- ─── STEP 3: 누가 뛰나? ─── -->
   <div class="wizard-panel" id="panel-3">
     <div class="panel-sub">// STEP 03</div>
     <div class="panel-title">누가 뛰나?</div>
 
+    <!-- 개인전 3종 -->
+    <div class="vs-section-label">👤 개인전</div>
     <div class="vs-grid">
       <div class="vs-card selected" id="vscard-individual" onclick="selectVs('individual')">
         <span class="vs-icon">👤</span>
         <div class="vs-name">개인전</div>
-        <div class="vs-desc">참가자 각자의 기록으로<br>순위를 결정합니다</div>
+        <div class="vs-desc">참가자 전원이 함께 겨루는 일반 개인전</div>
       </div>
+      <div class="vs-card" id="vscard-class_individual" onclick="selectVs('class_individual')">
+        <span class="vs-icon">⚖️</span>
+        <div class="vs-name">체급 개인전</div>
+        <div class="vs-desc">체급을 나누고 체급별로 따로 순위 결정</div>
+      </div>
+      <div class="vs-card" id="vscard-division_class_individual" onclick="selectVs('division_class_individual')">
+        <span class="vs-icon">🏅</span>
+        <div class="vs-name">부문+체급 개인전</div>
+        <div class="vs-desc">초등부·중등부 등 부문 안에서 체급으로 나눔</div>
+      </div>
+    </div>
+
+    <!-- 팀전 3종 -->
+    <div class="vs-section-label">👥 팀전</div>
+    <div class="vs-grid vs-grid-team">
       <div class="vs-card" id="vscard-team" onclick="selectVs('team')">
         <span class="vs-icon">👥</span>
         <div class="vs-name">팀전</div>
-        <div class="vs-desc">팀을 구성하고<br>팀 이름별로 참가자를 등록합니다</div>
+        <div class="vs-desc">팀을 구성해 팀별로 겨루는 일반 팀전</div>
+      </div>
+      <div class="vs-card" id="vscard-class_team" onclick="selectVs('class_team')">
+        <span class="vs-icon">🥊</span>
+        <div class="vs-name">체급 팀전</div>
+        <div class="vs-desc">체급을 나누고 체급별 팀 구성 및 대결</div>
+      </div>
+      <div class="vs-card" id="vscard-division_class_team" onclick="selectVs('division_class_team')">
+        <span class="vs-icon">🏆</span>
+        <div class="vs-name">부문+체급 팀전</div>
+        <div class="vs-desc">부문 안에서 체급별 팀 구성 및 대결</div>
       </div>
     </div>
 
-    <!-- 팀 구성 -->
-    <div id="team-setup" style="display:none;">
-      <div class="team-area">
-        <div class="reg-title">팀 구성</div>
-        <div id="team-list-w"></div>
-        <div class="add-row" style="margin-top:12px;">
-          <input class="form-input" id="team-name-inp" placeholder="팀 이름 입력">
-          <button class="btn btn-secondary" onclick="addTeam()">팀 추가</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 참가자 등록 -->
-    <div class="reg-area">
-      <div class="reg-title">참가자 등록</div>
-      <div id="team-assign-wrap" style="display:none;" class="form-group">
-        <label class="form-label">소속 팀</label>
-        <select class="form-select" id="assign-team"><option value="">팀 없음</option></select>
-      </div>
-      <div class="add-row">
-        <input class="form-input" id="p-name-inp" placeholder="참가자 이름 (예: 홍길동)" onkeydown="if(event.key==='Enter')addParticipant()">
-        <button class="btn btn-secondary" onclick="addParticipant()">추가</button>
-        <button class="btn btn-outline" onclick="openBulk()">여러명</button>
-      </div>
-      <div class="p-list" id="p-list">
-        <div class="text-dim text-sm" style="margin-top:12px;">참가자를 추가하세요.</div>
-      </div>
-    </div>
+    <!-- 동적 등록 영역 -->
+    <div id="reg-container"></div>
 
     <div class="excel-bar" style="margin-top:18px;">
       <span class="excel-bar-label">📊 엑셀 설정 파일</span>
@@ -434,7 +463,7 @@ function renderStep(){
 }
 function validateStep(step){
   if(step===1&&!document.getElementById('event-name').value.trim()){App.toast('행사명을 입력하세요!','error');return false;}
-  if(step===3&&!App.getState().participants.length){App.toast('참가자를 한 명 이상 추가하세요!','error');return false;}
+  if(step===3&&getTotalParticipantCount()===0){App.toast('참가자(또는 팀)를 한 명 이상 추가하세요!','error');return false;}
   return true;
 }
 
@@ -470,56 +499,421 @@ function pickGame(id){selectedGame=id;renderGameGrid();}
 function changeLaps(d){laps=Math.max(1,Math.min(20,laps+d));document.getElementById('laps-val').textContent=laps;}
 
 /* ── STEP 3 ── */
+// 상태: 6가지 모드 + 각 데이터
+// divisions: [{id, name, color, classes:[{id,name,color,participants:[],teams:[]}]}]
+// classes: [{id,name,color,participants:[],teams:[]}]  (체급만 있을때)
+// participants: [] (개인전만)
+// teams: []  (팀전만)
+
+const COLORS=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585','#4895ef','#3a0ca3','#7209b7'];
+let colorIdx=0;
+function nextColor(){return COLORS[colorIdx++%COLORS.length];}
+function uid(){return Math.random().toString(36).slice(2,8);}
+
+// 전체 데이터 저장소
+let st3={
+  vsMode:'individual',
+  participants:[],   // 개인전용
+  teams:[],          // 팀전용
+  classes:[],        // 체급 개인/팀전용 [{id,name,color,participants,teams}]
+  divisions:[],      // 부문+체급용 [{id,name,color,classes:[{id,name,color,participants,teams}]}]
+};
+
+const VS_MODES=['individual','class_individual','division_class_individual','team','class_team','division_class_team'];
+
 function selectVs(mode){
-  vsMode=mode;
-  document.getElementById('vscard-individual').classList.toggle('selected',mode==='individual');
-  document.getElementById('vscard-team').classList.toggle('selected',mode==='team');
-  document.getElementById('team-setup').style.display=mode==='team'?'block':'none';
-  document.getElementById('team-assign-wrap').style.display=mode==='team'?'block':'none';
+  st3.vsMode=mode;
+  VS_MODES.forEach(m=>{
+    const el=document.getElementById('vscard-'+m);
+    if(el)el.classList.toggle('selected',m===mode);
+  });
   updateFormatAvailability();
-  if(mode==='individual'&&selectedFormat.startsWith('team_'))selectFormat('individual_record');
-  if(mode==='team'&&!selectedFormat.startsWith('team_'))selectFormat('team_record');
+  // 포맷 자동 조정
+  const isTeam=mode.includes('team');
+  if(isTeam&&!selectedFormat.startsWith('team_'))selectFormat('team_record');
+  if(!isTeam&&selectedFormat.startsWith('team_'))selectFormat('individual_record');
+  renderRegContainer();
 }
-function addParticipant(){
-  const inp=document.getElementById('p-name-inp');
-  const name=inp.value.trim();
+
+function renderRegContainer(){
+  const c=document.getElementById('reg-container');
+  const m=st3.vsMode;
+  if(m==='individual')          c.innerHTML=renderSimpleParticipants();
+  else if(m==='class_individual') c.innerHTML=renderClassBlock(false);
+  else if(m==='division_class_individual') c.innerHTML=renderDivisionBlock(false);
+  else if(m==='team')            c.innerHTML=renderSimpleTeam();
+  else if(m==='class_team')      c.innerHTML=renderClassBlock(true);
+  else if(m==='division_class_team') c.innerHTML=renderDivisionBlock(true);
+}
+
+/* ─ 개인전 단순 ─ */
+function renderSimpleParticipants(){
+  return`<div class="reg-area">
+    <div class="reg-title">참가자 등록</div>
+    <div class="add-row">
+      <input class="form-input" id="p-name-inp" placeholder="참가자 이름" onkeydown="if(event.key==='Enter')addSimpleP()">
+      <button class="btn btn-secondary" onclick="addSimpleP()">추가</button>
+      <button class="btn btn-outline" onclick="openBulk('simple')">여러명</button>
+    </div>
+    <div class="p-list" id="p-list">${renderPList(st3.participants,'simple',null)}</div>
+  </div>`;
+}
+function addSimpleP(){
+  const inp=document.getElementById('p-name-inp'),name=inp.value.trim();
   if(!name){App.toast('이름을 입력하세요','error');return;}
-  const teamId=vsMode==='team'?(document.getElementById('assign-team').value||null):null;
-  App.addParticipant(name,teamId);
-  inp.value='';
-  renderParticipants();renderTeamList();
+  st3.participants.push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();App.toast(name+' 추가됨!','success');
+}
+
+/* ─ 팀전 단순 ─ */
+function renderSimpleTeam(){
+  const teams=st3.teams;
+  const teamItems=teams.length?teams.map(t=>{
+    const members=st3.participants.filter(p=>p.teamId===t.id);
+    return`<div class="block-item">
+      <div class="block-hdr" onclick="toggleBlock('team-${t.id}')">
+        <div class="block-hdr-dot" style="background:${t.color}"></div>
+        <div class="block-hdr-name">${t.name}</div>
+        <span class="block-hdr-badge">${members.length}명</span>
+        <button class="p-del" onclick="event.stopPropagation();removeSimpleTeam('${t.id}')">×</button>
+      </div>
+      <div class="block-body" id="team-${t.id}">
+        <div class="block-members">${members.map(p=>`<span class="bmtag"><span style="width:8px;height:8px;border-radius:50%;background:${p.color};display:inline-block"></span>${p.name}<button class="p-del" style="font-size:13px" onclick="removeSimpleP('${p.id}')">×</button></span>`).join('')||'<span class="text-dim text-sm">팀원 없음</span>'}</div>
+        <div class="add-row">
+          <input class="form-input" id="tp-inp-${t.id}" placeholder="팀원 이름" onkeydown="if(event.key==='Enter')addTeamP('${t.id}','tp-inp-${t.id}')">
+          <button class="btn btn-secondary btn-sm" onclick="addTeamP('${t.id}','tp-inp-${t.id}')">추가</button>
+          <button class="btn btn-outline btn-sm" onclick="openBulk('team','${t.id}')">여러명</button>
+        </div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="text-dim text-sm" style="margin-bottom:12px;">팀을 추가하세요.</div>';
+  return`<div class="block-area">
+    <div class="reg-title">팀 구성 및 팀원 등록</div>
+    ${teamItems}
+    <div class="add-row" style="margin-top:10px;">
+      <input class="form-input" id="team-name-inp" placeholder="팀 이름 입력">
+      <button class="btn btn-secondary" onclick="addSimpleTeam()">팀 추가</button>
+    </div>
+  </div>`;
+}
+function addSimpleTeam(){
+  const inp=document.getElementById('team-name-inp'),name=inp.value.trim();
+  if(!name){App.toast('팀 이름을 입력하세요','error');return;}
+  st3.teams.push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();
+}
+function removeSimpleTeam(tid){
+  st3.teams=st3.teams.filter(t=>t.id!==tid);
+  st3.participants=st3.participants.filter(p=>p.teamId!==tid);
+  renderRegContainer();
+}
+function addTeamP(tid,inputId){
+  const inp=document.getElementById(inputId),name=inp.value.trim();
+  if(!name){App.toast('이름을 입력하세요','error');return;}
+  st3.participants.push({id:uid(),name,color:nextColor(),teamId:tid});
+  inp.value='';renderRegContainer();
+  // 열려있던 블록 다시 열기
+  setTimeout(()=>{const b=document.getElementById('team-'+tid);if(b)b.classList.add('open');},10);
   App.toast(name+' 추가됨!','success');
 }
-function renderParticipants(){
-  const state=App.getState(),el=document.getElementById('p-list');
-  if(!state.participants.length){el.innerHTML='<div class="text-dim text-sm" style="margin-top:12px;">참가자를 추가하세요.</div>';return;}
-  el.innerHTML=state.participants.map(p=>{
-    const team=p.teamId?App.getTeam(p.teamId):null;
-    return`<div class="p-item"><div class="p-dot" style="background:${p.color}"></div><div class="p-iname">${p.name}</div>${team?`<div class="p-iteam">${team.name}</div>`:''}<button class="p-del" onclick="removeP('${p.id}')">×</button></div>`;
-  }).join('');
+function removeSimpleP(pid){
+  st3.participants=st3.participants.filter(p=>p.id!==pid);renderRegContainer();
 }
-function removeP(id){const p=App.getParticipant(id);App.removeParticipant(id);renderParticipants();renderTeamList();App.toast((p?.name||'')+'삭제됨','info');}
-function addTeam(){const inp=document.getElementById('team-name-inp'),name=inp.value.trim();if(!name){App.toast('팀 이름을 입력하세요','error');return;}App.addTeam(name);inp.value='';renderTeamList();updateTeamDropdown();}
-function renderTeamList(){
-  const state=App.getState(),el=document.getElementById('team-list-w');
-  if(!state.teams.length){el.innerHTML='<div class="text-dim text-sm" style="margin-bottom:12px;">팀을 추가하세요.</div>';return;}
-  el.innerHTML=state.teams.map(t=>{
-    const members=state.participants.filter(p=>p.teamId===t.id);
-    return`<div class="team-item-w"><div class="team-item-hdr"><div class="p-dot" style="background:${t.color};width:13px;height:13px;"></div><div style="font-weight:700;flex:1;">${t.name}</div><span class="badge badge-blue">${members.length}명</span><button class="p-del" onclick="removeTeam('${t.id}')">×</button></div>${members.length?`<div class="team-members-w">${members.map(m=>`<span class="tmtag">${m.name}</span>`).join('')}</div>`:'<div class="text-dim text-sm" style="padding-left:20px;">팀원 없음</div>'}</div>`;
-  }).join('');
+
+/* ─ 체급 블록 (개인/팀 공용) ─ */
+function renderClassBlock(isTeam){
+  const classes=st3.classes;
+  const items=classes.length?classes.map(cl=>{
+    const members=isTeam?cl.teams||[]:cl.participants||[];
+    const count=isTeam?(cl.teams||[]).length:(cl.participants||[]).length;
+    const innerContent=isTeam?renderTeamInClass(cl):renderPInClass(cl);
+    return`<div class="block-item">
+      <div class="block-hdr" onclick="toggleBlock('cl-${cl.id}')">
+        <div class="block-hdr-dot" style="background:${cl.color}"></div>
+        <div class="block-hdr-name">${cl.name}</div>
+        <span class="block-hdr-badge">${count}${isTeam?'팀':'명'}</span>
+        <button class="p-del" onclick="event.stopPropagation();removeClass('${cl.id}')">×</button>
+      </div>
+      <div class="block-body" id="cl-${cl.id}">${innerContent}</div>
+    </div>`;
+  }).join(''):'<div class="text-dim text-sm" style="margin-bottom:12px;">체급을 추가하세요.</div>';
+  return`<div class="block-area">
+    <div class="reg-title">체급 구성</div>
+    ${items}
+    <div class="add-row" style="margin-top:10px;">
+      <input class="form-input" id="cl-name-inp" placeholder="체급 이름 (예: -60kg, 플라이급)">
+      <button class="btn btn-secondary" onclick="addClass()">체급 추가</button>
+    </div>
+  </div>`;
 }
-function removeTeam(id){App.removeTeam(id);renderTeamList();updateTeamDropdown();}
-function updateTeamDropdown(){
-  const state=App.getState(),sel=document.getElementById('assign-team');
-  sel.innerHTML='<option value="">팀 없음</option>'+state.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+function addClass(){
+  const inp=document.getElementById('cl-name-inp'),name=inp.value.trim();
+  if(!name){App.toast('체급 이름을 입력하세요','error');return;}
+  st3.classes.push({id:uid(),name,color:nextColor(),participants:[],teams:[]});
+  inp.value='';renderRegContainer();
 }
-function openBulk(){document.getElementById('bulk-modal').classList.remove('hidden');}
+function removeClass(cid){
+  st3.classes=st3.classes.filter(c=>c.id!==cid);renderRegContainer();
+}
+
+function renderPInClass(cl){
+  const ps=cl.participants||[];
+  return`<div class="block-members">${ps.map(p=>`<span class="bmtag"><span style="width:8px;height:8px;border-radius:50%;background:${p.color};display:inline-block"></span>${p.name}<button class="p-del" style="font-size:13px" onclick="removePFromClass('${cl.id}','${p.id}')">×</button></span>`).join('')||'<span class="text-dim text-sm">참가자 없음</span>'}</div>
+  <div class="add-row" style="margin-top:8px;">
+    <input class="form-input" id="clp-${cl.id}" placeholder="참가자 이름" onkeydown="if(event.key==='Enter')addPToClass('${cl.id}')">
+    <button class="btn btn-secondary btn-sm" onclick="addPToClass('${cl.id}')">추가</button>
+    <button class="btn btn-outline btn-sm" onclick="openBulk('class','${cl.id}')">여러명</button>
+  </div>`;
+}
+function addPToClass(cid){
+  const cl=st3.classes.find(c=>c.id===cid);
+  const inp=document.getElementById('clp-'+cid),name=inp.value.trim();
+  if(!name||!cl){App.toast('이름을 입력하세요','error');return;}
+  cl.participants.push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const b=document.getElementById('cl-'+cid);if(b)b.classList.add('open');},10);
+  App.toast(name+' 추가됨!','success');
+}
+function removePFromClass(cid,pid){
+  const cl=st3.classes.find(c=>c.id===cid);
+  if(cl)cl.participants=cl.participants.filter(p=>p.id!==pid);
+  renderRegContainer();
+}
+
+function renderTeamInClass(cl){
+  const teams=cl.teams||[];
+  const teamItems=teams.map(t=>{
+    const members=st3.participants.filter(p=>p.classId===cl.id&&p.teamId===t.id);
+    return`<div style="margin-bottom:6px;padding:8px 10px;background:var(--bg3);border-radius:5px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+        <div style="width:9px;height:9px;border-radius:50%;background:${t.color}"></div>
+        <span style="font-weight:700;font-size:13px;flex:1">${t.name}</span>
+        <button class="p-del" style="font-size:13px" onclick="removeTeamFromClass('${cl.id}','${t.id}')">×</button>
+      </div>
+      <div class="block-members">${members.map(p=>`<span class="bmtag">${p.name}<button class="p-del" style="font-size:12px" onclick="removePFromClassTeam('${cl.id}','${t.id}','${p.id}')">×</button></span>`).join('')||'<span class="text-dim text-sm">팀원 없음</span>'}</div>
+      <div class="add-row" style="margin-top:6px;">
+        <input class="form-input" id="clt-${cl.id}-${t.id}" placeholder="팀원 이름" onkeydown="if(event.key==='Enter')addPToClassTeam('${cl.id}','${t.id}')">
+        <button class="btn btn-secondary btn-sm" onclick="addPToClassTeam('${cl.id}','${t.id}')">추가</button>
+      </div>
+    </div>`;
+  }).join('')||'<div class="text-dim text-sm" style="margin-bottom:8px;">팀을 추가하세요.</div>';
+  return`${teamItems}
+  <div class="add-row" style="margin-top:8px;">
+    <input class="form-input" id="clt-new-${cl.id}" placeholder="팀 이름">
+    <button class="btn btn-secondary btn-sm" onclick="addTeamToClass('${cl.id}')">팀 추가</button>
+  </div>`;
+}
+function addTeamToClass(cid){
+  const cl=st3.classes.find(c=>c.id===cid);
+  const inp=document.getElementById('clt-new-'+cid),name=inp.value.trim();
+  if(!name||!cl){App.toast('팀 이름을 입력하세요','error');return;}
+  cl.teams.push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const b=document.getElementById('cl-'+cid);if(b)b.classList.add('open');},10);
+}
+function removeTeamFromClass(cid,tid){
+  const cl=st3.classes.find(c=>c.id===cid);
+  if(cl){cl.teams=cl.teams.filter(t=>t.id!==tid);st3.participants=st3.participants.filter(p=>!(p.classId===cid&&p.teamId===tid));}
+  renderRegContainer();
+}
+function addPToClassTeam(cid,tid){
+  const inp=document.getElementById('clt-'+cid+'-'+tid),name=inp.value.trim();
+  if(!name){App.toast('이름을 입력하세요','error');return;}
+  st3.participants.push({id:uid(),name,color:nextColor(),classId:cid,teamId:tid});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const b=document.getElementById('cl-'+cid);if(b)b.classList.add('open');},10);
+  App.toast(name+' 추가됨!','success');
+}
+function removePFromClassTeam(cid,tid,pid){
+  st3.participants=st3.participants.filter(p=>p.id!==pid);renderRegContainer();
+}
+
+/* ─ 부문+체급 블록 ─ */
+function renderDivisionBlock(isTeam){
+  const divs=st3.divisions;
+  const items=divs.length?divs.map(div=>{
+    const classItems=div.classes&&div.classes.length?div.classes.map(cl=>{
+      const count=isTeam?(cl.teams||[]).length:(cl.participants||[]).length;
+      const innerContent=isTeam?renderTeamInDivClass(div,cl):renderPInDivClass(div,cl);
+      return`<div class="class-item">
+        <div class="class-hdr" onclick="toggleBlock('dc-${div.id}-${cl.id}')">
+          <div style="width:9px;height:9px;border-radius:50%;background:${cl.color}"></div>
+          <div class="class-name">${cl.name}</div>
+          <span class="block-hdr-badge" style="font-size:10px;">${count}${isTeam?'팀':'명'}</span>
+          <button class="p-del" style="font-size:13px" onclick="event.stopPropagation();removeDivClass('${div.id}','${cl.id}')">×</button>
+        </div>
+        <div class="block-body" id="dc-${div.id}-${cl.id}" style="padding:10px 12px;">${innerContent}</div>
+      </div>`;
+    }).join(''):'<div class="text-dim text-sm" style="margin-bottom:8px;">체급을 추가하세요.</div>';
+    return`<div class="division-item">
+      <div class="division-hdr" onclick="toggleBlock('div-${div.id}')">
+        <div style="width:12px;height:12px;border-radius:50%;background:${div.color}"></div>
+        <div class="division-name">${div.name}</div>
+        <button class="p-del" onclick="event.stopPropagation();removeDivision('${div.id}')">×</button>
+      </div>
+      <div class="division-body" id="div-${div.id}">
+        ${classItems}
+        <div class="add-row" style="margin-top:8px;">
+          <input class="form-input" id="dc-inp-${div.id}" placeholder="체급 이름 (예: -60kg)">
+          <button class="btn btn-secondary btn-sm" onclick="addDivClass('${div.id}')">체급 추가</button>
+        </div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="text-dim text-sm" style="margin-bottom:12px;">부문을 추가하세요.</div>';
+  return`<div class="block-area">
+    <div class="reg-title">부문 구성</div>
+    ${items}
+    <div class="add-row" style="margin-top:10px;">
+      <input class="form-input" id="div-name-inp" placeholder="부문 이름 (예: 초등부, 중등부)">
+      <button class="btn btn-secondary" onclick="addDivision()">부문 추가</button>
+    </div>
+  </div>`;
+}
+function addDivision(){
+  const inp=document.getElementById('div-name-inp'),name=inp.value.trim();
+  if(!name){App.toast('부문 이름을 입력하세요','error');return;}
+  st3.divisions.push({id:uid(),name,color:nextColor(),classes:[]});
+  inp.value='';renderRegContainer();
+}
+function removeDivision(did){
+  st3.divisions=st3.divisions.filter(d=>d.id!==did);renderRegContainer();
+}
+function addDivClass(did){
+  const div=st3.divisions.find(d=>d.id===did);
+  const inp=document.getElementById('dc-inp-'+did),name=inp.value.trim();
+  if(!name||!div){App.toast('체급 이름을 입력하세요','error');return;}
+  div.classes.push({id:uid(),name,color:nextColor(),participants:[],teams:[]});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const b=document.getElementById('div-'+did);if(b)b.classList.add('open');},10);
+}
+function removeDivClass(did,cid){
+  const div=st3.divisions.find(d=>d.id===did);
+  if(div)div.classes=div.classes.filter(c=>c.id!==cid);
+  renderRegContainer();
+}
+function renderPInDivClass(div,cl){
+  const ps=cl.participants||[];
+  return`<div class="block-members">${ps.map(p=>`<span class="bmtag">${p.name}<button class="p-del" style="font-size:12px" onclick="removePFromDivClass('${div.id}','${cl.id}','${p.id}')">×</button></span>`).join('')||'<span class="text-dim text-sm">참가자 없음</span>'}</div>
+  <div class="add-row" style="margin-top:6px;">
+    <input class="form-input" id="dcp-${div.id}-${cl.id}" placeholder="참가자 이름" onkeydown="if(event.key==='Enter')addPToDivClass('${div.id}','${cl.id}')">
+    <button class="btn btn-secondary btn-sm" onclick="addPToDivClass('${div.id}','${cl.id}')">추가</button>
+    <button class="btn btn-outline btn-sm" onclick="openBulk('divclass','${div.id}','${cl.id}')">여러명</button>
+  </div>`;
+}
+function addPToDivClass(did,cid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  const inp=document.getElementById('dcp-'+did+'-'+cid),name=inp.value.trim();
+  if(!name||!cl){App.toast('이름을 입력하세요','error');return;}
+  cl.participants.push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{
+    const db=document.getElementById('div-'+did),cb=document.getElementById('dc-'+did+'-'+cid);
+    if(db)db.classList.add('open');if(cb)cb.classList.add('open');
+  },10);
+  App.toast(name+' 추가됨!','success');
+}
+function removePFromDivClass(did,cid,pid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  if(cl)cl.participants=cl.participants.filter(p=>p.id!==pid);
+  renderRegContainer();
+}
+function renderTeamInDivClass(div,cl){
+  const teams=cl.teams||[];
+  const items=teams.map(t=>{
+    const members=(cl.teamMembers||{})[t.id]||[];
+    return`<div style="margin-bottom:6px;padding:7px 9px;background:var(--bg2);border-radius:4px;border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${t.color}"></div>
+        <span style="font-weight:700;font-size:12px;flex:1">${t.name}</span>
+        <button class="p-del" style="font-size:12px" onclick="removeDivClassTeam('${div.id}','${cl.id}','${t.id}')">×</button>
+      </div>
+      <div class="block-members">${members.map(p=>`<span class="bmtag">${p.name}<button class="p-del" style="font-size:11px" onclick="removePFromDivClassTeam('${div.id}','${cl.id}','${t.id}','${p.id}')">×</button></span>`).join('')||'<span class="text-dim text-sm">팀원 없음</span>'}</div>
+      <div class="add-row" style="margin-top:5px;">
+        <input class="form-input" id="dct-${div.id}-${cl.id}-${t.id}" placeholder="팀원" onkeydown="if(event.key==='Enter')addPToDivClassTeam('${div.id}','${cl.id}','${t.id}')">
+        <button class="btn btn-secondary btn-sm" onclick="addPToDivClassTeam('${div.id}','${cl.id}','${t.id}')">추가</button>
+      </div>
+    </div>`;
+  }).join('')||'<div class="text-dim text-sm" style="margin-bottom:6px;">팀을 추가하세요.</div>';
+  return`${items}
+  <div class="add-row" style="margin-top:6px;">
+    <input class="form-input" id="dct-new-${div.id}-${cl.id}" placeholder="팀 이름">
+    <button class="btn btn-secondary btn-sm" onclick="addTeamToDivClass('${div.id}','${cl.id}')">팀 추가</button>
+  </div>`;
+}
+function addTeamToDivClass(did,cid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  const inp=document.getElementById('dct-new-'+did+'-'+cid),name=inp.value.trim();
+  if(!name||!cl){App.toast('팀 이름을 입력하세요','error');return;}
+  if(!cl.teams)cl.teams=[];
+  if(!cl.teamMembers)cl.teamMembers={};
+  const t={id:uid(),name,color:nextColor()};
+  cl.teams.push(t);cl.teamMembers[t.id]=[];
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const db=document.getElementById('div-'+did),cb=document.getElementById('dc-'+did+'-'+cid);if(db)db.classList.add('open');if(cb)cb.classList.add('open');},10);
+}
+function removeDivClassTeam(did,cid,tid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  if(cl){cl.teams=(cl.teams||[]).filter(t=>t.id!==tid);if(cl.teamMembers)delete cl.teamMembers[tid];}
+  renderRegContainer();
+}
+function addPToDivClassTeam(did,cid,tid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  const inp=document.getElementById('dct-'+did+'-'+cid+'-'+tid),name=inp.value.trim();
+  if(!name||!cl){App.toast('이름을 입력하세요','error');return;}
+  if(!cl.teamMembers)cl.teamMembers={};
+  if(!cl.teamMembers[tid])cl.teamMembers[tid]=[];
+  cl.teamMembers[tid].push({id:uid(),name,color:nextColor()});
+  inp.value='';renderRegContainer();
+  setTimeout(()=>{const db=document.getElementById('div-'+did),cb=document.getElementById('dc-'+did+'-'+cid);if(db)db.classList.add('open');if(cb)cb.classList.add('open');},10);
+  App.toast(name+' 추가됨!','success');
+}
+function removePFromDivClassTeam(did,cid,tid,pid){
+  const div=st3.divisions.find(d=>d.id===did),cl=div?.classes.find(c=>c.id===cid);
+  if(cl?.teamMembers?.[tid])cl.teamMembers[tid]=cl.teamMembers[tid].filter(p=>p.id!==pid);
+  renderRegContainer();
+}
+
+/* ─ 블록 토글 ─ */
+function toggleBlock(id){
+  const el=document.getElementById(id);if(el)el.classList.toggle('open');
+}
+
+/* ─ 여러명 모달 ─ */
+let bulkCtx={type:'simple',classId:null,divId:null};
+function openBulk(type,a,b){
+  bulkCtx={type,classId:a||null,divId:b||null};
+  document.getElementById('bulk-modal').classList.remove('hidden');
+}
 function closeBulk(){document.getElementById('bulk-modal').classList.add('hidden');}
 function confirmBulk(){
   const lines=document.getElementById('bulk-input').value.split('\n').map(s=>s.trim()).filter(Boolean);
-  lines.forEach(name=>App.addParticipant(name,null));
+  if(bulkCtx.type==='simple'){lines.forEach(name=>st3.participants.push({id:uid(),name,color:nextColor()}));}
+  else if(bulkCtx.type==='class'){
+    const cl=st3.classes.find(c=>c.id===bulkCtx.classId);
+    if(cl)lines.forEach(name=>cl.participants.push({id:uid(),name,color:nextColor()}));
+  }else if(bulkCtx.type==='divclass'){
+    const div=st3.divisions.find(d=>d.id===bulkCtx.classId),cl=div?.classes.find(c=>c.id===bulkCtx.divId);
+    if(cl)lines.forEach(name=>cl.participants.push({id:uid(),name,color:nextColor()}));
+  }
   closeBulk();document.getElementById('bulk-input').value='';
-  renderParticipants();App.toast(lines.length+'명 추가됨!','success');
+  renderRegContainer();App.toast(lines.length+'명 추가됨!','success');
+}
+
+/* ─ 참가자 유효성 검사 ─ */
+function getTotalParticipantCount(){
+  const m=st3.vsMode;
+  if(m==='individual')return st3.participants.length;
+  if(m==='team')return st3.participants.length;
+  if(m==='class_individual')return st3.classes.reduce((s,c)=>s+(c.participants||[]).length,0);
+  if(m==='class_team')return st3.classes.reduce((s,c)=>s+(c.teams||[]).length,0);
+  if(m==='division_class_individual')return st3.divisions.reduce((s,d)=>s+d.classes.reduce((s2,c)=>s2+(c.participants||[]).length,0),0);
+  if(m==='division_class_team')return st3.divisions.reduce((s,d)=>s+d.classes.reduce((s2,c)=>s2+(c.teams||[]).length,0),0);
+  return 0;
+}
+
+function renderPList(list,type,ctx){
+  if(!list.length)return'<div class="text-dim text-sm" style="margin-top:12px;">참가자를 추가하세요.</div>';
+  return list.map(p=>`<div class="p-item"><div class="p-dot" style="background:${p.color}"></div><div class="p-iname">${p.name}</div><button class="p-del" onclick="removeSimpleP('${p.id}')">×</button></div>`).join('');
 }
 
 /* ── STEP 4 ── */
@@ -531,7 +925,7 @@ function selectFormat(fmt){
   card.classList.add('selected');
 }
 function updateFormatAvailability(){
-  const isTeam=vsMode==='team';
+  const isTeam=st3.vsMode.includes('team');
   ['individual_record','individual_tournament'].forEach(f=>{
     document.getElementById('fmt-'+f).classList.toggle('disabled',isTeam);
   });
@@ -541,30 +935,38 @@ function updateFormatAvailability(){
 }
 
 /* ── STEP 5 ── */
+const VS_LABELS={individual:'👤 개인전',class_individual:'⚖️ 체급 개인전',division_class_individual:'🏅 부문+체급 개인전',team:'👥 팀전',class_team:'🥊 체급 팀전',division_class_team:'🏆 부문+체급 팀전'};
 function buildConfirm(){
-  const state=App.getState(),game=GAMES.find(g=>g.id===selectedGame);
+  const game=GAMES.find(g=>g.id===selectedGame);
+  const total=getTotalParticipantCount();
   document.getElementById('cf-name').textContent=document.getElementById('event-name').value.trim()||'—';
   document.getElementById('cf-game').textContent=game?game.icon+' '+game.name:'—';
-  document.getElementById('cf-vs').textContent=vsMode==='individual'?'👤 개인전':'👥 팀전';
+  document.getElementById('cf-vs').textContent=VS_LABELS[st3.vsMode]||st3.vsMode;
   document.getElementById('cf-format').textContent=FORMAT_LABELS[selectedFormat]||'—';
-  document.getElementById('cf-count').textContent=state.participants.length+'명';
-  document.getElementById('cf-participants').innerHTML=state.participants.map(p=>
-    `<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`
-  ).join('');
+  document.getElementById('cf-count').textContent=total+'명';
+  // 참가자 태그 미리보기
+  let tags=[];
+  if(st3.vsMode==='individual')tags=st3.participants.map(p=>`<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`);
+  else if(st3.vsMode==='team')tags=st3.teams.map(t=>`<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${t.color}"></div>${t.name}</div>`);
+  else if(st3.vsMode==='class_individual')tags=st3.classes.map(c=>`<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${c.color}"></div>${c.name} ${(c.participants||[]).length}명</div>`);
+  else if(st3.vsMode==='class_team')tags=st3.classes.map(c=>`<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${c.color}"></div>${c.name} ${(c.teams||[]).length}팀</div>`);
+  else if(st3.vsMode.startsWith('division'))tags=st3.divisions.map(d=>`<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${d.color}"></div>${d.name} ${(d.classes||[]).length}체급</div>`);
+  document.getElementById('cf-participants').innerHTML=tags.join('');
 }
 function saveAndStart(e){
-  const state=App.getState();
-  if(!state.participants.length){e.preventDefault();App.toast('참가자가 없어요!','error');return;}
+  if(getTotalParticipantCount()===0){e.preventDefault();App.toast('참가자가 없어요!','error');return;}
   const name=document.getElementById('event-name').value.trim()||'행사';
   const modeMap={individual_record:'individual',individual_tournament:'tournament',team_record:'team',team_individual:'team',team_tournament:'tournament'};
   App.setState({
     mode:modeMap[selectedFormat]||'individual',
     gameType:selectedGame,
-    event:{...state.event,name,subtitle:document.getElementById('event-subtitle').value.trim(),gameName:document.getElementById('game-label').value.trim(),showEventName,showSubtitle,showGameName},
-    settings:{...state.settings,laps,format:selectedFormat},
+    vsMode:st3.vsMode,
+    participantData:st3,
+    event:{name,subtitle:document.getElementById('event-subtitle').value.trim(),gameName:document.getElementById('game-label').value.trim(),showEventName,showSubtitle,showGameName},
+    settings:{laps,format:selectedFormat},
   });
   const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
-  history.push({name,date:new Date().toLocaleDateString('ko-KR'),game:selectedGame,participants:state.participants.length,mode:modeMap[selectedFormat]||'individual'});
+  history.push({name,date:new Date().toLocaleDateString('ko-KR'),game:selectedGame,participants:getTotalParticipantCount(),mode:modeMap[selectedFormat]||'individual'});
   localStorage.setItem('sgp_history',JSON.stringify(history.slice(-20)));
 }
 function onExcelLoad(data){
@@ -572,8 +974,8 @@ function onExcelLoad(data){
   if(data.event?.subtitle)document.getElementById('event-subtitle').value=data.event.subtitle;
   if(data.gameType)selectedGame=data.gameType;
   if(data.settings?.laps){laps=data.settings.laps;document.getElementById('laps-val').textContent=laps;}
-  if(data.mode){const vsMap={individual:'individual',tournament:'individual',team:'team'};selectVs(vsMap[data.mode]||'individual');}
-  renderGameGrid();renderParticipants();renderTeamList();updateTeamDropdown();
+  if(data.participantData)Object.assign(st3,data.participantData);
+  renderGameGrid();renderRegContainer();
   App.toast('엑셀 설정 적용 완료!','success');
 }
 
@@ -589,8 +991,8 @@ function onExcelLoad(data){
   if(state.event?.name&&state.event.name!=='게임 행사')document.getElementById('event-name').value=state.event.name;
   if(state.event?.subtitle)document.getElementById('event-subtitle').value=state.event.subtitle;
   if(state.event?.gameName)document.getElementById('game-label').value=state.event.gameName;
-  if(state.mode==='team')selectVs('team');
-  renderGameGrid();renderParticipants();renderTeamList();updateTeamDropdown();updateFormatAvailability();
+  if(state.participantData)Object.assign(st3,state.participantData);
+  renderGameGrid();renderRegContainer();updateFormatAvailability();
 })();
 </script>
 </body>
