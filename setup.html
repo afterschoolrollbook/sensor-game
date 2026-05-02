@@ -28,20 +28,18 @@
 .panel-title { font-family:var(--font-display); font-size:clamp(28px,5vw,48px); letter-spacing:2px; margin-bottom:28px; }
 
 /* STEP 1 */
-.info-toggle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
-.info-toggle-item { background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:18px 16px 14px; cursor:pointer; transition:all .2s; position:relative; }
-.info-toggle-item.checked { border-color:var(--red); background:rgba(230,57,70,.06); }
-.itl { font-family:var(--font-mono); font-size:9px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:5px; }
-.iname { font-family:var(--font-display); font-size:18px; letter-spacing:1px; }
-.ichk { position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%; border:2px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .2s; }
-.info-toggle-item.checked .ichk { background:var(--red); border-color:var(--red); color:white; }
-.info-toggle-item.checked .ichk::after { content:'✓'; }
-.info-fields { display:flex; flex-direction:column; gap:14px; }
-.info-field { display:flex; gap:16px; align-items:center; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; transition:opacity .2s; }
-.info-field.disabled { opacity:.3; pointer-events:none; }
+.info-fields { display:flex; flex-direction:column; gap:14px; margin-bottom:28px; }
+.info-field { display:flex; gap:16px; align-items:center; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; }
 .info-field-label { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; width:72px; flex-shrink:0; }
 .info-field .form-input { margin:0; background:transparent; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:4px 0; font-size:16px; width:100%; }
 .info-field .form-input:focus { border-bottom-color:var(--blue); outline:none; }
+.display-section-label { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:12px; }
+.display-toggle-row { display:flex; gap:12px; flex-wrap:wrap; }
+.display-toggle { display:flex; align-items:center; gap:8px; background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:10px 16px; cursor:pointer; transition:all .2s; font-size:14px; font-weight:600; }
+.display-toggle.checked { border-color:var(--red); background:rgba(230,57,70,.06); color:var(--red); }
+.display-toggle .dt-box { width:16px; height:16px; border-radius:4px; border:2px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; transition:all .2s; }
+.display-toggle.checked .dt-box { background:var(--red); border-color:var(--red); color:white; }
+.display-toggle.checked .dt-box::after { content:'✓'; }
 
 /* STEP 2 */
 .game-grid-w { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
@@ -169,38 +167,34 @@
   <div class="wizard-panel active" id="panel-1">
     <div class="panel-sub">// STEP 01</div>
     <div class="panel-title">기본 정보</div>
-    <p class="text-dim" style="margin-bottom:22px;font-size:14px;">화면/전광판에 표시할 항목을 체크하고 내용을 입력하세요.</p>
 
-    <div class="info-toggle-grid">
-      <div class="info-toggle-item checked" id="chk-eventname" onclick="toggleInfo('eventname')">
-        <div class="itl">표시 항목 1</div>
-        <div class="iname">행사명</div>
-        <div class="ichk" id="ichk-eventname"></div>
-      </div>
-      <div class="info-toggle-item" id="chk-subtitle" onclick="toggleInfo('subtitle')">
-        <div class="itl">표시 항목 2</div>
-        <div class="iname">부제목</div>
-        <div class="ichk" id="ichk-subtitle"></div>
-      </div>
-      <div class="info-toggle-item" id="chk-gamename" onclick="toggleInfo('gamename')">
-        <div class="itl">표시 항목 3</div>
-        <div class="iname">종목명</div>
-        <div class="ichk" id="ichk-gamename"></div>
-      </div>
-    </div>
-
+    <!-- 입력 필드 (항상 활성) -->
     <div class="info-fields">
-      <div class="info-field" id="field-eventname">
+      <div class="info-field">
         <div class="info-field-label">행사명</div>
-        <input class="form-input" id="event-name" placeholder="예) 2026 청계초 여름 체육대회">
+        <input class="form-input" id="event-name" placeholder="예) 2026년 000 한마음 운동회">
       </div>
-      <div class="info-field disabled" id="field-subtitle">
+      <div class="info-field">
         <div class="info-field-label">부제목</div>
         <input class="form-input" id="event-subtitle" placeholder="예) 4학년">
       </div>
-      <div class="info-field disabled" id="field-gamename">
+      <div class="info-field">
         <div class="info-field-label">종목명</div>
         <input class="form-input" id="game-label" placeholder="예) 이어달리기">
+      </div>
+    </div>
+
+    <!-- 전광판 표시 여부 (별도) -->
+    <div class="display-section-label">📺 전광판에 표시할 항목</div>
+    <div class="display-toggle-row">
+      <div class="display-toggle checked" id="chk-eventname" onclick="toggleDisplay('eventname')">
+        <div class="dt-box"></div>행사명
+      </div>
+      <div class="display-toggle" id="chk-subtitle" onclick="toggleDisplay('subtitle')">
+        <div class="dt-box"></div>부제목
+      </div>
+      <div class="display-toggle" id="chk-gamename" onclick="toggleDisplay('gamename')">
+        <div class="dt-box"></div>종목명
       </div>
     </div>
 
@@ -445,14 +439,12 @@ function validateStep(step){
 }
 
 /* ── STEP 1 ── */
-function toggleInfo(key){
-  const map={eventname:[showEventName,'chk-eventname','field-eventname'],subtitle:[showSubtitle,'chk-subtitle','field-subtitle'],gamename:[showGameName,'chk-gamename','field-gamename']};
+function toggleDisplay(key){
   if(key==='eventname')showEventName=!showEventName;
   else if(key==='subtitle')showSubtitle=!showSubtitle;
   else showGameName=!showGameName;
   const val=key==='eventname'?showEventName:key==='subtitle'?showSubtitle:showGameName;
   document.getElementById('chk-'+key).classList.toggle('checked',val);
-  document.getElementById('field-'+key).classList.toggle('disabled',!val);
 }
 
 /* ── STEP 2 ── */
