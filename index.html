@@ -259,18 +259,66 @@ function updateStats() {
 function renderRecent() {
   const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
   const el = document.getElementById('recent-list');
-  if (!history.length) return;
-  el.innerHTML = history.slice(-5).reverse().map(h => `
-    <div class="recent-card mt-8">
-      <div>
-        <div style="font-weight:700; font-size:16px;">${h.name}</div>
-        <div class="text-dim text-sm">${h.date} · ${h.game} · 참가자 ${h.participants}명</div>
+  if (!history.length) {
+    el.innerHTML = '<div class="text-dim text-sm">아직 기록이 없어요.</div>';
+    return;
+  }
+  el.innerHTML = [...history].reverse().map((h, idx) => {
+    const realIdx = history.length - 1 - idx;
+    const GAME_LABELS = { timelap:'🏁 타임랩', reaction:'⚡ 반응속도', balance:'🎯 균형버티기', jump:'🤸 점프력', distance:'📏 멀리뛰기', weight:'⚖️ 무게', strength:'💪 악력', oddeven:'🎲 홀짝', roulette:'🎰 룰렛', count:'🔢 카운트', sound:'🔊 소리' };
+    const MODE_LABELS = { individual:'👤 개인전', team:'👥 팀대결', tournament:'🏆 토너먼트' };
+    return `
+    <div class="recent-card mt-8" id="hcard-${realIdx}">
+      <div style="flex:1;">
+        <div id="hname-${realIdx}" style="font-weight:700; font-size:16px;">${h.name}</div>
+        <div class="text-dim text-sm">${h.date} · ${GAME_LABELS[h.game]||h.game} · 참가자 ${h.participants}명</div>
       </div>
-      <div class="flex gap-8">
-        <span class="badge badge-green">${h.mode}</span>
+      <div class="flex gap-8 items-center">
+        <span class="badge badge-green">${MODE_LABELS[h.mode]||h.mode}</span>
+        <button class="btn btn-outline btn-sm" onclick="editHistory(${realIdx})" title="수정" style="padding:5px 10px;">✏️</button>
+        <button class="btn btn-outline btn-sm" onclick="deleteHistory(${realIdx})" title="삭제" style="padding:5px 10px; border-color:#e63946; color:#e63946;">🗑️</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+function deleteHistory(idx) {
+  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
+  const name = history[idx]?.name || '이 기록';
+  if (!confirm(`"${name}" 기록을 삭제할까요?`)) return;
+  history.splice(idx, 1);
+  localStorage.setItem('sgp_history', JSON.stringify(history));
+  updateStats();
+  renderRecent();
+  App.toast(`"${name}" 삭제됨`, 'info');
+}
+
+function editHistory(idx) {
+  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
+  const h = history[idx];
+  if (!h) return;
+  document.getElementById('edit-idx').value = idx;
+  document.getElementById('edit-name').value = h.name;
+  document.getElementById('edit-date').value = h.date;
+  document.getElementById('edit-participants').value = h.participants;
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function saveEdit() {
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
+  history[idx].name         = document.getElementById('edit-name').value.trim() || history[idx].name;
+  history[idx].date         = document.getElementById('edit-date').value.trim() || history[idx].date;
+  history[idx].participants = document.getElementById('edit-participants').value || history[idx].participants;
+  localStorage.setItem('sgp_history', JSON.stringify(history));
+  closeEditModal();
+  renderRecent();
+  updateStats();
+  App.toast('수정됨!', 'success');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.add('hidden');
 }
 
 renderGames();
@@ -293,5 +341,30 @@ function resetAllHistory() {
   App.toast('전체 기록 삭제됨!', 'info');
 }
 </script>
+
+<!-- 수정 모달 -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ 행사 기록 수정</div>
+    <input type="hidden" id="edit-idx">
+    <div class="form-group">
+      <label class="form-label">행사명</label>
+      <input class="form-input" id="edit-name" placeholder="행사명">
+    </div>
+    <div class="form-group">
+      <label class="form-label">날짜</label>
+      <input class="form-input" id="edit-date" placeholder="예) 2026. 5. 3.">
+    </div>
+    <div class="form-group">
+      <label class="form-label">참가자 수</label>
+      <input class="form-input" type="number" id="edit-participants" placeholder="예) 10">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
