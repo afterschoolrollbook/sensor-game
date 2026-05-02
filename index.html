@@ -179,7 +179,17 @@
 
   <!-- 최근 기록 -->
   <hr class="divider">
-  <h2 class="text-display mb-16" style="font-size:24px; letter-spacing:2px;">최근 행사 기록</h2>
+  <div class="flex items-center justify-between mb-16">
+    <h2 class="text-display" style="font-size:24px; letter-spacing:2px;">최근 행사 기록</h2>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline btn-sm" onclick="resetCurrentEvent()" style="display:flex;align-items:center;gap:6px;">
+        🔄 <span>현재 행사 리셋</span>
+      </button>
+      <button class="btn btn-outline btn-sm" style="display:flex;align-items:center;gap:6px; border-color:#e63946; color:#e63946;" onclick="resetAllHistory()">
+        🗑️ <span>전체 기록 삭제</span>
+      </button>
+    </div>
+  </div>
   <div id="recent-list">
     <div class="text-dim text-sm">아직 기록이 없어요.</div>
   </div>
@@ -266,6 +276,22 @@ function renderRecent() {
 renderGames();
 updateStats();
 renderRecent();
+
+function resetCurrentEvent() {
+  if (!confirm('현재 행사 참가자와 기록을 초기화할까요?\n(최근 행사 이력은 유지됩니다)')) return;
+  App.resetState();
+  updateStats();
+  App.toast('현재 행사 초기화됨!', 'success');
+}
+
+function resetAllHistory() {
+  if (!confirm('최근 행사 이력을 전부 삭제할까요?\n이 작업은 되돌릴 수 없어요!')) return;
+  localStorage.removeItem('sgp_history');
+  App.resetState();
+  updateStats();
+  renderRecent();
+  App.toast('전체 기록 삭제됨!', 'info');
+}
 </script>
 </body>
 </html>
