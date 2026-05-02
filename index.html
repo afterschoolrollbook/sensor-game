@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 멀티 게임 센서 플랫폼</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.hero {
+  padding: 80px 0 60px;
+  text-align: center;
+  position: relative;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 10vw, 100px);
+  letter-spacing: 4px; line-height: 1;
+  margin-bottom: 16px;
+}
+.hero-title span { color: var(--red); }
+.hero-sub {
+  color: var(--text-dim);
+  font-size: 18px; margin-bottom: 40px;
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+}
+.hero-badge-row {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+
+/* 게임 카드 */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.game-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: all .25s;
+  text-decoration: none;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.game-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, var(--red));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .25s;
+}
+.game-card:hover { border-color: var(--accent, var(--red)); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+.game-card:hover::before { transform: scaleX(1); }
+.game-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.game-name {
+  font-family: var(--font-display);
+  font-size: 20px; letter-spacing: 1px;
+  margin-bottom: 6px; color: var(--text);
+}
+.game-desc { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.game-tag {
+  position: absolute; top: 14px; right: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px;
+  background: var(--bg3);
+  color: var(--text-dim);
+}
+
+/* 최근 행사 */
+.recent-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  cursor: pointer; transition: border-color .2s;
+}
+.recent-card:hover { border-color: var(--blue); }
+
+/* 통계 */
+.stat-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 48px;
+}
+.stat-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  text-align: center;
+}
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 36px; letter-spacing: 1px;
+  color: var(--blue);
+}
+.stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+@media (max-width: 600px) {
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step active" data-page="home" href="index.html">홈</a>
+      <a class="nav-step" data-page="setup" href="setup.html">참가자 설정</a>
+      <a class="nav-step" data-page="customize" href="customize.html">커스터마이징</a>
+      <a class="nav-step" data-page="game" href="game.html">게임 진행</a>
+      <a class="nav-step" data-page="result" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <!-- 히어로 -->
+  <div class="hero anim-fade-in">
+    <div class="hero-title">SENSOR<br><span>GAME</span><br>PLATFORM</div>
+    <div class="hero-sub">// 센서 하나로 무한한 게임</div>
+    <div class="hero-badge-row">
+      <span class="badge badge-red">서버 불필요</span>
+      <span class="badge badge-blue">Web Serial API</span>
+      <span class="badge badge-green">HDMI 지원</span>
+      <span class="badge badge-yellow">엑셀 저장</span>
+    </div>
+    <a href="setup.html" class="btn btn-primary btn-lg">
+      새 행사 시작 →
+    </a>
+    &nbsp;
+    <button class="btn btn-secondary btn-lg" onclick="loadLast()">
+      이어서 진행
+    </button>
+  </div>
+
+  <!-- 통계 -->
+  <div class="stat-row anim-fade-in" id="stats-row">
+    <div class="stat-box">
+      <div class="stat-val" id="stat-events">0</div>
+      <div class="stat-label">총 행사</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-participants">0</div>
+      <div class="stat-label">총 참가자</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-records">0</div>
+      <div class="stat-label">총 기록</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-games">12</div>
+      <div class="stat-label">게임 모드</div>
+    </div>
+  </div>
+
+  <!-- 게임 선택 -->
+  <div style="margin-bottom: 24px;">
+    <div class="flex items-center justify-between mb-16">
+      <h2 class="text-display" style="font-size:24px; letter-spacing:2px;">게임 모드 선택</h2>
+      <span class="text-dim text-sm">게임을 선택하면 설정 화면으로 이동해요</span>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <span class="badge badge-red" style="margin-right:8px; cursor:pointer;" onclick="filterGames('all')">전체</span>
+      <span class="badge badge-blue" style="margin-right:8px; cursor:pointer;" onclick="filterGames('speed')">속도/시간</span>
+      <span class="badge badge-green" style="margin-right:8px; cursor:pointer;" onclick="filterGames('strength')">힘/무게</span>
+      <span class="badge badge-yellow" style="cursor:pointer;" onclick="filterGames('fun')">운/재미</span>
+    </div>
+
+    <div class="game-grid" id="game-grid"></div>
+  </div>
+
+  <!-- 최근 기록 -->
+  <hr class="divider">
+  <h2 class="text-display mb-16" style="font-size:24px; letter-spacing:2px;">최근 행사 기록</h2>
+  <div id="recent-list">
+    <div class="text-dim text-sm">아직 기록이 없어요.</div>
+  </div>
+
+</div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+const GAMES = [
+  { id:'timelap',   icon:'🏁', name:'타임랩',      desc:'출발~결승 시간 측정. 바퀴 수, 랩타임, 구간 타임 자동 기록.', tag:'속도/시간', category:'speed',    accent:'#e63946' },
+  { id:'reaction',  icon:'⚡', name:'반응속도',     desc:'신호 후 버튼 누르는 속도 측정. 여러 명 동시 대결.', tag:'속도/시간', category:'speed',    accent:'#ff6b35' },
+  { id:'balance',   icon:'🎯', name:'균형 버티기',  desc:'압력 패드 위에서 균형 유지 시간. 흔들리면 탈락.', tag:'속도/시간', category:'speed',    accent:'#4cc9f0' },
+  { id:'jump',      icon:'🤸', name:'점프력',       desc:'패드에서 뛰어오른 공중 체공 시간 측정.', tag:'속도/시간', category:'speed',    accent:'#4cc9f0' },
+  { id:'distance',  icon:'📏', name:'멀리뛰기',     desc:'초음파 센서로 착지 거리 자동 측정.', tag:'속도/시간', category:'speed',    accent:'#06d6a0' },
+  { id:'weight',    icon:'⚖️', name:'무게 맞추기',  desc:'목표 무게에 얼마나 가까운지 정확도 경쟁.', tag:'힘/무게',  category:'strength', accent:'#7b2fff' },
+  { id:'strength',  icon:'💪', name:'악력/힘 측정', desc:'최대 힘 측정 후 순위. 3회 평균 또는 최고값.', tag:'힘/무게',  category:'strength', accent:'#e63946' },
+  { id:'weightacc', icon:'🏋️', name:'무게 정확도',  desc:'100g 단위로 정확하게 물건 올리기. 오차가 작을수록 고득점.', tag:'힘/무게',  category:'strength', accent:'#ff6b35' },
+  { id:'oddeven',   icon:'🎲', name:'홀짝 게임',    desc:'통과 횟수 카운트 후 홀짝 자동 판정.', tag:'운/재미',  category:'fun',      accent:'#06d6a0' },
+  { id:'roulette',  icon:'🎰', name:'랜덤 룰렛',    desc:'버튼 누르면 랜덤 미션/점수 지정. 행사 게임.', tag:'운/재미',  category:'fun',      accent:'#7b2fff' },
+  { id:'count',     icon:'🔢', name:'카운트 대결',  desc:'제한 시간 안에 센서를 몇 번 통과하는지 대결.', tag:'운/재미',  category:'fun',      accent:'#ffd60a' },
+  { id:'sound',     icon:'🔊', name:'소리 크기',    desc:'가장 크게 소리지르기. 팀 응원 소리 크기 측정.', tag:'운/재미',  category:'fun',      accent:'#ff6b35' },
+];
+
+let currentFilter = 'all';
+
+function filterGames(cat) {
+  currentFilter = cat;
+  renderGames();
+}
+
+function renderGames() {
+  const grid = document.getElementById('game-grid');
+  const filtered = currentFilter === 'all' ? GAMES : GAMES.filter(g => g.category === currentFilter);
+  grid.innerHTML = filtered.map(g => `
+    <a class="game-card" href="setup.html?game=${g.id}" style="--accent:${g.accent}" onclick="selectGame('${g.id}')">
+      <span class="game-tag">${g.tag}</span>
+      <span class="game-icon">${g.icon}</span>
+      <div class="game-name">${g.name}</div>
+      <div class="game-desc">${g.desc}</div>
+    </a>
+  `).join('');
+}
+
+function selectGame(id) {
+  const g = GAMES.find(x => x.id === id);
+  if (g) App.setState({ gameType: id });
+}
+
+function loadLast() {
+  const state = App.getState();
+  if (state.participants.length > 0) {
+    window.location.href = 'game.html';
+  } else {
+    App.toast('이전 행사 데이터가 없어요. 새 행사를 시작하세요!', 'info');
+  }
+}
+
+function updateStats() {
+  const state = App.getState();
+  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
+  document.getElementById('stat-events').textContent = history.length;
+  document.getElementById('stat-participants').textContent = state.participants.length;
+  document.getElementById('stat-records').textContent = state.records.length;
+}
+
+function renderRecent() {
+  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
+  const el = document.getElementById('recent-list');
+  if (!history.length) return;
+  el.innerHTML = history.slice(-5).reverse().map(h => `
+    <div class="recent-card mt-8">
+      <div>
+        <div style="font-weight:700; font-size:16px;">${h.name}</div>
+        <div class="text-dim text-sm">${h.date} · ${h.game} · 참가자 ${h.participants}명</div>
+      </div>
+      <div class="flex gap-8">
+        <span class="badge badge-green">${h.mode}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderGames();
+updateStats();
+renderRecent();
+</script>
+</body>
+</html>

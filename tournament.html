@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 토너먼트 브라켓</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.bracket-container {
+  overflow-x: auto; padding-bottom: 24px;
+}
+.bracket-grid {
+  display: flex; gap: 40px; align-items: flex-start;
+  min-width: max-content; padding: 24px 0;
+}
+.bracket-round-col { display: flex; flex-direction: column; gap: 0; }
+.round-label {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 3px; color: var(--text-dim);
+  text-transform: uppercase; text-align: center;
+  margin-bottom: 16px; padding: 6px 16px;
+  background: var(--bg3); border-radius: 4px;
+}
+.b-match {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); width: 180px; overflow: hidden;
+  margin-bottom: 12px;
+  transition: border-color .2s;
+}
+.b-match.current { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.b-match.done { border-color: var(--border); }
+.b-player {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  transition: all .2s;
+}
+.b-player:last-child { border-bottom: none; }
+.b-player.winner { background: rgba(6,214,160,.1); color: var(--green); }
+.b-player.loser  { opacity: .35; text-decoration: line-through; }
+.b-player.bye    { opacity: .2; font-style: italic; }
+.b-time { font-family: var(--font-mono); font-size: 11px; color: var(--blue); }
+.b-crown { font-size: 12px; }
+
+.champion-box {
+  text-align: center; padding: 48px;
+  background: radial-gradient(ellipse, rgba(255,214,10,.15) 0%, transparent 70%);
+  border: 1px solid rgba(255,214,10,.3); border-radius: 16px;
+  display: none;
+}
+.champion-box.visible { display: block; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step" href="setup.html">참가자 설정</a>
+      <a class="nav-step" href="customize.html">커스터마이징</a>
+      <a class="nav-step active" href="game.html">게임 진행</a>
+      <a class="nav-step" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <div class="page-header anim-fade-in">
+    <div class="label">// 토너먼트</div>
+    <h1>대진표</h1>
+    <p id="tournament-status">진행 중</p>
+  </div>
+
+  <!-- 우승자 -->
+  <div class="champion-box anim-fade-in" id="champion-box">
+    <div style="font-size:64px;">🏆</div>
+    <div style="font-family:var(--font-display); font-size:48px; letter-spacing:3px; color:var(--yellow); margin:12px 0;" id="champion-name">—</div>
+    <div style="color:var(--text-dim);">토너먼트 우승!</div>
+  </div>
+
+  <!-- 브라켓 -->
+  <div class="bracket-container anim-fade-in">
+    <div class="bracket-grid" id="bracket-grid"></div>
+  </div>
+
+  <div class="flex justify-between mt-32">
+    <a href="game.html" class="btn btn-outline">← 게임으로</a>
+    <a href="result.html" class="btn btn-primary">최종 결과 →</a>
+  </div>
+
+</div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/tournament.js"></script>
+<script>
+function init() {
+  const state = App.getState();
+  const rounds = state.tournament?.rounds;
+  if (!rounds?.length) {
+    document.getElementById('bracket-grid').innerHTML = '<div class="text-dim">토너먼트 데이터가 없어요. 게임 화면에서 토너먼트 모드를 시작하세요.</div>';
+    return;
+  }
+
+  const cur = Tournament.getCurrentMatch(rounds);
+  const champ = Tournament.getChampion(rounds);
+
+  if (champ) {
+    const p = App.getParticipant(champ);
+    document.getElementById('champion-box').classList.add('visible');
+    document.getElementById('champion-name').textContent = p?.name ?? '우승자';
+    document.getElementById('tournament-status').textContent = '토너먼트 완료!';
+  } else if (cur) {
+    document.getElementById('tournament-status').textContent = `진행 중 — ${Tournament.getRoundName(rounds, cur.roundIdx)} 매치 ${cur.matchIdx+1}`;
+  }
+
+  renderBracket(rounds, cur);
+}
+
+function renderBracket(rounds, cur) {
+  const grid = document.getElementById('bracket-grid');
+  grid.innerHTML = rounds.map((round, ri) => {
+    const label = Tournament.getRoundName(rounds, ri);
+    const matches = round.map((match, mi) => {
+      const isCurrent = cur && cur.roundIdx === ri && cur.matchIdx === mi;
+      const p1 = match.p1 ? App.getParticipant(match.p1) : null;
+      const p2 = match.p2 ? App.getParticipant(match.p2) : null;
+      const best1 = match.p1 ? App.getBestRecord(match.p1) : null;
+      const best2 = match.p2 ? App.getBestRecord(match.p2) : null;
+
+      const p1Class = !p1 ? 'bye' : match.winner === match.p1 ? 'winner' : match.winner ? 'loser' : '';
+      const p2Class = !p2 ? 'bye' : match.winner === match.p2 ? 'winner' : match.winner ? 'loser' : '';
+
+      return `
+        <div class="b-match ${isCurrent?'current':''} ${match.winner?'done':''}">
+          <div class="b-player ${p1Class}">
+            <span>${p1?.name ?? 'BYE'}</span>
+            <div class="flex gap-8 items-center">
+              ${best1 ? `<span class="b-time">${App.formatTime(best1.time)}</span>` : ''}
+              ${match.winner === match.p1 ? '<span class="b-crown">👑</span>' : ''}
+            </div>
+          </div>
+          <div class="b-player ${p2Class}">
+            <span>${p2?.name ?? 'BYE'}</span>
+            <div class="flex gap-8 items-center">
+              ${best2 ? `<span class="b-time">${App.formatTime(best2.time)}</span>` : ''}
+              ${match.winner === match.p2 ? '<span class="b-crown">👑</span>' : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="bracket-round-col">
+        <div class="round-label">${label}</div>
+        ${matches}
+      </div>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>

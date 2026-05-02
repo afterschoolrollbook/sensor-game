@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — UI 커스터마이징</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.theme-card {
+  border-radius: var(--radius); padding: 20px 16px;
+  cursor: pointer; border: 2px solid transparent;
+  transition: all .2s; text-align: center;
+  position: relative; overflow: hidden;
+}
+.theme-card.selected { border-color: white; box-shadow: 0 0 0 3px rgba(255,255,255,.3); }
+.theme-card .theme-name { font-weight: 700; font-size: 14px; margin-top: 8px; }
+.theme-card .theme-check {
+  position: absolute; top: 8px; right: 8px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: white; display: none; align-items: center; justify-content: center;
+  font-size: 12px; color: #000;
+}
+.theme-card.selected .theme-check { display: flex; }
+
+.color-row { display: flex; align-items: center; gap: 12px; }
+.color-swatch {
+  width: 40px; height: 40px; border-radius: 8px;
+  border: 2px solid var(--border); cursor: pointer;
+  transition: transform .2s;
+}
+.color-swatch:hover { transform: scale(1.1); }
+
+.preview-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.preview-header {
+  padding: 16px 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.preview-body { padding: 24px; }
+.preview-timer {
+  font-family: var(--font-mono);
+  font-size: 56px; text-align: center;
+  margin-bottom: 16px;
+}
+.preview-rank { display: flex; flex-direction: column; gap: 8px; }
+.preview-rank-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 6px;
+  font-size: 14px; font-weight: 600;
+}
+
+.sound-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer;
+  transition: border-color .2s; font-size: 14px;
+  color: var(--text); font-family: var(--font-body);
+  width: 100%;
+}
+.sound-btn:hover { border-color: var(--blue); }
+.sound-btn.active { border-color: var(--green); color: var(--green); }
+
+.toggle {
+  position: relative; display: inline-block;
+  width: 48px; height: 26px;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 26px; cursor: pointer; transition: .3s;
+}
+.slider::before {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; left: 4px; bottom: 3px;
+  background: var(--text-dim); border-radius: 50%;
+  transition: .3s;
+}
+input:checked + .slider { background: var(--green); border-color: var(--green); }
+input:checked + .slider::before { transform: translateX(22px); background: white; }
+
+@media (max-width: 600px) {
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step" href="setup.html">참가자 설정</a>
+      <a class="nav-step active" href="customize.html">커스터마이징</a>
+      <a class="nav-step" href="game.html">게임 진행</a>
+      <a class="nav-step" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <div class="page-header anim-fade-in">
+    <div class="label">// STEP 02</div>
+    <h1>UI 커스터마이징</h1>
+    <p>행사에 맞게 테마와 디자인을 설정하세요.</p>
+  </div>
+
+  <div class="grid-2 anim-fade-in" style="gap:32px; align-items:start;">
+
+    <!-- 왼쪽: 설정 -->
+    <div>
+      <!-- 테마 -->
+      <div class="card mb-24">
+        <div class="card-title">🎨 테마 프리셋</div>
+        <div class="theme-grid" id="theme-grid"></div>
+      </div>
+
+      <!-- 색상 -->
+      <div class="card mb-24">
+        <div class="card-title">🖌️ 색상 커스터마이징</div>
+        <div class="form-group">
+          <label class="form-label">포인트 컬러</label>
+          <div class="color-row">
+            <input type="color" id="primary-color" style="width:48px;height:40px;border:none;background:none;cursor:pointer;border-radius:8px;">
+            <div class="flex gap-8" id="preset-colors"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">강조 컬러 (타이머)</label>
+          <div class="color-row">
+            <input type="color" id="accent-color" style="width:48px;height:40px;border:none;background:none;cursor:pointer;border-radius:8px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- 로고/텍스트 -->
+      <div class="card mb-24">
+        <div class="card-title">🖼️ 로고 & 텍스트</div>
+        <div class="form-group">
+          <label class="form-label">행사 로고 업로드</label>
+          <input type="file" id="logo-input" accept="image/*" class="form-input" style="padding:8px;">
+        </div>
+        <div id="logo-preview" style="margin-bottom:16px; display:none;">
+          <img id="logo-img" style="max-height:60px; border-radius:8px;">
+          <button class="btn btn-outline btn-sm mt-8" onclick="removeLogo()">로고 제거</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">화면 표시 텍스트 (행사명)</label>
+          <input class="form-input" id="display-name" placeholder="대형 화면에 표시될 행사명">
+        </div>
+      </div>
+
+      <!-- 효과음 -->
+      <div class="card mb-24">
+        <div class="card-title">🔊 효과음 설정</div>
+        <div class="flex items-center justify-between mb-16">
+          <span>효과음 사용</span>
+          <label class="toggle">
+            <input type="checkbox" id="sound-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;" id="sound-btns">
+          <button class="sound-btn" onclick="playSound('start')">▶ 출발 신호음 미리듣기</button>
+          <button class="sound-btn" onclick="playSound('finish')">▶ 완주 효과음 미리듣기</button>
+          <button class="sound-btn" onclick="playSound('countdown')">▶ 카운트다운 미리듣기</button>
+          <button class="sound-btn" onclick="playSound('win')">▶ 우승 팡파레 미리듣기</button>
+        </div>
+      </div>
+
+      <!-- 표시 항목 -->
+      <div class="card">
+        <div class="card-title">📊 화면 표시 항목</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <label class="toggle"><input type="checkbox" id="show-laptime" checked><span class="slider"></span></label>
+            <span>랩타임 표시</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <label class="toggle"><input type="checkbox" id="show-rank" checked><span class="slider"></span></label>
+            <span>실시간 순위 표시</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <label class="toggle"><input type="checkbox" id="show-best" checked><span class="slider"></span></label>
+            <span>최고기록 하이라이트</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <label class="toggle"><input type="checkbox" id="show-team"><span class="slider"></span></label>
+            <span>팀 점수 표시</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 미리보기 -->
+    <div>
+      <div style="position: sticky; top: 80px;">
+        <div class="mb-16 flex items-center justify-between">
+          <span class="text-display" style="font-size:18px; letter-spacing:1px;">실시간 미리보기</span>
+          <span class="badge badge-blue">LIVE</span>
+        </div>
+        <div class="preview-box" id="preview-box">
+          <div class="preview-header" id="preview-header" style="background:#1a1a26;">
+            <div id="preview-logo" style="display:none;">
+              <img id="preview-logo-img" style="height:32px; border-radius:4px;">
+            </div>
+            <div id="preview-event-name" style="font-family:var(--font-display); font-size:18px; letter-spacing:2px;">게임 행사</div>
+            <div style="flex:1;"></div>
+            <span class="badge badge-red">LIVE</span>
+          </div>
+          <div class="preview-body">
+            <div class="preview-timer" id="preview-timer" style="color:#4cc9f0;">00:12.345</div>
+            <div class="preview-rank">
+              <div class="preview-rank-row" style="background:rgba(255,214,10,.08); color:#ffd60a;">
+                <span style="width:24px;">🥇</span>
+                <span style="flex:1;">홍길동</span>
+                <span style="font-family:var(--font-mono);">00:11.234</span>
+              </div>
+              <div class="preview-rank-row" style="background:rgba(255,255,255,.04);">
+                <span style="width:24px;">🥈</span>
+                <span style="flex:1;">김철수</span>
+                <span style="font-family:var(--font-mono); color:var(--text-dim);">00:13.456</span>
+              </div>
+              <div class="preview-rank-row" style="background:rgba(255,255,255,.04);">
+                <span style="width:24px;">🥉</span>
+                <span style="flex:1;">이영희</span>
+                <span style="font-family:var(--font-mono); color:var(--text-dim);">00:15.789</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 버튼 -->
+  <div class="flex justify-between items-center mt-32">
+    <a href="setup.html" class="btn btn-outline">← 참가자 설정</a>
+    <a href="game.html" class="btn btn-primary btn-lg" onclick="saveCustomize()">게임 시작 🚀</a>
+  </div>
+
+</div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+const THEMES = [
+  { id:'dark-racing', name:'🏁 레이싱', bg:'#0a0a0f', header:'#1a0000', primary:'#e63946', accent:'#ff6b35', emoji:'🏁' },
+  { id:'dark-sport',  name:'⚽ 스포츠', bg:'#0a0f0a', header:'#001a00', primary:'#06d6a0', accent:'#4cc9f0', emoji:'⚽' },
+  { id:'festival',    name:'🎉 축제',   bg:'#0f0a1a', header:'#1a0033', primary:'#7b2fff', accent:'#ffd60a', emoji:'🎉' },
+  { id:'corporate',   name:'🏢 기업',   bg:'#0a0c14', header:'#111624', primary:'#4cc9f0', accent:'#06d6a0', emoji:'🏢' },
+  { id:'kids',        name:'🎈 어린이', bg:'#1a0f00', header:'#2a1500', primary:'#ffd60a', accent:'#ff6b35', emoji:'🎈' },
+  { id:'night',       name:'🌙 나이트', bg:'#050508', header:'#0a0a12', primary:'#4cc9f0', accent:'#7b2fff', emoji:'🌙' },
+];
+
+const PRESET_COLORS = ['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585','#ffffff'];
+
+let currentTheme = THEMES[0];
+let logoDataUrl = null;
+
+function init() {
+  const state = App.getState();
+  renderThemes();
+  renderPresetColors();
+
+  document.getElementById('primary-color').value = state.event.primaryColor || '#e63946';
+  document.getElementById('accent-color').value = state.event.accentColor || '#4cc9f0';
+  document.getElementById('display-name').value = state.event.name || '';
+
+  document.getElementById('primary-color').addEventListener('input', updatePreview);
+  document.getElementById('accent-color').addEventListener('input', updatePreview);
+  document.getElementById('display-name').addEventListener('input', updatePreview);
+  document.getElementById('logo-input').addEventListener('change', onLogoUpload);
+
+  currentTheme = THEMES.find(t => t.id === state.event.theme) || THEMES[0];
+  applyTheme(currentTheme);
+}
+
+function renderThemes() {
+  document.getElementById('theme-grid').innerHTML = THEMES.map(t => `
+    <div class="theme-card ${t.id === currentTheme.id ? 'selected':''}"
+      style="background:${t.bg}; color:white;"
+      onclick="applyTheme(${JSON.stringify(t).replace(/"/g,"'")})" data-id="${t.id}">
+      <div class="theme-check">✓</div>
+      <div style="font-size:24px;">${t.emoji}</div>
+      <div class="theme-name">${t.name}</div>
+    </div>
+  `).join('');
+}
+
+function applyTheme(theme) {
+  if (typeof theme === 'string') theme = THEMES.find(t => t.id === theme) || THEMES[0];
+  currentTheme = theme;
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.toggle('selected', c.dataset.id === theme.id));
+  document.getElementById('primary-color').value = theme.primary;
+  document.getElementById('accent-color').value = theme.accent;
+  updatePreview();
+}
+
+function renderPresetColors() {
+  document.getElementById('preset-colors').innerHTML = PRESET_COLORS.map(c => `
+    <div class="color-swatch" style="background:${c};" onclick="setPrimary('${c}')"></div>
+  `).join('');
+}
+
+function setPrimary(color) {
+  document.getElementById('primary-color').value = color;
+  updatePreview();
+}
+
+function updatePreview() {
+  const primary = document.getElementById('primary-color').value;
+  const accent = document.getElementById('accent-color').value;
+  const name = document.getElementById('display-name').value || '게임 행사';
+  document.getElementById('preview-timer').style.color = accent;
+  document.getElementById('preview-header').style.background = currentTheme.header;
+  document.getElementById('preview-event-name').textContent = name;
+}
+
+function onLogoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    logoDataUrl = ev.target.result;
+    document.getElementById('logo-img').src = logoDataUrl;
+    document.getElementById('logo-preview').style.display = 'block';
+    document.getElementById('preview-logo').style.display = 'block';
+    document.getElementById('preview-logo-img').src = logoDataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+  logoDataUrl = null;
+  document.getElementById('logo-preview').style.display = 'none';
+  document.getElementById('preview-logo').style.display = 'none';
+  document.getElementById('logo-input').value = '';
+}
+
+function playSound(type) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const sounds = {
+    start:     [[523,0.1,.1],[659,0.2,.1],[784,0.3,.2]],
+    finish:    [[784,0,.15],[1047,0.15,.15],[1319,0.3,.3]],
+    countdown: [[440,0,.1]],
+    win:       [[523,0,.1],[659,0.15,.1],[784,0.3,.1],[1047,0.45,.4]],
+  };
+  (sounds[type]||[]).forEach(([freq,delay,dur])=>{
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    o.type = 'sine';
+    g.gain.setValueAtTime(0.3, ctx.currentTime+delay);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+dur);
+    o.start(ctx.currentTime+delay);
+    o.stop(ctx.currentTime+delay+dur);
+  });
+}
+
+function saveCustomize() {
+  const state = App.getState();
+  App.setState({
+    event: {
+      ...state.event,
+      name: document.getElementById('display-name').value || state.event.name,
+      logo: logoDataUrl,
+      theme: currentTheme.id,
+      primaryColor: document.getElementById('primary-color').value,
+      accentColor: document.getElementById('accent-color').value,
+      sound: document.getElementById('sound-toggle').checked,
+    }
+  });
+  App.toast('설정 저장됨!', 'success');
+}
+
+init();
+</script>
+</body>
+</html>

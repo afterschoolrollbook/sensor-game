@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 최종 결과</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.podium {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 16px; margin: 40px 0; height: 180px;
+}
+.podium-place {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end;
+}
+.podium-block {
+  width: 120px; border-radius: 8px 8px 0 0;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 16px 8px;
+}
+.podium-medal { font-size: 28px; margin-bottom: 6px; }
+.podium-name { font-family: var(--font-display); font-size: 16px; letter-spacing: 1px; text-align:center; }
+.podium-time { font-family: var(--font-mono); font-size: 13px; margin-top: 4px; }
+.podium-rank { font-family: var(--font-display); font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+
+.result-table {
+  width: 100%; border-collapse: separate; border-spacing: 0 6px;
+}
+.result-table th {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px;
+  color: var(--text-dim); text-transform: uppercase;
+  padding: 8px 16px; text-align: left;
+}
+.result-table td {
+  padding: 14px 16px; background: var(--card);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+.result-table td:first-child { border-left: 1px solid var(--border); border-radius: 8px 0 0 8px; }
+.result-table td:last-child  { border-right: 1px solid var(--border); border-radius: 0 8px 8px 0; }
+.result-table tr.rank-1 td { border-color: var(--yellow); background: rgba(255,214,10,.05); }
+.result-table tr.rank-2 td { border-color: #c0c0c0; background: rgba(192,192,192,.04); }
+.result-table tr.rank-3 td { border-color: #cd7f32; background: rgba(205,127,50,.04); }
+
+.export-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.export-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+  cursor: pointer; transition: border-color .2s;
+  color: var(--text); font-family: var(--font-body);
+  font-size: 14px; font-weight: 600;
+}
+.export-btn:hover { border-color: var(--blue); color: var(--blue); }
+.export-icon { font-size: 24px; }
+
+.tab-row { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.tab-btn {
+  padding: 10px 20px; font-weight: 700; font-size: 14px;
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  font-family: var(--font-body); transition: all .2s;
+  margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--red); border-bottom-color: var(--red); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.winner-banner {
+  text-align: center; padding: 48px 32px;
+  background: radial-gradient(ellipse at center, rgba(255,214,10,.12) 0%, transparent 70%);
+  border: 1px solid rgba(255,214,10,.2); border-radius: 16px; margin-bottom: 32px;
+}
+.winner-crown { font-size: 64px; }
+.winner-name { font-family: var(--font-display); font-size: clamp(36px, 8vw, 64px); letter-spacing: 3px; color: var(--yellow); margin: 12px 0; }
+.winner-time { font-family: var(--font-mono); font-size: 24px; color: var(--blue); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step" href="setup.html">참가자 설정</a>
+      <a class="nav-step" href="customize.html">커스터마이징</a>
+      <a class="nav-step" href="game.html">게임 진행</a>
+      <a class="nav-step active" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <div class="page-header anim-fade-in">
+    <div class="label">// 최종 결과</div>
+    <h1 id="event-title">결과</h1>
+  </div>
+
+  <!-- 우승자 배너 -->
+  <div class="winner-banner anim-fade-in" id="winner-banner" style="display:none;">
+    <div class="winner-crown">🏆</div>
+    <div class="winner-name" id="winner-name">—</div>
+    <div class="winner-time" id="winner-time">—</div>
+  </div>
+
+  <!-- 시상대 -->
+  <div class="podium anim-fade-in" id="podium"></div>
+
+  <!-- 탭 -->
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="showTab('individual')">👤 개인 순위</button>
+    <button class="tab-btn" onclick="showTab('team')">👥 팀 순위</button>
+    <button class="tab-btn" onclick="showTab('detail')">📋 상세 기록</button>
+  </div>
+
+  <!-- 개인 순위 -->
+  <div class="tab-content active" id="tab-individual">
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>참가자</th>
+          <th>팀</th>
+          <th>최고기록</th>
+          <th>도전횟수</th>
+        </tr>
+      </thead>
+      <tbody id="result-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- 팀 순위 -->
+  <div class="tab-content" id="tab-team">
+    <div id="team-result-list"></div>
+  </div>
+
+  <!-- 상세 기록 -->
+  <div class="tab-content" id="tab-detail">
+    <table class="result-table">
+      <thead>
+        <tr><th>참가자</th><th>팀</th><th>라운드</th><th>기록</th><th>시각</th></tr>
+      </thead>
+      <tbody id="detail-tbody"></tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 내보내기 -->
+  <h2 class="text-display mb-16" style="font-size:22px; letter-spacing:2px;">📤 기록 저장 & 내보내기</h2>
+  <div class="export-grid mb-32">
+    <button class="export-btn" onclick="Export.exportResults()">
+      <span class="export-icon">📊</span>
+      <div><div>CSV 저장</div><div class="text-dim" style="font-size:12px; font-weight:400;">개인 순위 CSV</div></div>
+    </button>
+    <button class="export-btn" onclick="Export.exportTeamResults()">
+      <span class="export-icon">👥</span>
+      <div><div>팀 결과 CSV</div><div class="text-dim" style="font-size:12px; font-weight:400;">팀 순위 CSV</div></div>
+    </button>
+    <button class="export-btn" onclick="Export.exportDetailRecords()">
+      <span class="export-icon">📋</span>
+      <div><div>상세 기록 CSV</div><div class="text-dim" style="font-size:12px; font-weight:400;">전체 기록 CSV</div></div>
+    </button>
+    <button class="export-btn" onclick="Export.copyResultText()">
+      <span class="export-icon">📋</span>
+      <div><div>클립보드 복사</div><div class="text-dim" style="font-size:12px; font-weight:400;">카카오톡에 바로 붙여넣기</div></div>
+    </button>
+    <button class="export-btn" onclick="window.print()">
+      <span class="export-icon">🖨️</span>
+      <div><div>인쇄</div><div class="text-dim" style="font-size:12px; font-weight:400;">결과표 A4 인쇄</div></div>
+    </button>
+    <a class="export-btn" href="tournament.html">
+      <span class="export-icon">🏆</span>
+      <div><div>토너먼트 브라켓</div><div class="text-dim" style="font-size:12px; font-weight:400;">대진표 전체 보기</div></div>
+    </a>
+  </div>
+
+  <div class="flex justify-between">
+    <a href="game.html" class="btn btn-outline">← 게임으로</a>
+    <button class="btn btn-primary" onclick="newEvent()">새 행사 시작 🚀</button>
+  </div>
+
+</div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/export.js"></script>
+<script>
+function init() {
+  const state = App.getState();
+  document.getElementById('event-title').textContent = state.event.name + ' — 결과';
+  renderPodium();
+  renderIndividual();
+  renderTeam();
+  renderDetail();
+}
+
+function renderPodium() {
+  const ranking = App.getRanking().filter(r => r.best).slice(0, 3);
+  if (!ranking.length) return;
+
+  // 우승자 배너
+  const winner = ranking[0];
+  document.getElementById('winner-banner').style.display = 'block';
+  document.getElementById('winner-name').textContent = winner.participant.name;
+  document.getElementById('winner-time').textContent = App.formatTime(winner.best.time);
+
+  // 시상대 순서: 2등, 1등, 3등
+  const order = [ranking[1], ranking[0], ranking[2]].filter(Boolean);
+  const heights = [120, 160, 90];
+  const medals = ['🥈', '🥇', '🥉'];
+  const colors = ['rgba(192,192,192,.2)', 'rgba(255,214,10,.2)', 'rgba(205,127,50,.2)'];
+  const borderColors = ['#c0c0c0', '#ffd60a', '#cd7f32'];
+
+  document.getElementById('podium').innerHTML = order.map((item, i) => `
+    <div class="podium-place">
+      <div class="podium-medal">${medals[i]}</div>
+      <div class="podium-block" style="height:${heights[i]}px; background:${colors[i]}; border:1px solid ${borderColors[i]};">
+        <div class="podium-name">${item.participant.name}</div>
+        <div class="podium-time">${App.formatTime(item.best.time)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderIndividual() {
+  const ranking = App.getRanking();
+  document.getElementById('result-tbody').innerHTML = ranking.map((item, idx) => {
+    const cls = idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':'';
+    const team = item.participant.teamId ? App.getTeam(item.participant.teamId) : null;
+    const count = App.getRecords(item.participant.id).length;
+    return `<tr class="${cls}">
+      <td><strong>${['🥇','🥈','🥉'][idx]??idx+1}</strong></td>
+      <td><strong>${item.participant.name}</strong></td>
+      <td>${team ? `<span class="badge badge-blue">${team.name}</span>` : '<span class="text-dim">개인</span>'}</td>
+      <td><span style="font-family:var(--font-mono); color:var(--blue);">${item.best ? App.formatTime(item.best.time) : '—'}</span></td>
+      <td>${count}회</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="text-dim text-sm" style="text-align:center; padding:24px;">기록이 없어요</td></tr>';
+}
+
+function renderTeam() {
+  const ranking = App.getTeamRanking();
+  const el = document.getElementById('team-result-list');
+  if (!ranking.length) { el.innerHTML = '<div class="text-dim text-sm">팀이 없어요</div>'; return; }
+  el.innerHTML = ranking.map((item, idx) => `
+    <div class="rank-row ${idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''} mb-8">
+      <div class="rank-num">${['🥇','🥈','🥉'][idx]??idx+1}</div>
+      <div class="team-dot" style="background:${item.team.color};"></div>
+      <div class="rank-name">${item.team.name} <span class="text-dim text-sm">(${item.count}명)</span></div>
+      <div>
+        <div class="rank-time">${App.formatTime(item.totalTime)}</div>
+        <div class="text-dim text-sm" style="text-align:right;">평균 ${App.formatTime(item.avgTime)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDetail() {
+  const state = App.getState();
+  document.getElementById('detail-tbody').innerHTML = state.records.map(r => {
+    const p = App.getParticipant(r.participantId);
+    const t = p?.teamId ? App.getTeam(p.teamId) : null;
+    return `<tr>
+      <td>${p?.name??'?'}</td>
+      <td>${t ? t.name : '개인'}</td>
+      <td>R${r.round??1} L${r.lap??1}</td>
+      <td><span style="font-family:var(--font-mono); color:var(--blue);">${r.time ? App.formatTime(r.time) : '—'}</span></td>
+      <td class="text-dim text-sm">${new Date(r.timestamp).toLocaleTimeString('ko-KR')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="text-dim text-sm" style="text-align:center; padding:24px;">기록이 없어요</td></tr>';
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['individual','team','detail'][i]===id));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id===`tab-${id}`));
+}
+
+function newEvent() {
+  if (!confirm('새 행사를 시작하면 현재 데이터가 초기화됩니다. 계속할까요?')) return;
+  App.resetState();
+  window.location.href = 'index.html';
+}
+
+init();
+</script>
+</body>
+</html>

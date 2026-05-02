@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 게임 진행</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.game-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+/* 타이머 패널 */
+.timer-panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 40px 32px;
+  text-align: center;
+}
+.current-player {
+  font-family: var(--font-mono);
+  font-size: 13px; letter-spacing: 3px;
+  color: var(--text-dim); margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.current-name {
+  font-family: var(--font-display);
+  font-size: 32px; letter-spacing: 2px;
+  margin-bottom: 32px;
+}
+.timer-display {
+  font-family: var(--font-mono);
+  font-size: clamp(48px, 10vw, 96px);
+  line-height: 1; margin-bottom: 8px;
+  transition: color .3s;
+}
+.lap-info {
+  font-family: var(--font-mono);
+  font-size: 14px; color: var(--text-dim);
+  margin-bottom: 32px; min-height: 20px;
+}
+.timer-controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.countdown-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.85); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+.countdown-overlay.hidden { display: none; }
+.countdown-num {
+  font-family: var(--font-display);
+  font-size: 200px; line-height: 1;
+  animation: countPulse .9s ease both;
+}
+@keyframes countPulse {
+  0%   { transform: scale(1.4); opacity: 0; }
+  50%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(.9);  opacity: .6; }
+}
+.countdown-label {
+  font-family: var(--font-mono);
+  font-size: 18px; letter-spacing: 4px; color: var(--text-dim);
+  margin-top: 16px;
+}
+
+/* 랩 기록 */
+.lap-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.lap-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 6px;
+  background: var(--bg3); font-size: 14px;
+}
+.lap-num { font-family: var(--font-mono); color: var(--text-dim); width: 50px; }
+.lap-time-val { font-family: var(--font-mono); flex: 1; }
+.lap-split { font-family: var(--font-mono); color: var(--text-dim); font-size: 12px; }
+.lap-best { color: var(--green); }
+
+/* 우측 순위판 */
+.rank-panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  position: sticky; top: 80px;
+}
+.rank-panel-title {
+  font-family: var(--font-display);
+  font-size: 18px; letter-spacing: 2px;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rank-list { display: flex; flex-direction: column; gap: 6px; }
+.rank-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 6px;
+  border: 1px solid var(--border); font-size: 14px;
+  transition: all .3s;
+}
+.rank-item.current { border-color: var(--blue); background: rgba(76,201,240,.06); }
+.rank-item.rank-1  { border-color: var(--yellow); background: rgba(255,214,10,.06); }
+.r-num { font-family: var(--font-display); font-size: 20px; width: 32px; text-align: center; color: var(--text-dim); }
+.rank-item.rank-1 .r-num { color: var(--yellow); }
+.r-name { flex: 1; font-weight: 600; }
+.r-time { font-family: var(--font-mono); font-size: 13px; color: var(--blue); }
+.r-no-record { color: var(--text-dim); font-size: 12px; }
+
+/* 토너먼트 패널 */
+.match-panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 24px;
+}
+.match-vs {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px;
+  align-items: center; margin: 20px 0;
+}
+.match-player {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  text-align: center; cursor: pointer; transition: all .2s;
+}
+.match-player:hover { border-color: var(--green); }
+.match-player.selected-winner { border-color: var(--green); background: rgba(6,214,160,.1); }
+.match-player.selected-loser  { opacity: .4; }
+.match-player-name { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; margin-bottom: 6px; }
+.match-player-time { font-family: var(--font-mono); font-size: 16px; color: var(--blue); }
+.vs-badge {
+  font-family: var(--font-display);
+  font-size: 28px; color: var(--red);
+  letter-spacing: 2px;
+}
+
+/* 센서 상태 */
+.sensor-bar {
+  display: flex; gap: 12px; align-items: center;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px; margin-bottom: 20px;
+}
+.sensor-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--text-dim); flex-shrink: 0;
+}
+.sensor-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+.sensor-dot.alert  { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+/* 모드 탭 */
+.mode-tab-row { display: flex; gap: 8px; margin-bottom: 24px; }
+.mode-tab {
+  padding: 8px 20px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text-dim); cursor: pointer; font-weight: 600;
+  font-family: var(--font-body); font-size: 14px;
+  transition: all .2s;
+}
+.mode-tab.active { background: var(--red); border-color: var(--red); color: white; }
+
+@media (max-width: 900px) {
+  .game-layout { grid-template-columns: 1fr; }
+  .rank-panel { position: static; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step" href="setup.html">참가자 설정</a>
+      <a class="nav-step" href="customize.html">커스터마이징</a>
+      <a class="nav-step active" href="game.html">게임 진행</a>
+      <a class="nav-step" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<!-- 카운트다운 오버레이 -->
+<div class="countdown-overlay hidden" id="countdown-overlay">
+  <div class="countdown-num text-red" id="countdown-num">3</div>
+  <div class="countdown-label">// READY</div>
+</div>
+
+<div class="page">
+<div class="container">
+
+  <!-- 행사명 헤더 -->
+  <div class="page-header anim-fade-in" style="padding-bottom:20px;">
+    <div class="label" id="game-label">// 타임랩</div>
+    <h1 id="event-title">게임 행사</h1>
+    <div class="flex items-center gap-16 mt-8" style="flex-wrap:wrap;">
+      <!-- 센서 상태 -->
+      <div class="sensor-bar" style="flex:0 0 auto;">
+        <div class="sensor-dot" id="sensor-a-dot"></div>
+        <span class="text-sm">센서 A (출발)</span>
+        <div class="sensor-dot" id="sensor-b-dot" style="margin-left:12px;"></div>
+        <span class="text-sm">센서 B (결승)</span>
+        <span class="text-dim text-sm" style="margin-left:8px;" id="sensor-status">시뮬레이션 모드</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="connectSerial()">🔌 Arduino 연결</button>
+    </div>
+  </div>
+
+  <!-- 모드 탭 -->
+  <div class="mode-tab-row" id="mode-tabs"></div>
+
+  <!-- 토너먼트 매치 패널 -->
+  <div id="tournament-panel" style="display:none;">
+    <div class="match-panel">
+      <div class="flex items-center justify-between mb-8">
+        <span class="badge badge-red" id="round-badge">1라운드</span>
+        <span class="text-dim text-sm" id="match-progress">매치 1/4</span>
+      </div>
+      <div class="match-vs" id="match-vs">
+        <div class="match-player" id="match-p1" onclick="selectWinner('p1')">
+          <div class="match-player-name" id="match-p1-name">—</div>
+          <div class="match-player-time" id="match-p1-time">—</div>
+        </div>
+        <div class="vs-badge">VS</div>
+        <div class="match-player" id="match-p2" onclick="selectWinner('p2')">
+          <div class="match-player-name" id="match-p2-name">—</div>
+          <div class="match-player-time" id="match-p2-time">—</div>
+        </div>
+      </div>
+      <div class="flex gap-12 justify-center" id="match-actions">
+        <button class="btn btn-primary" onclick="confirmWinner()">승자 확정 →</button>
+        <a href="tournament.html" class="btn btn-secondary">브라켓 보기</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 게임 레이아웃 -->
+  <div class="game-layout">
+
+    <!-- 왼쪽: 타이머 -->
+    <div>
+      <div class="timer-panel anim-fade-in">
+        <div class="current-player">// 현재 도전자</div>
+        <div class="current-name" id="current-name">참가자 선택</div>
+
+        <div class="timer-display" id="timer-display">00:00.000</div>
+        <div class="lap-info" id="lap-info">바퀴 1 / 1</div>
+
+        <div class="timer-controls">
+          <button class="btn btn-primary btn-lg" id="start-btn" onclick="startTimer()">
+            ▶ 출발
+          </button>
+          <button class="btn btn-secondary btn-lg" id="lap-btn" onclick="recordLap()" disabled>
+            🔁 랩
+          </button>
+          <button class="btn btn-outline btn-lg" id="stop-btn" onclick="stopTimer()" disabled>
+            ⏹ 정지
+          </button>
+        </div>
+
+        <!-- 랩 기록 -->
+        <div id="lap-list-section" style="margin-top:24px; text-align:left;">
+          <div class="lap-list" id="lap-list"></div>
+        </div>
+      </div>
+
+      <!-- 다음 참가자 -->
+      <div class="card mt-16" id="queue-panel">
+        <div class="card-title">대기 순서</div>
+        <div class="flex" style="gap:8px; flex-wrap:wrap;" id="queue-list"></div>
+      </div>
+    </div>
+
+    <!-- 우측: 실시간 순위 -->
+    <div class="rank-panel anim-fade-in">
+      <div class="rank-panel-title">
+        <span>실시간 순위</span>
+        <span class="badge badge-green" id="rank-count">0명</span>
+      </div>
+      <div class="rank-list" id="rank-list">
+        <div class="text-dim text-sm">아직 기록이 없어요</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 -->
+  <div class="flex justify-between items-center mt-32">
+    <button class="btn btn-outline" onclick="resetGame()">🔄 게임 초기화</button>
+    <a href="result.html" class="btn btn-primary btn-lg">결과 보기 →</a>
+  </div>
+
+</div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/tournament.js"></script>
+<script>
+let currentParticipantIdx = 0;
+let lapCount = 0;
+let targetLaps = 1;
+let rafId = null;
+let timerEl = null;
+let pendingWinner = null;
+let tournamentRounds = [];
+let serialPort = null;
+
+function init() {
+  const state = App.getState();
+  timerEl = document.getElementById('timer-display');
+  document.getElementById('event-title').textContent = state.event.name;
+  document.getElementById('game-label').textContent = '// ' + (state.gameType || '타임랩');
+  targetLaps = state.settings.laps || 1;
+
+  // 모드 탭
+  const tabs = [
+    { id:'individual', label:'👤 개인전' },
+    { id:'team',       label:'👥 팀 대결' },
+    { id:'tournament', label:'🏆 토너먼트' },
+  ];
+  document.getElementById('mode-tabs').innerHTML = tabs.map(t => `
+    <button class="mode-tab ${state.mode===t.id?'active':''}" onclick="switchMode('${t.id}')">${t.label}</button>
+  `).join('');
+
+  if (state.mode === 'tournament') {
+    initTournament();
+  }
+
+  setCurrentParticipant(0);
+  renderQueue();
+  renderRanking();
+}
+
+function switchMode(mode) {
+  App.setState({ mode });
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(mode==='individual'?'개인':mode==='team'?'팀':'토너먼트')));
+  document.getElementById('tournament-panel').style.display = mode === 'tournament' ? 'block' : 'none';
+  if (mode === 'tournament') initTournament();
+}
+
+function initTournament() {
+  const state = App.getState();
+  if (!state.tournament.rounds.length) {
+    const rounds = Tournament.createBracket(state.participants.map(p=>p.id));
+    App.setState({ tournament: { rounds, currentRound:0, currentMatch:0 } });
+  }
+  document.getElementById('tournament-panel').style.display = 'block';
+  renderCurrentMatch();
+}
+
+function renderCurrentMatch() {
+  const state = App.getState();
+  const cur = Tournament.getCurrentMatch(state.tournament.rounds);
+  if (!cur) {
+    const champ = Tournament.getChampion(state.tournament.rounds);
+    const p = App.getParticipant(champ);
+    document.getElementById('match-vs').innerHTML = `<div style="text-align:center;grid-column:1/-1;"><div style="font-size:48px;">🏆</div><div class="match-player-name" style="font-size:32px;">${p?.name??'우승자'}</div><div class="text-green" style="margin-top:8px;">우승!</div></div>`;
+    document.getElementById('match-actions').innerHTML = '<a href="result.html" class="btn btn-primary btn-lg">결과 보기 →</a>';
+    return;
+  }
+  const { roundIdx, matchIdx, match } = cur;
+  const rounds = state.tournament.rounds;
+  const p1 = App.getParticipant(match.p1);
+  const p2 = App.getParticipant(match.p2);
+  const best1 = match.p1 ? App.getBestRecord(match.p1) : null;
+  const best2 = match.p2 ? App.getBestRecord(match.p2) : null;
+
+  document.getElementById('round-badge').textContent = Tournament.getRoundName(rounds, roundIdx);
+  document.getElementById('match-progress').textContent = `매치 ${matchIdx+1}/${rounds[roundIdx].length}`;
+  document.getElementById('match-p1-name').textContent = p1?.name ?? '?';
+  document.getElementById('match-p2-name').textContent = p2?.name ?? '?';
+  document.getElementById('match-p1-time').textContent = best1 ? App.formatTime(best1.time) : '기록 없음';
+  document.getElementById('match-p2-time').textContent = best2 ? App.formatTime(best2.time) : '기록 없음';
+  document.getElementById('match-p1').className = 'match-player';
+  document.getElementById('match-p2').className = 'match-player';
+  pendingWinner = null;
+  document.getElementById('match-p1').dataset.pid = match.p1;
+  document.getElementById('match-p2').dataset.pid = match.p2;
+
+  // 현재 매치 참가자를 대기열로
+  if (match.p1) {
+    const idx = App.getState().participants.findIndex(p=>p.id===match.p1);
+    if (idx >= 0) setCurrentParticipant(idx);
+  }
+}
+
+function selectWinner(slot) {
+  const pid = document.getElementById(`match-${slot}`).dataset.pid;
+  pendingWinner = pid;
+  document.getElementById('match-p1').classList.toggle('selected-winner', slot==='p1');
+  document.getElementById('match-p2').classList.toggle('selected-winner', slot==='p2');
+  document.getElementById('match-p1').classList.toggle('selected-loser', slot==='p2');
+  document.getElementById('match-p2').classList.toggle('selected-loser', slot==='p1');
+}
+
+function confirmWinner() {
+  if (!pendingWinner) { App.toast('승자를 선택하세요', 'error'); return; }
+  const state = App.getState();
+  const cur = Tournament.getCurrentMatch(state.tournament.rounds);
+  if (!cur) return;
+  const rounds = Tournament.setResult([...state.tournament.rounds], cur.roundIdx, cur.matchIdx, pendingWinner);
+  App.setState({ tournament: { ...state.tournament, rounds } });
+  renderCurrentMatch();
+  const p = App.getParticipant(pendingWinner);
+  App.toast(`${p?.name} 승리!`, 'success');
+}
+
+function setCurrentParticipant(idx) {
+  const state = App.getState();
+  if (!state.participants.length) return;
+  currentParticipantIdx = idx % state.participants.length;
+  const p = state.participants[currentParticipantIdx];
+  document.getElementById('current-name').textContent = p.name;
+  lapCount = 0;
+  updateLapInfo();
+  document.getElementById('lap-list').innerHTML = '';
+}
+
+function updateLapInfo() {
+  document.getElementById('lap-info').textContent = `바퀴 ${lapCount} / ${targetLaps}`;
+}
+
+function startTimer() {
+  const state = App.getState();
+  if (!state.participants.length) { App.toast('참가자를 먼저 추가하세요!', 'error'); return; }
+  if (state.settings.countFrom > 0) {
+    startCountdown(() => doStart());
+  } else {
+    doStart();
+  }
+}
+
+function doStart() {
+  Timer.reset();
+  lapCount = 0;
+  updateLapInfo();
+  document.getElementById('lap-list').innerHTML = '';
+  timerEl.className = 'timer-display running';
+
+  Timer.start(elapsed => {
+    timerEl.textContent = App.formatTime(elapsed);
+  });
+
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('stop-btn').disabled = false;
+  const s = App.getState();
+  document.getElementById('lap-btn').disabled = s.settings.laps <= 1;
+
+  playBeep(880, 0.1);
+  flashSensor('a');
+}
+
+function stopTimer() {
+  const elapsed = Timer.stop();
+  timerEl.className = 'timer-display stopped';
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('stop-btn').disabled = true;
+  document.getElementById('lap-btn').disabled = true;
+
+  const state = App.getState();
+  const p = state.participants[currentParticipantIdx];
+  if (p) {
+    App.addRecord(p.id, { time: elapsed, lap: lapCount + 1, round: 1 });
+    App.toast(`${p.name}: ${App.formatTime(elapsed)}`, 'success');
+    renderRanking();
+
+    // 자동으로 다음 참가자
+    const next = (currentParticipantIdx + 1) % state.participants.length;
+    setTimeout(() => {
+      setCurrentParticipant(next);
+      renderQueue();
+      timerEl.className = 'timer-display';
+      timerEl.textContent = '00:00.000';
+      document.getElementById('start-btn').disabled = false;
+    }, 1500);
+  }
+  flashSensor('b');
+  playBeep(660, 0.15);
+}
+
+function recordLap() {
+  const { total, lapTime } = Timer.lap();
+  lapCount++;
+  updateLapInfo();
+
+  const laps = Timer.getLaps();
+  const bestLap = laps.length > 1 ? Math.min(...laps) : null;
+  const isBest = bestLap && lapTime === bestLap;
+
+  const item = document.createElement('div');
+  item.className = 'lap-item';
+  item.innerHTML = `
+    <span class="lap-num">LAP ${lapCount}</span>
+    <span class="lap-time-val ${isBest?'lap-best':''}">${App.formatTime(lapTime)}</span>
+    <span class="lap-split">${App.formatTime(total)}</span>
+    ${isBest ? '<span class="badge badge-green" style="font-size:10px;">BEST</span>' : ''}
+  `;
+  document.getElementById('lap-list').prepend(item);
+
+  if (lapCount >= targetLaps) {
+    stopTimer();
+  }
+  playBeep(440, 0.05);
+  flashSensor('a');
+}
+
+function renderRanking() {
+  const ranking = App.getRanking();
+  const el = document.getElementById('rank-list');
+  const counted = ranking.filter(r => r.best);
+  document.getElementById('rank-count').textContent = `${counted.length}명`;
+
+  if (!counted.length) {
+    el.innerHTML = '<div class="text-dim text-sm">아직 기록이 없어요</div>';
+    return;
+  }
+  el.innerHTML = ranking.map((item, idx) => {
+    const cls = idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':'';
+    const isCurrent = item.participant.id === App.getState().participants[currentParticipantIdx]?.id;
+    return `<div class="rank-item ${cls} ${isCurrent?'current':''}">
+      <span class="r-num">${['🥇','🥈','🥉'][idx]??idx+1}</span>
+      <span class="r-name">${item.participant.name}</span>
+      ${item.best ? `<span class="r-time">${App.formatTime(item.best.time)}</span>` : '<span class="r-no-record">기록없음</span>'}
+    </div>`;
+  }).join('');
+}
+
+function renderQueue() {
+  const state = App.getState();
+  const el = document.getElementById('queue-list');
+  el.innerHTML = state.participants.map((p, idx) => `
+    <div class="badge ${idx===currentParticipantIdx?'badge-red':'badge-blue'}"
+      style="cursor:pointer;" onclick="setCurrentParticipant(${idx})">
+      ${p.name}
+    </div>
+  `).join('');
+}
+
+function resetGame() {
+  if (!confirm('현재 게임 기록을 초기화할까요?')) return;
+  App.clearRecords();
+  Timer.reset();
+  timerEl.textContent = '00:00.000';
+  timerEl.className = 'timer-display';
+  document.getElementById('lap-list').innerHTML = '';
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('stop-btn').disabled = true;
+  document.getElementById('lap-btn').disabled = true;
+  setCurrentParticipant(0);
+  renderRanking();
+  App.toast('게임 초기화됨', 'info');
+}
+
+// 카운트다운
+function startCountdown(callback) {
+  const overlay = document.getElementById('countdown-overlay');
+  const numEl = document.getElementById('countdown-num');
+  overlay.classList.remove('hidden');
+  let n = 3;
+  numEl.textContent = n;
+  numEl.style.color = 'var(--red)';
+  playBeep(440, 0.1);
+
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(iv);
+      numEl.textContent = 'GO!';
+      numEl.style.color = 'var(--green)';
+      playBeep(880, 0.2);
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        callback();
+      }, 600);
+    } else {
+      numEl.textContent = n;
+      numEl.style.color = n === 1 ? 'var(--yellow)' : 'var(--red)';
+      playBeep(440, 0.1);
+      numEl.style.animation = 'none';
+      numEl.offsetHeight;
+      numEl.style.animation = 'countPulse .9s ease both';
+    }
+  }, 1000);
+}
+
+// 효과음
+function playBeep(freq, duration) {
+  if (!App.getState().event.sound) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.2, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    o.start(); o.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+// 센서 플래시 애니메이션
+function flashSensor(type) {
+  const dot = document.getElementById(`sensor-${type}-dot`);
+  dot.classList.add('active');
+  setTimeout(() => dot.classList.remove('active'), 300);
+}
+
+// Arduino Serial 연결 (Web Serial API)
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    App.toast('Web Serial API는 Chrome에서만 지원돼요!', 'error');
+    return;
+  }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 9600 });
+    App.toast('Arduino 연결됨!', 'success');
+    document.getElementById('sensor-status').textContent = '연결됨';
+    document.getElementById('sensor-a-dot').classList.add('active');
+    readSerial();
+  } catch(e) {
+    App.toast('연결 실패: ' + e.message, 'error');
+  }
+}
+
+async function readSerial() {
+  const reader = serialPort.readable.getReader();
+  let buf = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += new TextDecoder().decode(value);
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      lines.forEach(line => {
+        line = line.trim();
+        if (line === 'A') { if (!Timer.isRunning()) startTimer(); else recordLap(); flashSensor('a'); }
+        if (line === 'B') { if (Timer.isRunning()) stopTimer(); flashSensor('b'); }
+      });
+    }
+  } catch(e) {
+    App.toast('시리얼 연결 끊김', 'error');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
