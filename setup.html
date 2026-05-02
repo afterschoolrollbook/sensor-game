@@ -141,10 +141,113 @@
 .excel-bar { display:flex; gap:10px; align-items:center; padding:13px 18px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:22px; }
 .excel-bar-label { font-size:13px; color:var(--text-dim); font-weight:600; letter-spacing:1px; flex:1; }
 
+/* 전광판 미리보기 플로팅 버튼 */
+.preview-fab {
+  position: fixed; bottom: 28px; right: 28px; z-index: 300;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg,#e63946,#c1121f);
+  color: white; border: none; border-radius: 50px;
+  padding: 14px 22px; font-size: 15px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 8px 28px rgba(230,57,70,.45);
+  transition: all .2s; letter-spacing: 1px;
+}
+.preview-fab:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(230,57,70,.55); }
+.preview-fab .fab-dot { width:8px; height:8px; border-radius:50%; background:white; animation:pulse 1.4s infinite; }
+
+/* 전광판 미리보기 패널 */
+.preview-panel {
+  position: fixed; right: 0; top: 0; bottom: 0; z-index: 400;
+  width: 480px; max-width: 95vw;
+  background: var(--bg2); border-left: 1px solid var(--border);
+  box-shadow: -8px 0 40px rgba(0,0,0,.6);
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .3s ease;
+}
+.preview-panel.open { transform: translateX(0); }
+.preview-panel-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.preview-panel-title { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+.preview-panel-close {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 22px; cursor: pointer; line-height: 1; padding: 0;
+  transition: color .2s;
+}
+.preview-panel-close:hover { color: var(--red); }
+.preview-panel-body { flex: 1; overflow-y: auto; padding: 20px 22px; }
+
+/* 전광판 썸네일 */
+.disp-thumb {
+  background: #06060e; border: 1px solid var(--border);
+  border-radius: 10px; aspect-ratio: 16/9;
+  position: relative; overflow: hidden;
+  font-family: var(--font-mono); margin-bottom: 20px;
+}
+.dt-header {
+  background: rgba(230,57,70,.1); border-bottom: 1px solid rgba(230,57,70,.4);
+  padding: 7px 12px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 9px; letter-spacing: 2px; color: #f0f0f8;
+}
+.dt-live { color: #e63946; display: flex; align-items: center; gap: 4px; }
+.dt-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #e63946; animation: pulse 1.2s infinite; }
+.dt-main { display: flex; gap: 8px; padding: 8px 10px; height: calc(100% - 52px); }
+.dt-timer-block {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255,255,255,.02); border-radius: 6px; padding: 8px;
+}
+.dt-timer-label { font-size: 7px; color: #555; letter-spacing: 2px; margin-bottom: 4px; }
+.dt-challenger { font-size: 10px; font-weight: 800; color: #f0f0f8; margin-bottom: 6px; font-family: sans-serif; }
+.dt-timer-num { font-size: clamp(14px,3.5vw,26px); color: #4cc9f0; letter-spacing: -1px; }
+.dt-rank-block {
+  width: 38%; background: rgba(255,255,255,.02);
+  border-radius: 6px; padding: 7px; display: flex; flex-direction: column; gap: 3px;
+}
+.dt-rank-title { font-size: 7px; color: #4cc9f0; margin-bottom: 3px; }
+.dt-rank-row { display: flex; gap: 4px; align-items: center; font-size: 6.5px; padding: 2px 3px; border-radius: 3px; }
+.dt-rank-row.r1 { background: rgba(255,214,10,.12); }
+.dt-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  border-top: 1px solid #1a1a2a; padding: 4px 12px;
+  display: flex; justify-content: space-between; font-size: 7px; color: #333;
+}
+
+/* 패널 안 설정 섹션 */
+.ps-section { margin-bottom: 20px; }
+.ps-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+.ps-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+.ps-toggle-name { font-size: 14px; font-weight: 600; }
+.toggle { position:relative; display:inline-block; width:40px; height:22px; }
+.toggle input { opacity:0; width:0; height:0; }
+.slider { position:absolute; inset:0; background:var(--bg2); border:1px solid var(--border); border-radius:22px; cursor:pointer; transition:.3s; }
+.slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; bottom:3px; background:var(--text-dim); border-radius:50%; transition:.3s; }
+input:checked+.slider { background:var(--green); border-color:var(--green); }
+input:checked+.slider::before { transform:translateX(18px); background:white; }
+
+.ps-open-btn {
+  width: 100%; padding: 14px; border-radius: var(--radius);
+  background: linear-gradient(135deg,#e63946,#c1121f);
+  color: white; font-size: 15px; font-weight: 700;
+  border: none; cursor: pointer; letter-spacing: 1px;
+  transition: all .2s; margin-top: 4px;
+}
+.ps-open-btn:hover { filter: brightness(1.1); }
+
+/* 오버레이 */
+.preview-overlay {
+  position: fixed; inset: 0; z-index: 390;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(3px);
+  display: none;
+}
+.preview-overlay.open { display: block; }
+
 @media (max-width:640px) {
   .info-toggle-grid { grid-template-columns:1fr; }
   .vs-grid { grid-template-columns:1fr; }
   .confirm-grid { grid-template-columns:1fr; }
+  .preview-panel { width: 100%; }
 }
 </style>
 </head>
@@ -402,6 +505,83 @@
   </div>
 
 </div></div></div>
+
+<!-- 전광판 미리보기 플로팅 버튼 -->
+<button class="preview-fab" onclick="openPreviewPanel()">
+  <div class="fab-dot"></div>
+  📺 전광판 미리보기
+</button>
+
+<!-- 오버레이 -->
+<div class="preview-overlay" id="preview-overlay" onclick="closePreviewPanel()"></div>
+
+<!-- 전광판 미리보기 패널 -->
+<div class="preview-panel" id="preview-panel">
+  <div class="preview-panel-hdr">
+    <div class="preview-panel-title">📺 전광판 미리보기</div>
+    <button class="preview-panel-close" onclick="closePreviewPanel()">×</button>
+  </div>
+  <div class="preview-panel-body">
+
+    <!-- 썸네일 -->
+    <div class="disp-thumb" id="disp-thumb">
+      <div class="dt-header" id="dt-header">
+        <span id="dt-event-name">행사명</span>
+        <div class="dt-live"><div class="dt-live-dot"></div>LIVE</div>
+      </div>
+      <div class="dt-main">
+        <div class="dt-timer-block" id="dt-timer-block">
+          <div class="dt-timer-label">// 현재 도전자</div>
+          <div class="dt-challenger" id="dt-challenger">홍길동</div>
+          <div class="dt-timer-num">00:00.000</div>
+        </div>
+        <div class="dt-rank-block" id="dt-rank-block">
+          <div class="dt-rank-title">🏆 순위</div>
+          <div class="dt-rank-row r1">🥇 <span style="flex:1">—</span></div>
+          <div class="dt-rank-row">🥈 <span style="flex:1">—</span></div>
+          <div class="dt-rank-row">🥉 <span style="flex:1">—</span></div>
+        </div>
+      </div>
+      <div class="dt-footer" id="dt-footer">
+        <span id="dt-game-label">// 종목명</span>
+        <span id="dt-clock">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- 표시 항목 ON/OFF -->
+    <div class="ps-section">
+      <div class="ps-label">표시 항목</div>
+      <div class="ps-toggle-row">
+        <span class="ps-toggle-name">행사 헤더</span>
+        <label class="toggle"><input type="checkbox" id="tog-header" checked onchange="updateThumb()"><span class="slider"></span></label>
+      </div>
+      <div class="ps-toggle-row">
+        <span class="ps-toggle-name">타이머</span>
+        <label class="toggle"><input type="checkbox" id="tog-timer" checked onchange="updateThumb()"><span class="slider"></span></label>
+      </div>
+      <div class="ps-toggle-row">
+        <span class="ps-toggle-name">실시간 순위</span>
+        <label class="toggle"><input type="checkbox" id="tog-rank" checked onchange="updateThumb()"><span class="slider"></span></label>
+      </div>
+      <div class="ps-toggle-row">
+        <span class="ps-toggle-name">하단 정보</span>
+        <label class="toggle"><input type="checkbox" id="tog-footer" checked onchange="updateThumb()"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- 전광판 열기 -->
+    <div class="ps-section">
+      <div class="ps-label">전광판 실행</div>
+      <button class="ps-open-btn" onclick="openDisplay()">
+        📺 새 창으로 열기 (HDMI 드래그 후 F11)
+      </button>
+      <div class="text-dim text-sm" style="margin-top:8px; text-align:center;">
+        HDMI 연결 후 새 창을 TV 화면으로 드래그하세요
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- 여러명 추가 모달 -->
 <div class="modal-overlay hidden" id="bulk-modal">
@@ -979,7 +1159,56 @@ function onExcelLoad(data){
   App.toast('엑셀 설정 적용 완료!','success');
 }
 
-/* ── 초기화 ── */
+/* ── 전광판 미리보기 패널 ── */
+function openPreviewPanel(){
+  document.getElementById('preview-panel').classList.add('open');
+  document.getElementById('preview-overlay').classList.add('open');
+  updateThumb();
+}
+function closePreviewPanel(){
+  document.getElementById('preview-panel').classList.remove('open');
+  document.getElementById('preview-overlay').classList.remove('open');
+}
+function updateThumb(){
+  // 행사명/종목명 반영
+  const eventName = document.getElementById('event-name')?.value.trim() || '행사명';
+  const gameLabel = document.getElementById('game-label')?.value.trim() || '종목명';
+  const showHeader = document.getElementById('tog-header')?.checked ?? true;
+  const showTimer  = document.getElementById('tog-timer')?.checked  ?? true;
+  const showRank   = document.getElementById('tog-rank')?.checked   ?? true;
+  const showFooter = document.getElementById('tog-footer')?.checked ?? true;
+
+  document.getElementById('dt-event-name').textContent = showEventName ? eventName : '';
+  document.getElementById('dt-header').style.display      = showHeader ? 'flex' : 'none';
+  document.getElementById('dt-timer-block').style.display = showTimer  ? 'flex' : 'none';
+  document.getElementById('dt-rank-block').style.display  = showRank   ? 'flex' : 'none';
+  document.getElementById('dt-footer').style.display      = showFooter ? 'flex' : 'none';
+  document.getElementById('dt-game-label').textContent    = '// ' + (showGameName ? gameLabel : '종목');
+
+  // 설정 저장
+  const cfg = {
+    showHeader, showTimer, showRank, showFooter,
+    rankCount: 6, blockOrder:['header','timer','rank','footer'],
+  };
+  localStorage.setItem('sgp_display_config', JSON.stringify(cfg));
+}
+function openDisplay(){
+  updateThumb();
+  window.open('display.html','_blank','width=1280,height=720');
+  App.toast('전광판 창을 HDMI 화면으로 드래그 후 F11!','info');
+}
+
+// 시계
+setInterval(()=>{
+  const n=new Date();
+  const el=document.getElementById('dt-clock');
+  if(el)el.textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+},1000);
+
+// STEP 1 입력 바뀔 때 썸네일 자동 업데이트
+document.addEventListener('input', e=>{
+  if(['event-name','event-subtitle','game-label'].includes(e.target.id)) updateThumb();
+});
 (function init(){
   const state=App.getState();
   const url=new URLSearchParams(location.search);
