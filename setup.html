@@ -3,82 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SGP — 참가자 설정</title>
+<title>SGP — 행사 설정</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-.mode-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-.mode-card {
-  background: var(--card); border: 2px solid var(--border);
-  border-radius: var(--radius); padding: 24px 20px;
-  cursor: pointer; transition: all .2s; text-align: center;
-}
-.mode-card:hover { border-color: var(--blue); }
-.mode-card.selected { border-color: var(--red); background: rgba(230,57,70,.08); }
-.mode-card .mode-icon { font-size: 32px; margin-bottom: 10px; }
-.mode-card .mode-name { font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; margin-bottom: 6px; }
-.mode-card .mode-desc { font-size: 12px; color: var(--text-dim); }
+.wizard-wrap { max-width: 860px; margin: 0 auto; }
 
-.participant-list { display: flex; flex-direction: column; gap: 8px; }
-.participant-item {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 16px;
-}
-.p-color-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
-.p-name { flex: 1; font-weight: 600; }
-.p-team { font-size: 13px; color: var(--text-dim); }
-.p-remove {
-  background: none; border: none; color: var(--text-dim);
-  cursor: pointer; font-size: 18px; line-height: 1;
-  transition: color .2s;
-}
-.p-remove:hover { color: var(--red); }
+/* 위저드 진행 바 */
+.wizard-progress { display:flex; align-items:flex-start; margin-bottom:48px; }
+.wp-step { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; position:relative; cursor:pointer; }
+.wp-step::after { content:''; position:absolute; top:18px; left:50%; width:100%; height:2px; background:var(--border); z-index:0; transition:background .3s; }
+.wp-step:last-child::after { display:none; }
+.wp-step.done::after { background:var(--green); }
+.wp-dot { width:36px; height:36px; border-radius:50%; border:2px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; color:var(--text-dim); position:relative; z-index:1; transition:all .3s; }
+.wp-step.active .wp-dot { border-color:var(--red); background:var(--red); color:white; box-shadow:0 0 16px rgba(230,57,70,.4); }
+.wp-step.done .wp-dot { border-color:var(--green); background:rgba(6,214,160,.15); color:var(--green); }
+.wp-label { font-family:var(--font-mono); font-size:10px; letter-spacing:1px; color:var(--text-dim); text-align:center; white-space:nowrap; }
+.wp-step.active .wp-label { color:var(--text); }
+.wp-step.done .wp-label { color:var(--green); }
 
-.team-list { display: flex; flex-direction: column; gap: 8px; }
-.team-item {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 16px;
-}
-.team-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-.team-members { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 26px; }
-.team-member-tag {
-  font-size: 12px; padding: 3px 10px; border-radius: 12px;
-  background: var(--bg2); border: 1px solid var(--border);
-}
+/* 패널 */
+.wizard-panel { display:none; }
+.wizard-panel.active { display:block; animation:fadeInUp .35s ease both; }
+.panel-sub { font-family:var(--font-mono); font-size:12px; letter-spacing:3px; color:var(--red); margin-bottom:6px; text-transform:uppercase; }
+.panel-title { font-family:var(--font-display); font-size:clamp(28px,5vw,48px); letter-spacing:2px; margin-bottom:28px; }
 
-.add-row { display: flex; gap: 8px; margin-top: 12px; }
-.add-row .form-input { flex: 1; }
+/* STEP 1 */
+.info-toggle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+.info-toggle-item { background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:18px 16px 14px; cursor:pointer; transition:all .2s; position:relative; }
+.info-toggle-item.checked { border-color:var(--red); background:rgba(230,57,70,.06); }
+.itl { font-family:var(--font-mono); font-size:9px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:5px; }
+.iname { font-family:var(--font-display); font-size:18px; letter-spacing:1px; }
+.ichk { position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%; border:2px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .2s; }
+.info-toggle-item.checked .ichk { background:var(--red); border-color:var(--red); color:white; }
+.info-toggle-item.checked .ichk::after { content:'✓'; }
+.info-fields { display:flex; flex-direction:column; gap:14px; }
+.info-field { display:flex; gap:16px; align-items:center; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; transition:opacity .2s; }
+.info-field.disabled { opacity:.3; pointer-events:none; }
+.info-field-label { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; width:72px; flex-shrink:0; }
+.info-field .form-input { margin:0; background:transparent; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:4px 0; font-size:16px; width:100%; }
+.info-field .form-input:focus { border-bottom-color:var(--blue); outline:none; }
 
-.laps-control { display: flex; align-items: center; gap: 16px; }
-.laps-btn {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text); font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
-}
-.laps-btn:hover { border-color: var(--red); color: var(--red); }
-.laps-val {
-  font-family: var(--font-display);
-  font-size: 36px; min-width: 60px; text-align: center;
-}
+/* STEP 2 */
+.game-grid-w { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+.game-card-w { background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:18px 14px; cursor:pointer; transition:all .2s; position:relative; }
+.game-card-w:hover { border-color:var(--accent,var(--red)); transform:translateY(-3px); }
+.game-card-w.selected { border-color:var(--accent,var(--red)); background:rgba(230,57,70,.06); }
+.gc-tag { font-family:var(--font-mono); font-size:9px; letter-spacing:1px; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px; }
+.gc-icon { font-size:28px; display:block; margin-bottom:7px; }
+.gc-name { font-family:var(--font-display); font-size:17px; letter-spacing:1px; margin-bottom:4px; }
+.gc-desc { font-size:12px; color:var(--text-dim); line-height:1.4; }
+.gc-dot { position:absolute; top:11px; right:11px; width:16px; height:16px; border-radius:50%; border:2px solid var(--border); background:var(--bg2); transition:all .2s; }
+.game-card-w.selected .gc-dot { background:var(--accent,var(--red)); border-color:var(--accent,var(--red)); }
+.gc-filter-bar { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+.gc-filter { font-family:var(--font-mono); font-size:11px; letter-spacing:1px; padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:var(--bg3); color:var(--text-dim); cursor:pointer; transition:all .2s; text-transform:uppercase; }
+.gc-filter.active { background:var(--red); border-color:var(--red); color:white; }
+.laps-row { display:flex; align-items:center; gap:18px; margin-top:22px; padding:18px 22px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); }
+.laps-label { font-family:var(--font-mono); font-size:11px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; flex:1; }
+.laps-btn { width:36px; height:36px; border-radius:50%; background:var(--bg2); border:1px solid var(--border); color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.laps-btn:hover { border-color:var(--red); color:var(--red); }
+.laps-val { font-family:var(--font-display); font-size:38px; min-width:52px; text-align:center; }
 
-.section { margin-bottom: 36px; }
-.section-title {
-  font-family: var(--font-display);
-  font-size: 22px; letter-spacing: 2px;
-  margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-}
-.section-title .step-num {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--red); color: white;
-  font-size: 14px; display: flex; align-items: center; justify-content: center;
-}
+/* STEP 3 */
+.vs-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px; }
+.vs-card { background:var(--card); border:2px solid var(--border); border-radius:12px; padding:36px 24px; cursor:pointer; transition:all .25s; text-align:center; }
+.vs-card:hover { border-color:var(--blue); transform:translateY(-4px); }
+.vs-card.selected { border-color:var(--red); background:rgba(230,57,70,.07); box-shadow:0 0 28px rgba(230,57,70,.18); }
+.vs-icon { font-size:44px; margin-bottom:14px; display:block; }
+.vs-name { font-family:var(--font-display); font-size:26px; letter-spacing:2px; margin-bottom:7px; }
+.vs-desc { font-size:13px; color:var(--text-dim); line-height:1.5; }
+.reg-area { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
+.reg-title { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:14px; }
+.add-row { display:flex; gap:8px; }
+.add-row .form-input { flex:1; margin:0; }
+.p-list { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+.p-item { display:flex; align-items:center; gap:10px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:9px 13px; }
+.p-dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+.p-iname { flex:1; font-weight:600; font-size:14px; }
+.p-iteam { font-size:12px; color:var(--text-dim); }
+.p-del { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:17px; line-height:1; transition:color .2s; padding:0; }
+.p-del:hover { color:var(--red); }
+.team-area { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:18px; }
+.team-item-w { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:11px 14px; margin-bottom:8px; }
+.team-item-hdr { display:flex; align-items:center; gap:9px; margin-bottom:5px; }
+.team-members-w { display:flex; flex-wrap:wrap; gap:5px; padding-left:20px; }
+.tmtag { font-size:11px; padding:2px 9px; border-radius:12px; background:var(--bg3); border:1px solid var(--border); }
 
-@media (max-width: 600px) {
-  .mode-cards { grid-template-columns: 1fr; }
+/* STEP 4 */
+.format-grid { display:flex; flex-direction:column; gap:10px; }
+.format-card { background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:18px 22px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:18px; }
+.format-card:hover:not(.disabled) { border-color:var(--blue); }
+.format-card.selected { border-color:var(--red); background:rgba(230,57,70,.07); }
+.format-card.disabled { opacity:.28; pointer-events:none; }
+.format-icon { font-size:28px; flex-shrink:0; }
+.format-info { flex:1; }
+.format-name { font-family:var(--font-display); font-size:20px; letter-spacing:1px; margin-bottom:3px; }
+.format-desc { font-size:12px; color:var(--text-dim); line-height:1.4; }
+.format-radio { width:20px; height:20px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+.format-card.selected .format-radio { border-color:var(--red); background:var(--red); }
+.format-card.selected .format-radio::after { content:''; width:7px; height:7px; border-radius:50%; background:white; }
+
+/* STEP 5 */
+.confirm-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+.confirm-box { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; }
+.confirm-label { font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--text-dim); text-transform:uppercase; margin-bottom:7px; }
+.confirm-val { font-family:var(--font-display); font-size:20px; letter-spacing:1px; }
+.pp-wrap { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+.pp-tag { display:flex; align-items:center; gap:6px; background:var(--bg3); border:1px solid var(--border); border-radius:20px; padding:4px 11px; font-size:13px; font-weight:600; }
+
+/* 네비 */
+.wizard-nav { display:flex; justify-content:space-between; align-items:center; margin-top:36px; padding-top:22px; border-top:1px solid var(--border); }
+.excel-bar { display:flex; gap:10px; align-items:center; padding:13px 18px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:22px; }
+.excel-bar-label { font-size:13px; color:var(--text-dim); font-weight:600; letter-spacing:1px; flex:1; }
+
+@media (max-width:640px) {
+  .info-toggle-grid { grid-template-columns:1fr; }
+  .vs-grid { grid-template-columns:1fr; }
+  .confirm-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -88,158 +128,257 @@
   <div class="nav-inner">
     <a class="nav-logo" href="index.html">SGP<span>.</span></a>
     <div class="nav-steps">
-      <a class="nav-step" data-page="home" href="index.html">홈</a>
-      <a class="nav-step active" data-page="setup" href="setup.html">참가자 설정</a>
-      <a class="nav-step" data-page="customize" href="customize.html">커스터마이징</a>
-      <a class="nav-step" data-page="game" href="game.html">게임 진행</a>
-      <a class="nav-step" data-page="result" href="result.html">결과</a>
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step active" href="setup.html">행사 설정</a>
+      <a class="nav-step" href="game.html">게임 진행</a>
+      <a class="nav-step" href="result.html">결과</a>
     </div>
   </div>
 </nav>
 
 <div class="page">
 <div class="container">
+<div class="wizard-wrap">
 
   <div class="page-header anim-fade-in">
-    <div class="label">// STEP 01</div>
-    <h1>참가자 설정</h1>
-    <p>행사명, 진행 방식, 참가자를 설정하세요.</p>
+    <div class="label">// 행사 설정</div>
+    <h1>새 행사 시작</h1>
+    <p>5단계로 빠르게 설정하세요.</p>
   </div>
 
-  <!-- 행사 기본 정보 -->
-  <div class="section anim-fade-in">
-    <div class="section-title"><span class="step-num">1</span> 행사 기본 정보</div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label">행사명</label>
-        <input class="form-input" id="event-name" placeholder="예) 2026 봄맞이 달리기 대회">
-      </div>
-      <div class="form-group">
-        <label class="form-label">부제목 (선택)</label>
-        <input class="form-input" id="event-subtitle" placeholder="예) 전국 아마추어 경주 대회">
-      </div>
+  <!-- 진행 바 -->
+  <div class="wizard-progress anim-fade-in">
+    <div class="wp-step active" data-step="1" onclick="goStep(1)">
+      <div class="wp-dot">01</div><div class="wp-label">기본 정보</div>
     </div>
-  </div>
-
-  <!-- 게임 선택 -->
-  <div class="section anim-fade-in">
-    <div class="section-title"><span class="step-num">2</span> 게임 모드</div>
-    <div class="form-group">
-      <label class="form-label">게임 종류</label>
-      <select class="form-select" id="game-type">
-        <option value="timelap">🏁 타임랩</option>
-        <option value="reaction">⚡ 반응속도</option>
-        <option value="balance">🎯 균형 버티기</option>
-        <option value="jump">🤸 점프력</option>
-        <option value="distance">📏 멀리뛰기</option>
-        <option value="weight">⚖️ 무게 맞추기</option>
-        <option value="strength">💪 악력/힘 측정</option>
-        <option value="oddeven">🎲 홀짝 게임</option>
-        <option value="roulette">🎰 랜덤 룰렛</option>
-        <option value="count">🔢 카운트 대결</option>
-        <option value="sound">🔊 소리 크기</option>
-      </select>
+    <div class="wp-step" data-step="2" onclick="goStep(2)">
+      <div class="wp-dot">02</div><div class="wp-label">게임 모드</div>
     </div>
-
-    <!-- 바퀴 수 (타임랩 전용) -->
-    <div id="laps-section">
-      <label class="form-label">바퀴 수</label>
-      <div class="laps-control">
-        <button class="laps-btn" onclick="changeLaps(-1)">−</button>
-        <div class="laps-val" id="laps-val">1</div>
-        <button class="laps-btn" onclick="changeLaps(1)">+</button>
-        <span class="text-dim text-sm">바퀴</span>
-      </div>
+    <div class="wp-step" data-step="3" onclick="goStep(3)">
+      <div class="wp-dot">03</div><div class="wp-label">누가 뛰나</div>
+    </div>
+    <div class="wp-step" data-step="4" onclick="goStep(4)">
+      <div class="wp-dot">04</div><div class="wp-label">진행 방식</div>
+    </div>
+    <div class="wp-step" data-step="5" onclick="goStep(5)">
+      <div class="wp-dot">05</div><div class="wp-label">확인&amp;시작</div>
     </div>
   </div>
 
-  <!-- 진행 방식 -->
-  <div class="section anim-fade-in">
-    <div class="section-title"><span class="step-num">3</span> 진행 방식</div>
-    <div class="mode-cards">
-      <div class="mode-card selected" onclick="selectMode('individual')" data-mode="individual">
-        <div class="mode-icon">👤</div>
-        <div class="mode-name">개인전</div>
-        <div class="mode-desc">개인 기록으로 순위 결정</div>
+  <!-- ─── STEP 1: 기본 정보 ─── -->
+  <div class="wizard-panel active" id="panel-1">
+    <div class="panel-sub">// STEP 01</div>
+    <div class="panel-title">기본 정보</div>
+    <p class="text-dim" style="margin-bottom:22px;font-size:14px;">화면/전광판에 표시할 항목을 체크하고 내용을 입력하세요.</p>
+
+    <div class="info-toggle-grid">
+      <div class="info-toggle-item checked" id="chk-eventname" onclick="toggleInfo('eventname')">
+        <div class="itl">표시 항목 1</div>
+        <div class="iname">행사명</div>
+        <div class="ichk" id="ichk-eventname"></div>
       </div>
-      <div class="mode-card" onclick="selectMode('team')" data-mode="team">
-        <div class="mode-icon">👥</div>
-        <div class="mode-name">팀 대결</div>
-        <div class="mode-desc">팀 합산/평균 기록으로 순위</div>
+      <div class="info-toggle-item" id="chk-subtitle" onclick="toggleInfo('subtitle')">
+        <div class="itl">표시 항목 2</div>
+        <div class="iname">부제목</div>
+        <div class="ichk" id="ichk-subtitle"></div>
       </div>
-      <div class="mode-card" onclick="selectMode('tournament')" data-mode="tournament">
-        <div class="mode-icon">🏆</div>
-        <div class="mode-name">토너먼트</div>
-        <div class="mode-desc">1:1 대진표로 최강자 결정</div>
+      <div class="info-toggle-item" id="chk-gamename" onclick="toggleInfo('gamename')">
+        <div class="itl">표시 항목 3</div>
+        <div class="iname">종목명</div>
+        <div class="ichk" id="ichk-gamename"></div>
       </div>
+    </div>
+
+    <div class="info-fields">
+      <div class="info-field" id="field-eventname">
+        <div class="info-field-label">행사명</div>
+        <input class="form-input" id="event-name" placeholder="예) 2026 청계초 여름 체육대회">
+      </div>
+      <div class="info-field disabled" id="field-subtitle">
+        <div class="info-field-label">부제목</div>
+        <input class="form-input" id="event-subtitle" placeholder="예) 4학년">
+      </div>
+      <div class="info-field disabled" id="field-gamename">
+        <div class="info-field-label">종목명</div>
+        <input class="form-input" id="game-label" placeholder="예) 이어달리기">
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <span></span>
+      <button class="btn btn-primary" onclick="nextStep(1)">다음 — 게임 모드 →</button>
     </div>
   </div>
 
-  <!-- 팀 설정 (팀 모드) -->
-  <div class="section anim-fade-in" id="team-section" style="display:none;">
-    <div class="section-title"><span class="step-num">4</span> 팀 구성</div>
-    <div class="team-list" id="team-list"></div>
-    <div class="add-row mt-16">
-      <input class="form-input" id="team-name-input" placeholder="팀 이름 입력">
-      <button class="btn btn-secondary" onclick="addTeam()">팀 추가</button>
+  <!-- ─── STEP 2: 게임 모드 ─── -->
+  <div class="wizard-panel" id="panel-2">
+    <div class="panel-sub">// STEP 02</div>
+    <div class="panel-title">게임 모드</div>
+
+    <div class="gc-filter-bar">
+      <span class="gc-filter active" onclick="filterGames('all',this)">전체</span>
+      <span class="gc-filter" onclick="filterGames('speed',this)">속도/시간</span>
+      <span class="gc-filter" onclick="filterGames('strength',this)">힘/무게</span>
+      <span class="gc-filter" onclick="filterGames('fun',this)">운/재미</span>
+    </div>
+    <div class="game-grid-w" id="game-grid-w"></div>
+
+    <div class="laps-row" id="laps-row" style="display:none;">
+      <span class="laps-label">🏁 바퀴 수</span>
+      <button class="laps-btn" onclick="changeLaps(-1)">−</button>
+      <div class="laps-val" id="laps-val">1</div>
+      <button class="laps-btn" onclick="changeLaps(1)">+</button>
+      <span class="text-dim text-sm">바퀴</span>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-outline" onclick="prevStep(2)">← 이전</button>
+      <button class="btn btn-primary" onclick="nextStep(2)">다음 — 참가자 →</button>
     </div>
   </div>
 
-  <!-- 참가자 등록 -->
-  <div class="section anim-fade-in">
-    <div class="section-title"><span class="step-num" id="participant-step-num">4</span> 참가자 등록</div>
-    <div id="team-assign-row" style="display:none;" class="form-group">
-      <label class="form-label">소속 팀</label>
-      <select class="form-select" id="assign-team">
-        <option value="">팀 없음</option>
-      </select>
-    </div>
-    <div class="add-row">
-      <input class="form-input" id="p-name-input" placeholder="참가자 이름 (예: 홍길동)" onkeydown="if(event.key==='Enter') addParticipant()">
-      <button class="btn btn-secondary" onclick="addParticipant()">추가</button>
-      <button class="btn btn-outline" onclick="addBulk()">여러명 추가</button>
-    </div>
-    <div class="participant-list mt-16" id="participant-list">
-      <div class="text-dim text-sm">참가자를 추가하세요.</div>
-    </div>
-  </div>
+  <!-- ─── STEP 3: 개인전 / 팀전 + 참가자 ─── -->
+  <div class="wizard-panel" id="panel-3">
+    <div class="panel-sub">// STEP 03</div>
+    <div class="panel-title">누가 뛰나?</div>
 
-  <!-- 하단 버튼 -->
-  <div style="margin-top:32px;">
-
-    <!-- 엑셀 저장/불러오기 바 -->
-    <div style="display:flex; gap:10px; align-items:center; margin-bottom:16px;
-      padding:16px 20px; background:var(--bg3);
-      border:1px solid var(--border); border-radius:var(--radius);">
-      <span style="font-size:13px; color:var(--text-dim); font-weight:600;
-        letter-spacing:1px; text-transform:uppercase; flex:1;">
-        📊 엑셀 설정 파일
-      </span>
-      <button class="btn btn-secondary btn-sm" onclick="ExcelIO.importExcel(onExcelLoad)"
-        style="display:flex;align-items:center;gap:6px;">
-        📂 <span>엑셀 불러오기</span>
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="ExcelIO.exportResultExcel()"
-        style="display:flex;align-items:center;gap:6px;">
-        📊 <span>결과 엑셀 저장</span>
-      </button>
-      <a href="/SGP_행사설정_템플릿.xlsx" download class="btn btn-secondary btn-sm"
-        style="display:flex;align-items:center;gap:6px;">
-        ⬇️ <span>템플릿 다운로드</span>
-      </a>
-    </div>
-
-    <div class="flex justify-between items-center">
-      <button class="btn btn-outline" onclick="clearAll()">초기화</button>
-      <div class="flex gap-16">
-        <a href="customize.html" class="btn btn-secondary">커스터마이징 →</a>
-        <a href="game.html" class="btn btn-primary" onclick="saveAndGo(event)">게임 시작 →</a>
+    <div class="vs-grid">
+      <div class="vs-card selected" id="vscard-individual" onclick="selectVs('individual')">
+        <span class="vs-icon">👤</span>
+        <div class="vs-name">개인전</div>
+        <div class="vs-desc">참가자 각자의 기록으로<br>순위를 결정합니다</div>
+      </div>
+      <div class="vs-card" id="vscard-team" onclick="selectVs('team')">
+        <span class="vs-icon">👥</span>
+        <div class="vs-name">팀전</div>
+        <div class="vs-desc">팀을 구성하고<br>팀 이름별로 참가자를 등록합니다</div>
       </div>
     </div>
+
+    <!-- 팀 구성 -->
+    <div id="team-setup" style="display:none;">
+      <div class="team-area">
+        <div class="reg-title">팀 구성</div>
+        <div id="team-list-w"></div>
+        <div class="add-row" style="margin-top:12px;">
+          <input class="form-input" id="team-name-inp" placeholder="팀 이름 입력">
+          <button class="btn btn-secondary" onclick="addTeam()">팀 추가</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참가자 등록 -->
+    <div class="reg-area">
+      <div class="reg-title">참가자 등록</div>
+      <div id="team-assign-wrap" style="display:none;" class="form-group">
+        <label class="form-label">소속 팀</label>
+        <select class="form-select" id="assign-team"><option value="">팀 없음</option></select>
+      </div>
+      <div class="add-row">
+        <input class="form-input" id="p-name-inp" placeholder="참가자 이름 (예: 홍길동)" onkeydown="if(event.key==='Enter')addParticipant()">
+        <button class="btn btn-secondary" onclick="addParticipant()">추가</button>
+        <button class="btn btn-outline" onclick="openBulk()">여러명</button>
+      </div>
+      <div class="p-list" id="p-list">
+        <div class="text-dim text-sm" style="margin-top:12px;">참가자를 추가하세요.</div>
+      </div>
+    </div>
+
+    <div class="excel-bar" style="margin-top:18px;">
+      <span class="excel-bar-label">📊 엑셀 설정 파일</span>
+      <button class="btn btn-secondary btn-sm" onclick="ExcelIO.importExcel(onExcelLoad)">📂 불러오기</button>
+      <a href="/SGP_행사설정_템플릿.xlsx" download class="btn btn-secondary btn-sm">⬇️ 템플릿</a>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-outline" onclick="prevStep(3)">← 이전</button>
+      <button class="btn btn-primary" onclick="nextStep(3)">다음 — 진행 방식 →</button>
+    </div>
   </div>
 
-</div>
-</div>
+  <!-- ─── STEP 4: 진행 방식 ─── -->
+  <div class="wizard-panel" id="panel-4">
+    <div class="panel-sub">// STEP 04</div>
+    <div class="panel-title">진행 방식</div>
+    <p class="text-dim" style="margin-bottom:22px;font-size:14px;">어떻게 겨루나요? 선택한 참가 방식에 따라 일부 항목이 비활성화됩니다.</p>
+
+    <div class="format-grid">
+      <div class="format-card selected" id="fmt-individual_record" onclick="selectFormat('individual_record')">
+        <div class="format-icon">📋</div>
+        <div class="format-info">
+          <div class="format-name">개별 기록</div>
+          <div class="format-desc">참가자 개인 기록을 측정해 순위표를 만듭니다.</div>
+        </div>
+        <div class="format-radio"></div>
+      </div>
+      <div class="format-card" id="fmt-individual_tournament" onclick="selectFormat('individual_tournament')">
+        <div class="format-icon">🏆</div>
+        <div class="format-info">
+          <div class="format-name">개별 토너먼트</div>
+          <div class="format-desc">1:1 대진표로 최강자를 가립니다. 개인전 전용.</div>
+        </div>
+        <div class="format-radio"></div>
+      </div>
+      <div class="format-card disabled" id="fmt-team_record" onclick="selectFormat('team_record')">
+        <div class="format-icon">👥</div>
+        <div class="format-info">
+          <div class="format-name">팀 기록</div>
+          <div class="format-desc">팀 합산·평균 기록으로 팀 순위를 결정합니다. 팀전 전용.</div>
+        </div>
+        <div class="format-radio"></div>
+      </div>
+      <div class="format-card disabled" id="fmt-team_individual" onclick="selectFormat('team_individual')">
+        <div class="format-icon">📊</div>
+        <div class="format-info">
+          <div class="format-name">팀 개별 기록</div>
+          <div class="format-desc">팀별로 개인 기록을 따로 집계합니다. 팀전 전용.</div>
+        </div>
+        <div class="format-radio"></div>
+      </div>
+      <div class="format-card disabled" id="fmt-team_tournament" onclick="selectFormat('team_tournament')">
+        <div class="format-icon">⚔️</div>
+        <div class="format-info">
+          <div class="format-name">팀 대항 토너먼트</div>
+          <div class="format-desc">팀 vs 팀 대진표로 최강 팀을 가립니다. 팀전 전용.</div>
+        </div>
+        <div class="format-radio"></div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-outline" onclick="prevStep(4)">← 이전</button>
+      <button class="btn btn-primary" onclick="nextStep(4)">다음 — 확인 →</button>
+    </div>
+  </div>
+
+  <!-- ─── STEP 5: 확인 & 시작 ─── -->
+  <div class="wizard-panel" id="panel-5">
+    <div class="panel-sub">// STEP 05</div>
+    <div class="panel-title">확인 &amp; 시작</div>
+
+    <div class="confirm-grid">
+      <div class="confirm-box"><div class="confirm-label">행사명</div><div class="confirm-val" id="cf-name">—</div></div>
+      <div class="confirm-box"><div class="confirm-label">게임 모드</div><div class="confirm-val" id="cf-game">—</div></div>
+      <div class="confirm-box"><div class="confirm-label">참가 방식</div><div class="confirm-val" id="cf-vs">—</div></div>
+      <div class="confirm-box"><div class="confirm-label">진행 방식</div><div class="confirm-val" id="cf-format">—</div></div>
+    </div>
+
+    <div class="confirm-box" style="margin-bottom:20px;">
+      <div class="confirm-label">참가자 <span id="cf-count" style="color:var(--blue);"></span></div>
+      <div class="pp-wrap" id="cf-participants"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:4px;">
+      <button class="btn btn-secondary" onclick="ExcelIO.exportResultExcel()">📊 결과 엑셀 저장</button>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn btn-outline" onclick="prevStep(5)">← 이전</button>
+      <a href="game.html" class="btn btn-primary btn-lg" onclick="saveAndStart(event)">🚀 게임 시작 →</a>
+    </div>
+  </div>
+
+</div></div></div>
 
 <!-- 여러명 추가 모달 -->
 <div class="modal-overlay hidden" id="bulk-modal">
@@ -249,7 +388,7 @@
       <label class="form-label">이름 목록 (줄바꿈으로 구분)</label>
       <textarea class="form-input" id="bulk-input" rows="8"
         placeholder="홍길동&#10;김철수&#10;이영희&#10;박민준"
-        style="resize: vertical;"></textarea>
+        style="resize:vertical;"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeBulk()">취소</button>
@@ -261,183 +400,206 @@
 <script src="js/app.js"></script>
 <script src="js/export.js"></script>
 <script>
-let laps = 1;
-let currentMode = 'individual';
+const GAMES=[
+  {id:'timelap',  icon:'🏁',name:'타임랩',     desc:'출발~결승 시간 측정. 바퀴 수·랩타임 자동 기록.',tag:'속도/시간',cat:'speed',   accent:'#e63946'},
+  {id:'reaction', icon:'⚡',name:'반응속도',    desc:'신호 후 버튼 누르는 속도 측정. 여러 명 동시 대결.',tag:'속도/시간',cat:'speed',   accent:'#ff6b35'},
+  {id:'balance',  icon:'🎯',name:'균형 버티기', desc:'압력 패드 위에서 균형 유지 시간. 흔들리면 탈락.',tag:'속도/시간',cat:'speed',   accent:'#4cc9f0'},
+  {id:'jump',     icon:'🤸',name:'점프력',      desc:'패드에서 뛰어오른 공중 체공 시간 측정.',tag:'속도/시간',cat:'speed',   accent:'#4cc9f0'},
+  {id:'distance', icon:'📏',name:'멀리뛰기',    desc:'초음파 센서로 착지 거리 자동 측정.',tag:'속도/시간',cat:'speed',   accent:'#06d6a0'},
+  {id:'weight',   icon:'⚖️',name:'무게 맞추기', desc:'목표 무게에 얼마나 가까운지 정확도 경쟁.',tag:'힘/무게', cat:'strength',accent:'#7b2fff'},
+  {id:'strength', icon:'💪',name:'악력/힘 측정',desc:'최대 힘 측정 후 순위. 3회 평균 또는 최고값.',tag:'힘/무게', cat:'strength',accent:'#e63946'},
+  {id:'weightacc',icon:'🏋️',name:'무게 정확도', desc:'100g 단위로 정확하게 물건 올리기.',tag:'힘/무게', cat:'strength',accent:'#ff6b35'},
+  {id:'oddeven',  icon:'🎲',name:'홀짝 게임',   desc:'통과 횟수 카운트 후 홀짝 자동 판정.',tag:'운/재미', cat:'fun',     accent:'#06d6a0'},
+  {id:'roulette', icon:'🎰',name:'랜덤 룰렛',   desc:'버튼 누르면 랜덤 미션/점수 지정.',tag:'운/재미', cat:'fun',     accent:'#7b2fff'},
+  {id:'count',    icon:'🔢',name:'카운트 대결', desc:'제한 시간 안에 센서를 몇 번 통과하는지 대결.',tag:'운/재미', cat:'fun',     accent:'#ffd60a'},
+  {id:'sound',    icon:'🔊',name:'소리 크기',   desc:'가장 크게 소리지르기. 팀 응원 소리 크기 측정.',tag:'운/재미', cat:'fun',     accent:'#ff6b35'},
+];
+const FORMAT_LABELS={
+  individual_record:'📋 개별 기록',individual_tournament:'🏆 개별 토너먼트',
+  team_record:'👥 팀 기록',team_individual:'📊 팀 개별 기록',team_tournament:'⚔️ 팀 대항 토너먼트',
+};
 
-// 초기값 로드
-(function init() {
-  const state = App.getState();
-  document.getElementById('event-name').value = state.event.name !== '게임 행사' ? state.event.name : '';
-  document.getElementById('event-subtitle').value = state.event.subtitle || '';
-  if (state.gameType) document.getElementById('game-type').value = state.gameType;
-  laps = state.settings.laps || 1;
-  document.getElementById('laps-val').textContent = laps;
-  currentMode = state.mode || 'individual';
-  selectMode(currentMode);
-  renderParticipants();
-  renderTeams();
-  updateTeamDropdown();
-  document.getElementById('game-type').addEventListener('change', onGameTypeChange);
-  onGameTypeChange();
-})();
+let currentStep=1, showEventName=true, showSubtitle=false, showGameName=false;
+let selectedGame='timelap', laps=1, vsMode='individual';
+let selectedFormat='individual_record', gcFilter='all';
 
-function onGameTypeChange() {
-  const v = document.getElementById('game-type').value;
-  document.getElementById('laps-section').style.display = v === 'timelap' ? 'block' : 'none';
-}
-
-function changeLaps(d) {
-  laps = Math.max(1, Math.min(20, laps + d));
-  document.getElementById('laps-val').textContent = laps;
-}
-
-function selectMode(mode) {
-  currentMode = mode;
-  document.querySelectorAll('.mode-card').forEach(c => c.classList.toggle('selected', c.dataset.mode === mode));
-  document.getElementById('team-section').style.display = mode === 'team' ? 'block' : 'none';
-  document.getElementById('team-assign-row').style.display = mode === 'team' ? 'block' : 'none';
-  document.getElementById('participant-step-num').textContent = mode === 'team' ? '5' : '4';
-}
-
-function addParticipant() {
-  const input = document.getElementById('p-name-input');
-  const name = input.value.trim();
-  if (!name) { App.toast('이름을 입력하세요', 'error'); return; }
-  const teamSel = document.getElementById('assign-team');
-  const teamId = teamSel.value || null;
-  App.addParticipant(name, teamId);
-  input.value = '';
-  renderParticipants();
-  updateTeamRoster();
-  App.toast(`${name} 추가됨!`, 'success');
-}
-
-function addBulk() { document.getElementById('bulk-modal').classList.remove('hidden'); }
-function closeBulk() { document.getElementById('bulk-modal').classList.add('hidden'); }
-function confirmBulk() {
-  const lines = document.getElementById('bulk-input').value.split('\n').map(s => s.trim()).filter(Boolean);
-  lines.forEach(name => App.addParticipant(name, null));
-  closeBulk();
-  document.getElementById('bulk-input').value = '';
-  renderParticipants();
-  App.toast(`${lines.length}명 추가됨!`, 'success');
-}
-
-function addTeam() {
-  const input = document.getElementById('team-name-input');
-  const name = input.value.trim();
-  if (!name) { App.toast('팀 이름을 입력하세요', 'error'); return; }
-  App.addTeam(name);
-  input.value = '';
-  renderTeams();
-  updateTeamDropdown();
-}
-
-function renderParticipants() {
-  const state = App.getState();
-  const el = document.getElementById('participant-list');
-  if (!state.participants.length) {
-    el.innerHTML = '<div class="text-dim text-sm">참가자를 추가하세요.</div>';
-    return;
-  }
-  el.innerHTML = state.participants.map(p => {
-    const team = p.teamId ? App.getTeam(p.teamId) : null;
-    return `
-      <div class="participant-item">
-        <div class="p-color-dot" style="background:${p.color}"></div>
-        <div class="p-name">${p.name}</div>
-        ${team ? `<div class="p-team">${team.name}</div>` : ''}
-        <button class="p-remove" onclick="removeP('${p.id}')">×</button>
-      </div>`;
-  }).join('');
-}
-
-function removeP(id) {
-  const p = App.getParticipant(id);
-  App.removeParticipant(id);
-  renderParticipants();
-  updateTeamRoster();
-  App.toast(`${p?.name} 삭제됨`, 'info');
-}
-
-function renderTeams() {
-  const state = App.getState();
-  const el = document.getElementById('team-list');
-  if (!state.teams.length) {
-    el.innerHTML = '<div class="text-dim text-sm">팀을 추가하세요.</div>';
-    return;
-  }
-  el.innerHTML = state.teams.map(t => {
-    const members = state.participants.filter(p => p.teamId === t.id);
-    return `
-      <div class="team-item">
-        <div class="team-header">
-          <div class="team-dot" style="background:${t.color}; width:16px; height:16px; border-radius:50%;"></div>
-          <div style="font-weight:700; flex:1;">${t.name}</div>
-          <span class="badge badge-blue">${members.length}명</span>
-          <button class="p-remove" onclick="removeTeam('${t.id}')">×</button>
-        </div>
-        ${members.length ? `<div class="team-members">${members.map(m=>`<span class="team-member-tag">${m.name}</span>`).join('')}</div>` : '<div class="text-dim text-sm" style="padding-left:28px;">팀원 없음</div>'}
-      </div>`;
-  }).join('');
-}
-
-function removeTeam(id) {
-  App.removeTeam(id);
-  renderTeams();
-  updateTeamDropdown();
-}
-
-function updateTeamDropdown() {
-  const state = App.getState();
-  const sel = document.getElementById('assign-team');
-  sel.innerHTML = '<option value="">팀 없음</option>' +
-    state.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-}
-
-function updateTeamRoster() { renderTeams(); }
-
-function saveAndGo(e) {
-  const name = document.getElementById('event-name').value.trim() || '행사';
-  const state = App.getState();
-  if (!state.participants.length) {
-    e.preventDefault();
-    App.toast('참가자를 한 명 이상 추가하세요!', 'error');
-    return;
-  }
-  App.setState({
-    mode: currentMode,
-    gameType: document.getElementById('game-type').value,
-    event: { ...state.event, name, subtitle: document.getElementById('event-subtitle').value.trim() },
-    settings: { ...state.settings, laps },
+/* ── 위저드 네비 ── */
+function goStep(n){if(n>=currentStep)return;currentStep=n;renderStep();}
+function nextStep(from){if(!validateStep(from))return;currentStep=from+1;renderStep();if(currentStep===5)buildConfirm();}
+function prevStep(from){currentStep=from-1;renderStep();}
+function renderStep(){
+  document.querySelectorAll('.wizard-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+currentStep).classList.add('active');
+  document.querySelectorAll('.wp-step').forEach(s=>{
+    const n=parseInt(s.dataset.step);
+    s.classList.remove('active','done');
+    if(n===currentStep)s.classList.add('active');
+    else if(n<currentStep)s.classList.add('done');
   });
-  // 히스토리 저장
-  const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
-  history.push({ name, date: new Date().toLocaleDateString('ko-KR'), game: document.getElementById('game-type').value, participants: state.participants.length, mode: currentMode });
-  localStorage.setItem('sgp_history', JSON.stringify(history.slice(-20)));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function validateStep(step){
+  if(step===1&&!document.getElementById('event-name').value.trim()){App.toast('행사명을 입력하세요!','error');return false;}
+  if(step===3&&!App.getState().participants.length){App.toast('참가자를 한 명 이상 추가하세요!','error');return false;}
+  return true;
 }
 
-function onExcelLoad(data) {
-  // 불러온 후 화면 전체 갱신
-  document.getElementById('event-name').value    = data.event?.name     || '';
-  document.getElementById('event-subtitle').value= data.event?.subtitle || '';
-  if (data.gameType) document.getElementById('game-type').value = data.gameType;
-  laps = data.settings?.laps || 1;
-  document.getElementById('laps-val').textContent = laps;
-  currentMode = data.mode || 'individual';
-  selectMode(currentMode);
-  renderParticipants();
-  renderTeams();
-  updateTeamDropdown();
-  onGameTypeChange();
-  App.toast('엑셀 설정 적용 완료!', 'success');
+/* ── STEP 1 ── */
+function toggleInfo(key){
+  const map={eventname:[showEventName,'chk-eventname','field-eventname'],subtitle:[showSubtitle,'chk-subtitle','field-subtitle'],gamename:[showGameName,'chk-gamename','field-gamename']};
+  if(key==='eventname')showEventName=!showEventName;
+  else if(key==='subtitle')showSubtitle=!showSubtitle;
+  else showGameName=!showGameName;
+  const val=key==='eventname'?showEventName:key==='subtitle'?showSubtitle:showGameName;
+  document.getElementById('chk-'+key).classList.toggle('checked',val);
+  document.getElementById('field-'+key).classList.toggle('disabled',!val);
 }
 
-function clearAll() {
-  if (!confirm('모든 참가자와 기록을 초기화할까요?')) return;
-  App.resetState();
-  location.reload();
+/* ── STEP 2 ── */
+function filterGames(cat,el){
+  gcFilter=cat;
+  document.querySelectorAll('.gc-filter').forEach(f=>f.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderGameGrid();
 }
+function renderGameGrid(){
+  const list=gcFilter==='all'?GAMES:GAMES.filter(g=>g.cat===gcFilter);
+  document.getElementById('game-grid-w').innerHTML=list.map(g=>`
+    <div class="game-card-w ${g.id===selectedGame?'selected':''}" style="--accent:${g.accent}" onclick="pickGame('${g.id}')">
+      <div class="gc-dot"></div>
+      <div class="gc-tag">${g.tag}</div>
+      <span class="gc-icon">${g.icon}</span>
+      <div class="gc-name">${g.name}</div>
+      <div class="gc-desc">${g.desc}</div>
+    </div>`).join('');
+  document.getElementById('laps-row').style.display=selectedGame==='timelap'?'flex':'none';
+}
+function pickGame(id){selectedGame=id;renderGameGrid();}
+function changeLaps(d){laps=Math.max(1,Math.min(20,laps+d));document.getElementById('laps-val').textContent=laps;}
+
+/* ── STEP 3 ── */
+function selectVs(mode){
+  vsMode=mode;
+  document.getElementById('vscard-individual').classList.toggle('selected',mode==='individual');
+  document.getElementById('vscard-team').classList.toggle('selected',mode==='team');
+  document.getElementById('team-setup').style.display=mode==='team'?'block':'none';
+  document.getElementById('team-assign-wrap').style.display=mode==='team'?'block':'none';
+  updateFormatAvailability();
+  if(mode==='individual'&&selectedFormat.startsWith('team_'))selectFormat('individual_record');
+  if(mode==='team'&&!selectedFormat.startsWith('team_'))selectFormat('team_record');
+}
+function addParticipant(){
+  const inp=document.getElementById('p-name-inp');
+  const name=inp.value.trim();
+  if(!name){App.toast('이름을 입력하세요','error');return;}
+  const teamId=vsMode==='team'?(document.getElementById('assign-team').value||null):null;
+  App.addParticipant(name,teamId);
+  inp.value='';
+  renderParticipants();renderTeamList();
+  App.toast(name+' 추가됨!','success');
+}
+function renderParticipants(){
+  const state=App.getState(),el=document.getElementById('p-list');
+  if(!state.participants.length){el.innerHTML='<div class="text-dim text-sm" style="margin-top:12px;">참가자를 추가하세요.</div>';return;}
+  el.innerHTML=state.participants.map(p=>{
+    const team=p.teamId?App.getTeam(p.teamId):null;
+    return`<div class="p-item"><div class="p-dot" style="background:${p.color}"></div><div class="p-iname">${p.name}</div>${team?`<div class="p-iteam">${team.name}</div>`:''}<button class="p-del" onclick="removeP('${p.id}')">×</button></div>`;
+  }).join('');
+}
+function removeP(id){const p=App.getParticipant(id);App.removeParticipant(id);renderParticipants();renderTeamList();App.toast((p?.name||'')+'삭제됨','info');}
+function addTeam(){const inp=document.getElementById('team-name-inp'),name=inp.value.trim();if(!name){App.toast('팀 이름을 입력하세요','error');return;}App.addTeam(name);inp.value='';renderTeamList();updateTeamDropdown();}
+function renderTeamList(){
+  const state=App.getState(),el=document.getElementById('team-list-w');
+  if(!state.teams.length){el.innerHTML='<div class="text-dim text-sm" style="margin-bottom:12px;">팀을 추가하세요.</div>';return;}
+  el.innerHTML=state.teams.map(t=>{
+    const members=state.participants.filter(p=>p.teamId===t.id);
+    return`<div class="team-item-w"><div class="team-item-hdr"><div class="p-dot" style="background:${t.color};width:13px;height:13px;"></div><div style="font-weight:700;flex:1;">${t.name}</div><span class="badge badge-blue">${members.length}명</span><button class="p-del" onclick="removeTeam('${t.id}')">×</button></div>${members.length?`<div class="team-members-w">${members.map(m=>`<span class="tmtag">${m.name}</span>`).join('')}</div>`:'<div class="text-dim text-sm" style="padding-left:20px;">팀원 없음</div>'}</div>`;
+  }).join('');
+}
+function removeTeam(id){App.removeTeam(id);renderTeamList();updateTeamDropdown();}
+function updateTeamDropdown(){
+  const state=App.getState(),sel=document.getElementById('assign-team');
+  sel.innerHTML='<option value="">팀 없음</option>'+state.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+function openBulk(){document.getElementById('bulk-modal').classList.remove('hidden');}
+function closeBulk(){document.getElementById('bulk-modal').classList.add('hidden');}
+function confirmBulk(){
+  const lines=document.getElementById('bulk-input').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  lines.forEach(name=>App.addParticipant(name,null));
+  closeBulk();document.getElementById('bulk-input').value='';
+  renderParticipants();App.toast(lines.length+'명 추가됨!','success');
+}
+
+/* ── STEP 4 ── */
+function selectFormat(fmt){
+  const card=document.getElementById('fmt-'+fmt);
+  if(!card||card.classList.contains('disabled'))return;
+  selectedFormat=fmt;
+  document.querySelectorAll('.format-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+function updateFormatAvailability(){
+  const isTeam=vsMode==='team';
+  ['individual_record','individual_tournament'].forEach(f=>{
+    document.getElementById('fmt-'+f).classList.toggle('disabled',isTeam);
+  });
+  ['team_record','team_individual','team_tournament'].forEach(f=>{
+    document.getElementById('fmt-'+f).classList.toggle('disabled',!isTeam);
+  });
+}
+
+/* ── STEP 5 ── */
+function buildConfirm(){
+  const state=App.getState(),game=GAMES.find(g=>g.id===selectedGame);
+  document.getElementById('cf-name').textContent=document.getElementById('event-name').value.trim()||'—';
+  document.getElementById('cf-game').textContent=game?game.icon+' '+game.name:'—';
+  document.getElementById('cf-vs').textContent=vsMode==='individual'?'👤 개인전':'👥 팀전';
+  document.getElementById('cf-format').textContent=FORMAT_LABELS[selectedFormat]||'—';
+  document.getElementById('cf-count').textContent=state.participants.length+'명';
+  document.getElementById('cf-participants').innerHTML=state.participants.map(p=>
+    `<div class="pp-tag"><div style="width:10px;height:10px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`
+  ).join('');
+}
+function saveAndStart(e){
+  const state=App.getState();
+  if(!state.participants.length){e.preventDefault();App.toast('참가자가 없어요!','error');return;}
+  const name=document.getElementById('event-name').value.trim()||'행사';
+  const modeMap={individual_record:'individual',individual_tournament:'tournament',team_record:'team',team_individual:'team',team_tournament:'tournament'};
+  App.setState({
+    mode:modeMap[selectedFormat]||'individual',
+    gameType:selectedGame,
+    event:{...state.event,name,subtitle:document.getElementById('event-subtitle').value.trim(),gameName:document.getElementById('game-label').value.trim(),showEventName,showSubtitle,showGameName},
+    settings:{...state.settings,laps,format:selectedFormat},
+  });
+  const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
+  history.push({name,date:new Date().toLocaleDateString('ko-KR'),game:selectedGame,participants:state.participants.length,mode:modeMap[selectedFormat]||'individual'});
+  localStorage.setItem('sgp_history',JSON.stringify(history.slice(-20)));
+}
+function onExcelLoad(data){
+  if(data.event?.name)document.getElementById('event-name').value=data.event.name;
+  if(data.event?.subtitle)document.getElementById('event-subtitle').value=data.event.subtitle;
+  if(data.gameType)selectedGame=data.gameType;
+  if(data.settings?.laps){laps=data.settings.laps;document.getElementById('laps-val').textContent=laps;}
+  if(data.mode){const vsMap={individual:'individual',tournament:'individual',team:'team'};selectVs(vsMap[data.mode]||'individual');}
+  renderGameGrid();renderParticipants();renderTeamList();updateTeamDropdown();
+  App.toast('엑셀 설정 적용 완료!','success');
+}
+
+/* ── 초기화 ── */
+(function init(){
+  const state=App.getState();
+  const url=new URLSearchParams(location.search);
+  const gFromUrl=url.get('game');
+  if(gFromUrl&&GAMES.find(g=>g.id===gFromUrl))selectedGame=gFromUrl;
+  else if(state.gameType)selectedGame=state.gameType;
+  laps=state.settings?.laps||1;
+  document.getElementById('laps-val').textContent=laps;
+  if(state.event?.name&&state.event.name!=='게임 행사')document.getElementById('event-name').value=state.event.name;
+  if(state.event?.subtitle)document.getElementById('event-subtitle').value=state.event.subtitle;
+  if(state.event?.gameName)document.getElementById('game-label').value=state.event.gameName;
+  if(state.mode==='team')selectVs('team');
+  renderGameGrid();renderParticipants();renderTeamList();updateTeamDropdown();updateFormatAvailability();
+})();
 </script>
 </body>
 </html>
