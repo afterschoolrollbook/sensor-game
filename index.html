@@ -83,7 +83,7 @@
 
 /* 통계 */
 .stat-row {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   margin-bottom: 48px;
 }
 .stat-box {
@@ -99,7 +99,7 @@
 .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
 
 @media (max-width: 600px) {
-  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .stat-row { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
@@ -156,8 +156,12 @@
       <div class="stat-label">총 기록</div>
     </div>
     <div class="stat-box">
-      <div class="stat-val" id="stat-games">12</div>
-      <div class="stat-label">게임 모드</div>
+      <div class="stat-val" id="stat-sensor-games">12</div>
+      <div class="stat-label">센서 게임</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-sport-games">57</div>
+      <div class="stat-label">종목 모드</div>
     </div>
   </div>
 
@@ -171,17 +175,17 @@
     <!-- 탭 -->
     <div style="display:flex;gap:0;margin-bottom:20px;border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;">
       <button id="home-tab-sensor" onclick="switchHomeTab('sensor')"
-        style="flex:1;padding:14px;background:var(--red);color:white;border:none;cursor:pointer;font-size:14px;font-weight:700;letter-spacing:1px;transition:all .2s;">
+        style="flex:1;padding:14px;background:var(--bg2);color:var(--text-dim);border:none;cursor:pointer;font-size:14px;font-weight:700;letter-spacing:1px;transition:all .2s;">
         🔌 센서 게임
       </button>
       <button id="home-tab-sport" onclick="switchHomeTab('sport')"
-        style="flex:1;padding:14px;background:var(--bg2);color:var(--text-dim);border:none;border-left:2px solid var(--border);cursor:pointer;font-size:14px;font-weight:700;letter-spacing:1px;transition:all .2s;">
+        style="flex:1;padding:14px;background:var(--red);color:white;border:none;border-left:2px solid var(--border);cursor:pointer;font-size:14px;font-weight:700;letter-spacing:1px;transition:all .2s;">
         🏆 종목 선택
       </button>
     </div>
 
     <!-- 센서 게임 필터 -->
-    <div id="home-filter-sensor" style="margin-bottom:12px;">
+    <div id="home-filter-sensor" style="margin-bottom:12px;display:none;">
       <span class="badge badge-red"   style="margin-right:8px;cursor:pointer;" onclick="filterGames('all')">전체</span>
       <span class="badge badge-blue"  style="margin-right:8px;cursor:pointer;" onclick="filterGames('speed')">속도/시간</span>
       <span class="badge badge-green" style="margin-right:8px;cursor:pointer;" onclick="filterGames('strength')">힘/무게</span>
@@ -189,7 +193,7 @@
     </div>
 
     <!-- 종목 선택 필터 -->
-    <div id="home-filter-sport" style="margin-bottom:12px;display:none;flex-wrap:wrap;gap:6px;">
+    <div id="home-filter-sport" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;">
       <span class="badge badge-red"    style="cursor:pointer;" onclick="filterSports('all')">전체</span>
       <span class="badge badge-blue"   style="cursor:pointer;" onclick="filterSports('athletics')">육상/체조</span>
       <span class="badge badge-green"  style="cursor:pointer;" onclick="filterSports('ball')">구기</span>
@@ -299,7 +303,7 @@ const SPORT_GAMES = [
 
 let currentFilter = 'all';
 let currentSportFilter = 'all';
-let homeTab = 'sensor';
+let homeTab = 'sport';
 
 function switchHomeTab(tab) {
   homeTab = tab;
