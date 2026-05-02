@@ -279,9 +279,24 @@
 
   </div>
 
-  <!-- 하단 -->
-  <div class="flex justify-between items-center mt-32">
-    <button class="btn btn-outline" onclick="resetGame()">🔄 게임 초기화</button>
+  <!-- 하단 버튼 바 -->
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:32px; flex-wrap:wrap;">
+    <!-- 왼쪽: 리셋 -->
+    <button class="btn btn-outline" onclick="resetGame()" style="display:flex; align-items:center; gap:8px;">
+      🔄 <span>게임 초기화</span>
+    </button>
+
+    <!-- 가운데: 전광판 -->
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn btn-secondary" onclick="openDisplay()" style="display:flex; align-items:center; gap:8px;">
+        📺 <span>전광판 열기</span>
+      </button>
+      <a href="display-settings.html" class="btn btn-secondary" style="display:flex; align-items:center; gap:8px;">
+        ⚙️ <span>전광판 설정</span>
+      </a>
+    </div>
+
+    <!-- 오른쪽: 결과 -->
     <a href="result.html" class="btn btn-primary btn-lg">결과 보기 →</a>
   </div>
 
@@ -533,6 +548,11 @@ function renderQueue() {
   `).join('');
 }
 
+function openDisplay() {
+  const win = window.open('display.html', 'sgp_display', 'width=1280,height=720');
+  App.toast('전광판 창을 HDMI 화면으로 드래그 후 F11 전체화면!', 'info', 5000);
+}
+
 function resetGame() {
   if (!confirm('현재 게임 기록을 초기화할까요?')) return;
   App.clearRecords();
@@ -546,6 +566,8 @@ function resetGame() {
   setCurrentParticipant(0);
   renderRanking();
   App.toast('게임 초기화됨', 'info');
+  localStorage.setItem('sgp_display_cmd', JSON.stringify({ type:'timer_reset', ts: Date.now() }));
+  localStorage.setItem('sgp_display_time', '00:00.000');
 }
 
 // 카운트다운
