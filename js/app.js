@@ -147,10 +147,10 @@ const App = (() => {
   function formatTime(ms) {
     if (ms == null || ms === Infinity) return '--:--.---';
     const sign = ms < 0 ? '-' : '';
-    ms = Math.abs(ms);
+    ms = Math.floor(Math.abs(ms));
     const m  = Math.floor(ms / 60000);
     const s  = Math.floor((ms % 60000) / 1000);
-    const ms3 = ms % 1000;
+    const ms3 = Math.floor(ms % 1000);
     return `${sign}${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms3).padStart(3,'0')}`;
   }
 
