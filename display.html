@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 전광판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080810;
+  --primary: #e63946;
+  --accent:  #4cc9f0;
+  --green:   #06d6a0;
+  --yellow:  #ffd60a;
+  --text:    #f0f0f8;
+  --dim:     #44445a;
+  --font-d:  'Bebas Neue', cursive;
+  --font-b:  'Rajdhani', sans-serif;
+  --font-m:  'Share Tech Mono', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* 배경 스캔라인 효과 */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,.08) 2px, rgba(0,0,0,.08) 4px
+  );
+  pointer-events: none; z-index: 999;
+}
+
+/* ── 전광판 캔버스 ── */
+#display-canvas {
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 40px;
+  gap: 24px;
+  position: relative;
+}
+
+/* ── 헤더 블록 ── */
+.blk-header {
+  display: flex; align-items: center; gap: 24px;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 20px;
+}
+.blk-logo img { height: 56px; border-radius: 8px; }
+.blk-event-name {
+  font-family: var(--font-d);
+  font-size: clamp(32px, 5vw, 64px);
+  letter-spacing: 3px; line-height: 1;
+  flex: 1;
+}
+.blk-live {
+  font-family: var(--font-m);
+  font-size: 13px; letter-spacing: 3px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 6px 14px; border-radius: 4px;
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+/* ── 메인 영역 ── */
+#main-area {
+  display: flex; gap: 32px; align-items: stretch; overflow: hidden;
+}
+
+/* ── 타이머 블록 ── */
+.blk-timer {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--dim);
+  border-radius: 16px; padding: 32px;
+  position: relative; overflow: hidden;
+}
+.blk-timer::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(76,201,240,.06) 0%, transparent 70%);
+}
+.timer-label {
+  font-family: var(--font-m);
+  font-size: 13px; letter-spacing: 4px;
+  color: var(--dim); margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.timer-current-name {
+  font-family: var(--font-d);
+  font-size: clamp(28px, 4vw, 52px);
+  letter-spacing: 2px; margin-bottom: 16px;
+  color: var(--text);
+}
+.timer-big {
+  font-family: var(--font-m);
+  font-size: clamp(64px, 14vw, 180px);
+  line-height: 1; letter-spacing: -2px;
+  color: var(--accent);
+  text-shadow: 0 0 80px rgba(76,201,240,.4);
+  transition: color .3s;
+}
+.timer-big.running { color: var(--green); text-shadow: 0 0 80px rgba(6,214,160,.4); }
+.timer-big.stopped { color: var(--primary); text-shadow: 0 0 80px rgba(230,57,70,.4); }
+.timer-lap-info {
+  font-family: var(--font-m);
+  font-size: 18px; color: var(--dim);
+  margin-top: 12px; letter-spacing: 2px;
+}
+
+/* ── 순위판 블록 ── */
+.blk-rank {
+  width: clamp(280px, 35%, 480px);
+  display: flex; flex-direction: column;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--dim);
+  border-radius: 16px; padding: 24px;
+  overflow: hidden;
+}
+.rank-title {
+  font-family: var(--font-d);
+  font-size: 24px; letter-spacing: 3px;
+  color: var(--dim); margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--dim);
+}
+.rank-rows { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow: hidden; }
+.rank-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all .4s ease;
+  animation: slideIn .4s ease both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.rank-row.r1 { border-color: var(--yellow); background: rgba(255,214,10,.08); }
+.rank-row.r2 { border-color: #c0c0c0;      background: rgba(192,192,192,.06); }
+.rank-row.r3 { border-color: #cd7f32;      background: rgba(205,127,50,.06); }
+.rank-row.rN { border-color: var(--dim);   background: rgba(255,255,255,.02); }
+.rank-pos {
+  font-family: var(--font-d);
+  font-size: clamp(22px, 3vw, 36px);
+  width: 44px; text-align: center;
+  color: var(--dim);
+}
+.rank-row.r1 .rank-pos { color: var(--yellow); }
+.rank-row.r2 .rank-pos { color: #c0c0c0; }
+.rank-row.r3 .rank-pos { color: #cd7f32; }
+.rank-name {
+  flex: 1;
+  font-size: clamp(16px, 2.5vw, 26px);
+  font-weight: 700;
+}
+.rank-time {
+  font-family: var(--font-m);
+  font-size: clamp(14px, 2vw, 22px);
+  color: var(--accent);
+}
+.rank-no-record { font-size: 13px; color: var(--dim); font-family: var(--font-m); }
+
+/* ── 푸터 블록 ── */
+.blk-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--dim);
+  padding-top: 16px;
+}
+.blk-footer-game {
+  font-family: var(--font-m);
+  font-size: 14px; letter-spacing: 3px; color: var(--dim);
+}
+.blk-footer-time {
+  font-family: var(--font-m);
+  font-size: 14px; color: var(--dim);
+}
+
+/* ── 전체화면 타이머 모드 ── */
+.mode-fullscreen-timer {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%;
+}
+.mode-fullscreen-timer .timer-big {
+  font-size: clamp(100px, 25vw, 280px);
+}
+
+/* ── 카운트다운 오버레이 ── */
+#countdown-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.9);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  display: none;
+}
+#countdown-overlay.show { display: flex; }
+#countdown-num {
+  font-family: var(--font-d);
+  font-size: 30vw; color: var(--primary); line-height: 1;
+  animation: cntPulse .9s ease both;
+}
+@keyframes cntPulse {
+  0%   { transform: scale(1.3); opacity: 0; }
+  60%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(.92); opacity: .7; }
+}
+#countdown-go {
+  font-family: var(--font-d);
+  font-size: 20vw; color: var(--green); line-height: 1;
+  display: none;
+}
+
+/* ── 우승 오버레이 ── */
+#winner-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.85);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+}
+#winner-overlay.show { display: flex; }
+.winner-trophy { font-size: 15vw; animation: trophyBounce 1s ease infinite alternate; }
+@keyframes trophyBounce {
+  from { transform: translateY(0) rotate(-5deg); }
+  to   { transform: translateY(-20px) rotate(5deg); }
+}
+.winner-label { font-family: var(--font-m); font-size: 18px; letter-spacing: 6px; color: var(--yellow); margin: 16px 0 8px; }
+.winner-name-big { font-family: var(--font-d); font-size: clamp(48px, 12vw, 130px); letter-spacing: 4px; color: var(--text); }
+.winner-time-big { font-family: var(--font-m); font-size: clamp(24px, 5vw, 56px); color: var(--accent); margin-top: 8px; }
+
+/* ── 드래그 블록 (비활성화된 border) ── */
+.dragging { opacity: .5; border: 2px dashed var(--primary) !important; }
+.drag-over { border: 2px solid var(--green) !important; }
+</style>
+</head>
+<body>
+
+<!-- 카운트다운 -->
+<div id="countdown-overlay">
+  <div id="countdown-num">3</div>
+  <div id="countdown-go">GO!</div>
+</div>
+
+<!-- 우승 -->
+<div id="winner-overlay">
+  <div class="winner-trophy">🏆</div>
+  <div class="winner-label">// CHAMPION</div>
+  <div class="winner-name-big" id="w-name">—</div>
+  <div class="winner-time-big" id="w-time">—</div>
+</div>
+
+<!-- 전광판 캔버스 -->
+<div id="display-canvas">
+  <!-- 헤더 -->
+  <div class="blk-header" id="blk-header">
+    <div class="blk-logo" id="blk-logo" style="display:none;"><img id="logo-img" src=""></div>
+    <div class="blk-event-name" id="blk-event-name">게임 행사</div>
+    <div class="blk-live">● LIVE</div>
+  </div>
+
+  <!-- 메인 -->
+  <div id="main-area">
+    <!-- 타이머 -->
+    <div class="blk-timer" id="blk-timer">
+      <div class="timer-label">// 현재 도전자</div>
+      <div class="timer-current-name" id="disp-current-name">—</div>
+      <div class="timer-big" id="disp-timer">00:00.000</div>
+      <div class="timer-lap-info" id="disp-lap-info">바퀴 0 / 1</div>
+    </div>
+
+    <!-- 순위판 -->
+    <div class="blk-rank" id="blk-rank">
+      <div class="rank-title">🏆 실시간 순위</div>
+      <div class="rank-rows" id="disp-rank-rows"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="blk-footer" id="blk-footer">
+    <div class="blk-footer-game" id="disp-game-label">// TIMELAP</div>
+    <div class="blk-footer-time" id="disp-clock"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/timer.js"></script>
+<script>
+// ── 상태 공유 (localStorage 폴링) ──
+let lastStateStr = '';
+let clockInterval = null;
+
+function startPolling() {
+  setInterval(() => {
+    const cur = localStorage.getItem('sgp_state');
+    if (cur !== lastStateStr) {
+      lastStateStr = cur;
+      refreshDisplay();
+    }
+    // 타이머 실시간 업데이트
+    if (Timer.isRunning()) {
+      document.getElementById('disp-timer').textContent = App.formatTime(Timer.getElapsed());
+    }
+  }, 50);
+}
+
+function refreshDisplay() {
+  const state = App.getState();
+  const cfg   = getDisplayConfig();
+
+  // 헤더
+  document.getElementById('blk-event-name').textContent = state.event.name || '게임 행사';
+  if (state.event.logo) {
+    document.getElementById('logo-img').src = state.event.logo;
+    document.getElementById('blk-logo').style.display = 'block';
+  }
+  document.getElementById('blk-header').style.display = cfg.showHeader ? 'flex' : 'none';
+
+  // 현재 도전자
+  const p = state.participants[0];
+  if (p) document.getElementById('disp-current-name').textContent = p.name;
+
+  // 순위판
+  document.getElementById('blk-rank').style.display = cfg.showRank ? 'flex' : 'none';
+  renderRank();
+
+  // 랩 정보
+  document.getElementById('disp-lap-info').style.display = cfg.showLap ? 'block' : 'none';
+
+  // 게임 라벨
+  document.getElementById('disp-game-label').textContent = '// ' + (state.gameType || 'GAME').toUpperCase();
+
+  // 테마 컬러 적용
+  if (state.event.primaryColor) document.documentElement.style.setProperty('--primary', state.event.primaryColor);
+  if (state.event.accentColor)  document.documentElement.style.setProperty('--accent',  state.event.accentColor);
+}
+
+function renderRank() {
+  const ranking = App.getRanking();
+  const el = document.getElementById('disp-rank-rows');
+  const cfg = getDisplayConfig();
+  const max = cfg.rankCount || 6;
+
+  if (!ranking.filter(r=>r.best).length) {
+    el.innerHTML = '<div style="color:var(--dim); font-family:var(--font-m); font-size:14px; text-align:center; margin-top:24px;">기록 대기 중...</div>';
+    return;
+  }
+
+  el.innerHTML = ranking.slice(0, max).map((item, idx) => {
+    const cls = idx===0?'r1':idx===1?'r2':idx===2?'r3':'rN';
+    const medal = ['🥇','🥈','🥉'][idx] ?? idx+1;
+    return `<div class="rank-row ${cls}">
+      <div class="rank-pos">${medal}</div>
+      <div class="rank-name">${item.participant.name}</div>
+      ${item.best
+        ? `<div class="rank-time">${App.formatTime(item.best.time)}</div>`
+        : '<div class="rank-no-record">기록없음</div>'}
+    </div>`;
+  }).join('');
+}
+
+// 시계
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('disp-clock').textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── 디스플레이 설정 ──
+function getDisplayConfig() {
+  try {
+    return JSON.parse(localStorage.getItem('sgp_display_config') || '{}');
+  } catch { return {}; }
+}
+
+// ── 카운트다운 (관리자에서 트리거) ──
+function triggerCountdown() {
+  const overlay = document.getElementById('countdown-overlay');
+  const numEl   = document.getElementById('countdown-num');
+  const goEl    = document.getElementById('countdown-go');
+  overlay.classList.add('show');
+  let n = 3;
+  numEl.style.display = 'block'; goEl.style.display = 'none';
+  numEl.textContent = n;
+
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(iv);
+      numEl.style.display = 'none'; goEl.style.display = 'block';
+      setTimeout(() => overlay.classList.remove('show'), 800);
+    } else {
+      numEl.textContent = n;
+      numEl.style.animation = 'none'; numEl.offsetHeight;
+      numEl.style.animation = 'cntPulse .9s ease both';
+    }
+  }, 1000);
+}
+
+// ── 우승자 표시 ──
+function showWinner(name, time) {
+  document.getElementById('w-name').textContent = name;
+  document.getElementById('w-time').textContent = time;
+  document.getElementById('winner-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('winner-overlay').classList.remove('show'), 6000);
+}
+
+// ── localStorage 이벤트 수신 ──
+window.addEventListener('storage', e => {
+  if (e.key === 'sgp_display_cmd') {
+    const cmd = JSON.parse(e.newValue || '{}');
+    if (cmd.type === 'countdown') triggerCountdown();
+    if (cmd.type === 'winner')    showWinner(cmd.name, cmd.time);
+    if (cmd.type === 'timer_start') { document.getElementById('disp-timer').className = 'timer-big running'; }
+    if (cmd.type === 'timer_stop')  { document.getElementById('disp-timer').className = 'timer-big stopped'; }
+    if (cmd.type === 'timer_reset') { document.getElementById('disp-timer').textContent = '00:00.000'; document.getElementById('disp-timer').className = 'timer-big'; }
+  }
+  if (e.key === 'sgp_display_time') {
+    document.getElementById('disp-timer').textContent = e.newValue || '00:00.000';
+  }
+  if (e.key === 'sgp_display_player') {
+    document.getElementById('disp-current-name').textContent = e.newValue || '—';
+  }
+  if (e.key === 'sgp_display_lap') {
+    document.getElementById('disp-lap-info').textContent = e.newValue || '';
+  }
+});
+
+refreshDisplay();
+startClock();
+startPolling();
+</script>
+</body>
+</html>

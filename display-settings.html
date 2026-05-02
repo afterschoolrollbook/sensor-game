@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 전광판 설정</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* 블록 목록 (드래그) */
+.block-list {
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 60px;
+}
+.block-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  cursor: grab; transition: all .2s;
+  user-select: none;
+}
+.block-item:active { cursor: grabbing; }
+.block-item.dragging { opacity: .4; border-style: dashed; border-color: var(--red); }
+.block-item.drag-over { border-color: var(--green); background: rgba(6,214,160,.08); }
+.block-item.disabled { opacity: .35; }
+.drag-handle {
+  color: var(--text-dim); font-size: 18px; cursor: grab; flex-shrink: 0;
+}
+.block-icon { font-size: 20px; flex-shrink: 0; }
+.block-info { flex: 1; }
+.block-name { font-weight: 700; font-size: 15px; }
+.block-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.block-actions { display: flex; gap: 8px; align-items: center; }
+
+/* 토글 */
+.toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; inset: 0;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 24px; cursor: pointer; transition: .3s;
+}
+.slider::before {
+  content: ''; position: absolute;
+  width: 16px; height: 16px; left: 3px; bottom: 3px;
+  background: var(--text-dim); border-radius: 50%; transition: .3s;
+}
+input:checked + .slider { background: var(--green); border-color: var(--green); }
+input:checked + .slider::before { transform: translateX(20px); background: white; }
+
+/* 미리보기 썸네일 */
+.preview-thumb {
+  background: #080810; border: 1px solid var(--border);
+  border-radius: 12px; aspect-ratio: 16/9;
+  position: relative; overflow: hidden;
+  font-family: 'Share Tech Mono', monospace;
+}
+.preview-thumb * { pointer-events: none; }
+.pt-header {
+  background: rgba(230,57,70,.1); border-bottom: 1px solid #e63946;
+  padding: 8px 12px; font-size: 8px; letter-spacing: 2px;
+  display: flex; align-items: center; justify-content: space-between;
+  color: #f0f0f8;
+}
+.pt-main { display: flex; gap: 8px; padding: 8px 12px; flex: 1; }
+.pt-timer {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255,255,255,.03); border-radius: 6px; padding: 8px;
+}
+.pt-timer-num {
+  font-size: clamp(16px, 4vw, 28px); color: #4cc9f0;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: -1px;
+}
+.pt-name { font-size: 7px; color: #888; margin-bottom: 4px; letter-spacing: 2px; }
+.pt-rank {
+  width: 36%; background: rgba(255,255,255,.03);
+  border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px;
+}
+.pt-rank-row {
+  display: flex; gap: 4px; align-items: center;
+  font-size: 6px; padding: 3px 4px; border-radius: 3px;
+}
+.pt-rank-row.r1 { background: rgba(255,214,10,.15); }
+.pt-footer {
+  border-top: 1px solid #2a2a3a; padding: 5px 12px;
+  display: flex; justify-content: space-between;
+  font-size: 7px; color: #44445a;
+}
+
+/* 조작 버튼들 */
+.control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ctrl-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  cursor: pointer; transition: all .2s;
+  color: var(--text); font-family: var(--font-body);
+}
+.ctrl-btn:hover { border-color: var(--blue); transform: translateY(-2px); }
+.ctrl-btn.danger:hover { border-color: var(--red); }
+.ctrl-btn .ctrl-icon { font-size: 28px; }
+.ctrl-btn .ctrl-label { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.ctrl-btn .ctrl-desc  { font-size: 11px; color: var(--text-dim); }
+
+/* 순위 수 설정 */
+.rank-count-control { display: flex; align-items: center; gap: 12px; }
+.rc-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.rc-btn:hover { border-color: var(--red); color: var(--red); }
+.rc-val { font-family: var(--font-display,serif); font-size: 28px; min-width: 40px; text-align: center; }
+
+/* 전광판 열기 버튼 */
+.open-display-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #e63946, #c1121f);
+  border: none; border-radius: var(--radius);
+  padding: 18px 28px; width: 100%;
+  color: white; font-family: var(--font-body);
+  font-size: 18px; font-weight: 700; letter-spacing: 2px;
+  cursor: pointer; transition: all .2s;
+  text-transform: uppercase;
+}
+.open-display-btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(230,57,70,.4); }
+
+.section { margin-bottom: 28px; }
+.section-label {
+  font-family: var(--font-display,serif); font-size: 18px; letter-spacing: 2px;
+  margin-bottom: 12px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 768px) { .panel-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">SGP<span>.</span></a>
+    <div class="nav-steps">
+      <a class="nav-step" href="index.html">홈</a>
+      <a class="nav-step" href="setup.html">참가자 설정</a>
+      <a class="nav-step" href="customize.html">커스터마이징</a>
+      <a class="nav-step" href="game.html">게임 진행</a>
+      <a class="nav-step active" href="display-settings.html">전광판</a>
+      <a class="nav-step" href="result.html">결과</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+<div class="container">
+
+  <div class="page-header anim-fade-in">
+    <div class="label">// 전광판 설정</div>
+    <h1>전광판 관리</h1>
+    <p>관객용 대형화면에 보여줄 항목을 설정하고 조작하세요.</p>
+  </div>
+
+  <!-- 전광판 열기 -->
+  <div class="mb-24 anim-fade-in">
+    <button class="open-display-btn" onclick="openDisplay()">
+      <span style="font-size:24px;">📺</span>
+      전광판 새 창으로 열기 (HDMI 화면에 드래그)
+    </button>
+    <div class="text-dim text-sm mt-8" style="text-align:center;">
+      새 창을 HDMI 연결된 TV/프로젝터 화면으로 드래그한 후 F11로 전체화면
+    </div>
+  </div>
+
+  <div class="panel-grid anim-fade-in">
+
+    <!-- 왼쪽: 블록 설정 -->
+    <div>
+
+      <!-- 미리보기 -->
+      <div class="section">
+        <div class="section-label">👁️ 미리보기</div>
+        <div class="preview-thumb" id="preview-thumb">
+          <div class="pt-header" id="pt-header">
+            <span id="pt-event-name">게임 행사</span>
+            <span style="color:#e63946;">● LIVE</span>
+          </div>
+          <div class="pt-main">
+            <div class="pt-timer" id="pt-timer-block">
+              <div class="pt-name">// 현재 도전자</div>
+              <div style="font-size:9px; margin-bottom:4px; color:#f0f0f8; font-family:sans-serif; font-weight:700;">홍길동</div>
+              <div class="pt-timer-num">00:12.345</div>
+              <div style="font-size:6px; color:#444; margin-top:4px; font-family:monospace;">바퀴 1 / 3</div>
+            </div>
+            <div class="pt-rank" id="pt-rank-block">
+              <div style="font-size:7px; color:#4cc9f0; margin-bottom:2px;">🏆 순위</div>
+              <div class="pt-rank-row r1">🥇 <span style="flex:1">홍길동</span> <span style="color:#4cc9f0">00:11.2</span></div>
+              <div class="pt-rank-row">🥈 <span style="flex:1">김철수</span> <span style="color:#4cc9f0">00:13.4</span></div>
+              <div class="pt-rank-row">🥉 <span style="flex:1">이영희</span> <span style="color:#888">기록없음</span></div>
+            </div>
+          </div>
+          <div class="pt-footer" id="pt-footer">
+            <span>// TIMELAP</span><span id="pt-clock">12:34:56</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 블록 순서 & ON/OFF -->
+      <div class="section">
+        <div class="section-label">📦 표시 블록 설정 <span class="text-dim text-sm" style="font-size:12px; margin-left:4px;">드래그로 순서 변경</span></div>
+        <div class="block-list" id="block-list"></div>
+      </div>
+
+      <!-- 순위 표시 수 -->
+      <div class="section">
+        <div class="section-label">🏆 순위 표시 수</div>
+        <div class="card">
+          <div class="rank-count-control">
+            <button class="rc-btn" onclick="changeRankCount(-1)">−</button>
+            <div class="rc-val" id="rank-count-val">6</div>
+            <button class="rc-btn" onclick="changeRankCount(1)">+</button>
+            <span class="text-dim text-sm">명까지 표시</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 오른쪽: 실시간 조작 -->
+    <div>
+      <div class="section">
+        <div class="section-label">🎮 실시간 조작</div>
+        <div class="control-grid">
+          <button class="ctrl-btn" onclick="sendCmd('countdown')">
+            <span class="ctrl-icon">3️⃣</span>
+            <span class="ctrl-label">카운트다운</span>
+            <span class="ctrl-desc">전광판에 3,2,1 표시</span>
+          </button>
+          <button class="ctrl-btn" onclick="sendCmd('timer_start')">
+            <span class="ctrl-icon">▶️</span>
+            <span class="ctrl-label">타이머 시작</span>
+            <span class="ctrl-desc">전광판 타이머 색 변경</span>
+          </button>
+          <button class="ctrl-btn" onclick="sendCmd('timer_stop')">
+            <span class="ctrl-icon">⏹️</span>
+            <span class="ctrl-label">타이머 정지</span>
+            <span class="ctrl-desc">빨간색으로 표시</span>
+          </button>
+          <button class="ctrl-btn" onclick="sendCmd('timer_reset')">
+            <span class="ctrl-icon">🔄</span>
+            <span class="ctrl-label">타이머 초기화</span>
+            <span class="ctrl-desc">00:00.000 으로 리셋</span>
+          </button>
+          <button class="ctrl-btn" onclick="showWinnerPrompt()">
+            <span class="ctrl-icon">🏆</span>
+            <span class="ctrl-label">우승자 표시</span>
+            <span class="ctrl-desc">전광판에 우승 화면</span>
+          </button>
+          <button class="ctrl-btn danger" onclick="sendCmd('clear_rank')">
+            <span class="ctrl-icon">🗑️</span>
+            <span class="ctrl-label">순위 초기화</span>
+            <span class="ctrl-desc">전광판 순위 리셋</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 현재 도전자 수동 변경 -->
+      <div class="section">
+        <div class="section-label">👤 현재 도전자 수동 설정</div>
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">도전자 선택</label>
+            <select class="form-select" id="player-select" onchange="updateCurrentPlayer()">
+            </select>
+          </div>
+          <div class="add-row" style="display:flex; gap:8px;">
+            <input class="form-input" id="custom-player" placeholder="직접 입력 (예: 3번 선수)">
+            <button class="btn btn-secondary" onclick="setCustomPlayer()">전송</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 자동 전환 설정 -->
+      <div class="section">
+        <div class="section-label">🔄 화면 자동 전환</div>
+        <div class="card">
+          <div class="flex items-center justify-between mb-16">
+            <div>
+              <div style="font-weight:700;">타이머 ↔ 순위판 자동 교대</div>
+              <div class="text-dim text-sm">게임 중 자동으로 화면 전환</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="auto-switch-toggle" onchange="saveConfig()">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">전환 간격 (초)</label>
+            <input class="form-input" type="number" id="switch-interval" value="8" min="3" max="60" onchange="saveConfig()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 전광판 링크 -->
+      <div class="section">
+        <div class="section-label">🔗 전광판 URL</div>
+        <div class="card">
+          <div class="flex gap-8">
+            <input class="form-input" id="display-url" readonly style="font-family:var(--font-mono); font-size:13px;">
+            <button class="btn btn-secondary" onclick="copyUrl()">복사</button>
+          </div>
+          <div class="text-dim text-sm mt-8">같은 와이파이 내 다른 기기(TV 브라우저 등)에서도 접속 가능</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- 우승자 입력 모달 -->
+<div class="modal-overlay hidden" id="winner-modal">
+  <div class="modal">
+    <div class="modal-title">🏆 우승자 전광판 표시</div>
+    <div class="form-group">
+      <label class="form-label">우승자 이름</label>
+      <select class="form-select" id="winner-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">우승 기록</label>
+      <input class="form-input" id="winner-time-input" placeholder="예: 00:11.234">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeWinnerModal()">취소</button>
+      <button class="btn btn-primary" onclick="confirmWinner()">🏆 전광판에 표시</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+// ── 블록 정의 ──
+const DEFAULT_BLOCKS = [
+  { id:'header', icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',   enabled:true  },
+  { id:'timer',  icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',   enabled:true  },
+  { id:'rank',   icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',   enabled:true  },
+  { id:'lap',    icon:'🔢', name:'바퀴 수',        desc:'랩 카운트 표시',       enabled:true  },
+  { id:'footer', icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',        enabled:true  },
+];
+
+let blocks = [];
+let rankCount = 6;
+let dragSrc = null;
+
+function init() {
+  const saved = localStorage.getItem('sgp_display_blocks');
+  blocks = saved ? JSON.parse(saved) : [...DEFAULT_BLOCKS];
+  const cfg = getConfig();
+  rankCount = cfg.rankCount || 6;
+  document.getElementById('rank-count-val').textContent = rankCount;
+  document.getElementById('auto-switch-toggle').checked = cfg.autoSwitch || false;
+  document.getElementById('switch-interval').value = cfg.switchInterval || 8;
+  renderBlockList();
+  renderPlayerSelect();
+  document.getElementById('display-url').value = window.location.origin + '/display.html';
+  updatePreview();
+}
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem('sgp_display_config') || '{}'); } catch { return {}; }
+}
+
+function saveConfig() {
+  const cfg = {
+    rankCount,
+    showHeader:  blocks.find(b=>b.id==='header')?.enabled ?? true,
+    showTimer:   blocks.find(b=>b.id==='timer')?.enabled  ?? true,
+    showRank:    blocks.find(b=>b.id==='rank')?.enabled   ?? true,
+    showLap:     blocks.find(b=>b.id==='lap')?.enabled    ?? true,
+    showFooter:  blocks.find(b=>b.id==='footer')?.enabled ?? true,
+    autoSwitch:  document.getElementById('auto-switch-toggle').checked,
+    switchInterval: parseInt(document.getElementById('switch-interval').value) || 8,
+    blockOrder:  blocks.map(b=>b.id),
+  };
+  localStorage.setItem('sgp_display_config', JSON.stringify(cfg));
+  localStorage.setItem('sgp_display_blocks', JSON.stringify(blocks));
+  updatePreview();
+}
+
+function renderBlockList() {
+  const el = document.getElementById('block-list');
+  el.innerHTML = '';
+  blocks.forEach((blk, idx) => {
+    const div = document.createElement('div');
+    div.className = `block-item ${blk.enabled?'':'disabled'}`;
+    div.draggable = true;
+    div.dataset.idx = idx;
+    div.innerHTML = `
+      <span class="drag-handle" title="드래그해서 순서 변경">⠿</span>
+      <span class="block-icon">${blk.icon}</span>
+      <div class="block-info">
+        <div class="block-name">${blk.name}</div>
+        <div class="block-desc">${blk.desc}</div>
+      </div>
+      <div class="block-actions">
+        <label class="toggle">
+          <input type="checkbox" ${blk.enabled?'checked':''} onchange="toggleBlock(${idx}, this.checked)">
+          <span class="slider"></span>
+        </label>
+        <button class="btn btn-outline btn-sm" style="padding:4px 10px; font-size:16px; line-height:1;"
+          onclick="removeBlock(${idx})" title="삭제">×</button>
+      </div>
+    `;
+    // 드래그 이벤트
+    div.addEventListener('dragstart', e => { dragSrc = idx; div.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    div.addEventListener('dragend',   ()  => { div.classList.remove('dragging'); document.querySelectorAll('.block-item').forEach(d=>d.classList.remove('drag-over')); });
+    div.addEventListener('dragover',  e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', ()  => div.classList.remove('drag-over'));
+    div.addEventListener('drop',      e => {
+      e.preventDefault(); div.classList.remove('drag-over');
+      if (dragSrc === null || dragSrc === idx) return;
+      const moved = blocks.splice(dragSrc, 1)[0];
+      blocks.splice(idx, 0, moved);
+      dragSrc = null;
+      renderBlockList();
+      saveConfig();
+      App.toast('순서 변경됨!', 'success');
+    });
+    el.appendChild(div);
+  });
+}
+
+function toggleBlock(idx, val) {
+  blocks[idx].enabled = val;
+  saveConfig();
+  renderBlockList();
+}
+
+function removeBlock(idx) {
+  blocks[idx].enabled = false;
+  saveConfig();
+  renderBlockList();
+  App.toast(`${blocks[idx].name} 숨김`, 'info');
+}
+
+function changeRankCount(d) {
+  rankCount = Math.max(1, Math.min(10, rankCount + d));
+  document.getElementById('rank-count-val').textContent = rankCount;
+  saveConfig();
+}
+
+function updatePreview() {
+  const cfg = getConfig();
+  const state = App.getState();
+  document.getElementById('pt-header').style.display    = cfg.showHeader  !== false ? 'flex' : 'none';
+  document.getElementById('pt-timer-block').style.display = cfg.showTimer !== false ? 'flex' : 'none';
+  document.getElementById('pt-rank-block').style.display  = cfg.showRank  !== false ? 'flex' : 'none';
+  document.getElementById('pt-footer').style.display    = cfg.showFooter !== false ? 'flex' : 'none';
+  document.getElementById('pt-event-name').textContent  = state.event?.name || '게임 행사';
+}
+
+function sendCmd(type) {
+  localStorage.setItem('sgp_display_cmd', JSON.stringify({ type, ts: Date.now() }));
+  App.toast(`전광판에 "${type}" 전송!`, 'success');
+}
+
+function renderPlayerSelect() {
+  const state = App.getState();
+  const sel = document.getElementById('player-select');
+  const wSel = document.getElementById('winner-select');
+  const opts = state.participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  sel.innerHTML = '<option value="">선택하세요</option>' + opts;
+  wSel.innerHTML = opts;
+}
+
+function updateCurrentPlayer() {
+  const sel = document.getElementById('player-select');
+  const state = App.getState();
+  const p = state.participants.find(p=>p.id===sel.value);
+  if (p) {
+    localStorage.setItem('sgp_display_player', p.name);
+    App.toast(`전광판 도전자: ${p.name}`, 'success');
+  }
+}
+
+function setCustomPlayer() {
+  const val = document.getElementById('custom-player').value.trim();
+  if (!val) return;
+  localStorage.setItem('sgp_display_player', val);
+  App.toast(`전광판 도전자: ${val}`, 'success');
+  document.getElementById('custom-player').value = '';
+}
+
+function showWinnerPrompt() {
+  document.getElementById('winner-modal').classList.remove('hidden');
+}
+function closeWinnerModal() {
+  document.getElementById('winner-modal').classList.add('hidden');
+}
+function confirmWinner() {
+  const state = App.getState();
+  const sel = document.getElementById('winner-select');
+  const p = state.participants.find(p=>p.id===sel.value);
+  const time = document.getElementById('winner-time-input').value || (p ? App.formatTime(App.getBestRecord(p.id)?.time) : '—');
+  localStorage.setItem('sgp_display_cmd', JSON.stringify({ type:'winner', name: p?.name||sel.options[sel.selectedIndex]?.text||'우승자', time, ts: Date.now() }));
+  closeWinnerModal();
+  App.toast('🏆 우승자 화면 전송!', 'success');
+}
+
+function openDisplay() {
+  saveConfig();
+  window.open('display.html', '_blank', 'width=1280,height=720');
+  App.toast('전광판 창을 HDMI 화면으로 드래그 후 F11로 전체화면!', 'info', 5000);
+}
+
+function copyUrl() {
+  const url = document.getElementById('display-url').value;
+  navigator.clipboard.writeText(url).then(() => App.toast('URL 복사됨!', 'success'));
+}
+
+// 시계
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('pt-clock').textContent =
+    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+}, 1000);
+
+init();
+</script>
+</body>
+</html>
