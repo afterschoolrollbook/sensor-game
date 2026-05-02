@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
 
 :root {
   --bg:       #0a0a0f;
@@ -16,8 +16,8 @@
   --text-dim: #888899;
   --card:     #16161f;
   --radius:   8px;
-  --font-display: 'Bebas Neue', cursive;
-  --font-body:    'Rajdhani', sans-serif;
+  --font-display: 'Noto Sans KR', sans-serif;
+  --font-body:    'Noto Sans KR', sans-serif;
   --font-mono:    'Share Tech Mono', monospace;
 }
 
