@@ -199,6 +199,13 @@ const App = (() => {
     TEAM_COLORS,
   };
 
+})();
+
+// ⚠️ 전역 게임 목록 — IIFE 밖에 선언해야 모든 페이지에서 접근 가능
+const SGAMES = SENSOR_GAMES.map(g => ({...g, ac: g.accent}));
+const PGAMES = SPORT_GAMES.map(g => ({...g, ac: g.accent}));
+const ALLG = [...SGAMES, ...PGAMES];
+
 // ══════════════════════════════════════════
 //  게임 목록 — 단일 정의, 모든 페이지 공유
 // ══════════════════════════════════════════
@@ -275,9 +282,3 @@ const SPORT_GAMES = [
   { id:'esports',     icon:'🎮', name:'e스포츠',       desc:'라운드별 승패 기록. 토너먼트 지원.', tag:'기타', cat:'etc', accent:'#7b2fff' },
 ];
 
-// 별칭 (setup.html 호환)
-const SGAMES = SENSOR_GAMES.map(g => ({...g, ac: g.accent}));
-const PGAMES = SPORT_GAMES.map(g => ({...g, ac: g.accent}));
-const ALLG = [...SGAMES, ...PGAMES];
-
-})();
