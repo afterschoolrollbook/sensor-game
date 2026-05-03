@@ -232,7 +232,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   width:1280px;height:720px;
   transform-origin:top left;
   background:#040408;
-  display:grid;grid-template-rows:auto auto 1fr auto auto;
+  display:grid;grid-template-rows:auto 1fr auto auto;
   padding:28px;gap:16px;
 }
 #pvc::after{
@@ -298,7 +298,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* RANKS */
 #pvr{
   flex:1;display:flex;flex-direction:column;gap:5px;
-  justify-content:center;position:relative;z-index:2;
+  justify-content:flex-start;position:relative;z-index:2;overflow:hidden;
 }
 .rrow{
   display:flex;align-items:center;gap:7px;
@@ -338,20 +338,37 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 
 /* 현재경기 VS 블록 */
+
+#pv-right{
+  flex:1;display:flex;flex-direction:column;gap:8px;
+  min-height:0;
+}
+
 #pvvs{
   display:flex;align-items:center;justify-content:center;gap:clamp(6px,1vw,14px);
   background:rgba(230,57,70,.04);border:1px solid rgba(230,57,70,.15);
-  border-radius:9px;padding:6px 10px;position:relative;z-index:2;transition:opacity .3s;
+  border-radius:9px;padding:8px;position:relative;z-index:2;transition:opacity .3s;
   flex-shrink:0;
 }
 .pvvs-pl{flex:1;text-align:center;}
 .pvvs-nm{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);letter-spacing:2px;line-height:1.1;}
 .pvvs-sub{font-size:clamp(6px,.55vw,8px);color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-top:2px;}
 .pvvs-vs{font-family:'Bebas Neue',cursive;font-size:clamp(13px,2vw,26px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
-/* 순위 OFF 시 타이머 확장 */
+/* 순위/VS OFF 시 타이머 확장 */
+#pv-right{
+  flex:1;display:flex;flex-direction:column;gap:8px;
+  min-height:0;
+}
+
+#pvvs{display:none;}
+
+/* 순위 OFF → pvvs 크게 (pv-right 유지, pvr만 숨김) */
 #pvm.rank-off #pvr{display:none;}
-#pvm.rank-off #pvt{flex:1;}
-#pvc.vs-off #pvvs{display:none;}
+/* VS OFF → pvvs 숨김 */
+#pvm.vs-off #pvvs{display:none;}
+/* 순위+VS 둘다 OFF → pv-right 숨기고 타이머 전체화면 */
+#pvm.rank-off.vs-off #pv-right{display:none;}
+#pvm.rank-off.vs-off #pvt{flex:1;}
 
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
@@ -438,9 +455,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv3-pl{padding:10px 16px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border);}
 .pv3-pl:last-child{border-bottom:none;}
 /* 순위 OFF시 타이머 전체 확장 */
-#pvm.rank-off #pvr{display:none;}
-#pvm.rank-off #pvt{flex:1;}
-#pvc.vs-off #pvvs{display:none;}
 
 /* TOAST */
 #tc{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
@@ -563,11 +577,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
         <div id="pv-live">● LIVE</div>
       </div>
-      <div id="pvvs">
-          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p1">—</div><div class="pvvs-sub">선수 1</div></div>
-          <div class="pvvs-vs">VS</div>
-          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p2">—</div><div class="pvvs-sub">선수 2</div></div>
-      </div>
       <div id="pvm">
         <div id="pvt">
           <div class="tvlbl">CHALLENGER</div>
@@ -575,7 +584,14 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div id="pv-time">00:00.000</div>
           <div id="pv-lap">LAP 1 / 1</div>
         </div>
-        <div id="pvr"></div>
+        <div id="pv-right">
+          <div id="pvvs">
+            <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p1">—</div><div class="pvvs-sub">선수 1</div></div>
+            <div class="pvvs-vs">VS</div>
+            <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p2">—</div><div class="pvvs-sub">선수 2</div></div>
+          </div>
+          <div id="pvr"></div>
+        </div>
       </div>
       <div id="pvf">
         <div id="pv-gname">SGP PLATFORM</div>
@@ -1119,9 +1135,9 @@ function updatePvVs(){
 }
 function updateRankLayout(){
   const pvm=document.getElementById('pvm');
-  const pvc=document.getElementById('pvc');
-  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
-  if(pvc)pvc.classList.toggle('vs-off',!S.blk.vs);
+  if(!pvm)return;
+  pvm.classList.toggle('rank-off',!S.blk.rank);
+  pvm.classList.toggle('vs-off',!S.blk.vs);
 }
 function buildTicker(){
   const sh=k=>S.di[k];
@@ -1170,10 +1186,6 @@ function updatePv3(){
     });
     el.appendChild(col);
   });
-}
-function updateRankLayout(){
-  const pvm=document.getElementById('pvm');
-  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
 }
 
 
