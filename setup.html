@@ -214,8 +214,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #pvcw{
   width:480px;flex-shrink:0;
   display:flex;flex-direction:column;align-items:stretch;
-  padding:0;overflow:hidden;
+  padding:0;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
+#pvcw::-webkit-scrollbar{width:3px}
+#pvcw::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 #pvc{
   width:100%;aspect-ratio:16/9;flex-shrink:0;
   background:#040408;border-radius:12px;
@@ -327,6 +330,65 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
 /* PV CONTROLS */
+
+/* 화면 구분 레이블 */
+.pv-screen-label{
+  font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--text3);text-transform:uppercase;
+  padding:6px 14px;background:var(--bg2);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.pv-screen-label .pv-snum{
+  font-size:10px;font-weight:700;color:var(--red);
+  border:1px solid var(--red);padding:1px 6px;border-radius:3px;
+}
+/* 2번 화면 - 현재경기 VS */
+#pv2{
+  aspect-ratio:16/9;flex-shrink:0;
+  background:#040408;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;position:relative;overflow:hidden;
+  box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);
+  margin:8px 0;
+}
+#pv2::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
+  pointer-events:none;border-radius:12px;z-index:1;
+}
+.pv2-label{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.7vw,9px);letter-spacing:3px;color:var(--text3);z-index:2;}
+.pv2-vs-row{display:flex;align-items:center;gap:16px;z-index:2;width:90%;}
+.pv2-player{flex:1;text-align:center;}
+.pv2-name{font-family:'Bebas Neue',cursive;font-size:clamp(14px,2.5vw,32px);letter-spacing:2px;line-height:1.1;}
+.pv2-sub{font-size:clamp(7px,.7vw,10px);color:var(--text3);margin-top:3px;font-family:'Share Tech Mono',monospace;}
+.pv2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(18px,3vw,40px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
+.pv2-round{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,9px);color:var(--text3);letter-spacing:2px;z-index:2;}
+/* 3번 화면 - 대진표 */
+#pv3{
+  aspect-ratio:16/9;flex-shrink:0;
+  background:#040408;border-radius:12px;
+  display:flex;flex-direction:column;
+  padding:12px;gap:8px;position:relative;overflow:hidden;
+  box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);
+  margin:8px 0 14px;
+}
+#pv3::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
+  pointer-events:none;border-radius:12px;z-index:1;
+}
+#pv3-inner{display:flex;gap:8px;flex:1;overflow:hidden;z-index:2;}
+.pv3-col{display:flex;flex-direction:column;gap:5px;min-width:80px;}
+.pv3-col-title{font-family:'Share Tech Mono',monospace;font-size:clamp(5px,.6vw,8px);letter-spacing:2px;color:var(--text3);margin-bottom:3px;}
+.pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.pv3-player{padding:3px 6px;font-size:clamp(7px,.8vw,11px);font-weight:700;border-bottom:1px solid var(--border);}
+.pv3-player:last-child{border-bottom:none;}
+/* 타이머 전체화면 (순위 OFF시) */
+#pvt.full{flex:none;}
+#pvm.rank-off #pvt{flex:1;}
+#pvm.rank-off #pvr{display:none;}
+
 /* resizer */
 #resizer,#resizer2{width:5px;flex-shrink:0;cursor:col-resize;background:var(--border2);position:relative;z-index:10;transition:background .15s;}
 #resizer:hover,#resizer.drag{background:var(--red)}
@@ -497,6 +559,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <!-- 3단: left | resizer | pvcw | resizer2 | dspanel -->
   <div id="resizer"></div>
   <div id="pvcw">
+    <!-- ① 1번 화면: 전광판 -->
+    <div class="pv-screen-label"><span class="pv-snum">01</span> 전광판</div>
     <div id="pvc">
       <div id="pvh">
         <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
@@ -517,6 +581,28 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
       <div id="pvtk"><div id="pvtki"></div></div>
     </div>
+    <!-- ② 2번 화면: 현재경기 VS -->
+    <div class="pv-screen-label"><span class="pv-snum">02</span> 현재경기</div>
+    <div id="pv2">
+      <div class="pv2-label">// 현재 경기</div>
+      <div class="pv2-vs-row">
+        <div class="pv2-player">
+          <div class="pv2-name" id="pv2-p1">—</div>
+          <div class="pv2-sub">선수 1</div>
+        </div>
+        <div class="pv2-vs">VS</div>
+        <div class="pv2-player">
+          <div class="pv2-name" id="pv2-p2">—</div>
+          <div class="pv2-sub">선수 2</div>
+        </div>
+      </div>
+      <div class="pv2-round" id="pv2-round">경기 정보</div>
+    </div>
+    <!-- ③ 3번 화면: 대진표 -->
+    <div class="pv-screen-label"><span class="pv-snum">03</span> 대진표</div>
+    <div id="pv3">
+      <div id="pv3-inner"></div>
+    </div>
     <!-- 미리보기 아래: 실시간 조작 -->
     <div id="pvc-bottom">
       <div class="dssec" style="border-top:1px solid var(--border)">
@@ -529,9 +615,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
           <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <button class="ds-cbtn" style="flex:1;flex-direction:row;gap:8px;padding:10px;" onclick="sendCmd('screen_1')"><span>📺</span><span>1번 화면 (전광판)</span></button>
-          <button class="ds-cbtn" style="flex:1;flex-direction:row;gap:8px;padding:10px;" onclick="sendCmd('screen_2')"><span>🏆</span><span>2번 화면 (대진표)</span></button>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;">
+          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_1')"><span>📺</span><span style="font-size:9px">1번 전광판</span></button>
+          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_2')"><span>⚔️</span><span style="font-size:9px">2번 현재경기</span></button>
+          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_3')"><span>🏆</span><span style="font-size:9px">3번 대진표</span></button>
         </div>
       </div>
     </div>
@@ -1007,6 +1094,7 @@ function updatePv(){
   const g=ALLG.find(x=>x.id===S.selG);
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
+  updatePv2();updatePv3();updateRankLayout();
   try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
 }
 function buildRanks(){
@@ -1022,6 +1110,53 @@ function buildRanks(){
     d.innerHTML=`<div class="rno">${rn}</div><div class="rdot" style="background:${clr}"></div><div class="rnm">${p?p.name:'—'}</div><div class="rtm">${p?'—:--':'——'}</div>`;
     w.appendChild(d);
   }
+}
+function updatePv2(){
+  // 2번 화면: 현재경기 VS
+  const p1=S.pts[0],p2=S.pts[1];
+  document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
+  document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
+  document.getElementById('pv2-round').textContent=
+    p1&&p2?`경기 ${S.pts.indexOf(p1)+1} / ${S.pts.length}`:'참가자를 등록해주세요';
+}
+function updatePv3(){
+  // 3번 화면: 대진표 미니
+  const el=document.getElementById('pv3-inner');
+  if(!el)return;
+  el.innerHTML='';
+  if(!S.pts.length){
+    el.innerHTML='<div style="color:var(--text3);font-size:10px;font-family:'Share Tech Mono',monospace;padding:20px">참가자를 등록해주세요</div>';
+    return;
+  }
+  let pts=[...S.pts];
+  let size=1;while(size<pts.length)size*=2;
+  while(pts.length<size)pts.push(null);
+  let rounds=[];
+  let cur=[...pts];
+  while(cur.length>1){
+    const matches=[];
+    for(let i=0;i<cur.length;i+=2)matches.push([cur[i],cur[i+1]]);
+    rounds.push(matches);
+    cur=matches.map(m=>m[0]);
+  }
+  const rnames=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
+  rounds.forEach((matches,ri)=>{
+    const col=document.createElement('div');
+    col.className='pv3-col';
+    col.innerHTML=`<div class="pv3-col-title">${rnames[ri]||ri+1+'R'}</div>`;
+    matches.forEach(([p1,p2])=>{
+      const m=document.createElement('div');
+      m.className='pv3-match';
+      m.innerHTML=`<div class="pv3-player" style="color:${p1?p1.color:'var(--text3)'}">${p1?p1.name:'BYE'}</div><div class="pv3-player" style="color:${p2?p2.color:'var(--text3)'}">${p2?p2.name:'BYE'}</div>`;
+      col.appendChild(m);
+    });
+    el.appendChild(col);
+  });
+}
+function updateRankLayout(){
+  // 순위판 OFF시 타이머 전체화면
+  const pvm=document.getElementById('pvm');
+  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
 }
 function buildTicker(){
   const sh=k=>S.di[k];

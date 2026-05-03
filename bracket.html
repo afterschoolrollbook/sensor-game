@@ -467,6 +467,11 @@ window.addEventListener('storage', e => {
   if (e.key === 'sgp_current_idx' || e.key === 'sgp_state') render();
 });
 
+// URL 파라미터로 초기 뷰 설정
+const urlView = new URLSearchParams(location.search).get('view');
+if (urlView === 'bracket') setView('bracket');
+else setView('next');
+
 render();
 startClock();
 startPolling();

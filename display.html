@@ -340,9 +340,13 @@ body::after {
 </div><!-- /display-canvas -->
 </div><!-- /screen-1 -->
 
-<!-- 2번 화면: 대진표/다음경기 -->
+<!-- 2번 화면: 현재경기 VS -->
 <div id="screen-2">
-  <iframe src="bracket.html" style="width:100%;height:100%;border:none;background:#080810;"></iframe>
+  <iframe src="bracket.html?view=current" style="width:100%;height:100%;border:none;background:#080810;"></iframe>
+</div>
+<!-- 3번 화면: 대진표 -->
+<div id="screen-3" style="display:none;">
+  <iframe src="bracket.html?view=bracket" style="width:100%;height:100%;border:none;background:#080810;"></iframe>
 </div>
 
 <script src="js/app.js"></script>
@@ -543,10 +547,11 @@ function switchScreen(n) {
   currentScreen = n;
   document.getElementById('screen-1').style.display = n === 1 ? 'block' : 'none';
   document.getElementById('screen-2').style.display = n === 2 ? 'block' : 'none';
+  document.getElementById('screen-3') && (document.getElementById('screen-3').style.display = n === 3 ? 'block' : 'none');
   const btn = document.getElementById('switch-btn');
-  btn.textContent = n === 1 ? '📺 2번 화면' : '🔙 1번 화면';
-  btn.classList.toggle('on-2', n === 2);
-  // localStorage로 setup.html에도 알림
+  const labels = {1:'📺 2번 화면', 2:'🏆 3번 대진표', 3:'🔙 1번 전광판'};
+  btn.textContent = labels[n] || '📺 화면전환';
+  btn.classList.toggle('on-2', n !== 1);
   try { localStorage.setItem('sgp_screen', String(n)); } catch(e) {}
 }
 
@@ -563,6 +568,7 @@ window.addEventListener('storage', e => {
     const cmd = JSON.parse(e.newValue || '{}');
     if (cmd.type === 'screen_1') switchScreen(1);
     if (cmd.type === 'screen_2') switchScreen(2);
+    if (cmd.type === 'screen_3') switchScreen(3);
   }
 });
 
