@@ -212,8 +212,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pvbtn.p:hover{background:#c62835}
 
 #pvcw{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  padding:20px;overflow:hidden;
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  padding:14px 20px;overflow:hidden;
 }
 #pvc{
   width:100%;max-width:940px;aspect-ratio:16/9;
@@ -326,19 +326,59 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
 /* PV CONTROLS */
-#pvctrls{
-  padding:9px 20px;border-top:1px solid var(--border);
-  display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex-shrink:0;
-  background:rgba(8,8,15,.85);
+/* DS PANEL */
+#dspanel{
+  flex:1;overflow-y:auto;padding:0 0 12px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
-.pvcl{font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-right:3px}
-.pvct{
-  display:flex;align-items:center;gap:4px;padding:4px 9px;
-  border-radius:20px;cursor:pointer;border:1px solid var(--border);
-  font-size:10px;color:var(--text3);transition:all .2s;user-select:none;
+#dspanel::-webkit-scrollbar{width:3px}
+#dspanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.dssec{padding:10px 16px;border-bottom:1px solid var(--border)}
+.dssec-hd{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.dssec-icon{font-size:13px}
+.dssec-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
+/* chips shared style - used for both dtchips and blkchips */
+.ds-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dsc{
+  display:flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:20px;cursor:pointer;user-select:none;
+  border:1px solid var(--border);background:var(--card);
+  font-size:11px;font-weight:500;color:var(--text2);transition:all .2s;
 }
-.pvct.on{border-color:var(--accent);color:var(--accent);background:rgba(76,201,240,.06)}
-.pvcd{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.6}
+.dsc.on{border-color:var(--accent);background:rgba(76,201,240,.08);color:var(--text)}
+.dsc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s}
+.dsc.on .dsc-dot{background:var(--accent)}
+/* font picker */
+.ds-fonts{display:flex;flex-wrap:wrap;gap:6px}
+.ds-font{
+  padding:5px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--border);background:var(--card);
+  font-size:12px;color:var(--text2);transition:all .2s;
+}
+.ds-font.on{border-color:var(--yellow);background:rgba(255,214,10,.08);color:var(--yellow)}
+/* rank row */
+.ds-rankrow{display:flex;align-items:center;gap:10px}
+.ds-rcbtn{width:28px;height:28px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ds-rcbtn:hover{border-color:var(--red);color:var(--red)}
+.ds-rcval{font-family:'Share Tech Mono',monospace;font-size:22px;min-width:26px;text-align:center}
+/* control grid */
+.ds-ctrlgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ds-cbtn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);
+}
+.ds-cbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.ds-cbtn.ds-danger:hover{border-color:var(--red)}
+.ds-cicon{font-size:18px}
+.ds-clbl{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text2)}
+/* toggle */
+.ds-toggle{position:relative;display:inline-block;width:40px;height:22px}
+.ds-toggle input{opacity:0;width:0;height:0}
+.ds-slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s}
+.ds-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s}
+.ds-toggle input:checked+.ds-slider{background:var(--green);border-color:var(--green)}
+.ds-toggle input:checked+.ds-slider::before{transform:translateX(18px);background:white}
 
 /* TOAST */
 #tc{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
@@ -374,7 +414,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     <a class="nl" href="index.html">홈</a>
     <a class="nl cur" href="setup.html">행사설정</a>
     <a class="nl" href="customize.html">커스터마이징</a>
-    <a class="nl" href="display-settings.html">전광판설정</a>
+    
     <a class="nl" href="game.html">게임진행</a>
     <a class="nl" href="result.html">결과</a>
   </div>
@@ -455,7 +495,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <div id="right">
     <div id="pvhdr">
       <div style="display:flex;align-items:center;gap:12px">
-        <div class="pvtitle">전광판 미리보기</div>
+        <div class="pvtitle">전광판 미리보기 &amp; 설정</div>
         <div class="pvbadge">● LIVE</div>
       </div>
       <div class="pvacts">
@@ -466,12 +506,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
     <div id="pvcw">
       <div id="pvc">
-        <!-- 헤더 -->
         <div id="pvh">
           <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
           <div id="pv-live">● LIVE</div>
         </div>
-        <!-- 메인 -->
         <div id="pvm">
           <div id="pvt">
             <div class="tvlbl">CHALLENGER</div>
@@ -481,27 +519,74 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           </div>
           <div id="pvr"></div>
         </div>
-        <!-- 푸터 -->
         <div id="pvf">
           <div id="pv-gname">SGP PLATFORM</div>
           <div id="pv-clk">--:--:--</div>
         </div>
-        <!-- 티커 -->
         <div id="pvtk"><div id="pvtki"></div></div>
       </div>
     </div>
 
-    <!-- 블록 토글 -->
-    <div id="pvctrls">
-      <span class="pvcl">블록 표시</span>
-      <div class="pvct on" onclick="togBlk('pvh',this)"><span class="pvcd"></span>헤더</div>
-      <div class="pvct on" onclick="togBlk('pvt',this)"><span class="pvcd"></span>타이머</div>
-      <div class="pvct on" onclick="togBlk('pvr',this)"><span class="pvcd"></span>순위</div>
-      <div class="pvct on" onclick="togBlk('pvf',this)"><span class="pvcd"></span>푸터</div>
-      <div class="pvct on" onclick="togBlk('pvtk',this)"><span class="pvcd"></span>티커</div>
-    </div>
-  </div>
+    <!-- ══ 전광판 설정 통합 패널 ══ -->
+    <div id="dspanel">
 
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">📦</span><span class="dssec-title">블록 표시</span></div>
+        <div class="ds-chips" id="blkchips"></div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🔤</span><span class="dssec-title">타이틀 글씨체</span></div>
+        <div class="ds-fonts" id="fontpicker"></div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🏆</span><span class="dssec-title">순위 표시 수</span></div>
+        <div class="ds-rankrow">
+          <button class="ds-rcbtn" onclick="chRank(-1)">−</button>
+          <span class="ds-rcval" id="ds-rankval">6</span>
+          <button class="ds-rcbtn" onclick="chRank(1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">명까지 표시</span>
+        </div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🎮</span><span class="dssec-title">실시간 조작</span></div>
+        <div class="ds-ctrlgrid">
+          <button class="ds-cbtn" onclick="sendCmd('countdown')"><span class="ds-cicon">3️⃣</span><span class="ds-clbl">카운트다운</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span class="ds-cicon">▶️</span><span class="ds-clbl">타이머 시작</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span class="ds-cicon">⏹️</span><span class="ds-clbl">타이머 정지</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span class="ds-cicon">🔄</span><span class="ds-clbl">타이머 초기화</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('winner')"><span class="ds-cicon">🏆</span><span class="ds-clbl">우승자 표시</span></button>
+          <button class="ds-cbtn ds-danger" onclick="sendCmd('clear_rank')"><span class="ds-cicon">🗑️</span><span class="ds-clbl">순위 초기화</span></button>
+        </div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">👤</span><span class="dssec-title">도전자 수동 설정</span></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="ds-cplayer" placeholder="도전자 이름 직접 입력" style="flex:1;font-size:12px;padding:7px 11px">
+          <button class="pvbtn p" onclick="setDsPlayer()" style="padding:7px 13px;font-size:12px">전송</button>
+        </div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd">
+          <span class="dssec-icon">🔄</span><span class="dssec-title">화면 자동 전환</span>
+          <label class="ds-toggle" style="margin-left:auto">
+            <input type="checkbox" id="ds-autoswitch" onchange="saveDsCfg()">
+            <span class="ds-slider"></span>
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <span style="font-size:11px;color:var(--text3)">전환 간격</span>
+          <input class="fi" type="number" id="ds-interval" value="8" min="3" max="60" style="width:70px;padding:5px 9px;font-size:12px" onchange="saveDsCfg()">
+          <span style="font-size:11px;color:var(--text3)">초</span>
+        </div>
+      </div>
+
+    </div><!-- /dspanel -->
+  </div>
 </div><!-- /split -->
 
 <button id="fab" onclick="togMob()">📺</button>
@@ -553,6 +638,21 @@ const DITEMS=[
   {k:'slogan1',  l:'슬로건1', def:false},
   {k:'slogan2',  l:'슬로건2', def:false},
 ];
+// 전광판 블록 항목 (오른쪽 패널과 동일)
+const BLKITEMS=[
+  {k:'header', l:'헤더',   blkId:'pvh'},
+  {k:'timer',  l:'타이머', blkId:'pvt'},
+  {k:'rank',   l:'순위',   blkId:'pvr'},
+  {k:'footer', l:'푸터',   blkId:'pvf'},
+  {k:'ticker', l:'티커',   blkId:'pvtk'},
+];
+const TITLE_FONTS=[
+  {id:'bebas',   name:'Bebas Neue',   sample:'Bebas Neue',   css:"'Bebas Neue',cursive"},
+  {id:'rajdhani',name:'Rajdhani',     sample:'Rajdhani',     css:"'Rajdhani',sans-serif"},
+  {id:'mono',    name:'Share Tech Mono',sample:'Share Tech Mono',css:"'Share Tech Mono',monospace"},
+  {id:'noto',    name:'Noto Sans KR', sample:'Noto Sans KR', css:"'Noto Sans KR',sans-serif"},
+  {id:'serif',   name:'Serif',        sample:'Georgia',      css:'Georgia,serif'},
+];
 const TC=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585','#4361ee'];
 
 /* ── STATE ── */
@@ -561,6 +661,9 @@ const SL=['기본정보','게임모드','참가자','진행방식','확인/시�
 let S={
   en:'',sub:'',gl:'',dt:'',pl:'',sp:'',s1:'',s2:'',
   di:{eventname:true},
+  blk:{header:true,timer:true,rank:true,footer:true,ticker:true},
+  titleFont:'bebas',
+  rankCount:6,
   gtab:'sensor',selG:'timelap',cat:'all',laps:1,
   rm:'ind',pts:[],proc:'ind-rec',
 };
@@ -612,6 +715,7 @@ function updateNav(){
 
 /* ── CHIPS ── */
 function buildChips(){
+  // 왼쪽: 전광판 표시항목 (텍스트 내용)
   const w=document.getElementById('dtchips');w.innerHTML='';
   DITEMS.forEach(d=>{
     const el=document.createElement('div');
@@ -620,6 +724,66 @@ function buildChips(){
     el.onclick=()=>{S.di[d.k]=!S.di[d.k];el.classList.toggle('on');updatePv();};
     w.appendChild(el);
   });
+  // 오른쪽 패널: 블록 표시 칩
+  buildBlkChips();
+  buildFontPicker();
+  document.getElementById('ds-rankval').textContent=S.rankCount;
+}
+function buildBlkChips(){
+  const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
+  BLKITEMS.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='dsc'+(S.blk[b.k]?' on':'');
+    el.innerHTML=`<div class="dsc-dot"></div>${b.l}`;
+    el.onclick=()=>{
+      S.blk[b.k]=!S.blk[b.k];el.classList.toggle('on');
+      const target=document.getElementById(b.blkId);
+      if(target)target.classList.toggle('pv-hidden',!S.blk[b.k]);
+      saveDsCfg();
+    };
+    w.appendChild(el);
+  });
+}
+function buildFontPicker(){
+  const w=document.getElementById('fontpicker');if(!w)return;w.innerHTML='';
+  TITLE_FONTS.forEach(f=>{
+    const el=document.createElement('div');
+    el.className='ds-font'+(S.titleFont===f.id?' on':'');
+    el.style.fontFamily=f.css;
+    el.textContent=f.name;
+    el.onclick=()=>{
+      S.titleFont=f.id;
+      document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      const ename=document.getElementById('pv-ename');
+      if(ename)ename.style.fontFamily=f.css;
+      saveDsCfg();
+    };
+    w.appendChild(el);
+  });
+}
+function chRank(d){S.rankCount=Math.max(1,Math.min(10,S.rankCount+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveDsCfg();}
+function setDsPlayer(){
+  const v=document.getElementById('ds-cplayer').value.trim();
+  if(!v)return;
+  try{localStorage.setItem('sgp_display_player',v);}catch(e){}
+  toast('도전자 설정: '+v,'success');
+  document.getElementById('ds-cplayer').value='';
+}
+function sendCmd(type){
+  try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type,ts:Date.now()}));}catch(e){}
+  toast('전광판 전송: '+type,'success');
+}
+function saveDsCfg(){
+  try{
+    const cfg={rankCount:S.rankCount,titleFont:S.titleFont,
+      showHeader:S.blk.header,showTimer:S.blk.timer,showRank:S.blk.rank,
+      showFooter:S.blk.footer,showTicker:S.blk.ticker,
+      autoSwitch:document.getElementById('ds-autoswitch')?.checked||false,
+      switchInterval:parseInt(document.getElementById('ds-interval')?.value||8),
+    };
+    localStorage.setItem('sgp_display_config',JSON.stringify({...JSON.parse(localStorage.getItem('sgp_display_config')||'{}'),...cfg}));
+  }catch(e){}
 }
 function fc(){
   S.en=document.getElementById('f-en').value;
@@ -747,7 +911,11 @@ function saveAll(){
 /* ── PREVIEW UPDATE ── */
 function updatePv(){
   const sh=k=>S.di[k];
-  document.getElementById('pv-ename').textContent=(sh('eventname')&&S.en)||'SGP 행사';
+  const en=document.getElementById('pv-ename');
+  en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
+  // apply selected font
+  const tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
+  en.style.fontFamily=tf.css;
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
   document.getElementById('pv-chal').textContent=S.pts.length?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
@@ -755,12 +923,13 @@ function updatePv(){
   const g=ALLG.find(x=>x.id===S.selG);
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
-  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
+  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di,titleFont:S.titleFont}));}catch(e){}
 }
 function buildRanks(){
   const w=document.getElementById('pvr');w.innerHTML='';
   const medals=['🥇','🥈','🥉'];
-  for(let i=0;i<6;i++){
+  const count=S.rankCount||6;
+  for(let i=0;i<count;i++){
     const p=S.pts[i];
     const d=document.createElement('div');
     d.className='rrow'+(i===0?' r1':'')+(p?'':' empty');
