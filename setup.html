@@ -65,6 +65,19 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   pointer-events:none;
 }
 #resizer:hover::after,#resizer.dragging::after{color:var(--red)}
+#resizer2{
+  width:5px;flex-shrink:0;cursor:col-resize;
+  background:var(--border);position:relative;
+  transition:background .15s;z-index:10;
+}
+#resizer2:hover,#resizer2.dragging{background:var(--accent)}
+#resizer2::after{
+  content:'⋮';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  color:var(--text3);font-size:14px;letter-spacing:-2px;
+  pointer-events:none;
+}
+#resizer2:hover::after,#resizer2.dragging::after{color:var(--accent)}
 
 /* LEFT PANEL */
 #left{
