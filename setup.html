@@ -213,11 +213,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 #pvcw{
   width:480px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  padding:14px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:stretch;
+  padding:0;overflow:hidden;
 }
 #pvc{
-  width:100%;max-width:940px;aspect-ratio:16/9;
+  width:100%;aspect-ratio:16/9;flex-shrink:0;
   background:#040408;border-radius:12px;
   display:grid;grid-template-rows:auto 1fr auto auto;
   padding:14px;gap:9px;position:relative;overflow:hidden;
@@ -332,6 +332,27 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #resizer:hover,#resizer.drag{background:var(--red)}
 #resizer2:hover,#resizer2.drag{background:var(--accent)}
 /* dspanel */
+#pvc-bottom{background:var(--bg2);flex-shrink:0;}
+
+/* 블록 드래그 리스트 */
+.blk-list{display:flex;flex-direction:column;gap:6px;}
+.blk-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:grab;transition:all .2s;user-select:none;}
+.blk-item:active{cursor:grabbing;}
+.blk-item.dragging{opacity:.4;border-style:dashed;border-color:var(--red);}
+.blk-item.dragover{border-color:var(--green);background:rgba(6,214,160,.06);}
+.blk-item.disabled{opacity:.4;}
+.blk-handle{color:var(--text3);font-size:16px;cursor:grab;flex-shrink:0;}
+.blk-icon{font-size:18px;flex-shrink:0;}
+.blk-info{flex:1;}
+.blk-name{font-size:13px;font-weight:700;}
+.blk-desc{font-size:10px;color:var(--text3);margin-top:2px;}
+.blk-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
+.blk-tog input{opacity:0;width:0;height:0;}
+.blk-sld{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s;}
+.blk-sld::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s;}
+.blk-tog input:checked+.blk-sld{background:var(--green);border-color:var(--green);}
+.blk-tog input:checked+.blk-sld::before{transform:translateX(18px);background:white;}
+
 #dspanel{flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--bg2);min-width:180px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 #dspanel::-webkit-scrollbar{width:3px}
 #dspanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -496,6 +517,20 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
       <div id="pvtk"><div id="pvtki"></div></div>
     </div>
+    <!-- 미리보기 아래: 실시간 조작 -->
+    <div id="pvc-bottom">
+      <div class="dssec" style="border-top:1px solid var(--border)">
+        <div class="dssec-hd"><span>🎮</span><span class="dssec-ttl">실시간 조작</span></div>
+        <div class="ds-cgrid">
+          <button class="ds-cbtn" onclick="sendCmd('countdown')"><span>3️⃣</span><span>카운트다운</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span>▶️</span><span>타이머 시작</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span>⏹️</span><span>타이머 정지</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>초기화</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
+          <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
+        </div>
+      </div>
+    </div>
   </div>
   <div id="resizer2"></div>
   <div id="dspanel">
@@ -508,14 +543,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <button class="pvbtn p" onclick="openDisp()">⬜ HDMI 열기</button>
       </div>
     </div>
-    <div class="dssec">
-      <div class="dssec-hd"><span>📦</span><span class="dssec-ttl">블록 표시</span></div>
-      <div class="ds-chips" id="blkchips"></div>
-    </div>
-    <div class="dssec">
-      <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">타이틀 글씨체</span></div>
-      <div class="ds-fonts" id="fontpicker"></div>
-    </div>
+
     <div class="dssec">
       <div class="dssec-hd"><span>🏆</span><span class="dssec-ttl">순위 표시 수</span></div>
       <div class="ds-rcrow">
@@ -526,15 +554,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
     </div>
     <div class="dssec">
-      <div class="dssec-hd"><span>🎮</span><span class="dssec-ttl">실시간 조작</span></div>
-      <div class="ds-cgrid">
-        <button class="ds-cbtn" onclick="sendCmd('countdown')"><span>3️⃣</span><span>카운트다운</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span>▶️</span><span>타이머 시작</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span>⏹️</span><span>타이머 정지</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>초기화</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
-        <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
-      </div>
+      <div class="dssec-hd"><span>📦</span><span class="dssec-ttl">표시 블록 설정</span><span style="font-size:10px;color:var(--text3);margin-left:6px;">드래그로 순서 변경</span></div>
+      <div class="blk-list" id="blkchips"></div>
+    </div>
+    <div class="dssec">
+      <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">타이틀 글씨체</span></div>
+      <div class="ds-fonts" id="fontpicker"></div>
     </div>
     <div class="dssec">
       <div class="dssec-hd"><span>👤</span><span class="dssec-ttl">도전자 설정</span></div>
@@ -665,11 +690,11 @@ const PGAMES=[
 ];
 const ALLG=[...SGAMES,...PGAMES];
 const BLKITEMS=[
-  {k:'header',l:'헤더',  bid:'pvh'},
-  {k:'timer', l:'타이머',bid:'pvt'},
-  {k:'rank',  l:'순위',  bid:'pvr'},
-  {k:'footer',l:'푸터',  bid:'pvf'},
-  {k:'ticker',l:'티커',  bid:'pvtk'},
+  {k:'header', icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',   bid:'pvh'},
+  {k:'timer',  icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',   bid:'pvt'},
+  {k:'rank',   icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',   bid:'pvr'},
+  {k:'footer', icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',        bid:'pvf'},
+  {k:'ticker', icon:'📢', name:'티커',          desc:'하단 흐르는 텍스트',   bid:'pvtk'},
 ];
 const TITLE_FONTS=[
   {id:'bebas',   name:'Bebas Neue',     css:"'Bebas Neue',cursive"},
@@ -775,12 +800,42 @@ function initResizer(){
 /* ── DSPANEL ── */
 function buildBlkChips(){
   const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
-  BLKITEMS.forEach(b=>{
-    const el=document.createElement('div');
-    el.className='dsc'+(S.blk[b.k]?' on':'');
-    el.innerHTML='<div class="dsc-dot"></div>'+b.l;
-    el.onclick=()=>{S.blk[b.k]=!S.blk[b.k];el.classList.toggle('on');const t=document.getElementById(b.bid);if(t)t.classList.toggle('pv-hidden',!S.blk[b.k]);};
-    w.appendChild(el);
+  let dragSrc=null;
+  BLKITEMS.forEach((b,idx)=>{
+    const item=document.createElement('div');
+    item.className='blk-item'+(S.blk[b.k]?'':' disabled');
+    item.draggable=true;
+    item.dataset.idx=idx;
+    item.innerHTML=`
+      <span class="blk-handle">⠿</span>
+      <span class="blk-icon">${b.icon}</span>
+      <div class="blk-info"><div class="blk-name">${b.name}</div><div class="blk-desc">${b.desc}</div></div>
+      <label class="blk-tog">
+        <input type="checkbox" ${S.blk[b.k]?'checked':''}>
+        <span class="blk-sld"></span>
+      </label>`;
+    // 토글
+    item.querySelector('input').onchange=function(){
+      S.blk[b.k]=this.checked;
+      item.classList.toggle('disabled',!this.checked);
+      const t=document.getElementById(b.bid);
+      if(t)t.classList.toggle('pv-hidden',!this.checked);
+    };
+    // 드래그
+    item.addEventListener('dragstart',e=>{dragSrc=idx;item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    item.addEventListener('dragend',()=>{item.classList.remove('dragging');w.querySelectorAll('.blk-item').forEach(d=>d.classList.remove('dragover'));});
+    item.addEventListener('dragover',e=>{e.preventDefault();item.classList.add('dragover');});
+    item.addEventListener('dragleave',()=>item.classList.remove('dragover'));
+    item.addEventListener('drop',e=>{
+      e.preventDefault();item.classList.remove('dragover');
+      if(dragSrc===null||dragSrc===idx)return;
+      const moved=BLKITEMS.splice(dragSrc,1)[0];
+      BLKITEMS.splice(idx,0,moved);
+      dragSrc=null;
+      buildBlkChips();
+      toast('순서 변경됨','success');
+    });
+    w.appendChild(item);
   });
 }
 function buildFontPicker(){
