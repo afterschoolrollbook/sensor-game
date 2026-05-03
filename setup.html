@@ -434,10 +434,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <body>
 
 <nav id="nav">
-  <div class="nav-logo">
+  <a class="nav-logo" href="index.html" style="text-decoration:none;color:inherit;">
     <div class="nav-logo-dot"></div>
     <span class="nav-logo-txt">SGP.</span>
-  </div>
+  </a>
   <div class="nav-steps" id="navsteps"></div>
   <div class="nav-links">
     <a class="nl" href="index.html">홈</a>
@@ -626,23 +626,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <script src="js/export.js"></script>
 <script>
 /* ── DATA ── */
-const SGAMES=[
-  {id:'timelap', icon:'🏁',name:'타임랩',   desc:'출발~결승 시간 측정. 바퀴·랩타임 자동 기록.',tag:'속도/시간',cat:'speed',  ac:'#e63946'},
-  {id:'reaction',icon:'⚡',name:'반응속도', desc:'신호 후 버튼 누르는 속도 측정.',              tag:'속도/시간',cat:'speed',  ac:'#ff6b35'},
-  {id:'jump',    icon:'🦘',name:'점프력',   desc:'점프 높이·체공 시간 측정.',                  tag:'순간/힘',  cat:'power',  ac:'#7b2fff'},
-  {id:'balance', icon:'⚖️', name:'균형감각', desc:'센서 기반 밸런스 지속 시간 기록.',           tag:'순간/힘',  cat:'power',  ac:'#06d6a0'},
-  {id:'accuracy',icon:'🎯',name:'정확도',   desc:'타겟 히트 정확도. 복수 라운드 평균.',         tag:'정확도',   cat:'target', ac:'#ffd60a'},
-  {id:'endurance',icon:'🔥',name:'지속력',  desc:'일정 자세 유지 시간. 센서 탈락 감지.',        tag:'정확도',   cat:'target', ac:'#ff6b35'},
-];
-const PGAMES=[
-  {id:'athletics', icon:'🏃',name:'육상',    desc:'트랙·필드·도로 종목.',                      tag:'육상',     cat:'field',  ac:'#e63946'},
-  {id:'swimming',  icon:'🏊',name:'수영',    desc:'종목별 타임 기록. 체급·부문별 지원.',        tag:'수상',     cat:'aqua',   ac:'#4cc9f0'},
-  {id:'cycling',   icon:'🚴',name:'자전거',  desc:'타임·랩 기록. 도로·트랙 지원.',             tag:'사이클',   cat:'cycle',  ac:'#ffd60a'},
-  {id:'archery',   icon:'🏹',name:'양궁',    desc:'거리별 점수 집계. 단체·개인전.',             tag:'정확도',   cat:'target', ac:'#06d6a0'},
-  {id:'taekwondo', icon:'🥋',name:'태권도',  desc:'심판 채점 입력. 체급·종목별.',               tag:'무술',     cat:'martial',ac:'#7b2fff'},
-  {id:'weightlift',icon:'🏋️',name:'역도',   desc:'무게 기록. 체급별 자동 분류 및 순위.',       tag:'힘',       cat:'power',  ac:'#ff6b35'},
-];
-const ALLG=[...SGAMES,...PGAMES];
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},
   {id:'weight', icon:'⚖️', name:'체급 개인전',   sub:'체급별 분류'},
