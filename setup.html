@@ -219,17 +219,26 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 }
 #pvcw::-webkit-scrollbar{width:3px}
 #pvcw::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-#pvc{
+/* pvc 래퍼: 비율 유지 컨테이너 */
+#pvc-wrap{
   width:100%;aspect-ratio:16/9;flex-shrink:0;
-  background:#040408;border-radius:12px;
-  display:grid;grid-template-rows:auto 1fr auto auto;
-  padding:14px;gap:9px;position:relative;overflow:hidden;
+  position:relative;overflow:hidden;
+  border-radius:12px;
   box-shadow:0 0 80px rgba(0,0,0,.7),0 0 0 1px var(--border);
+}
+/* pvc 내부: 고정 1280x720 기준, scale로 축소 */
+#pvc{
+  position:absolute;top:0;left:0;
+  width:1280px;height:720px;
+  transform-origin:top left;
+  background:#040408;
+  display:grid;grid-template-rows:auto 1fr auto auto;
+  padding:28px;gap:16px;
 }
 #pvc::after{
   content:'';position:absolute;inset:0;
   background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
-  pointer-events:none;border-radius:12px;z-index:1;
+  pointer-events:none;z-index:1;
 }
 #pvc::before{
   content:'';position:absolute;inset:0;
@@ -245,14 +254,14 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 }
 #pv-ename{
   font-family:'Bebas Neue',cursive;
-  font-size:clamp(16px,3.8vw,46px);
+  font-size:46px;
   letter-spacing:3px;line-height:1;flex:1;
   text-shadow:0 0 30px rgba(230,57,70,.25);
 }
-#pv-sub{font-size:clamp(8px,1vw,13px);color:var(--text2);margin-top:3px}
+#pv-sub{font-size:13px;color:var(--text2);margin-top:3px}
 #pv-live{
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(8px,1vw,11px);letter-spacing:3px;
+  font-size:11px;letter-spacing:3px;
   color:var(--red);border:1px solid var(--red);
   padding:3px 9px;border-radius:3px;animation:lp 2s infinite;flex-shrink:0;
 }
@@ -275,16 +284,16 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   content:'';position:absolute;inset:0;
   background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.04) 0%,transparent 70%);
 }
-.tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.8vw,10px);letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase}
-#pv-chal{font-family:'Bebas Neue',cursive;font-size:clamp(13px,2.5vw,32px);letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1}
+.tvlbl{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase}
+#pv-chal{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1}
 #pv-time{
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(26px,8vw,100px);
+  font-size:100px;
   line-height:1;letter-spacing:-1px;
   color:var(--accent);text-shadow:0 0 40px rgba(76,201,240,.4);
   position:relative;z-index:1;
 }
-#pv-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,10px);color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1}
+#pv-lap{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1}
 
 /* RANKS */
 #pvr{
@@ -297,11 +306,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   padding:5px 8px;border:1px solid rgba(255,255,255,.035);transition:all .3s;
 }
 .rrow.r1{border-color:rgba(255,214,10,.2);background:rgba(255,214,10,.04)}
-.rno{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);color:var(--text3);width:clamp(14px,1.8vw,22px);text-align:center;flex-shrink:0}
+.rno{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--text3);width:22px;text-align:center;flex-shrink:0}
 .rrow.r1 .rno{color:var(--yellow)}
 .rdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rnm{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:clamp(10px,1.4vw,18px);flex:1;letter-spacing:.5px}
-.rtm{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,1.1vw,13px);color:var(--accent)}
+.rnm{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:18px;flex:1;letter-spacing:.5px}
+.rtm{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--accent)}
 .rrow.empty .rnm{color:var(--text3);font-weight:400}
 .rrow.empty .rtm{color:var(--text3)}
 
@@ -311,8 +320,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   border-top:1px solid var(--border);padding-top:8px;
   transition:opacity .3s;position:relative;z-index:2;
 }
-#pv-gname{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.9vw,11px);letter-spacing:3px;color:var(--text3)}
-#pv-clk{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,1.1vw,13px);color:var(--text2)}
+#pv-gname{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text3)}
+#pv-clk{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text2)}
 
 /* TICKER */
 #pvtk{
@@ -322,7 +331,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #pvtki{
   display:flex;gap:50px;white-space:nowrap;
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(8px,.9vw,11px);letter-spacing:2px;color:var(--text3);
+  font-size:11px;letter-spacing:2px;color:var(--text3);
   animation:ticker 22s linear infinite;
 }
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -391,23 +400,25 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv-slabel{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);padding:5px 10px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-shrink:0;}
 .pv-snum{font-size:9px;font-weight:700;color:var(--red);border:1px solid var(--red);padding:1px 5px;border-radius:3px;}
 /* 2번 화면: VS */
-#pv2{width:100%;aspect-ratio:16/9;flex-shrink:0;background:#040408;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
+#pv2-wrap{width:100%;aspect-ratio:16/9;flex-shrink:0;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
+#pv2{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
 #pv2::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
-.pv2-lbl{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,9px);letter-spacing:3px;color:var(--text3);z-index:2;}
-.pv2-row{display:flex;align-items:center;gap:14px;z-index:2;width:88%;}
+.pv2-lbl{font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:4px;color:var(--text3);z-index:2;}
+.pv2-row{display:flex;align-items:center;gap:60px;z-index:2;width:80%;}
 .pv2-pl{flex:1;text-align:center;}
-.pv2-nm{font-family:'Bebas Neue',cursive;font-size:clamp(14px,2.2vw,30px);letter-spacing:2px;}
-.pv2-sub{font-size:clamp(6px,.6vw,9px);color:var(--text3);margin-top:2px;font-family:'Share Tech Mono',monospace;}
-.pv2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(16px,2.5vw,34px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
-.pv2-info{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.6vw,9px);color:var(--text3);letter-spacing:2px;z-index:2;}
+.pv2-nm{font-family:'Bebas Neue',cursive;font-size:100px;letter-spacing:3px;line-height:1;}
+.pv2-sub{font-size:16px;color:var(--text3);margin-top:8px;font-family:'Share Tech Mono',monospace;letter-spacing:3px;}
+.pv2-vs{font-family:'Bebas Neue',cursive;font-size:80px;color:var(--red);letter-spacing:5px;flex-shrink:0;}
+.pv2-info{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--text3);letter-spacing:3px;z-index:2;}
 /* 3번 화면: 대진표 */
-#pv3{width:100%;aspect-ratio:16/9;flex-shrink:0;background:#040408;border-radius:10px;display:flex;padding:10px;gap:8px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
+#pv3-wrap{width:100%;aspect-ratio:16/9;flex-shrink:0;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
+#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;padding:40px;gap:24px;}
 #pv3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
-#pv3-inner{display:flex;gap:8px;z-index:2;overflow:hidden;}
-.pv3-col{display:flex;flex-direction:column;gap:4px;min-width:70px;}
-.pv3-ct{font-family:'Share Tech Mono',monospace;font-size:clamp(5px,.55vw,8px);letter-spacing:2px;color:var(--text3);margin-bottom:3px;}
-.pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
-.pv3-pl{padding:3px 6px;font-size:clamp(7px,.75vw,10px);font-weight:700;border-bottom:1px solid var(--border);}
+#pv3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
+.pv3-col{display:flex;flex-direction:column;gap:10px;min-width:160px;}
+.pv3-ct{font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:3px;color:var(--text3);margin-bottom:6px;}
+.pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.pv3-pl{padding:10px 16px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border);}
 .pv3-pl:last-child{border-bottom:none;}
 /* 순위 OFF시 타이머 전체 확장 */
 #pvm.rank-off #pvr{display:none;}
@@ -529,7 +540,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <div id="pvcw">
     <!-- ① 1번 전광판 -->
     <div class="pv-slabel"><span class="pv-snum">01</span> 전광판</div>
-    <div id="pvc">
+    <div id="pvc-wrap"><div id="pvc">
       <div id="pvh">
         <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
         <div id="pv-live">● LIVE</div>
@@ -548,10 +559,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div id="pv-clk">--:--:--</div>
       </div>
       <div id="pvtk"><div id="pvtki"></div></div>
-    </div>
+    </div></div><!-- /pvc-wrap -->
     <!-- ② 2번 현재경기 -->
     <div class="pv-slabel"><span class="pv-snum">02</span> 현재경기 (VS)</div>
-    <div id="pv2">
+    <div id="pv2-wrap"><div id="pv2">
       <div class="pv2-lbl">// 현재 경기</div>
       <div class="pv2-row">
         <div class="pv2-pl"><div class="pv2-nm" id="pv2-p1">—</div><div class="pv2-sub">선수 1</div></div>
@@ -559,10 +570,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div class="pv2-pl"><div class="pv2-nm" id="pv2-p2">—</div><div class="pv2-sub">선수 2</div></div>
       </div>
       <div class="pv2-info" id="pv2-info">참가자를 등록해주세요</div>
-    </div>
+    </div></div><!-- /pv2-wrap -->
     <!-- ③ 3번 대진표 -->
     <div class="pv-slabel"><span class="pv-snum">03</span> 대진표</div>
-    <div id="pv3"><div id="pv3-inner"></div></div>
+    <div id="pv3-wrap"><div id="pv3"><div id="pv3-inner"></div></div></div><!-- /pv3-wrap -->
     <!-- 미리보기 아래: 실시간 조작 -->
     <div id="pvc-bottom">
       <div class="dssec" style="border-top:1px solid var(--border)">
@@ -772,7 +783,9 @@ let S={
 window.addEventListener('DOMContentLoaded',()=>{
   try{const a=App.getState();if(a.event?.name)S.en=a.event.name;if(a.participants?.length)S.pts=[...a.participants];if(a.settings?.laps)S.laps=a.settings.laps;}catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
-  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();
+  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();
+  // pvcw 크기 바뀔 때마다 scale 재계산
+  ['pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
   // restore
   document.getElementById('f-en').value=S.en;
   document.getElementById('f-sub').value=S.sub;
@@ -1122,6 +1135,21 @@ function updatePv3(){
 function updateRankLayout(){
   const pvm=document.getElementById('pvm');
   if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
+}
+
+
+/* ── PVC SCALE (TV 비율 축소) ── */
+function scaleEl(wrapId, elId){
+  const wrap=document.getElementById(wrapId);
+  const el=document.getElementById(elId);
+  if(!wrap||!el)return;
+  const s=wrap.offsetWidth/1280;
+  el.style.transform='scale('+s+')';
+}
+function scalePvc(){
+  scaleEl('pvc-wrap','pvc');
+  scaleEl('pv2-wrap','pv2');
+  scaleEl('pv3-wrap','pv3');
 }
 
 /* ── CLOCK ── */
