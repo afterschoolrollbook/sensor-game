@@ -321,6 +321,22 @@ input:checked+.slider::before { transform:translateX(18px); background:white; }
         <div class="info-field-label">종목명</div>
         <input class="form-input" id="game-label" placeholder="예) 이어달리기">
       </div>
+      <div class="info-field">
+        <div class="info-field-label">일시</div>
+        <input class="form-input" id="event-date" placeholder="예) 2026년 5월 10일 (토) 오전 10시">
+      </div>
+      <div class="info-field">
+        <div class="info-field-label">장소</div>
+        <input class="form-input" id="event-place" placeholder="예) 000 체육관">
+      </div>
+      <div class="info-field">
+        <div class="info-field-label">후원</div>
+        <input class="form-input" id="event-sponsor" placeholder="예) 000시청, 000체육회">
+      </div>
+      <div class="info-field">
+        <div class="info-field-label">슬로건</div>
+        <input class="form-input" id="event-slogan" placeholder="예) 함께하는 스포츠, 하나되는 우리">
+      </div>
     </div>
 
     <!-- 전광판 표시 여부 (별도) -->
@@ -334,6 +350,18 @@ input:checked+.slider::before { transform:translateX(18px); background:white; }
       </div>
       <div class="display-toggle" id="chk-gamename" onclick="toggleDisplay('gamename')">
         <div class="dt-box"></div>종목명
+      </div>
+      <div class="display-toggle" id="chk-date" onclick="toggleDisplay('date')">
+        <div class="dt-box"></div>일시
+      </div>
+      <div class="display-toggle" id="chk-place" onclick="toggleDisplay('place')">
+        <div class="dt-box"></div>장소
+      </div>
+      <div class="display-toggle" id="chk-sponsor" onclick="toggleDisplay('sponsor')">
+        <div class="dt-box"></div>후원
+      </div>
+      <div class="display-toggle" id="chk-slogan" onclick="toggleDisplay('slogan')">
+        <div class="dt-box"></div>슬로건
       </div>
     </div>
 
@@ -733,6 +761,7 @@ const FORMAT_LABELS={
 };
 
 let currentStep=1, showEventName=true, showSubtitle=false, showGameName=false;
+let showDate=false, showPlace=false, showSponsor=false, showSlogan=false;
 let selectedGame='timelap', selectedGameType='sensor', laps=1, vsMode='individual';
 let selectedFormat='individual_record', gcFilter='all', sportFilter='all';
 
@@ -759,10 +788,15 @@ function validateStep(step){
 
 /* ── STEP 1 ── */
 function toggleDisplay(key){
+  const map={eventname:'showEventName',subtitle:'showSubtitle',gamename:'showGameName',date:'showDate',place:'showPlace',sponsor:'showSponsor',slogan:'showSlogan'};
   if(key==='eventname')showEventName=!showEventName;
   else if(key==='subtitle')showSubtitle=!showSubtitle;
-  else showGameName=!showGameName;
-  const val=key==='eventname'?showEventName:key==='subtitle'?showSubtitle:showGameName;
+  else if(key==='gamename')showGameName=!showGameName;
+  else if(key==='date')showDate=!showDate;
+  else if(key==='place')showPlace=!showPlace;
+  else if(key==='sponsor')showSponsor=!showSponsor;
+  else if(key==='slogan')showSlogan=!showSlogan;
+  const val={eventname:showEventName,subtitle:showSubtitle,gamename:showGameName,date:showDate,place:showPlace,sponsor:showSponsor,slogan:showSlogan}[key];
   document.getElementById('chk-'+key).classList.toggle('checked',val);
 }
 
@@ -1278,7 +1312,16 @@ function saveAndStart(e){
     gameType:selectedGame,
     vsMode:st3.vsMode,
     participantData:st3,
-    event:{name,subtitle:document.getElementById('event-subtitle').value.trim(),gameName:document.getElementById('game-label').value.trim(),showEventName,showSubtitle,showGameName},
+    event:{
+      name,
+      subtitle: document.getElementById('event-subtitle').value.trim(),
+      gameName: document.getElementById('game-label').value.trim(),
+      date:     document.getElementById('event-date').value.trim(),
+      place:    document.getElementById('event-place').value.trim(),
+      sponsor:  document.getElementById('event-sponsor').value.trim(),
+      slogan:   document.getElementById('event-slogan').value.trim(),
+      showEventName, showSubtitle, showGameName, showDate, showPlace, showSponsor, showSlogan,
+    },
     settings:{laps,format:selectedFormat},
   });
   const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
