@@ -232,7 +232,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   width:1280px;height:720px;
   transform-origin:top left;
   background:#040408;
-  display:grid;grid-template-rows:auto 1fr auto auto;
+  display:grid;grid-template-rows:auto auto 1fr auto auto;
   padding:28px;gap:16px;
 }
 #pvc::after{
@@ -341,16 +341,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #pvvs{
   display:flex;align-items:center;justify-content:center;gap:clamp(6px,1vw,14px);
   background:rgba(230,57,70,.04);border:1px solid rgba(230,57,70,.15);
-  border-radius:9px;padding:8px;position:relative;z-index:2;transition:opacity .3s;
+  border-radius:9px;padding:6px 10px;position:relative;z-index:2;transition:opacity .3s;
+  flex-shrink:0;
 }
 .pvvs-pl{flex:1;text-align:center;}
 .pvvs-nm{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);letter-spacing:2px;line-height:1.1;}
 .pvvs-sub{font-size:clamp(6px,.55vw,8px);color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-top:2px;}
 .pvvs-vs{font-family:'Bebas Neue',cursive;font-size:clamp(13px,2vw,26px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
-/* 순위/VS OFF 시 타이머 확장 */
+/* 순위 OFF 시 타이머 확장 */
 #pvm.rank-off #pvr{display:none;}
-#pvm.vs-off #pvvs{display:none;}
-#pvm.rank-off #pvt,#pvm.vs-off #pvt{flex:1;}
+#pvm.rank-off #pvt{flex:1;}
+#pvc.vs-off #pvvs{display:none;}
 
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
@@ -439,6 +440,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* 순위 OFF시 타이머 전체 확장 */
 #pvm.rank-off #pvr{display:none;}
 #pvm.rank-off #pvt{flex:1;}
+#pvc.vs-off #pvvs{display:none;}
 
 /* TOAST */
 #tc{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
@@ -561,17 +563,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
         <div id="pv-live">● LIVE</div>
       </div>
+      <div id="pvvs">
+          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p1">—</div><div class="pvvs-sub">선수 1</div></div>
+          <div class="pvvs-vs">VS</div>
+          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p2">—</div><div class="pvvs-sub">선수 2</div></div>
+      </div>
       <div id="pvm">
         <div id="pvt">
           <div class="tvlbl">CHALLENGER</div>
           <div id="pv-chal">—</div>
           <div id="pv-time">00:00.000</div>
           <div id="pv-lap">LAP 1 / 1</div>
-        </div>
-        <div id="pvvs">
-          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p1">—</div><div class="pvvs-sub">선수 1</div></div>
-          <div class="pvvs-vs">VS</div>
-          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p2">—</div><div class="pvvs-sub">선수 2</div></div>
         </div>
         <div id="pvr"></div>
       </div>
@@ -1117,9 +1119,9 @@ function updatePvVs(){
 }
 function updateRankLayout(){
   const pvm=document.getElementById('pvm');
-  if(!pvm)return;
-  pvm.classList.toggle('rank-off',!S.blk.rank);
-  pvm.classList.toggle('vs-off',!S.blk.vs);
+  const pvc=document.getElementById('pvc');
+  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
+  if(pvc)pvc.classList.toggle('vs-off',!S.blk.vs);
 }
 function buildTicker(){
   const sh=k=>S.di[k];
