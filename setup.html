@@ -81,7 +81,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 /* LEFT PANEL */
 #left{
-  flex:0 0 var(--left-w);min-width:220px;
+  flex:0 0 500px;width:500px;min-width:220px;
   background:var(--bg2);border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden;
 }
@@ -226,7 +226,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* 가운데: 미리보기 */
 /* ⚠️ pvcw: #split 직속 3번째 컬럼 — flex 구조 유지 */
 #pvcw{
-  flex:0 0 480px;min-width:180px;
+  flex:0 0 480px;width:480px;min-width:180px;
   display:flex;align-items:center;justify-content:center;
   padding:14px;background:var(--bg);
   overflow:hidden;
@@ -988,11 +988,13 @@ function initResizer(){
       document.body.style.userSelect='none';
       function move(e){
         const w=Math.min(Math.max(startW+(e.clientX-startX),minW),maxW());
-        el.style.cssText+=';width:'+w+'px!important;flex:0 0 '+w+'px!important;';
+        el.style.flex='0 0 '+w+'px';
+        el.style.width=w+'px';
       }
       function up(){
         bar.classList.remove('dragging');
-        document.body.style.cssText='';
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
         document.removeEventListener('mousemove',move);
         document.removeEventListener('mouseup',up);
       }
