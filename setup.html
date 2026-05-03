@@ -336,6 +336,22 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 }
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
+
+/* 현재경기 VS 블록 */
+#pvvs{
+  display:flex;align-items:center;justify-content:center;gap:clamp(6px,1vw,14px);
+  background:rgba(230,57,70,.04);border:1px solid rgba(230,57,70,.15);
+  border-radius:9px;padding:8px;position:relative;z-index:2;transition:opacity .3s;
+}
+.pvvs-pl{flex:1;text-align:center;}
+.pvvs-nm{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);letter-spacing:2px;line-height:1.1;}
+.pvvs-sub{font-size:clamp(6px,.55vw,8px);color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-top:2px;}
+.pvvs-vs{font-family:'Bebas Neue',cursive;font-size:clamp(13px,2vw,26px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
+/* 순위/VS OFF 시 타이머 확장 */
+#pvm.rank-off #pvr{display:none;}
+#pvm.vs-off #pvvs{display:none;}
+#pvm.rank-off #pvt,#pvm.vs-off #pvt{flex:1;}
+
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
 /* PV CONTROLS */
@@ -552,6 +568,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div id="pv-time">00:00.000</div>
           <div id="pv-lap">LAP 1 / 1</div>
         </div>
+        <div id="pvvs">
+          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p1">—</div><div class="pvvs-sub">선수 1</div></div>
+          <div class="pvvs-vs">VS</div>
+          <div class="pvvs-pl"><div class="pvvs-nm" id="pvvs-p2">—</div><div class="pvvs-sub">선수 2</div></div>
+        </div>
         <div id="pvr"></div>
       </div>
       <div id="pvf">
@@ -754,6 +775,7 @@ const ALLG=[...SGAMES,...PGAMES];
 const BLKITEMS=[
   {k:'header', icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',   bid:'pvh'},
   {k:'timer',  icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',   bid:'pvt'},
+  {k:'vs',     icon:'⚔️', name:'현재경기 VS',   desc:'선수1 VS 선수2 표시',  bid:'pvvs'},
   {k:'rank',   icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',   bid:'pvr'},
   {k:'footer', icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',        bid:'pvf'},
   {k:'ticker', icon:'📢', name:'티커',          desc:'하단 흐르는 텍스트',   bid:'pvtk'},
@@ -773,7 +795,7 @@ const SL=['기본정보','게임모드','참가자','진행방식','확인/시�
 let S={
   en:'',sub:'',gl:'',dt:'',pl:'',sp:'',s1:'',s2:'',
   di:{eventname:true},
-  blk:{header:true,timer:true,rank:true,footer:true,ticker:true},
+  blk:{header:true,timer:true,vs:true,rank:true,footer:true,ticker:true},
   titleFont:'bebas',rankCount:6,
   gtab:'sensor',selG:'timelap',cat:'all',laps:1,
   rm:'ind',pts:[],proc:'ind-rec',
@@ -884,6 +906,7 @@ function buildBlkChips(){
       item.classList.toggle('disabled',!this.checked);
       const t=document.getElementById(b.bid);
       if(t)t.classList.toggle('pv-hidden',!this.checked);
+      updateRankLayout();
     };
     // 드래그
     item.addEventListener('dragstart',e=>{dragSrc=idx;item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
@@ -1067,7 +1090,7 @@ function updatePv(){
   const g=ALLG.find(x=>x.id===S.selG);
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
-  updatePv2();updatePv3();updateRankLayout();
+  updatePvVs();updatePv2();updatePv3();updateRankLayout();
   try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
 }
 function buildRanks(){
@@ -1083,6 +1106,20 @@ function buildRanks(){
     d.innerHTML=`<div class="rno">${rn}</div><div class="rdot" style="background:${clr}"></div><div class="rnm">${p?p.name:'—'}</div><div class="rtm">${p?'—:--':'——'}</div>`;
     w.appendChild(d);
   }
+}
+
+function updatePvVs(){
+  const p1=S.pts[0],p2=S.pts[1];
+  const e1=document.getElementById('pvvs-p1');
+  const e2=document.getElementById('pvvs-p2');
+  if(e1)e1.textContent=p1?p1.name:'—';
+  if(e2)e2.textContent=p2?p2.name:'—';
+}
+function updateRankLayout(){
+  const pvm=document.getElementById('pvm');
+  if(!pvm)return;
+  pvm.classList.toggle('rank-off',!S.blk.rank);
+  pvm.classList.toggle('vs-off',!S.blk.vs);
 }
 function buildTicker(){
   const sh=k=>S.di[k];
