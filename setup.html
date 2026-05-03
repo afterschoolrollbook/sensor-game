@@ -51,15 +51,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* SPLIT */
 #split{display:flex;height:100vh;padding-top:var(--nav-h);overflow:hidden;}
 
-
-/* ⚠️ RESIZER — 삭제/수정 금지 */
-#resizer,#resizer2{
-  width:5px;flex-shrink:0;cursor:col-resize;
-  background:var(--border2);position:relative;z-index:10;
-  transition:background .15s;
-}
-#resizer:hover,#resizer.drag{background:var(--red)}
-#resizer2:hover,#resizer2.drag{background:var(--accent)}
 /* LEFT PANEL */
 #left{
   width:500px;flex-shrink:0;
@@ -203,7 +194,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .bstart:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,57,70,.3)}
 
 /* RIGHT PANEL */
-/* ⚠️ right: flex-direction:row 필수 — 3단 구조 */
 #right{
   flex:1;display:flex;flex-direction:row;
   background:var(--bg);overflow:hidden;
@@ -221,14 +211,13 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pvbtn.p{background:var(--red);border-color:var(--red);color:#fff}
 .pvbtn.p:hover{background:#c62835}
 
-/* ⚠️ pvcw: 가운데 미리보기 고정 */
 #pvcw{
-  flex:0 0 480px;width:480px;min-width:180px;
+  width:480px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   padding:14px;overflow:hidden;
 }
 #pvc{
-  width:100%;aspect-ratio:16/9;
+  width:100%;max-width:940px;aspect-ratio:16/9;
   background:#040408;border-radius:12px;
   display:grid;grid-template-rows:auto 1fr auto auto;
   padding:14px;gap:9px;position:relative;overflow:hidden;
@@ -338,51 +327,40 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
 /* PV CONTROLS */
-
-/* ⚠️ DSPANEL — 오른쪽 설정 패널 */
-#dspanel{
-  flex:1;display:flex;flex-direction:column;overflow-y:auto;
-  background:var(--bg2);min-width:200px;
-  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
-}
+/* resizer */
+#resizer,#resizer2{width:5px;flex-shrink:0;cursor:col-resize;background:var(--border2);position:relative;z-index:10;transition:background .15s;}
+#resizer:hover,#resizer.drag{background:var(--red)}
+#resizer2:hover,#resizer2.drag{background:var(--accent)}
+/* dspanel */
+#dspanel{flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--bg2);min-width:180px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 #dspanel::-webkit-scrollbar{width:3px}
 #dspanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.dspanel-hd{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;border-bottom:1px solid var(--border);
-  position:sticky;top:0;background:var(--bg2);z-index:5;flex-shrink:0;
-}
-.dssec{padding:10px 14px;border-bottom:1px solid var(--border)}
-.dssec-hd{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.dssec-ttl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
-.ds-chips{display:flex;flex-wrap:wrap;gap:6px}
-.dsc{
-  display:flex;align-items:center;gap:4px;padding:4px 10px;
-  border-radius:20px;cursor:pointer;user-select:none;
-  border:1px solid var(--border);background:var(--card);
-  font-size:11px;color:var(--text2);transition:all .2s;
-}
-.dsc.on{border-color:var(--accent);background:rgba(76,201,240,.08);color:var(--text)}
-.dsc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s}
-.dsc.on .dsc-dot{background:var(--accent)}
-.ds-fonts{display:flex;flex-wrap:wrap;gap:6px}
-.ds-font{padding:5px 10px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--card);font-size:12px;color:var(--text2);transition:all .2s}
-.ds-font.on{border-color:var(--yellow);background:rgba(255,214,10,.08);color:var(--yellow)}
-.ds-rcbtn{width:28px;height:28px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.ds-rcbtn:hover{border-color:var(--red);color:var(--red)}
-.ds-rcval{font-family:'Share Tech Mono',monospace;font-size:22px;min-width:26px;text-align:center}
-.ds-ctrlgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.ds-cbtn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);font-size:9px;font-weight:700}
-.ds-cbtn:hover{border-color:var(--accent)}
-.ds-cbtn.ds-danger:hover{border-color:var(--red)}
-.ds-cbtn span:first-child{font-size:18px}
-.ds-toggle{position:relative;display:inline-block;width:40px;height:22px}
-.ds-toggle input{opacity:0;width:0;height:0}
-.ds-slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s}
-.ds-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s}
-.ds-toggle input:checked+.ds-slider{background:var(--green);border-color:var(--green)}
-.ds-toggle input:checked+.ds-slider::before{transform:translateX(18px);background:white}
-
+.dsp-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:5;flex-shrink:0;}
+.dssec{padding:10px 14px;border-bottom:1px solid var(--border);}
+.dssec-hd{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.dssec-ttl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;}
+.dsc{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;cursor:pointer;user-select:none;border:1px solid var(--border);background:var(--card);font-size:11px;color:var(--text2);transition:all .2s;}
+.dsc.on{border-color:var(--accent);background:rgba(76,201,240,.08);color:var(--text);}
+.dsc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s;}
+.dsc.on .dsc-dot{background:var(--accent);}
+.ds-chips,.ds-fonts{display:flex;flex-wrap:wrap;gap:6px;}
+.ds-font{padding:5px 10px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--card);font-size:12px;color:var(--text2);transition:all .2s;}
+.ds-font.on{border-color:var(--yellow);background:rgba(255,214,10,.08);color:var(--yellow);}
+.ds-rcrow{display:flex;align-items:center;gap:10px;}
+.ds-rcbtn{width:28px;height:28px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.ds-rcbtn:hover{border-color:var(--red);color:var(--red);}
+.ds-rcval{font-family:'Share Tech Mono',monospace;font-size:22px;min-width:26px;text-align:center;}
+.ds-cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.ds-cbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);font-size:9px;font-weight:700;letter-spacing:.5px;}
+.ds-cbtn:hover{border-color:var(--accent);}
+.ds-cbtn.dang:hover{border-color:var(--red);}
+.ds-cbtn span:first-child{font-size:17px;}
+.ds-tog{position:relative;display:inline-block;width:40px;height:22px;}
+.ds-tog input{opacity:0;width:0;height:0;}
+.ds-sld{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s;}
+.ds-sld::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s;}
+.ds-tog input:checked+.ds-sld{background:var(--green);border-color:var(--green);}
+.ds-tog input:checked+.ds-sld::before{transform:translateX(18px);background:white;}
 
 /* TOAST */
 #tc{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
@@ -495,10 +473,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
   </div>
 
-  <!-- ⚠️ 3단구조: left | resizer | pvcw | resizer2 | dspanel — 구조변경금지 -->
+  <!-- 3단: left | resizer | pvcw | resizer2 | dspanel -->
   <div id="resizer"></div>
-
-  <!-- 가운데: 미리보기 고정 -->
   <div id="pvcw">
     <div id="pvc">
       <div id="pvh">
@@ -521,16 +497,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <div id="pvtk"><div id="pvtki"></div></div>
     </div>
   </div>
-
-  <!-- ⚠️ resizer2 — 삭제금지 -->
   <div id="resizer2"></div>
-
-  <!-- 오른쪽: 전광판 설정 스크롤 -->
   <div id="dspanel">
-    <div class="dspanel-hd">
+    <div class="dsp-hd">
       <div style="display:flex;align-items:center;gap:8px">
-        <span class="pvtitle">전광판 설정</span>
-        <span class="pvbadge">● LIVE</span>
+        <span class="pvtitle">전광판 설정</span><span class="pvbadge">● LIVE</span>
       </div>
       <div style="display:flex;gap:6px">
         <button class="pvbtn" onclick="resetPv()">↺ 초기화</button>
@@ -547,7 +518,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
     <div class="dssec">
       <div class="dssec-hd"><span>🏆</span><span class="dssec-ttl">순위 표시 수</span></div>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div class="ds-rcrow">
         <button class="ds-rcbtn" onclick="chRank(-1)">−</button>
         <span class="ds-rcval" id="ds-rankval">6</span>
         <button class="ds-rcbtn" onclick="chRank(1)">+</button>
@@ -556,28 +527,28 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
     <div class="dssec">
       <div class="dssec-hd"><span>🎮</span><span class="dssec-ttl">실시간 조작</span></div>
-      <div class="ds-ctrlgrid">
+      <div class="ds-cgrid">
         <button class="ds-cbtn" onclick="sendCmd('countdown')"><span>3️⃣</span><span>카운트다운</span></button>
         <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span>▶️</span><span>타이머 시작</span></button>
         <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span>⏹️</span><span>타이머 정지</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>타이머 초기화</span></button>
-        <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자 표시</span></button>
-        <button class="ds-cbtn ds-danger" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위 초기화</span></button>
+        <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>초기화</span></button>
+        <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
+        <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
       </div>
     </div>
     <div class="dssec">
-      <div class="dssec-hd"><span>👤</span><span class="dssec-ttl">도전자 수동 설정</span></div>
+      <div class="dssec-hd"><span>👤</span><span class="dssec-ttl">도전자 설정</span></div>
       <div style="display:flex;gap:6px">
-        <input class="fi" id="ds-cplayer" placeholder="도전자 이름 직접 입력" style="flex:1;font-size:12px;padding:7px 11px">
+        <input class="fi" id="ds-cplayer" placeholder="도전자 이름 입력" style="flex:1;font-size:12px;padding:7px 11px">
         <button class="pvbtn p" onclick="setDsPlayer()" style="padding:7px 13px">전송</button>
       </div>
     </div>
     <div class="dssec">
       <div class="dssec-hd">
         <span>🔄</span><span class="dssec-ttl">화면 자동 전환</span>
-        <label class="ds-toggle" style="margin-left:auto">
+        <label class="ds-tog" style="margin-left:auto">
           <input type="checkbox" id="ds-autoswitch" onchange="saveDsCfg()">
-          <span class="ds-slider"></span>
+          <span class="ds-sld"></span>
         </label>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
@@ -597,23 +568,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <script src="js/export.js"></script>
 <script>
 /* ── DATA ── */
-const SGAMES=[
-  {id:'timelap', icon:'🏁',name:'타임랩',   desc:'출발~결승 시간 측정. 바퀴·랩타임 자동 기록.',tag:'속도/시간',cat:'speed',  ac:'#e63946'},
-  {id:'reaction',icon:'⚡',name:'반응속도', desc:'신호 후 버튼 누르는 속도 측정.',              tag:'속도/시간',cat:'speed',  ac:'#ff6b35'},
-  {id:'jump',    icon:'🦘',name:'점프력',   desc:'점프 높이·체공 시간 측정.',                  tag:'순간/힘',  cat:'power',  ac:'#7b2fff'},
-  {id:'balance', icon:'⚖️', name:'균형감각', desc:'센서 기반 밸런스 지속 시간 기록.',           tag:'순간/힘',  cat:'power',  ac:'#06d6a0'},
-  {id:'accuracy',icon:'🎯',name:'정확도',   desc:'타겟 히트 정확도. 복수 라운드 평균.',         tag:'정확도',   cat:'target', ac:'#ffd60a'},
-  {id:'endurance',icon:'🔥',name:'지속력',  desc:'일정 자세 유지 시간. 센서 탈락 감지.',        tag:'정확도',   cat:'target', ac:'#ff6b35'},
-];
-const PGAMES=[
-  {id:'athletics', icon:'🏃',name:'육상',    desc:'트랙·필드·도로 종목.',                      tag:'육상',     cat:'field',  ac:'#e63946'},
-  {id:'swimming',  icon:'🏊',name:'수영',    desc:'종목별 타임 기록. 체급·부문별 지원.',        tag:'수상',     cat:'aqua',   ac:'#4cc9f0'},
-  {id:'cycling',   icon:'🚴',name:'자전거',  desc:'타임·랩 기록. 도로·트랙 지원.',             tag:'사이클',   cat:'cycle',  ac:'#ffd60a'},
-  {id:'archery',   icon:'🏹',name:'양궁',    desc:'거리별 점수 집계. 단체·개인전.',             tag:'정확도',   cat:'target', ac:'#06d6a0'},
-  {id:'taekwondo', icon:'🥋',name:'태권도',  desc:'심판 채점 입력. 체급·종목별.',               tag:'무술',     cat:'martial',ac:'#7b2fff'},
-  {id:'weightlift',icon:'🏋️',name:'역도',   desc:'무게 기록. 체급별 자동 분류 및 순위.',       tag:'힘',       cat:'power',  ac:'#ff6b35'},
-];
-const ALLG=[...SGAMES,...PGAMES];
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},
   {id:'weight', icon:'⚖️', name:'체급 개인전',   sub:'체급별 분류'},
@@ -639,19 +593,90 @@ const DITEMS=[
   {k:'slogan1',  l:'슬로건1', def:false},
   {k:'slogan2',  l:'슬로건2', def:false},
 ];
+const SGAMES=[
+  {id:'timelap', icon:'🏁',name:'타임랩',   desc:'출발~결승 시간 측정. 바퀴·랩타임 자동 기록.',tag:'속도/시간',cat:'speed',  ac:'#e63946'},
+  {id:'reaction',icon:'⚡',name:'반응속도', desc:'신호 후 버튼 누르는 속도 측정. 여러 명 동시 대결.',tag:'속도/시간',cat:'speed',  ac:'#ff6b35'},
+  {id:'balance', icon:'🎯',name:'균형 버티기',desc:'압력 패드 위에서 균형 유지 시간. 흔들리면 탈락.',tag:'속도/시간',cat:'speed',  ac:'#4cc9f0'},
+  {id:'jump',    icon:'🤸',name:'점프력',   desc:'패드에서 뛰어오른 공중 체공 시간 측정.',tag:'속도/시간',cat:'speed',  ac:'#4cc9f0'},
+  {id:'distance',icon:'📏',name:'멀리뛰기', desc:'초음파 센서로 착지 거리 자동 측정.',tag:'속도/시간',cat:'speed',  ac:'#06d6a0'},
+  {id:'weight',  icon:'⚖️',name:'무게 맞추기',desc:'목표 무게에 얼마나 가까운지 정확도 경쟁.',tag:'힘/무게',  cat:'strength',ac:'#7b2fff'},
+  {id:'strength',icon:'💪',name:'악력/힘 측정',desc:'최대 힘 측정 후 순위. 3회 평균 또는 최고값.',tag:'힘/무게',  cat:'strength',ac:'#e63946'},
+  {id:'weightacc',icon:'🏋️',name:'무게 정확도',desc:'100g 단위로 정확하게 물건 올리기.',tag:'힘/무게',  cat:'strength',ac:'#ff6b35'},
+  {id:'oddeven', icon:'🎲',name:'홀짝 게임', desc:'통과 횟수 카운트 후 홀짝 자동 판정.',tag:'운/재미',  cat:'fun',     ac:'#06d6a0'},
+  {id:'roulette',icon:'🎰',name:'랜덤 룰렛', desc:'버튼 누르면 랜덤 미션/점수 지정.',tag:'운/재미',  cat:'fun',     ac:'#7b2fff'},
+  {id:'count',   icon:'🔢',name:'카운트 대결',desc:'제한 시간 안에 센서를 몇 번 통과하는지 대결.',tag:'운/재미',  cat:'fun',     ac:'#ffd60a'},
+  {id:'sound',   icon:'🔊',name:'소리 크기', desc:'가장 크게 소리지르기. 팀 응원 소리 크기 측정.',tag:'운/재미',  cat:'fun',     ac:'#ff6b35'},
+];
+const PGAMES=[
+  {id:'athletics', icon:'🏃',name:'육상',       desc:'트랙·필드·도로. 타이머·거리 기록.',tag:'육상/체조',cat:'athletics',ac:'#e63946'},
+  {id:'gymnastics',icon:'🤸',name:'체조',       desc:'기계체조·리듬체조·트램폴린. 심판 채점.',tag:'육상/체조',cat:'athletics',ac:'#ff6b35'},
+  {id:'weightlift',icon:'🏋️',name:'역도',       desc:'용상·인상. 체급별 기록 측정.',tag:'육상/체조',cat:'athletics',ac:'#7b2fff'},
+  {id:'soccer',    icon:'⚽',name:'축구',       desc:'팀전. 득점 기록 및 토너먼트.',tag:'구기',cat:'ball',ac:'#06d6a0'},
+  {id:'baseball',  icon:'⚾',name:'야구',       desc:'이닝별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#e63946'},
+  {id:'softball',  icon:'🥎',name:'소프트볼',   desc:'이닝별 점수 기록.',tag:'구기',cat:'ball',ac:'#ff6b35'},
+  {id:'basketball',icon:'🏀',name:'농구',       desc:'쿼터별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#ffd60a'},
+  {id:'volleyball',icon:'🏐',name:'배구',       desc:'세트별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
+  {id:'handball',  icon:'🤾',name:'핸드볼',     desc:'전·후반 득점 기록.',tag:'구기',cat:'ball',ac:'#7b2fff'},
+  {id:'rugby',     icon:'🏉',name:'럭비',       desc:'전·후반 득점 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
+  {id:'hockey',    icon:'🏑',name:'하키',       desc:'전·후반 득점 기록.',tag:'구기',cat:'ball',ac:'#e63946'},
+  {id:'tabletennis',icon:'🏓',name:'탁구',      desc:'세트 점수 입력. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
+  {id:'badminton', icon:'🏸',name:'배드민턴',   desc:'세트 점수. 단식·복식 지원.',tag:'구기',cat:'ball',ac:'#ffd60a'},
+  {id:'tennis',    icon:'🎾',name:'테니스',     desc:'세트·게임 점수. 단식·복식 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
+  {id:'softtennis',icon:'🎾',name:'소프트테니스',desc:'세트·게임 점수 입력.',tag:'구기',cat:'ball',ac:'#ff6b35'},
+  {id:'squash',    icon:'🎱',name:'스쿼시',     desc:'게임 점수 입력. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#7b2fff'},
+  {id:'bowling',   icon:'🎳',name:'볼링',       desc:'프레임별 점수. 스트라이크·스페어 자동 계산.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
+  {id:'golf',      icon:'⛳',name:'골프',       desc:'홀별 타수 입력. 스트로크·매치플레이 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
+  {id:'curling',   icon:'🥌',name:'컬링',       desc:'엔드별 점수 기록.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
+  {id:'boxing',    icon:'🥊',name:'복싱',       desc:'라운드 타이머 + 판정·점수. 체급별 지원.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
+  {id:'taekwondo', icon:'🦵',name:'태권도',     desc:'경기 타이머 + 겨루기 승패·품새 점수.',tag:'무술/격투',cat:'martial',ac:'#4cc9f0'},
+  {id:'judo',      icon:'🥋',name:'유도',       desc:'경기 타이머 + 판정(한판·절반). 체급별.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
+  {id:'wrestling', icon:'🤼',name:'레슬링',     desc:'경기 타이머 + 포인트. 체급별 지원.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
+  {id:'fencing',   icon:'🤺',name:'펜싱',       desc:'경기 타이머 + 득점 기록.',tag:'무술/격투',cat:'martial',ac:'#ffd60a'},
+  {id:'ssireum',   icon:'🏅',name:'씨름',       desc:'경기 타이머 + 승패. 체급별 토너먼트.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
+  {id:'hapkido',   icon:'🥋',name:'합기도',     desc:'시범 타이머 + 심판 채점.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
+  {id:'jujitsu',   icon:'🤼',name:'주짓수',     desc:'경기 타이머 + 체급별 포인트.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
+  {id:'muaythai',  icon:'🥊',name:'무에타이',   desc:'라운드 타이머 + 판정 점수.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
+  {id:'kickboxing',icon:'🥊',name:'킥복싱',     desc:'라운드 타이머 + 판정 점수.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
+  {id:'wushu',     icon:'🐉',name:'우슈',       desc:'경기 타이머 + 심판 채점.',tag:'무술/격투',cat:'martial',ac:'#ffd60a'},
+  {id:'sambo',     icon:'🥋',name:'삼보',       desc:'경기 타이머 + 포인트·판정.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
+  {id:'swimming',  icon:'🏊',name:'수영',       desc:'종목별 타임 기록. 부문별 지원.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
+  {id:'diving',    icon:'🤽',name:'다이빙',     desc:'심판 채점 입력.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
+  {id:'waterpolo', icon:'🤽',name:'수구',       desc:'쿼터별 득점 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
+  {id:'waterski',  icon:'🏄',name:'수상스키',   desc:'타임·채점 기록.',tag:'수영/수상',cat:'aqua',ac:'#06d6a0'},
+  {id:'rowing',    icon:'🚣',name:'조정',       desc:'종목별 타임 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
+  {id:'canoeing',  icon:'🛶',name:'카누',       desc:'종목별 타임 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
+  {id:'sailing',   icon:'⛵',name:'요트',       desc:'레이스 순위 기록.',tag:'수영/수상',cat:'aqua',ac:'#06d6a0'},
+  {id:'cycling',   icon:'🚴',name:'자전거',     desc:'타임·랩 기록. 도로·트랙·MTB 지원.',tag:'사이클',cat:'cycle',ac:'#ffd60a'},
+  {id:'shooting',  icon:'🔫',name:'사격',       desc:'과녁 점수 입력. 종목별 설정 가능.',tag:'표적/정확도',cat:'target',ac:'#ffd60a'},
+  {id:'archery',   icon:'🏹',name:'양궁',       desc:'라운드별 점수 합산. 실내·실외 지원.',tag:'표적/정확도',cat:'target',ac:'#06d6a0'},
+  {id:'darts',     icon:'🎯',name:'다트',       desc:'라운드별 점수 입력.',tag:'표적/정확도',cat:'target',ac:'#06d6a0'},
+  {id:'billiards', icon:'🎱',name:'당구',       desc:'점수·이닝 기록. 3쿠션·포켓볼 지원.',tag:'표적/정확도',cat:'target',ac:'#7b2fff'},
+  {id:'iceskating',icon:'⛸️',name:'빙상',       desc:'타임 기록. 쇼트트랙·스피드스케이팅.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
+  {id:'figureskate',icon:'⛸️',name:'피겨스케이팅',desc:'심판 채점 입력.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
+  {id:'icehockey', icon:'🏒',name:'아이스하키', desc:'피리어드별 득점 기록.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
+  {id:'skiing',    icon:'⛷️',name:'스키',       desc:'타임 기록. 알파인·크로스컨트리 지원.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
+  {id:'biathlon',  icon:'🎿',name:'바이애슬론', desc:'타임+사격 점수 기록.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
+  {id:'equestrian',icon:'🏇',name:'승마',       desc:'심판 채점·타임 기록.',tag:'기타',cat:'etc',ac:'#ff6b35'},
+  {id:'triathlon', icon:'🏅',name:'트라이애슬론',desc:'수영+자전거+달리기 타임 기록.',tag:'기타',cat:'etc',ac:'#06d6a0'},
+  {id:'climbing',  icon:'🧗',name:'스포츠클라이밍',desc:'타임·난이도·볼더링 점수.',tag:'기타',cat:'etc',ac:'#ff6b35'},
+  {id:'cheerleading',icon:'📣',name:'치어리딩', desc:'심판 채점 입력.',tag:'기타',cat:'etc',ac:'#e63946'},
+  {id:'dancesport',icon:'💃',name:'댄스스포츠', desc:'심판 채점 입력. 종목별 지원.',tag:'기타',cat:'etc',ac:'#ff6b35'},
+  {id:'esports',   icon:'🎮',name:'e스포츠',    desc:'라운드별 승패 기록. 토너먼트 지원.',tag:'기타',cat:'etc',ac:'#7b2fff'},
+];
+const ALLG=[...SGAMES,...PGAMES];
 const BLKITEMS=[
-  {k:'header',l:'헤더',  blkId:'pvh'},
-  {k:'timer', l:'타이머',blkId:'pvt'},
-  {k:'rank',  l:'순위',  blkId:'pvr'},
-  {k:'footer',l:'푸터',  blkId:'pvf'},
-  {k:'ticker',l:'티커',  blkId:'pvtk'},
+  {k:'header',l:'헤더',  bid:'pvh'},
+  {k:'timer', l:'타이머',bid:'pvt'},
+  {k:'rank',  l:'순위',  bid:'pvr'},
+  {k:'footer',l:'푸터',  bid:'pvf'},
+  {k:'ticker',l:'티커',  bid:'pvtk'},
 ];
 const TITLE_FONTS=[
-  {id:'bebas',   name:'Bebas Neue',      css:"'Bebas Neue',cursive"},
-  {id:'rajdhani',name:'Rajdhani',        css:"'Rajdhani',sans-serif"},
-  {id:'mono',    name:'Share Tech Mono', css:"'Share Tech Mono',monospace"},
-  {id:'noto',    name:'Noto Sans KR',    css:"'Noto Sans KR',sans-serif"},
-  {id:'serif',   name:'Serif',           css:'Georgia,serif'},
+  {id:'bebas',   name:'Bebas Neue',     css:"'Bebas Neue',cursive"},
+  {id:'rajdhani',name:'Rajdhani',       css:"'Rajdhani',sans-serif"},
+  {id:'mono',    name:'Share Tech Mono',css:"'Share Tech Mono',monospace"},
+  {id:'noto',    name:'Noto Sans KR',   css:"'Noto Sans KR',sans-serif"},
+  {id:'serif',   name:'Serif',          css:'Georgia,serif'},
 ];
 const TC=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585','#4361ee'];
 
@@ -711,6 +736,67 @@ function updateNav(){
   if(cs===5){bn.style.display='none';}
   else{bn.style.display='';const lb=['','다음 → 게임 모드','다음 → 참가자','다음 → 진행방식','다음 → 확인&시작'];bn.textContent=lb[cs]||'다음 →';}
 }
+
+
+/* ── RESIZER ── */
+function initResizer(){
+  function bind(rId,getEl,minW,maxRatio){
+    const bar=document.getElementById(rId);
+    if(!bar)return;
+    bar.addEventListener('mousedown',function(e){
+      e.preventDefault();
+      const el=getEl();
+      const startX=e.clientX;
+      const startW=el.offsetWidth;
+      bar.classList.add('drag');
+      document.body.style.cursor='col-resize';
+      document.body.style.userSelect='none';
+      function move(e){
+        const total=document.getElementById('split').offsetWidth;
+        const w=Math.min(Math.max(startW+(e.clientX-startX),minW),total*maxRatio);
+        el.style.flex='0 0 '+w+'px';
+        el.style.width=w+'px';
+      }
+      function up(){
+        bar.classList.remove('drag');
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
+        document.removeEventListener('mousemove',move);
+        document.removeEventListener('mouseup',up);
+      }
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
+    });
+  }
+  bind('resizer', ()=>document.getElementById('left'), 220, 0.5);
+  bind('resizer2', ()=>document.getElementById('pvcw'), 180, 0.55);
+}
+
+/* ── DSPANEL ── */
+function buildBlkChips(){
+  const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
+  BLKITEMS.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='dsc'+(S.blk[b.k]?' on':'');
+    el.innerHTML='<div class="dsc-dot"></div>'+b.l;
+    el.onclick=()=>{S.blk[b.k]=!S.blk[b.k];el.classList.toggle('on');const t=document.getElementById(b.bid);if(t)t.classList.toggle('pv-hidden',!S.blk[b.k]);};
+    w.appendChild(el);
+  });
+}
+function buildFontPicker(){
+  const w=document.getElementById('fontpicker');if(!w)return;w.innerHTML='';
+  TITLE_FONTS.forEach(f=>{
+    const el=document.createElement('div');
+    el.className='ds-font'+(S.titleFont===f.id?' on':'');
+    el.style.fontFamily=f.css;el.textContent=f.name;
+    el.onclick=()=>{S.titleFont=f.id;document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));el.classList.add('on');const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;};
+    w.appendChild(el);
+  });
+}
+function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();}
+function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
+function sendCmd(t){try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type:t,ts:Date.now()}));}catch(e){}toast('전송: '+t,'success');}
+function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
 
 /* ── CHIPS ── */
 function buildChips(){
@@ -851,10 +937,10 @@ function saveAll(){
 /* ── PREVIEW UPDATE ── */
 function updatePv(){
   const sh=k=>S.di[k];
-  const en=document.getElementById('pv-ename');
-  en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
-  const tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
-  en.style.fontFamily=tf.css;
+  const _en=document.getElementById('pv-ename');
+  _en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
+  const _tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
+  _en.style.fontFamily=_tf.css;
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
   document.getElementById('pv-chal').textContent=S.pts.length?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
@@ -892,77 +978,7 @@ function buildTicker(){
   document.getElementById('pvtki').textContent=t+'          '+t;
 }
 
-/* ── RESIZER ── ⚠️ 삭제금지 */
-function initResizer(){
-  function bind(rId, getEl, minW, maxRatio){
-    const bar=document.getElementById(rId);
-    if(!bar)return;
-    bar.addEventListener('mousedown',function(e){
-      e.preventDefault();
-      const el=getEl();
-      const startX=e.clientX;
-      const startW=el.offsetWidth;
-      bar.classList.add('drag');
-      document.body.style.cursor='col-resize';
-      document.body.style.userSelect='none';
-      function move(e){
-        const total=document.getElementById('split').offsetWidth;
-        const w=Math.min(Math.max(startW+(e.clientX-startX),minW),total*maxRatio);
-        el.style.flex='0 0 '+w+'px';
-        el.style.width=w+'px';
-      }
-      function up(){
-        bar.classList.remove('drag');
-        document.body.style.cursor='';
-        document.body.style.userSelect='';
-        document.removeEventListener('mousemove',move);
-        document.removeEventListener('mouseup',up);
-      }
-      document.addEventListener('mousemove',move);
-      document.addEventListener('mouseup',up);
-    });
-  }
-  bind('resizer', ()=>document.getElementById('left'), 220, 0.5);
-  bind('resizer2', ()=>document.getElementById('pvcw'), 180, 0.55);
-}
-
-/* ── DSPANEL 기능 ── */
-function buildBlkChips(){
-  const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
-  BLKITEMS.forEach(b=>{
-    const el=document.createElement('div');
-    el.className='dsc'+(S.blk[b.k]?' on':'');
-    el.innerHTML='<div class="dsc-dot"></div>'+b.l;
-    el.onclick=()=>{
-      S.blk[b.k]=!S.blk[b.k];el.classList.toggle('on');
-      const t=document.getElementById(b.blkId);
-      if(t)t.classList.toggle('pv-hidden',!S.blk[b.k]);
-    };
-    w.appendChild(el);
-  });
-}
-function buildFontPicker(){
-  const w=document.getElementById('fontpicker');if(!w)return;w.innerHTML='';
-  TITLE_FONTS.forEach(f=>{
-    const el=document.createElement('div');
-    el.className='ds-font'+(S.titleFont===f.id?' on':'');
-    el.style.fontFamily=f.css;el.textContent=f.name;
-    el.onclick=()=>{
-      S.titleFont=f.id;
-      document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));
-      el.classList.add('on');
-      const en=document.getElementById('pv-ename');
-      if(en)en.style.fontFamily=f.css;
-    };
-    w.appendChild(el);
-  });
-}
-function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();}
-function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
-function sendCmd(t){try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type:t,ts:Date.now()}));}catch(e){}toast('전송: '+t,'success');}
-function saveDsCfg(){try{const c=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');c.autoSwitch=document.getElementById('ds-autoswitch')?.checked;c.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(c));}catch(e){}}
-
-/* ── BLOCK TOGGLE (레거시) ── */
+/* ── BLOCK TOGGLE ── */
 function togBlk(id,el){
   el.classList.toggle('on');
   document.getElementById(id).classList.toggle('pv-hidden',!el.classList.contains('on'));
