@@ -222,6 +222,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .bstart:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,57,70,.3)}
 
 /* RIGHT PANEL — 좌: 미리보기 고정 / 우: 설정 스크롤 */
+/* ⚠️ right: flex-direction:row 필수 — column으로 바꾸면 3단 깨짐 */
 #right{
   flex:1;display:flex;flex-direction:row;
   background:var(--bg);overflow:hidden;
@@ -449,6 +450,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   </div>
 </nav>
 
+<!-- ⚠️ 3단 레이아웃: left | resizer | right(pvcw + resizer2 + dspanel) — 구조 변경 금지 -->
 <div id="split">
 
   <!-- ══ LEFT PANEL ══ -->
@@ -520,6 +522,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
   </div>
 
+  <!-- ⚠️ resizer: 왼쪽(left) ↔ 오른쪽(right) 너비 드래그 조절 — 삭제 금지 -->
   <div id="resizer"></div>
   <!-- ══ RIGHT PANEL ══ -->
   <div id="right">
@@ -546,6 +549,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
     </div>
 
+    <!-- ⚠️ resizer2: 가운데(pvcw) ↔ 설정(dspanel) 너비 드래그 조절 — 삭제 금지 -->
     <div id="resizer2"></div>
     <!-- ══ 전광판 설정 통합 패널 ══ -->
     <div id="dspanel">
@@ -626,6 +630,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <script src="js/export.js"></script>
 <script>
 /* ── DATA ── */
+/* ⚠️ SGAMES/PGAMES/ALLG는 app.js에서 전역 정의됨 — 여기서 재선언 금지 */
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},
   {id:'weight', icon:'⚖️', name:'체급 개인전',   sub:'체급별 분류'},
@@ -973,12 +978,14 @@ function togBlk(id,el){
 }
 
 /* ── RESIZER ── */
-function makeResizer(resizerId, targetEl, minW, maxRatio, getTotal){
+function makeResizer(resizerId, getTarget, minW, maxRatio, getTotal){
   const resizer=document.getElementById(resizerId);
   if(!resizer)return;
   resizer.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    const target=getTarget();
     const startX=e.clientX;
-    const startW=targetEl.getBoundingClientRect().width;
+    const startW=target.getBoundingClientRect().width;
     resizer.classList.add('dragging');
     document.body.style.cursor='col-resize';
     document.body.style.userSelect='none';
@@ -986,8 +993,10 @@ function makeResizer(resizerId, targetEl, minW, maxRatio, getTotal){
       const dx=e.clientX-startX;
       const totalW=getTotal();
       const newW=Math.min(Math.max(startW+dx,minW),totalW*maxRatio);
-      targetEl.style.width=newW+'px';
-      targetEl.style.flex='0 0 auto';
+      target.style.flexBasis=newW+'px';
+      target.style.flexGrow='0';
+      target.style.flexShrink='0';
+      target.style.width=newW+'px';
     }
     function onUp(){
       resizer.classList.remove('dragging');
@@ -1000,12 +1009,14 @@ function makeResizer(resizerId, targetEl, minW, maxRatio, getTotal){
     document.addEventListener('mouseup',onUp);
   });
 }
+/* ⚠️ initResizer: 양쪽 경계선 드래그 기능 — 수정 시 makeResizer 로직 함께 확인 */
 function initResizer(){
-  const split=document.getElementById('split');
-  const left=document.getElementById('left');
-  const pvcw=document.getElementById('pvcw');
-  makeResizer('resizer', left, 260, 0.5, ()=>split.getBoundingClientRect().width);
-  makeResizer('resizer2', pvcw, 300, 0.6, ()=>document.getElementById('right').getBoundingClientRect().width);
+  makeResizer('resizer',
+    ()=>document.getElementById('left'), 260, 0.5,
+    ()=>document.getElementById('split').getBoundingClientRect().width);
+  makeResizer('resizer2',
+    ()=>document.getElementById('pvcw'), 200, 0.7,
+    ()=>document.getElementById('right').getBoundingClientRect().width);
 }
 
 /* ── CLOCK ── */
