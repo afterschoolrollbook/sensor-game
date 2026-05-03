@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP — 대진표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #080810;
+  --bg2:     #0f0f1a;
+  --card:    #13131f;
+  --border:  #2a2a40;
+  --primary: #e63946;
+  --accent:  #4cc9f0;
+  --green:   #06d6a0;
+  --yellow:  #ffd60a;
+  --text:    #f0f0f8;
+  --dim:     #44445a;
+  --font-d:  'Bebas Neue', cursive;
+  --font-b:  'Rajdhani', sans-serif;
+  --font-m:  'Share Tech Mono', monospace;
+}
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  overflow: hidden;
+  user-select: none;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.08) 2px, rgba(0,0,0,.08) 4px);
+  pointer-events: none; z-index: 999;
+}
+
+/* ── 레이아웃 ── */
+#bracket-wrap {
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 32px 40px;
+  gap: 24px;
+}
+
+/* ── 헤더 ── */
+#bk-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 16px;
+}
+#bk-title {
+  font-family: var(--font-d);
+  font-size: clamp(28px, 4vw, 52px);
+  letter-spacing: 3px;
+}
+#bk-subtitle {
+  font-family: var(--font-m);
+  font-size: 13px; letter-spacing: 3px;
+  color: var(--dim); margin-top: 4px;
+}
+.bk-live {
+  font-family: var(--font-m);
+  font-size: 13px; letter-spacing: 3px;
+  color: var(--primary); border: 1px solid var(--primary);
+  padding: 6px 14px; border-radius: 4px;
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── 탭 ── */
+#bk-tabs {
+  display: flex; gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+  align-self: center;
+}
+.bk-tab {
+  padding: 8px 20px;
+  font-family: var(--font-m); font-size: 12px; letter-spacing: 2px;
+  cursor: pointer; color: var(--dim); transition: all .2s;
+  background: transparent; border: none;
+}
+.bk-tab.active { background: var(--primary); color: white; }
+
+/* ── 콘텐츠 영역 ── */
+#bk-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  overflow: hidden;
+}
+
+/* ── 다음 경기 카드 ── */
+#next-match-card {
+  background: var(--bg2);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 32px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px;
+  position: relative; overflow: hidden;
+}
+#next-match-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(230,57,70,.08) 0%, transparent 60%);
+}
+.nm-label {
+  font-family: var(--font-m); font-size: 13px;
+  letter-spacing: 4px; color: var(--primary);
+  text-transform: uppercase;
+}
+.nm-vs-row {
+  display: flex; align-items: center; gap: 24px;
+  width: 100%;
+}
+.nm-player {
+  flex: 1; text-align: center;
+}
+.nm-player-name {
+  font-family: var(--font-d);
+  font-size: clamp(24px, 4vw, 52px);
+  letter-spacing: 2px; line-height: 1.1;
+}
+.nm-player-sub {
+  font-family: var(--font-m);
+  font-size: 12px; color: var(--dim);
+  margin-top: 6px; letter-spacing: 2px;
+}
+.nm-vs {
+  font-family: var(--font-d);
+  font-size: clamp(28px, 5vw, 64px);
+  color: var(--primary); letter-spacing: 4px;
+  flex-shrink: 0;
+}
+.nm-info {
+  font-family: var(--font-m); font-size: 13px;
+  color: var(--dim); letter-spacing: 2px;
+  text-align: center;
+}
+.nm-empty {
+  font-family: var(--font-m); font-size: 16px;
+  color: var(--dim); letter-spacing: 3px;
+  text-align: center;
+}
+
+/* ── 대기 명단 ── */
+#wait-list-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.wl-title {
+  font-family: var(--font-d);
+  font-size: 22px; letter-spacing: 3px;
+  color: var(--dim); margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#wait-list {
+  display: flex; flex-direction: column;
+  gap: 8px; overflow-y: auto; flex: 1;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.wl-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: all .3s;
+}
+.wl-row.current {
+  border-color: var(--green);
+  background: rgba(6,214,160,.06);
+}
+.wl-row.next {
+  border-color: var(--yellow);
+  background: rgba(255,214,10,.06);
+}
+.wl-num {
+  font-family: var(--font-m); font-size: 18px;
+  color: var(--dim); width: 32px; text-align: center; flex-shrink: 0;
+}
+.wl-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.wl-name {
+  flex: 1;
+  font-size: clamp(14px, 2vw, 22px); font-weight: 700;
+}
+.wl-badge {
+  font-family: var(--font-m); font-size: 10px;
+  letter-spacing: 2px; padding: 3px 8px;
+  border-radius: 4px; flex-shrink: 0;
+}
+.wl-badge.cur { background: rgba(6,214,160,.2); color: var(--green); border: 1px solid var(--green); }
+.wl-badge.nxt { background: rgba(255,214,10,.2); color: var(--yellow); border: 1px solid var(--yellow); }
+
+/* ── 대진표 모드 ── */
+#bracket-view {
+  grid-column: 1 / -1;
+  display: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#bracket-view.active { display: flex; }
+#next-view { display: contents; }
+#next-view.hidden { display: none; }
+
+.bracket-round {
+  display: flex; flex-direction: column;
+  justify-content: space-around;
+  gap: 16px; min-width: 200px; padding: 0 12px;
+  position: relative;
+}
+.bracket-round-title {
+  font-family: var(--font-m); font-size: 11px;
+  letter-spacing: 3px; color: var(--dim);
+  text-align: center; margin-bottom: 8px; flex-shrink: 0;
+}
+.bracket-match {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  min-width: 180px;
+}
+.bracket-player {
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  transition: all .2s;
+}
+.bracket-player:last-child { border-bottom: none; }
+.bracket-player.winner { background: rgba(255,214,10,.08); color: var(--yellow); }
+.bracket-player.loser { opacity: .4; }
+.bracket-player-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* 시계 */
+#bk-clock {
+  font-family: var(--font-m); font-size: 14px; color: var(--dim);
+}
+</style>
+</head>
+<body>
+
+<div id="bracket-wrap">
+  <!-- 헤더 -->
+  <div id="bk-header">
+    <div>
+      <div id="bk-title">대진표</div>
+      <div id="bk-subtitle">// BRACKET &amp; NEXT MATCH</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div id="bk-tabs">
+        <button class="bk-tab active" onclick="setView('next')">다음 경기</button>
+        <button class="bk-tab" onclick="setView('bracket')">대진표</button>
+      </div>
+      <div id="bk-clock"></div>
+      <div class="bk-live">● LIVE</div>
+    </div>
+  </div>
+
+  <!-- 콘텐츠 -->
+  <div id="bk-content">
+
+    <!-- 다음 경기 뷰 -->
+    <div id="next-view">
+      <!-- 다음 경기 카드 -->
+      <div id="next-match-card">
+        <div class="nm-label">// 다음 경기</div>
+        <div class="nm-vs-row" id="nm-vs-row">
+          <div class="nm-empty" id="nm-empty">참가자를 등록하면 여기에 표시됩니다</div>
+        </div>
+        <div class="nm-info" id="nm-info"></div>
+      </div>
+
+      <!-- 대기 명단 -->
+      <div id="wait-list-wrap">
+        <div class="wl-title">📋 대기 순서</div>
+        <div id="wait-list"></div>
+      </div>
+    </div>
+
+    <!-- 대진표 뷰 -->
+    <div id="bracket-view">
+      <div id="bracket-rounds"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+let currentView = 'next';
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('next-view').classList.toggle('hidden', v !== 'next');
+  document.getElementById('bracket-view').classList.toggle('active', v === 'bracket');
+  document.querySelectorAll('.bk-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0&&v==='next')||(i===1&&v==='bracket'));
+  });
+  if (v === 'bracket') renderBracket();
+}
+
+function render() {
+  const state = App.getState();
+  const pts = state.participants || [];
+
+  // 행사명 헤더
+  if (state.event?.name) document.getElementById('bk-title').textContent = state.event.name + ' — 대진표';
+
+  if (currentView === 'next') renderNext(pts, state);
+  else renderBracket(pts, state);
+}
+
+function renderNext(pts, state) {
+  const vsRow = document.getElementById('nm-vs-row');
+  const emptyEl = document.getElementById('nm-empty');
+  const infoEl = document.getElementById('nm-info');
+  const waitEl = document.getElementById('wait-list');
+
+  // localStorage에서 현재 도전자 인덱스 읽기
+  let curIdx = parseInt(localStorage.getItem('sgp_current_idx') || '0');
+  const nextIdx = curIdx + 1;
+
+  if (pts.length === 0) {
+    vsRow.innerHTML = '<div class="nm-empty">참가자를 등록하면 여기에 표시됩니다</div>';
+    waitEl.innerHTML = '';
+    infoEl.textContent = '';
+    return;
+  }
+
+  // 다음 경기 카드
+  const cur = pts[curIdx];
+  const nxt = pts[nextIdx];
+
+  if (cur && nxt) {
+    vsRow.innerHTML = `
+      <div class="nm-player">
+        <div class="nm-player-name">${cur.name}</div>
+        <div class="nm-player-sub" style="color:${cur.color}">● 현재</div>
+      </div>
+      <div class="nm-vs">VS</div>
+      <div class="nm-player">
+        <div class="nm-player-name">${nxt.name}</div>
+        <div class="nm-player-sub">다음</div>
+      </div>`;
+    infoEl.textContent = `${curIdx+1} / ${pts.length} 경기`;
+  } else if (cur) {
+    vsRow.innerHTML = `
+      <div class="nm-player" style="width:100%">
+        <div class="nm-player-name">${cur.name}</div>
+        <div class="nm-player-sub" style="color:var(--green)">● 현재 도전자</div>
+      </div>`;
+    infoEl.textContent = '마지막 도전자';
+  } else {
+    vsRow.innerHTML = '<div class="nm-empty">모든 경기 완료</div>';
+    infoEl.textContent = '';
+  }
+
+  // 대기 명단
+  waitEl.innerHTML = pts.map((p, i) => {
+    const isCur = i === curIdx;
+    const isNxt = i === nextIdx;
+    const cls = isCur ? 'wl-row current' : isNxt ? 'wl-row next' : 'wl-row';
+    const badge = isCur
+      ? '<span class="wl-badge cur">진행중</span>'
+      : isNxt ? '<span class="wl-badge nxt">다음</span>' : '';
+    return `<div class="${cls}">
+      <div class="wl-num">${i+1}</div>
+      <div class="wl-dot" style="background:${p.color||'var(--dim)'}"></div>
+      <div class="wl-name">${p.name}</div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function renderBracket() {
+  const state = App.getState();
+  const pts = state.participants || [];
+  const el = document.getElementById('bracket-rounds');
+  el.innerHTML = '';
+
+  if (pts.length < 2) {
+    el.innerHTML = '<div style="color:var(--dim);font-family:var(--font-m);font-size:16px;padding:40px;">참가자가 2명 이상 필요합니다</div>';
+    return;
+  }
+
+  // 단순 토너먼트 대진 생성
+  let rounds = [];
+  let current = [...pts];
+  // 2의 거듭제곱으로 맞추기
+  let size = 1;
+  while (size < current.length) size *= 2;
+  while (current.length < size) current.push(null); // bye
+
+  while (current.length > 1) {
+    const matches = [];
+    for (let i = 0; i < current.length; i += 2) {
+      matches.push([current[i], current[i+1]]);
+    }
+    rounds.push(matches);
+    // 다음 라운드 승자 (임시: 첫번째 플레이어가 승리)
+    current = matches.map(m => m[0]);
+  }
+
+  const roundNames = ['결승', '준결승', '8강', '16강', '32강'].reverse();
+
+  rounds.forEach((matches, ri) => {
+    const roundEl = document.createElement('div');
+    roundEl.className = 'bracket-round';
+    const rName = roundNames[Math.max(0, roundNames.length - rounds.length + ri)] || `${ri+1}라운드`;
+    roundEl.innerHTML = `<div class="bracket-round-title">${rName}</div>`;
+
+    matches.forEach(([p1, p2]) => {
+      const matchEl = document.createElement('div');
+      matchEl.className = 'bracket-match';
+      const p1html = p1
+        ? `<div class="bracket-player"><div class="bracket-player-dot" style="background:${p1.color||'var(--dim)'}"></div>${p1.name}</div>`
+        : `<div class="bracket-player" style="color:var(--dim)">— BYE —</div>`;
+      const p2html = p2
+        ? `<div class="bracket-player"><div class="bracket-player-dot" style="background:${p2.color||'var(--dim)'}"></div>${p2.name}</div>`
+        : `<div class="bracket-player" style="color:var(--dim)">— BYE —</div>`;
+      matchEl.innerHTML = p1html + p2html;
+      roundEl.appendChild(matchEl);
+    });
+
+    el.appendChild(roundEl);
+  });
+}
+
+// 시계
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('bk-clock').textContent =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// 상태 폴링
+let lastStr = '';
+function startPolling() {
+  setInterval(() => {
+    const cur = localStorage.getItem('sgp_state');
+    if (cur !== lastStr) { lastStr = cur; render(); }
+  }, 500);
+}
+
+// localStorage 명령 수신 (현재 도전자 인덱스 변경 등)
+window.addEventListener('storage', e => {
+  if (e.key === 'sgp_current_idx' || e.key === 'sgp_state') render();
+});
+
+render();
+startClock();
+startPolling();
+</script>
+</body>
+</html>
