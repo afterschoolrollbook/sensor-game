@@ -246,6 +246,15 @@ body::after {
 .winner-name-big { font-family: var(--font-d); font-size: clamp(48px, 12vw, 130px); letter-spacing: 4px; color: var(--text); }
 .winner-time-big { font-family: var(--font-m); font-size: clamp(24px, 5vw, 56px); color: var(--accent); margin-top: 8px; }
 
+/* ── 행사 메타 정보 ── */
+.event-meta-tag {
+  font-family: var(--font-m);
+  font-size: 12px; letter-spacing: 2px;
+  color: var(--dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.event-meta-tag span { color: var(--text); font-size: 13px; }
+
 /* ── 드래그 블록 (비활성화된 border) ── */
 .dragging { opacity: .5; border: 2px dashed var(--primary) !important; }
 .drag-over { border: 2px solid var(--green) !important; }
@@ -272,8 +281,14 @@ body::after {
   <!-- 헤더 -->
   <div class="blk-header" id="blk-header">
     <div class="blk-logo" id="blk-logo" style="display:none;"><img id="logo-img" src=""></div>
-    <div class="blk-event-name" id="blk-event-name">게임 행사</div>
-    <div class="blk-live">● LIVE</div>
+    <div style="flex:1; min-width:0;">
+      <div class="blk-event-name" id="blk-event-name">게임 행사</div>
+      <div id="blk-event-meta" style="display:flex; gap:24px; flex-wrap:wrap; margin-top:6px;"></div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+      <div class="blk-live">● LIVE</div>
+      <div id="blk-slogan" style="font-family:var(--font-m); font-size:13px; letter-spacing:2px; color:var(--dim); text-align:right;"></div>
+    </div>
   </div>
 
   <!-- 메인 -->
@@ -324,32 +339,73 @@ function startPolling() {
 function refreshDisplay() {
   const state = App.getState();
   const cfg   = getDisplayConfig();
+  const ev    = state.event || {};
 
-  // 헤더
-  document.getElementById('blk-event-name').textContent = state.event.name || '게임 행사';
-  if (state.event.logo) {
-    document.getElementById('logo-img').src = state.event.logo;
+  // 헤더 표시 여부
+  document.getElementById('blk-header').style.display = cfg.showHeader !== false ? 'flex' : 'none';
+
+  // 행사명
+  document.getElementById('blk-event-name').textContent =
+    ev.showEventName !== false ? (ev.name || '게임 행사') : '';
+
+  // 로고
+  if (ev.logo) {
+    document.getElementById('logo-img').src = ev.logo;
     document.getElementById('blk-logo').style.display = 'block';
   }
-  document.getElementById('blk-header').style.display = cfg.showHeader ? 'flex' : 'none';
+
+  // 부제목 → 행사명 아래 작게 표시
+  const subtitleEl = document.getElementById('blk-subtitle') ||
+    (() => {
+      const el = document.createElement('div');
+      el.id = 'blk-subtitle';
+      el.style.cssText = 'font-family:var(--font-m);font-size:14px;letter-spacing:3px;color:var(--dim);margin-top:2px;';
+      document.getElementById('blk-event-name').insertAdjacentElement('afterend', el);
+      return el;
+    })();
+  subtitleEl.textContent = ev.showSubtitle && ev.subtitle ? ev.subtitle : '';
+
+  // 메타 정보 (일시, 장소, 후원, 종목명)
+  const metaEl = document.getElementById('blk-event-meta');
+  const metaItems = [];
+  if (ev.showGameName && ev.gameName) metaItems.push({ icon:'🏆', val: ev.gameName });
+  if (ev.showDate    && ev.date)      metaItems.push({ icon:'📅', val: ev.date });
+  if (ev.showPlace   && ev.place)     metaItems.push({ icon:'📍', val: ev.place });
+  if (ev.showSponsor && ev.sponsor)   metaItems.push({ icon:'🤝', val: ev.sponsor });
+  metaEl.innerHTML = metaItems.map(m =>
+    `<div class="event-meta-tag">${m.icon} <span>${m.val}</span></div>`
+  ).join('');
+  metaEl.style.display = metaItems.length ? 'flex' : 'none';
+
+  // 슬로건 (1, 2)
+  const sloganEl = document.getElementById('blk-slogan');
+  const slogans = [];
+  if (ev.showSlogan1 && ev.slogan1) slogans.push(ev.slogan1);
+  if (ev.showSlogan2 && ev.slogan2) slogans.push(ev.slogan2);
+  sloganEl.innerHTML = slogans.map(s => `<div>${s}</div>`).join('');
+  sloganEl.style.display = slogans.length ? 'block' : 'none';
 
   // 현재 도전자
-  const p = state.participants[0];
+  const p = state.participants?.[0];
   if (p) document.getElementById('disp-current-name').textContent = p.name;
 
   // 순위판
-  document.getElementById('blk-rank').style.display = cfg.showRank ? 'flex' : 'none';
+  document.getElementById('blk-rank').style.display = cfg.showRank !== false ? 'flex' : 'none';
   renderRank();
 
   // 랩 정보
-  document.getElementById('disp-lap-info').style.display = cfg.showLap ? 'block' : 'none';
+  document.getElementById('disp-lap-info').style.display = cfg.showLap !== false ? 'block' : 'none';
 
   // 게임 라벨
-  document.getElementById('disp-game-label').textContent = '// ' + (state.gameType || 'GAME').toUpperCase();
+  const gameName = ev.showGameName && ev.gameName ? ev.gameName : (state.gameType || 'GAME').toUpperCase();
+  document.getElementById('disp-game-label').textContent = '// ' + gameName;
 
-  // 테마 컬러 적용
-  if (state.event.primaryColor) document.documentElement.style.setProperty('--primary', state.event.primaryColor);
-  if (state.event.accentColor)  document.documentElement.style.setProperty('--accent',  state.event.accentColor);
+  // 푸터
+  document.getElementById('blk-footer').style.display = cfg.showFooter !== false ? 'flex' : 'none';
+
+  // 테마 컬러
+  if (ev.primaryColor) document.documentElement.style.setProperty('--primary', ev.primaryColor);
+  if (ev.accentColor)  document.documentElement.style.setProperty('--accent',  ev.accentColor);
 }
 
 function renderRank() {

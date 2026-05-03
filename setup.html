@@ -334,8 +334,12 @@ input:checked+.slider::before { transform:translateX(18px); background:white; }
         <input class="form-input" id="event-sponsor" placeholder="예) 000시청, 000체육회">
       </div>
       <div class="info-field">
-        <div class="info-field-label">슬로건</div>
-        <input class="form-input" id="event-slogan" placeholder="예) 함께하는 스포츠, 하나되는 우리">
+        <div class="info-field-label">슬로건1</div>
+        <input class="form-input" id="event-slogan1" placeholder="예) 함께하는 스포츠, 하나되는 우리">
+      </div>
+      <div class="info-field">
+        <div class="info-field-label">슬로건2</div>
+        <input class="form-input" id="event-slogan2" placeholder="예) 도전! 열정! 승리!">
       </div>
     </div>
 
@@ -360,8 +364,11 @@ input:checked+.slider::before { transform:translateX(18px); background:white; }
       <div class="display-toggle" id="chk-sponsor" onclick="toggleDisplay('sponsor')">
         <div class="dt-box"></div>후원
       </div>
-      <div class="display-toggle" id="chk-slogan" onclick="toggleDisplay('slogan')">
-        <div class="dt-box"></div>슬로건
+      <div class="display-toggle" id="chk-slogan1" onclick="toggleDisplay('slogan1')">
+        <div class="dt-box"></div>슬로건1
+      </div>
+      <div class="display-toggle" id="chk-slogan2" onclick="toggleDisplay('slogan2')">
+        <div class="dt-box"></div>슬로건2
       </div>
     </div>
 
@@ -761,7 +768,7 @@ const FORMAT_LABELS={
 };
 
 let currentStep=1, showEventName=true, showSubtitle=false, showGameName=false;
-let showDate=false, showPlace=false, showSponsor=false, showSlogan=false;
+let showDate=false, showPlace=false, showSponsor=false, showSlogan1=false, showSlogan2=false;
 let selectedGame='timelap', selectedGameType='sensor', laps=1, vsMode='individual';
 let selectedFormat='individual_record', gcFilter='all', sportFilter='all';
 
@@ -788,15 +795,15 @@ function validateStep(step){
 
 /* ── STEP 1 ── */
 function toggleDisplay(key){
-  const map={eventname:'showEventName',subtitle:'showSubtitle',gamename:'showGameName',date:'showDate',place:'showPlace',sponsor:'showSponsor',slogan:'showSlogan'};
   if(key==='eventname')showEventName=!showEventName;
   else if(key==='subtitle')showSubtitle=!showSubtitle;
   else if(key==='gamename')showGameName=!showGameName;
   else if(key==='date')showDate=!showDate;
   else if(key==='place')showPlace=!showPlace;
   else if(key==='sponsor')showSponsor=!showSponsor;
-  else if(key==='slogan')showSlogan=!showSlogan;
-  const val={eventname:showEventName,subtitle:showSubtitle,gamename:showGameName,date:showDate,place:showPlace,sponsor:showSponsor,slogan:showSlogan}[key];
+  else if(key==='slogan1')showSlogan1=!showSlogan1;
+  else if(key==='slogan2')showSlogan2=!showSlogan2;
+  const val={eventname:showEventName,subtitle:showSubtitle,gamename:showGameName,date:showDate,place:showPlace,sponsor:showSponsor,slogan1:showSlogan1,slogan2:showSlogan2}[key];
   document.getElementById('chk-'+key).classList.toggle('checked',val);
 }
 
@@ -1319,8 +1326,9 @@ function saveAndStart(e){
       date:     document.getElementById('event-date').value.trim(),
       place:    document.getElementById('event-place').value.trim(),
       sponsor:  document.getElementById('event-sponsor').value.trim(),
-      slogan:   document.getElementById('event-slogan').value.trim(),
-      showEventName, showSubtitle, showGameName, showDate, showPlace, showSponsor, showSlogan,
+      slogan1:  document.getElementById('event-slogan1').value.trim(),
+      slogan2:  document.getElementById('event-slogan2').value.trim(),
+      showEventName, showSubtitle, showGameName, showDate, showPlace, showSponsor, showSlogan1, showSlogan2,
     },
     settings:{laps,format:selectedFormat},
   });
