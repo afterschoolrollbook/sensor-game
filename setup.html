@@ -51,10 +51,38 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* SPLIT */
 #split{display:flex;height:100vh;padding-top:var(--nav-h);overflow:hidden;}
 
+/* RESIZER */
+#resizer{
+  width:5px;flex-shrink:0;cursor:col-resize;
+  background:var(--border);position:relative;
+  transition:background .15s;z-index:10;
+}
+#resizer:hover,#resizer.dragging{background:var(--red)}
+#resizer::after{
+  content:'⋮';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  color:var(--text3);font-size:14px;letter-spacing:-2px;
+  pointer-events:none;
+}
+#resizer:hover::after,#resizer.dragging::after{color:var(--red)}
+#resizer2{
+  width:5px;flex-shrink:0;cursor:col-resize;
+  background:var(--border);position:relative;
+  transition:background .15s;z-index:10;
+}
+#resizer2:hover,#resizer2.dragging{background:var(--accent)}
+#resizer2::after{
+  content:'⋮';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  color:var(--text3);font-size:14px;letter-spacing:-2px;
+  pointer-events:none;
+}
+#resizer2:hover::after,#resizer2.dragging::after{color:var(--accent)}
+
 /* LEFT PANEL */
 #left{
-  width:500px;flex-shrink:0;
-  background:var(--bg2);
+  flex:0 0 500px;width:500px;min-width:220px;
+  background:var(--bg2);border-right:1px solid var(--border);
   display:flex;flex-direction:column;overflow:hidden;
 }
 #sw{
@@ -193,38 +221,44 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 }
 .bstart:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,57,70,.3)}
 
-/* RIGHT PANEL */
-#right{
-  flex:1;display:flex;flex-direction:row;
-  background:var(--bg);overflow:hidden;
-}
-#pvhdr{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.pvtitle{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
-.pvbadge{font-size:9px;letter-spacing:2px;color:var(--red);border:1px solid var(--red);padding:3px 8px;border-radius:3px;animation:lp 2s infinite}
-@keyframes lp{0%,100%{opacity:1}50%{opacity:.35}}
-.pvacts{display:flex;gap:7px}
-.pvbtn{padding:5px 11px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;transition:all .2s}
-.pvbtn:hover{border-color:var(--accent);color:var(--accent)}
-.pvbtn.p{background:var(--red);border-color:var(--red);color:#fff}
-.pvbtn.p:hover{background:#c62835}
+/* RIGHT PANEL — 좌: 미리보기 고정 / 우: 설정 스크롤 */
 
+/* 가운데: 미리보기 */
+/* ⚠️ pvcw: #split 직속 3번째 컬럼 — flex 구조 유지 */
 #pvcw{
-  width:480px;flex-shrink:0;
+  flex:0 0 480px;width:480px;min-width:180px;
   display:flex;flex-direction:column;align-items:stretch;
-  padding:0;overflow-y:auto;
+  padding:8px;background:var(--bg);
+  overflow-y:auto;
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 #pvcw::-webkit-scrollbar{width:3px}
 #pvcw::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+/* 오른쪽: 설정 스크롤 */
+/* ⚠️ dspanel: #split 직속 5번째 컬럼 — flex:1로 나머지 공간 차지 */
+#dspanel{
+  flex:1;overflow-y:auto;padding:0 0 20px;
+  background:var(--bg2);
+  border-left:1px solid var(--border);
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+#dspanel::-webkit-scrollbar{width:3px}
+#dspanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pvtitle{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase}
+.pvbadge{font-size:9px;letter-spacing:2px;color:var(--red);border:1px solid var(--red);padding:3px 8px;border-radius:3px;animation:lp 2s infinite}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.35}}
+.pvacts{display:flex;gap:7px}
+.pvbtn{padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;transition:all .2s}
+.pvbtn:hover{border-color:var(--accent);color:var(--accent)}
+.pvbtn.p{background:var(--red);border-color:var(--red);color:#fff}
+.pvbtn.p:hover{background:#c62835}
+
 #pvc{
-  width:100%;aspect-ratio:16/9;flex-shrink:0;
-  background:#040408;border-radius:12px;
+  width:100%;aspect-ratio:16/9;
+  background:#040408;border-radius:10px;
   display:grid;grid-template-rows:auto 1fr auto auto;
   padding:14px;gap:9px;position:relative;overflow:hidden;
-  box-shadow:0 0 80px rgba(0,0,0,.7),0 0 0 1px var(--border);
+  box-shadow:0 0 50px rgba(0,0,0,.7),0 0 0 1px var(--border);
 }
 #pvc::after{
   content:'';position:absolute;inset:0;
@@ -240,21 +274,21 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* PV HEADER */
 #pvh{
   display:flex;align-items:center;gap:14px;
-  border-bottom:2px solid var(--red);padding-bottom:12px;
+  border-bottom:2px solid var(--red);padding-bottom:8px;
   transition:opacity .3s;position:relative;z-index:2;
 }
 #pv-ename{
   font-family:'Bebas Neue',cursive;
-  font-size:clamp(16px,3.8vw,46px);
+  font-size:clamp(13px,2.5vw,28px);
   letter-spacing:3px;line-height:1;flex:1;
   text-shadow:0 0 30px rgba(230,57,70,.25);
 }
-#pv-sub{font-size:clamp(8px,1vw,13px);color:var(--text2);margin-top:3px}
+#pv-sub{font-size:clamp(7px,.8vw,11px);color:var(--text2);margin-top:3px}
 #pv-live{
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(8px,1vw,11px);letter-spacing:3px;
+  font-size:clamp(7px,.8vw,10px);letter-spacing:2px;
   color:var(--red);border:1px solid var(--red);
-  padding:3px 9px;border-radius:3px;animation:lp 2s infinite;flex-shrink:0;
+  padding:2px 7px;border-radius:3px;animation:lp 2s infinite;flex-shrink:0;
 }
 
 /* PV MAIN */
@@ -269,22 +303,22 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   align-items:center;justify-content:center;
   background:rgba(255,255,255,.018);
   border:1px solid rgba(76,201,240,.12);border-radius:9px;
-  padding:18px;position:relative;overflow:hidden;
+  padding:12px;position:relative;overflow:hidden;
 }
 #pvt::before{
   content:'';position:absolute;inset:0;
   background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.04) 0%,transparent 70%);
 }
-.tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.8vw,10px);letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase}
-#pv-chal{font-family:'Bebas Neue',cursive;font-size:clamp(13px,2.5vw,32px);letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1}
+.tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.7vw,9px);letter-spacing:3px;color:var(--text3);margin-bottom:3px;text-transform:uppercase}
+#pv-chal{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);letter-spacing:2px;color:var(--text);margin-bottom:5px;min-height:.8em;position:relative;z-index:1}
 #pv-time{
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(26px,8vw,100px);
+  font-size:clamp(18px,5vw,64px);
   line-height:1;letter-spacing:-1px;
   color:var(--accent);text-shadow:0 0 40px rgba(76,201,240,.4);
   position:relative;z-index:1;
 }
-#pv-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,10px);color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1}
+#pv-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.6vw,9px);color:var(--text3);margin-top:3px;letter-spacing:2px;position:relative;z-index:1}
 
 /* RANKS */
 #pvr{
@@ -294,35 +328,35 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .rrow{
   display:flex;align-items:center;gap:7px;
   background:rgba(255,255,255,.018);border-radius:6px;
-  padding:5px 8px;border:1px solid rgba(255,255,255,.035);transition:all .3s;
+  padding:4px 6px;border:1px solid rgba(255,255,255,.035);transition:all .3s;
 }
 .rrow.r1{border-color:rgba(255,214,10,.2);background:rgba(255,214,10,.04)}
-.rno{font-family:'Bebas Neue',cursive;font-size:clamp(11px,1.8vw,22px);color:var(--text3);width:clamp(14px,1.8vw,22px);text-align:center;flex-shrink:0}
+.rno{font-family:'Bebas Neue',cursive;font-size:clamp(10px,1.4vw,17px);color:var(--text3);width:clamp(12px,1.4vw,17px);text-align:center;flex-shrink:0}
 .rrow.r1 .rno{color:var(--yellow)}
-.rdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rnm{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:clamp(10px,1.4vw,18px);flex:1;letter-spacing:.5px}
-.rtm{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,1.1vw,13px);color:var(--accent)}
+.rdot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.rnm{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:clamp(9px,1.1vw,14px);flex:1;letter-spacing:.5px}
+.rtm{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.9vw,11px);color:var(--accent)}
 .rrow.empty .rnm{color:var(--text3);font-weight:400}
 .rrow.empty .rtm{color:var(--text3)}
 
 /* PV FOOTER */
 #pvf{
   display:flex;align-items:center;justify-content:space-between;
-  border-top:1px solid var(--border);padding-top:8px;
+  border-top:1px solid var(--border);padding-top:5px;
   transition:opacity .3s;position:relative;z-index:2;
 }
-#pv-gname{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.9vw,11px);letter-spacing:3px;color:var(--text3)}
-#pv-clk{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,1.1vw,13px);color:var(--text2)}
+#pv-gname{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.75vw,10px);letter-spacing:2px;color:var(--text3)}
+#pv-clk{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.9vw,11px);color:var(--text2)}
 
 /* TICKER */
 #pvtk{
   overflow:hidden;border-top:1px solid rgba(255,255,255,.035);
-  padding-top:5px;transition:opacity .3s;position:relative;z-index:2;
+  padding-top:3px;transition:opacity .3s;position:relative;z-index:2;
 }
 #pvtki{
   display:flex;gap:50px;white-space:nowrap;
   font-family:'Share Tech Mono',monospace;
-  font-size:clamp(8px,.9vw,11px);letter-spacing:2px;color:var(--text3);
+  font-size:clamp(6px,.75vw,10px);letter-spacing:2px;color:var(--text3);
   animation:ticker 22s linear infinite;
 }
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -330,120 +364,79 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv-hidden{opacity:.15;transition:opacity .3s}
 
 /* PV CONTROLS */
+.dssec{padding:11px 14px;border-bottom:1px solid var(--border)}
+.dssec-hd{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.dssec-icon{font-size:13px}
+.dssec-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
+/* chips shared style - used for both dtchips and blkchips */
+.ds-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dsc{
+  display:flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:20px;cursor:pointer;user-select:none;
+  border:1px solid var(--border);background:var(--card);
+  font-size:11px;font-weight:500;color:var(--text2);transition:all .2s;
+}
+.dsc.on{border-color:var(--accent);background:rgba(76,201,240,.08);color:var(--text)}
+.dsc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s}
+.dsc.on .dsc-dot{background:var(--accent)}
+/* font picker */
+.ds-fonts{display:flex;flex-wrap:wrap;gap:6px}
+.ds-font{
+  padding:5px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--border);background:var(--card);
+  font-size:12px;color:var(--text2);transition:all .2s;
+}
+.ds-font.on{border-color:var(--yellow);background:rgba(255,214,10,.08);color:var(--yellow)}
+/* rank row */
+.ds-rankrow{display:flex;align-items:center;gap:10px}
+.ds-rcbtn{width:28px;height:28px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ds-rcbtn:hover{border-color:var(--red);color:var(--red)}
+.ds-rcval{font-family:'Share Tech Mono',monospace;font-size:22px;min-width:26px;text-align:center}
+/* control grid */
+.ds-ctrlgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ds-cbtn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);
+}
+.ds-cbtn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.ds-cbtn.ds-danger:hover{border-color:var(--red)}
+.ds-cicon{font-size:18px}
+.ds-clbl{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text2)}
+/* toggle */
+.ds-toggle{position:relative;display:inline-block;width:40px;height:22px}
+.ds-toggle input{opacity:0;width:0;height:0}
+.ds-slider{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s}
+.ds-slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s}
+.ds-toggle input:checked+.ds-slider{background:var(--green);border-color:var(--green)}
+.ds-toggle input:checked+.ds-slider::before{transform:translateX(18px);background:white}
+
 
 /* 화면 구분 레이블 */
-.pv-screen-label{
-  font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;
-  color:var(--text3);text-transform:uppercase;
-  padding:6px 14px;background:var(--bg2);
-  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:8px;flex-shrink:0;
-}
-.pv-screen-label .pv-snum{
-  font-size:10px;font-weight:700;color:var(--red);
-  border:1px solid var(--red);padding:1px 6px;border-radius:3px;
-}
-/* 2번 화면 - 현재경기 VS */
-#pv2{
-  aspect-ratio:16/9;flex-shrink:0;
-  background:#040408;border-radius:12px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:12px;position:relative;overflow:hidden;
-  box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);
-  margin:8px 0;
-}
-#pv2::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
-  pointer-events:none;border-radius:12px;z-index:1;
-}
-.pv2-label{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.7vw,9px);letter-spacing:3px;color:var(--text3);z-index:2;}
-.pv2-vs-row{display:flex;align-items:center;gap:16px;z-index:2;width:90%;}
-.pv2-player{flex:1;text-align:center;}
-.pv2-name{font-family:'Bebas Neue',cursive;font-size:clamp(14px,2.5vw,32px);letter-spacing:2px;line-height:1.1;}
-.pv2-sub{font-size:clamp(7px,.7vw,10px);color:var(--text3);margin-top:3px;font-family:'Share Tech Mono',monospace;}
-.pv2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(18px,3vw,40px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
-.pv2-round{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,9px);color:var(--text3);letter-spacing:2px;z-index:2;}
-/* 3번 화면 - 대진표 */
-#pv3{
-  aspect-ratio:16/9;flex-shrink:0;
-  background:#040408;border-radius:12px;
-  display:flex;flex-direction:column;
-  padding:12px;gap:8px;position:relative;overflow:hidden;
-  box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);
-  margin:8px 0 14px;
-}
-#pv3::after{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
-  pointer-events:none;border-radius:12px;z-index:1;
-}
-#pv3-inner{display:flex;gap:8px;flex:1;overflow:hidden;z-index:2;}
-.pv3-col{display:flex;flex-direction:column;gap:5px;min-width:80px;}
-.pv3-col-title{font-family:'Share Tech Mono',monospace;font-size:clamp(5px,.6vw,8px);letter-spacing:2px;color:var(--text3);margin-bottom:3px;}
+.pv-screen-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);padding:5px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-shrink:0;}
+.pv-snum{font-size:9px;font-weight:700;color:var(--red);border:1px solid var(--red);padding:1px 5px;border-radius:3px;}
+/* 2번 화면 VS */
+#pv2{width:100%;aspect-ratio:16/9;flex-shrink:0;background:#040408;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);margin:8px 0;}
+#pv2::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:1;}
+.pv2-lbl{font-family:'Share Tech Mono',monospace;font-size:clamp(7px,.7vw,9px);letter-spacing:3px;color:var(--text3);z-index:2;}
+.pv2-row{display:flex;align-items:center;gap:14px;z-index:2;width:88%;}
+.pv2-pl{flex:1;text-align:center;}
+.pv2-nm{font-family:'Bebas Neue',cursive;font-size:clamp(14px,2.2vw,30px);letter-spacing:2px;}
+.pv2-sub{font-size:clamp(6px,.6vw,9px);color:var(--text3);margin-top:2px;font-family:'Share Tech Mono',monospace;}
+.pv2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(16px,2.5vw,34px);color:var(--red);letter-spacing:3px;flex-shrink:0;}
+.pv2-info{font-family:'Share Tech Mono',monospace;font-size:clamp(6px,.6vw,9px);color:var(--text3);letter-spacing:2px;z-index:2;}
+/* 3번 화면 대진표 */
+#pv3{width:100%;aspect-ratio:16/9;flex-shrink:0;background:#040408;border-radius:10px;display:flex;padding:10px;gap:8px;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);margin:8px 0 4px;}
+#pv3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:1;}
+#pv3-inner{display:flex;gap:8px;z-index:2;overflow:hidden;}
+.pv3-col{display:flex;flex-direction:column;gap:4px;min-width:70px;}
+.pv3-ct{font-family:'Share Tech Mono',monospace;font-size:clamp(5px,.55vw,8px);letter-spacing:2px;color:var(--text3);margin-bottom:3px;}
 .pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
-.pv3-player{padding:3px 6px;font-size:clamp(7px,.8vw,11px);font-weight:700;border-bottom:1px solid var(--border);}
-.pv3-player:last-child{border-bottom:none;}
-/* 타이머 전체화면 (순위 OFF시) */
-#pvt.full{flex:none;}
-#pvm.rank-off #pvt{flex:1;}
+.pv3-pl{padding:3px 6px;font-size:clamp(7px,.75vw,10px);font-weight:700;border-bottom:1px solid var(--border);}
+.pv3-pl:last-child{border-bottom:none;}
+/* 순위 OFF시 타이머 전체 확장 */
 #pvm.rank-off #pvr{display:none;}
-
-/* resizer */
-#resizer,#resizer2{width:5px;flex-shrink:0;cursor:col-resize;background:var(--border2);position:relative;z-index:10;transition:background .15s;}
-#resizer:hover,#resizer.drag{background:var(--red)}
-#resizer2:hover,#resizer2.drag{background:var(--accent)}
-/* dspanel */
-#pvc-bottom{background:var(--bg2);flex-shrink:0;}
-
-/* 블록 드래그 리스트 */
-.blk-list{display:flex;flex-direction:column;gap:6px;}
-.blk-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:grab;transition:all .2s;user-select:none;}
-.blk-item:active{cursor:grabbing;}
-.blk-item.dragging{opacity:.4;border-style:dashed;border-color:var(--red);}
-.blk-item.dragover{border-color:var(--green);background:rgba(6,214,160,.06);}
-.blk-item.disabled{opacity:.4;}
-.blk-handle{color:var(--text3);font-size:16px;cursor:grab;flex-shrink:0;}
-.blk-icon{font-size:18px;flex-shrink:0;}
-.blk-info{flex:1;}
-.blk-name{font-size:13px;font-weight:700;}
-.blk-desc{font-size:10px;color:var(--text3);margin-top:2px;}
-.blk-tog{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;}
-.blk-tog input{opacity:0;width:0;height:0;}
-.blk-sld{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s;}
-.blk-sld::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s;}
-.blk-tog input:checked+.blk-sld{background:var(--green);border-color:var(--green);}
-.blk-tog input:checked+.blk-sld::before{transform:translateX(18px);background:white;}
-
-#dspanel{flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--bg2);min-width:180px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-#dspanel::-webkit-scrollbar{width:3px}
-#dspanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.dsp-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:5;flex-shrink:0;}
-.dssec{padding:10px 14px;border-bottom:1px solid var(--border);}
-.dssec-hd{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-.dssec-ttl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;}
-.dsc{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;cursor:pointer;user-select:none;border:1px solid var(--border);background:var(--card);font-size:11px;color:var(--text2);transition:all .2s;}
-.dsc.on{border-color:var(--accent);background:rgba(76,201,240,.08);color:var(--text);}
-.dsc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s;}
-.dsc.on .dsc-dot{background:var(--accent);}
-.ds-chips,.ds-fonts{display:flex;flex-wrap:wrap;gap:6px;}
-.ds-font{padding:5px 10px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--card);font-size:12px;color:var(--text2);transition:all .2s;}
-.ds-font.on{border-color:var(--yellow);background:rgba(255,214,10,.08);color:var(--yellow);}
-.ds-rcrow{display:flex;align-items:center;gap:10px;}
-.ds-rcbtn{width:28px;height:28px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.ds-rcbtn:hover{border-color:var(--red);color:var(--red);}
-.ds-rcval{font-family:'Share Tech Mono',monospace;font-size:22px;min-width:26px;text-align:center;}
-.ds-cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.ds-cbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);font-size:9px;font-weight:700;letter-spacing:.5px;}
-.ds-cbtn:hover{border-color:var(--accent);}
-.ds-cbtn.dang:hover{border-color:var(--red);}
-.ds-cbtn span:first-child{font-size:17px;}
-.ds-tog{position:relative;display:inline-block;width:40px;height:22px;}
-.ds-tog input{opacity:0;width:0;height:0;}
-.ds-sld{position:absolute;inset:0;background:var(--card2);border:1px solid var(--border);border-radius:22px;cursor:pointer;transition:.3s;}
-.ds-sld::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text3);border-radius:50%;transition:.3s;}
-.ds-tog input:checked+.ds-sld{background:var(--green);border-color:var(--green);}
-.ds-tog input:checked+.ds-sld::before{transform:translateX(18px);background:white;}
+#pvm.rank-off #pvt{flex:1;}
 
 /* TOAST */
 #tc{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
@@ -485,6 +478,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   </div>
 </nav>
 
+<!-- ⚠️ 3단 레이아웃: left | resizer | right(pvcw + resizer2 + dspanel) — 구조 변경 금지 -->
 <div id="split">
 
   <!-- ══ LEFT PANEL ══ -->
@@ -556,125 +550,123 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
   </div>
 
-  <!-- 3단: left | resizer | pvcw | resizer2 | dspanel -->
+  <!-- ⚠️ resizer: left ↔ pvcw 너비 드래그 조절 — 삭제 금지 -->
   <div id="resizer"></div>
+  <!-- ══ 가운데: 미리보기 ══ -->
   <div id="pvcw">
-    <!-- ① 1번 화면: 전광판 -->
-    <div class="pv-screen-label"><span class="pv-snum">01</span> 전광판</div>
-    <div id="pvc">
-      <div id="pvh">
-        <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
-        <div id="pv-live">● LIVE</div>
-      </div>
-      <div id="pvm">
-        <div id="pvt">
-          <div class="tvlbl">CHALLENGER</div>
-          <div id="pv-chal">—</div>
-          <div id="pv-time">00:00.000</div>
-          <div id="pv-lap">LAP 1 / 1</div>
+      <!-- ① 1번 전광판 -->
+      <div class="pv-screen-label"><span class="pv-snum">01</span> 전광판</div>
+      <div id="pvc">
+        <div id="pvh">
+          <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
+          <div id="pv-live">● LIVE</div>
         </div>
-        <div id="pvr"></div>
-      </div>
-      <div id="pvf">
-        <div id="pv-gname">SGP PLATFORM</div>
-        <div id="pv-clk">--:--:--</div>
-      </div>
-      <div id="pvtk"><div id="pvtki"></div></div>
-    </div>
-    <!-- ② 2번 화면: 현재경기 VS -->
-    <div class="pv-screen-label"><span class="pv-snum">02</span> 현재경기</div>
-    <div id="pv2">
-      <div class="pv2-label">// 현재 경기</div>
-      <div class="pv2-vs-row">
-        <div class="pv2-player">
-          <div class="pv2-name" id="pv2-p1">—</div>
-          <div class="pv2-sub">선수 1</div>
+        <div id="pvm">
+          <div id="pvt">
+            <div class="tvlbl">CHALLENGER</div>
+            <div id="pv-chal">—</div>
+            <div id="pv-time">00:00.000</div>
+            <div id="pv-lap">LAP 1 / 1</div>
+          </div>
+          <div id="pvr"></div>
         </div>
-        <div class="pv2-vs">VS</div>
-        <div class="pv2-player">
-          <div class="pv2-name" id="pv2-p2">—</div>
-          <div class="pv2-sub">선수 2</div>
+        <div id="pvf">
+          <div id="pv-gname">SGP PLATFORM</div>
+          <div id="pv-clk">--:--:--</div>
+        </div>
+        <div id="pvtk"><div id="pvtki"></div></div>
+      </div>
+      <!-- ② 2번 현재경기 -->
+      <div class="pv-screen-label"><span class="pv-snum">02</span> 현재경기</div>
+      <div id="pv2">
+        <div class="pv2-lbl">// 현재 경기</div>
+        <div class="pv2-row">
+          <div class="pv2-pl"><div class="pv2-nm" id="pv2-p1">—</div><div class="pv2-sub">선수 1</div></div>
+          <div class="pv2-vs">VS</div>
+          <div class="pv2-pl"><div class="pv2-nm" id="pv2-p2">—</div><div class="pv2-sub">선수 2</div></div>
+        </div>
+        <div class="pv2-info" id="pv2-info">참가자를 등록해주세요</div>
+      </div>
+      <!-- ③ 3번 대진표 -->
+      <div class="pv-screen-label"><span class="pv-snum">03</span> 대진표</div>
+      <div id="pv3"><div id="pv3-inner"></div></div>
+  </div><!-- /pvcw -->
+  <!-- ⚠️ resizer2: pvcw ↔ dspanel 너비 드래그 조절 — 삭제 금지 -->
+  <div id="resizer2"></div>
+  <!-- ══ 전광판 설정 통합 패널 ══ -->
+  <div id="dspanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;background:var(--bg2);z-index:5">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="pvtitle">전광판 설정</div>
+          <div class="pvbadge">● LIVE</div>
+        </div>
+        <div class="pvacts">
+          <button class="pvbtn" onclick="resetPv()">↺ 초기화</button>
+          <button class="pvbtn p" onclick="openDisp()">⬜ HDMI 열기</button>
         </div>
       </div>
-      <div class="pv2-round" id="pv2-round">경기 정보</div>
-    </div>
-    <!-- ③ 3번 화면: 대진표 -->
-    <div class="pv-screen-label"><span class="pv-snum">03</span> 대진표</div>
-    <div id="pv3">
-      <div id="pv3-inner"></div>
-    </div>
-    <!-- 미리보기 아래: 실시간 조작 -->
-    <div id="pvc-bottom">
-      <div class="dssec" style="border-top:1px solid var(--border)">
-        <div class="dssec-hd"><span>🎮</span><span class="dssec-ttl">실시간 조작</span></div>
-        <div class="ds-cgrid">
-          <button class="ds-cbtn" onclick="sendCmd('countdown')"><span>3️⃣</span><span>카운트다운</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span>▶️</span><span>타이머 시작</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span>⏹️</span><span>타이머 정지</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>초기화</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
-          <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">📦</span><span class="dssec-title">블록 표시</span></div>
+        <div class="ds-chips" id="blkchips"></div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🔤</span><span class="dssec-title">타이틀 글씨체</span></div>
+        <div class="ds-fonts" id="fontpicker"></div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🏆</span><span class="dssec-title">순위 표시 수</span></div>
+        <div class="ds-rankrow">
+          <button class="ds-rcbtn" onclick="chRank(-1)">−</button>
+          <span class="ds-rcval" id="ds-rankval">6</span>
+          <button class="ds-rcbtn" onclick="chRank(1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">명까지 표시</span>
+        </div>
+      </div>
+
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">🎮</span><span class="dssec-title">실시간 조작</span></div>
+        <div class="ds-ctrlgrid">
+          <button class="ds-cbtn" onclick="sendCmd('countdown')"><span class="ds-cicon">3️⃣</span><span class="ds-clbl">카운트다운</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span class="ds-cicon">▶️</span><span class="ds-clbl">타이머 시작</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span class="ds-cicon">⏹️</span><span class="ds-clbl">타이머 정지</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span class="ds-cicon">🔄</span><span class="ds-clbl">타이머 초기화</span></button>
+          <button class="ds-cbtn" onclick="sendCmd('winner')"><span class="ds-cicon">🏆</span><span class="ds-clbl">우승자 표시</span></button>
+          <button class="ds-cbtn ds-danger" onclick="sendCmd('clear_rank')"><span class="ds-cicon">🗑️</span><span class="ds-clbl">순위 초기화</span></button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;">
-          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_1')"><span>📺</span><span style="font-size:9px">1번 전광판</span></button>
-          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_2')"><span>⚔️</span><span style="font-size:9px">2번 현재경기</span></button>
-          <button class="ds-cbtn" style="flex-direction:row;gap:6px;padding:9px;" onclick="sendCmd('screen_3')"><span>🏆</span><span style="font-size:9px">3번 대진표</span></button>
+          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_1')"><span class="ds-cicon">📺</span><span class="ds-clbl">1번 전광판</span></button>
+          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_2')"><span class="ds-cicon">⚔️</span><span class="ds-clbl">2번 현재경기</span></button>
+          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_3')"><span class="ds-cicon">🏆</span><span class="ds-clbl">3번 대진표</span></button>
         </div>
       </div>
-    </div>
-  </div>
-  <div id="resizer2"></div>
-  <div id="dspanel">
-    <div class="dsp-hd">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="pvtitle">전광판 설정</span><span class="pvbadge">● LIVE</span>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="pvbtn" onclick="resetPv()">↺ 초기화</button>
-        <button class="pvbtn p" onclick="openDisp()">⬜ HDMI 열기</button>
-      </div>
-    </div>
 
-    <div class="dssec">
-      <div class="dssec-hd"><span>🏆</span><span class="dssec-ttl">순위 표시 수</span></div>
-      <div class="ds-rcrow">
-        <button class="ds-rcbtn" onclick="chRank(-1)">−</button>
-        <span class="ds-rcval" id="ds-rankval">6</span>
-        <button class="ds-rcbtn" onclick="chRank(1)">+</button>
-        <span style="font-size:11px;color:var(--text3)">명까지 표시</span>
+      <div class="dssec">
+        <div class="dssec-hd"><span class="dssec-icon">👤</span><span class="dssec-title">도전자 수동 설정</span></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="ds-cplayer" placeholder="도전자 이름 직접 입력" style="flex:1;font-size:12px;padding:7px 11px">
+          <button class="pvbtn p" onclick="setDsPlayer()" style="padding:7px 13px;font-size:12px">전송</button>
+        </div>
       </div>
-    </div>
-    <div class="dssec">
-      <div class="dssec-hd"><span>📦</span><span class="dssec-ttl">표시 블록 설정</span><span style="font-size:10px;color:var(--text3);margin-left:6px;">드래그로 순서 변경</span></div>
-      <div class="blk-list" id="blkchips"></div>
-    </div>
-    <div class="dssec">
-      <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">타이틀 글씨체</span></div>
-      <div class="ds-fonts" id="fontpicker"></div>
-    </div>
-    <div class="dssec">
-      <div class="dssec-hd"><span>👤</span><span class="dssec-ttl">도전자 설정</span></div>
-      <div style="display:flex;gap:6px">
-        <input class="fi" id="ds-cplayer" placeholder="도전자 이름 입력" style="flex:1;font-size:12px;padding:7px 11px">
-        <button class="pvbtn p" onclick="setDsPlayer()" style="padding:7px 13px">전송</button>
-      </div>
-    </div>
-    <div class="dssec">
-      <div class="dssec-hd">
-        <span>🔄</span><span class="dssec-ttl">화면 자동 전환</span>
-        <label class="ds-tog" style="margin-left:auto">
-          <input type="checkbox" id="ds-autoswitch" onchange="saveDsCfg()">
-          <span class="ds-sld"></span>
-        </label>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-        <span style="font-size:11px;color:var(--text3)">전환 간격</span>
-        <input class="fi" type="number" id="ds-interval" value="8" min="3" max="60" style="width:70px;padding:5px 9px;font-size:12px" onchange="saveDsCfg()">
-        <span style="font-size:11px;color:var(--text3)">초</span>
-      </div>
-    </div>
-  </div>
 
+      <div class="dssec">
+        <div class="dssec-hd">
+          <span class="dssec-icon">🔄</span><span class="dssec-title">화면 자동 전환</span>
+          <label class="ds-toggle" style="margin-left:auto">
+            <input type="checkbox" id="ds-autoswitch" onchange="saveDsCfg()">
+            <span class="ds-slider"></span>
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <span style="font-size:11px;color:var(--text3)">전환 간격</span>
+          <input class="fi" type="number" id="ds-interval" value="8" min="3" max="60" style="width:70px;padding:5px 9px;font-size:12px" onchange="saveDsCfg()">
+          <span style="font-size:11px;color:var(--text3)">초</span>
+        </div>
+      </div>
+
+  </div><!-- /dspanel -->
 </div><!-- /split -->
 
 <button id="fab" onclick="togMob()">📺</button>
@@ -684,6 +676,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <script src="js/export.js"></script>
 <script>
 /* ── DATA ── */
+/* ⚠️ SGAMES/PGAMES/ALLG는 app.js에서 전역 정의됨 — 여기서 재선언 금지 */
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},
   {id:'weight', icon:'⚖️', name:'체급 개인전',   sub:'체급별 분류'},
@@ -709,90 +702,20 @@ const DITEMS=[
   {k:'slogan1',  l:'슬로건1', def:false},
   {k:'slogan2',  l:'슬로건2', def:false},
 ];
-const SGAMES=[
-  {id:'timelap', icon:'🏁',name:'타임랩',   desc:'출발~결승 시간 측정. 바퀴·랩타임 자동 기록.',tag:'속도/시간',cat:'speed',  ac:'#e63946'},
-  {id:'reaction',icon:'⚡',name:'반응속도', desc:'신호 후 버튼 누르는 속도 측정. 여러 명 동시 대결.',tag:'속도/시간',cat:'speed',  ac:'#ff6b35'},
-  {id:'balance', icon:'🎯',name:'균형 버티기',desc:'압력 패드 위에서 균형 유지 시간. 흔들리면 탈락.',tag:'속도/시간',cat:'speed',  ac:'#4cc9f0'},
-  {id:'jump',    icon:'🤸',name:'점프력',   desc:'패드에서 뛰어오른 공중 체공 시간 측정.',tag:'속도/시간',cat:'speed',  ac:'#4cc9f0'},
-  {id:'distance',icon:'📏',name:'멀리뛰기', desc:'초음파 센서로 착지 거리 자동 측정.',tag:'속도/시간',cat:'speed',  ac:'#06d6a0'},
-  {id:'weight',  icon:'⚖️',name:'무게 맞추기',desc:'목표 무게에 얼마나 가까운지 정확도 경쟁.',tag:'힘/무게',  cat:'strength',ac:'#7b2fff'},
-  {id:'strength',icon:'💪',name:'악력/힘 측정',desc:'최대 힘 측정 후 순위. 3회 평균 또는 최고값.',tag:'힘/무게',  cat:'strength',ac:'#e63946'},
-  {id:'weightacc',icon:'🏋️',name:'무게 정확도',desc:'100g 단위로 정확하게 물건 올리기.',tag:'힘/무게',  cat:'strength',ac:'#ff6b35'},
-  {id:'oddeven', icon:'🎲',name:'홀짝 게임', desc:'통과 횟수 카운트 후 홀짝 자동 판정.',tag:'운/재미',  cat:'fun',     ac:'#06d6a0'},
-  {id:'roulette',icon:'🎰',name:'랜덤 룰렛', desc:'버튼 누르면 랜덤 미션/점수 지정.',tag:'운/재미',  cat:'fun',     ac:'#7b2fff'},
-  {id:'count',   icon:'🔢',name:'카운트 대결',desc:'제한 시간 안에 센서를 몇 번 통과하는지 대결.',tag:'운/재미',  cat:'fun',     ac:'#ffd60a'},
-  {id:'sound',   icon:'🔊',name:'소리 크기', desc:'가장 크게 소리지르기. 팀 응원 소리 크기 측정.',tag:'운/재미',  cat:'fun',     ac:'#ff6b35'},
-];
-const PGAMES=[
-  {id:'athletics', icon:'🏃',name:'육상',       desc:'트랙·필드·도로. 타이머·거리 기록.',tag:'육상/체조',cat:'athletics',ac:'#e63946'},
-  {id:'gymnastics',icon:'🤸',name:'체조',       desc:'기계체조·리듬체조·트램폴린. 심판 채점.',tag:'육상/체조',cat:'athletics',ac:'#ff6b35'},
-  {id:'weightlift',icon:'🏋️',name:'역도',       desc:'용상·인상. 체급별 기록 측정.',tag:'육상/체조',cat:'athletics',ac:'#7b2fff'},
-  {id:'soccer',    icon:'⚽',name:'축구',       desc:'팀전. 득점 기록 및 토너먼트.',tag:'구기',cat:'ball',ac:'#06d6a0'},
-  {id:'baseball',  icon:'⚾',name:'야구',       desc:'이닝별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#e63946'},
-  {id:'softball',  icon:'🥎',name:'소프트볼',   desc:'이닝별 점수 기록.',tag:'구기',cat:'ball',ac:'#ff6b35'},
-  {id:'basketball',icon:'🏀',name:'농구',       desc:'쿼터별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#ffd60a'},
-  {id:'volleyball',icon:'🏐',name:'배구',       desc:'세트별 점수 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
-  {id:'handball',  icon:'🤾',name:'핸드볼',     desc:'전·후반 득점 기록.',tag:'구기',cat:'ball',ac:'#7b2fff'},
-  {id:'rugby',     icon:'🏉',name:'럭비',       desc:'전·후반 득점 기록. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
-  {id:'hockey',    icon:'🏑',name:'하키',       desc:'전·후반 득점 기록.',tag:'구기',cat:'ball',ac:'#e63946'},
-  {id:'tabletennis',icon:'🏓',name:'탁구',      desc:'세트 점수 입력. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
-  {id:'badminton', icon:'🏸',name:'배드민턴',   desc:'세트 점수. 단식·복식 지원.',tag:'구기',cat:'ball',ac:'#ffd60a'},
-  {id:'tennis',    icon:'🎾',name:'테니스',     desc:'세트·게임 점수. 단식·복식 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
-  {id:'softtennis',icon:'🎾',name:'소프트테니스',desc:'세트·게임 점수 입력.',tag:'구기',cat:'ball',ac:'#ff6b35'},
-  {id:'squash',    icon:'🎱',name:'스쿼시',     desc:'게임 점수 입력. 토너먼트 지원.',tag:'구기',cat:'ball',ac:'#7b2fff'},
-  {id:'bowling',   icon:'🎳',name:'볼링',       desc:'프레임별 점수. 스트라이크·스페어 자동 계산.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
-  {id:'golf',      icon:'⛳',name:'골프',       desc:'홀별 타수 입력. 스트로크·매치플레이 지원.',tag:'구기',cat:'ball',ac:'#06d6a0'},
-  {id:'curling',   icon:'🥌',name:'컬링',       desc:'엔드별 점수 기록.',tag:'구기',cat:'ball',ac:'#4cc9f0'},
-  {id:'boxing',    icon:'🥊',name:'복싱',       desc:'라운드 타이머 + 판정·점수. 체급별 지원.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
-  {id:'taekwondo', icon:'🦵',name:'태권도',     desc:'경기 타이머 + 겨루기 승패·품새 점수.',tag:'무술/격투',cat:'martial',ac:'#4cc9f0'},
-  {id:'judo',      icon:'🥋',name:'유도',       desc:'경기 타이머 + 판정(한판·절반). 체급별.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
-  {id:'wrestling', icon:'🤼',name:'레슬링',     desc:'경기 타이머 + 포인트. 체급별 지원.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
-  {id:'fencing',   icon:'🤺',name:'펜싱',       desc:'경기 타이머 + 득점 기록.',tag:'무술/격투',cat:'martial',ac:'#ffd60a'},
-  {id:'ssireum',   icon:'🏅',name:'씨름',       desc:'경기 타이머 + 승패. 체급별 토너먼트.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
-  {id:'hapkido',   icon:'🥋',name:'합기도',     desc:'시범 타이머 + 심판 채점.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
-  {id:'jujitsu',   icon:'🤼',name:'주짓수',     desc:'경기 타이머 + 체급별 포인트.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
-  {id:'muaythai',  icon:'🥊',name:'무에타이',   desc:'라운드 타이머 + 판정 점수.',tag:'무술/격투',cat:'martial',ac:'#ff6b35'},
-  {id:'kickboxing',icon:'🥊',name:'킥복싱',     desc:'라운드 타이머 + 판정 점수.',tag:'무술/격투',cat:'martial',ac:'#e63946'},
-  {id:'wushu',     icon:'🐉',name:'우슈',       desc:'경기 타이머 + 심판 채점.',tag:'무술/격투',cat:'martial',ac:'#ffd60a'},
-  {id:'sambo',     icon:'🥋',name:'삼보',       desc:'경기 타이머 + 포인트·판정.',tag:'무술/격투',cat:'martial',ac:'#7b2fff'},
-  {id:'swimming',  icon:'🏊',name:'수영',       desc:'종목별 타임 기록. 부문별 지원.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
-  {id:'diving',    icon:'🤽',name:'다이빙',     desc:'심판 채점 입력.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
-  {id:'waterpolo', icon:'🤽',name:'수구',       desc:'쿼터별 득점 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
-  {id:'waterski',  icon:'🏄',name:'수상스키',   desc:'타임·채점 기록.',tag:'수영/수상',cat:'aqua',ac:'#06d6a0'},
-  {id:'rowing',    icon:'🚣',name:'조정',       desc:'종목별 타임 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
-  {id:'canoeing',  icon:'🛶',name:'카누',       desc:'종목별 타임 기록.',tag:'수영/수상',cat:'aqua',ac:'#4cc9f0'},
-  {id:'sailing',   icon:'⛵',name:'요트',       desc:'레이스 순위 기록.',tag:'수영/수상',cat:'aqua',ac:'#06d6a0'},
-  {id:'cycling',   icon:'🚴',name:'자전거',     desc:'타임·랩 기록. 도로·트랙·MTB 지원.',tag:'사이클',cat:'cycle',ac:'#ffd60a'},
-  {id:'shooting',  icon:'🔫',name:'사격',       desc:'과녁 점수 입력. 종목별 설정 가능.',tag:'표적/정확도',cat:'target',ac:'#ffd60a'},
-  {id:'archery',   icon:'🏹',name:'양궁',       desc:'라운드별 점수 합산. 실내·실외 지원.',tag:'표적/정확도',cat:'target',ac:'#06d6a0'},
-  {id:'darts',     icon:'🎯',name:'다트',       desc:'라운드별 점수 입력.',tag:'표적/정확도',cat:'target',ac:'#06d6a0'},
-  {id:'billiards', icon:'🎱',name:'당구',       desc:'점수·이닝 기록. 3쿠션·포켓볼 지원.',tag:'표적/정확도',cat:'target',ac:'#7b2fff'},
-  {id:'iceskating',icon:'⛸️',name:'빙상',       desc:'타임 기록. 쇼트트랙·스피드스케이팅.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
-  {id:'figureskate',icon:'⛸️',name:'피겨스케이팅',desc:'심판 채점 입력.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
-  {id:'icehockey', icon:'🏒',name:'아이스하키', desc:'피리어드별 득점 기록.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
-  {id:'skiing',    icon:'⛷️',name:'스키',       desc:'타임 기록. 알파인·크로스컨트리 지원.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
-  {id:'biathlon',  icon:'🎿',name:'바이애슬론', desc:'타임+사격 점수 기록.',tag:'빙상/설상',cat:'winter',ac:'#4cc9f0'},
-  {id:'equestrian',icon:'🏇',name:'승마',       desc:'심판 채점·타임 기록.',tag:'기타',cat:'etc',ac:'#ff6b35'},
-  {id:'triathlon', icon:'🏅',name:'트라이애슬론',desc:'수영+자전거+달리기 타임 기록.',tag:'기타',cat:'etc',ac:'#06d6a0'},
-  {id:'climbing',  icon:'🧗',name:'스포츠클라이밍',desc:'타임·난이도·볼더링 점수.',tag:'기타',cat:'etc',ac:'#ff6b35'},
-  {id:'cheerleading',icon:'📣',name:'치어리딩', desc:'심판 채점 입력.',tag:'기타',cat:'etc',ac:'#e63946'},
-  {id:'dancesport',icon:'💃',name:'댄스스포츠', desc:'심판 채점 입력. 종목별 지원.',tag:'기타',cat:'etc',ac:'#ff6b35'},
-  {id:'esports',   icon:'🎮',name:'e스포츠',    desc:'라운드별 승패 기록. 토너먼트 지원.',tag:'기타',cat:'etc',ac:'#7b2fff'},
-];
-const ALLG=[...SGAMES,...PGAMES];
+// 전광판 블록 항목 (오른쪽 패널과 동일)
 const BLKITEMS=[
-  {k:'header', icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',   bid:'pvh'},
-  {k:'timer',  icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',   bid:'pvt'},
-  {k:'rank',   icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',   bid:'pvr'},
-  {k:'footer', icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',        bid:'pvf'},
-  {k:'ticker', icon:'📢', name:'티커',          desc:'하단 흐르는 텍스트',   bid:'pvtk'},
+  {k:'header', l:'헤더',   blkId:'pvh'},
+  {k:'timer',  l:'타이머', blkId:'pvt'},
+  {k:'rank',   l:'순위',   blkId:'pvr'},
+  {k:'footer', l:'푸터',   blkId:'pvf'},
+  {k:'ticker', l:'티커',   blkId:'pvtk'},
 ];
 const TITLE_FONTS=[
-  {id:'bebas',   name:'Bebas Neue',     css:"'Bebas Neue',cursive"},
-  {id:'rajdhani',name:'Rajdhani',       css:"'Rajdhani',sans-serif"},
-  {id:'mono',    name:'Share Tech Mono',css:"'Share Tech Mono',monospace"},
-  {id:'noto',    name:'Noto Sans KR',   css:"'Noto Sans KR',sans-serif"},
-  {id:'serif',   name:'Serif',          css:'Georgia,serif'},
+  {id:'bebas',   name:'Bebas Neue',   sample:'Bebas Neue',   css:"'Bebas Neue',cursive"},
+  {id:'rajdhani',name:'Rajdhani',     sample:'Rajdhani',     css:"'Rajdhani',sans-serif"},
+  {id:'mono',    name:'Share Tech Mono',sample:'Share Tech Mono',css:"'Share Tech Mono',monospace"},
+  {id:'noto',    name:'Noto Sans KR', sample:'Noto Sans KR', css:"'Noto Sans KR',sans-serif"},
+  {id:'serif',   name:'Serif',        sample:'Georgia',      css:'Georgia,serif'},
 ];
 const TC=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585','#4361ee'];
 
@@ -803,7 +726,8 @@ let S={
   en:'',sub:'',gl:'',dt:'',pl:'',sp:'',s1:'',s2:'',
   di:{eventname:true},
   blk:{header:true,timer:true,rank:true,footer:true,ticker:true},
-  titleFont:'bebas',rankCount:6,
+  titleFont:'bebas',
+  rankCount:6,
   gtab:'sensor',selG:'timelap',cat:'all',laps:1,
   rm:'ind',pts:[],proc:'ind-rec',
 };
@@ -853,101 +777,9 @@ function updateNav(){
   else{bn.style.display='';const lb=['','다음 → 게임 모드','다음 → 참가자','다음 → 진행방식','다음 → 확인&시작'];bn.textContent=lb[cs]||'다음 →';}
 }
 
-
-/* ── RESIZER ── */
-function initResizer(){
-  function bind(rId,getEl,minW,maxRatio){
-    const bar=document.getElementById(rId);
-    if(!bar)return;
-    bar.addEventListener('mousedown',function(e){
-      e.preventDefault();
-      const el=getEl();
-      const startX=e.clientX;
-      const startW=el.offsetWidth;
-      bar.classList.add('drag');
-      document.body.style.cursor='col-resize';
-      document.body.style.userSelect='none';
-      function move(e){
-        const total=document.getElementById('split').offsetWidth;
-        const w=Math.min(Math.max(startW+(e.clientX-startX),minW),total*maxRatio);
-        el.style.flex='0 0 '+w+'px';
-        el.style.width=w+'px';
-      }
-      function up(){
-        bar.classList.remove('drag');
-        document.body.style.cursor='';
-        document.body.style.userSelect='';
-        document.removeEventListener('mousemove',move);
-        document.removeEventListener('mouseup',up);
-      }
-      document.addEventListener('mousemove',move);
-      document.addEventListener('mouseup',up);
-    });
-  }
-  bind('resizer', ()=>document.getElementById('left'), 220, 0.5);
-  bind('resizer2', ()=>document.getElementById('pvcw'), 180, 0.55);
-}
-
-/* ── DSPANEL ── */
-function buildBlkChips(){
-  const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
-  let dragSrc=null;
-  BLKITEMS.forEach((b,idx)=>{
-    const item=document.createElement('div');
-    item.className='blk-item'+(S.blk[b.k]?'':' disabled');
-    item.draggable=true;
-    item.dataset.idx=idx;
-    item.innerHTML=`
-      <span class="blk-handle">⠿</span>
-      <span class="blk-icon">${b.icon}</span>
-      <div class="blk-info"><div class="blk-name">${b.name}</div><div class="blk-desc">${b.desc}</div></div>
-      <label class="blk-tog">
-        <input type="checkbox" ${S.blk[b.k]?'checked':''}>
-        <span class="blk-sld"></span>
-      </label>`;
-    // 토글
-    item.querySelector('input').onchange=function(){
-      S.blk[b.k]=this.checked;
-      item.classList.toggle('disabled',!this.checked);
-      const t=document.getElementById(b.bid);
-      if(t)t.classList.toggle('pv-hidden',!this.checked);
-    };
-    // 드래그
-    item.addEventListener('dragstart',e=>{dragSrc=idx;item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    item.addEventListener('dragend',()=>{item.classList.remove('dragging');w.querySelectorAll('.blk-item').forEach(d=>d.classList.remove('dragover'));});
-    item.addEventListener('dragover',e=>{e.preventDefault();item.classList.add('dragover');});
-    item.addEventListener('dragleave',()=>item.classList.remove('dragover'));
-    item.addEventListener('drop',e=>{
-      e.preventDefault();item.classList.remove('dragover');
-      if(dragSrc===null||dragSrc===idx)return;
-      const moved=BLKITEMS.splice(dragSrc,1)[0];
-      BLKITEMS.splice(idx,0,moved);
-      dragSrc=null;
-      buildBlkChips();
-      toast('순서 변경됨','success');
-    });
-    w.appendChild(item);
-  });
-}
-function buildFontPicker(){
-  const w=document.getElementById('fontpicker');if(!w)return;w.innerHTML='';
-  TITLE_FONTS.forEach(f=>{
-    const el=document.createElement('div');
-    el.className='ds-font'+(S.titleFont===f.id?' on':'');
-    el.style.fontFamily=f.css;el.textContent=f.name;
-    el.onclick=()=>{S.titleFont=f.id;document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));el.classList.add('on');const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;};
-    w.appendChild(el);
-  });
-}
-function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();}
-function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
-function sendCmd(t){try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type:t,ts:Date.now()}));}catch(e){}toast('전송: '+t,'success');}
-function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
-
 /* ── CHIPS ── */
 function buildChips(){
-  buildBlkChips();buildFontPicker();
-  document.getElementById('ds-rankval').textContent=S.rankCount||6;
+  // 왼쪽: 전광판 표시항목 (텍스트 내용)
   const w=document.getElementById('dtchips');w.innerHTML='';
   DITEMS.forEach(d=>{
     const el=document.createElement('div');
@@ -956,6 +788,66 @@ function buildChips(){
     el.onclick=()=>{S.di[d.k]=!S.di[d.k];el.classList.toggle('on');updatePv();};
     w.appendChild(el);
   });
+  // 오른쪽 패널: 블록 표시 칩
+  buildBlkChips();
+  buildFontPicker();
+  document.getElementById('ds-rankval').textContent=S.rankCount;
+}
+function buildBlkChips(){
+  const w=document.getElementById('blkchips');if(!w)return;w.innerHTML='';
+  BLKITEMS.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='dsc'+(S.blk[b.k]?' on':'');
+    el.innerHTML=`<div class="dsc-dot"></div>${b.l}`;
+    el.onclick=()=>{
+      S.blk[b.k]=!S.blk[b.k];el.classList.toggle('on');
+      const target=document.getElementById(b.blkId);
+      if(target)target.classList.toggle('pv-hidden',!S.blk[b.k]);
+      saveDsCfg();
+    };
+    w.appendChild(el);
+  });
+}
+function buildFontPicker(){
+  const w=document.getElementById('fontpicker');if(!w)return;w.innerHTML='';
+  TITLE_FONTS.forEach(f=>{
+    const el=document.createElement('div');
+    el.className='ds-font'+(S.titleFont===f.id?' on':'');
+    el.style.fontFamily=f.css;
+    el.textContent=f.name;
+    el.onclick=()=>{
+      S.titleFont=f.id;
+      document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      const ename=document.getElementById('pv-ename');
+      if(ename)ename.style.fontFamily=f.css;
+      saveDsCfg();
+    };
+    w.appendChild(el);
+  });
+}
+function chRank(d){S.rankCount=Math.max(1,Math.min(10,S.rankCount+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveDsCfg();}
+function setDsPlayer(){
+  const v=document.getElementById('ds-cplayer').value.trim();
+  if(!v)return;
+  try{localStorage.setItem('sgp_display_player',v);}catch(e){}
+  toast('도전자 설정: '+v,'success');
+  document.getElementById('ds-cplayer').value='';
+}
+function sendCmd(type){
+  try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type,ts:Date.now()}));}catch(e){}
+  toast('전광판 전송: '+type,'success');
+}
+function saveDsCfg(){
+  try{
+    const cfg={rankCount:S.rankCount,titleFont:S.titleFont,
+      showHeader:S.blk.header,showTimer:S.blk.timer,showRank:S.blk.rank,
+      showFooter:S.blk.footer,showTicker:S.blk.ticker,
+      autoSwitch:document.getElementById('ds-autoswitch')?.checked||false,
+      switchInterval:parseInt(document.getElementById('ds-interval')?.value||8),
+    };
+    localStorage.setItem('sgp_display_config',JSON.stringify({...JSON.parse(localStorage.getItem('sgp_display_config')||'{}'),...cfg}));
+  }catch(e){}
 }
 function fc(){
   S.en=document.getElementById('f-en').value;
@@ -1083,10 +975,11 @@ function saveAll(){
 /* ── PREVIEW UPDATE ── */
 function updatePv(){
   const sh=k=>S.di[k];
-  const _en=document.getElementById('pv-ename');
-  _en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
-  const _tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
-  _en.style.fontFamily=_tf.css;
+  const en=document.getElementById('pv-ename');
+  en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
+  // apply selected font
+  const tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
+  en.style.fontFamily=tf.css;
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
   document.getElementById('pv-chal').textContent=S.pts.length?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
@@ -1095,13 +988,13 @@ function updatePv(){
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
   updatePv2();updatePv3();updateRankLayout();
-  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
+  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di,titleFont:S.titleFont}));}catch(e){}
 }
 function buildRanks(){
   const w=document.getElementById('pvr');w.innerHTML='';
   const medals=['🥇','🥈','🥉'];
-  const cnt=S.rankCount||6;
-  for(let i=0;i<cnt;i++){
+  const count=S.rankCount||6;
+  for(let i=0;i<count;i++){
     const p=S.pts[i];
     const d=document.createElement('div');
     d.className='rrow'+(i===0?' r1':'')+(p?'':' empty');
@@ -1110,53 +1003,6 @@ function buildRanks(){
     d.innerHTML=`<div class="rno">${rn}</div><div class="rdot" style="background:${clr}"></div><div class="rnm">${p?p.name:'—'}</div><div class="rtm">${p?'—:--':'——'}</div>`;
     w.appendChild(d);
   }
-}
-function updatePv2(){
-  // 2번 화면: 현재경기 VS
-  const p1=S.pts[0],p2=S.pts[1];
-  document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
-  document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
-  document.getElementById('pv2-round').textContent=
-    p1&&p2?`경기 ${S.pts.indexOf(p1)+1} / ${S.pts.length}`:'참가자를 등록해주세요';
-}
-function updatePv3(){
-  // 3번 화면: 대진표 미니
-  const el=document.getElementById('pv3-inner');
-  if(!el)return;
-  el.innerHTML='';
-  if(!S.pts.length){
-    el.innerHTML='<div style="color:var(--text3);font-size:10px;font-family:'Share Tech Mono',monospace;padding:20px">참가자를 등록해주세요</div>';
-    return;
-  }
-  let pts=[...S.pts];
-  let size=1;while(size<pts.length)size*=2;
-  while(pts.length<size)pts.push(null);
-  let rounds=[];
-  let cur=[...pts];
-  while(cur.length>1){
-    const matches=[];
-    for(let i=0;i<cur.length;i+=2)matches.push([cur[i],cur[i+1]]);
-    rounds.push(matches);
-    cur=matches.map(m=>m[0]);
-  }
-  const rnames=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
-  rounds.forEach((matches,ri)=>{
-    const col=document.createElement('div');
-    col.className='pv3-col';
-    col.innerHTML=`<div class="pv3-col-title">${rnames[ri]||ri+1+'R'}</div>`;
-    matches.forEach(([p1,p2])=>{
-      const m=document.createElement('div');
-      m.className='pv3-match';
-      m.innerHTML=`<div class="pv3-player" style="color:${p1?p1.color:'var(--text3)'}">${p1?p1.name:'BYE'}</div><div class="pv3-player" style="color:${p2?p2.color:'var(--text3)'}">${p2?p2.name:'BYE'}</div>`;
-      col.appendChild(m);
-    });
-    el.appendChild(col);
-  });
-}
-function updateRankLayout(){
-  // 순위판 OFF시 타이머 전체화면
-  const pvm=document.getElementById('pvm');
-  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
 }
 function buildTicker(){
   const sh=k=>S.di[k];
@@ -1176,6 +1022,81 @@ function buildTicker(){
 function togBlk(id,el){
   el.classList.toggle('on');
   document.getElementById(id).classList.toggle('pv-hidden',!el.classList.contains('on'));
+}
+
+/* ── RESIZER ── */
+/* ⚠️ initResizer: 양쪽 경계선 드래그 기능 — 수정 시 함께 확인 */
+function initResizer(){
+  function bindResizer(rId, getEl, minW, maxW){
+    const bar=document.getElementById(rId);
+    if(!bar)return;
+    bar.addEventListener('mousedown',function(e){
+      e.preventDefault();
+      const el=getEl();
+      const startX=e.clientX;
+      const startW=el.offsetWidth;
+      bar.classList.add('dragging');
+      document.body.style.cursor='col-resize';
+      document.body.style.userSelect='none';
+      function move(e){
+        const w=Math.min(Math.max(startW+(e.clientX-startX),minW),maxW());
+        el.style.flex='0 0 '+w+'px';
+        el.style.width=w+'px';
+      }
+      function up(){
+        bar.classList.remove('dragging');
+        document.body.style.cursor='';
+        document.body.style.userSelect='';
+        document.removeEventListener('mousemove',move);
+        document.removeEventListener('mouseup',up);
+      }
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
+    });
+  }
+  bindResizer('resizer',
+    ()=>document.getElementById('left'),
+    220,
+    ()=>document.getElementById('split').offsetWidth*0.55
+  );
+  bindResizer('resizer2',
+    ()=>document.getElementById('pvcw'),
+    180,
+    ()=>document.getElementById('split').offsetWidth*0.6
+  );
+}
+
+
+/* ── 2번/3번 화면 업데이트 ── */
+function updatePv2(){
+  const p1=S.pts[0],p2=S.pts[1];
+  document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
+  document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
+  document.getElementById('pv2-info').textContent=p1&&p2?'경기 '+1+' / '+S.pts.length:'참가자를 등록해주세요';
+}
+function updatePv3(){
+  const el=document.getElementById('pv3-inner');if(!el)return;el.innerHTML='';
+  if(!S.pts.length){el.innerHTML='<div style="color:var(--text3);font-size:10px;font-family:Share Tech Mono,monospace;padding:16px">참가자를 등록해주세요</div>';return;}
+  let pts=[...S.pts];let size=1;while(size<pts.length)size*=2;
+  while(pts.length<size)pts.push(null);
+  let rounds=[];let cur=[...pts];
+  while(cur.length>1){const m=[];for(let i=0;i<cur.length;i+=2)m.push([cur[i],cur[i+1]]);rounds.push(m);cur=m.map(x=>x[0]);}
+  const rn=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
+  rounds.forEach((matches,ri)=>{
+    const col=document.createElement('div');col.className='pv3-col';
+    col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
+    matches.forEach(([p1,p2])=>{
+      const m=document.createElement('div');m.className='pv3-match';
+      m.innerHTML='<div class="pv3-pl" style="color:'+(p1?p1.color:'var(--text3)')+'">'+( p1?p1.name:'BYE')+'</div>'
+               +'<div class="pv3-pl" style="color:'+(p2?p2.color:'var(--text3)')+'">'+( p2?p2.name:'BYE')+'</div>';
+      col.appendChild(m);
+    });
+    el.appendChild(col);
+  });
+}
+function updateRankLayout(){
+  const pvm=document.getElementById('pvm');
+  if(pvm)pvm.classList.toggle('rank-off',!S.blk.rank);
 }
 
 /* ── CLOCK ── */
