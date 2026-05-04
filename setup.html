@@ -1276,10 +1276,10 @@ function buildGG(){
     d.onclick=()=>{S.selG=g.id;buildGG();updatePv();};
     gw.appendChild(d);
   });
-  document.getElementById('lapv').textContent=S.laps;
+  if(document.getElementById('lapv'))document.getElementById('lapv').textContent=S.laps;
 }
 function switchTab(t){S.gtab=t;S.cat='all';document.getElementById('tab-s').classList.toggle('active',t==='sensor');document.getElementById('tab-p').classList.toggle('active',t==='sport');buildGG();}
-function chLaps(d){S.laps=Math.max(1,Math.min(20,S.laps+d));document.getElementById('lapv').textContent=S.laps;updatePv();}
+function chLaps(d){S.laps=Math.max(1,Math.min(20,S.laps+d));if(document.getElementById('lapv'))document.getElementById('lapv').textContent=S.laps;updatePv();}
 
 /* ── MODE GRID ── */
 function buildMG(){
