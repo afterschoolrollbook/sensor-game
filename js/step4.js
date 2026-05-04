@@ -117,6 +117,7 @@ function buildTournamentTree(wrap){
     S.matchProc=S.proc;
     S.matchPts=pts.map(p=>p.id).join(',');
     S.curMatch=0;
+    try{if(typeof updatePv==="function")updatePv();}catch(e){}
   }
 
   const rounds=S.matches;
@@ -367,5 +368,6 @@ function recordWin(playerIdx){
   }
 
   buildProc();
+  try{if(typeof updatePv==='function')updatePv();}catch(e){}
   toast(winner.name+' 승리!','success');
 }
