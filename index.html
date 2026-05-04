@@ -356,8 +356,14 @@ function loadLast() {
 function updateStats() {
   const state = App.getState();
   const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
-  document.getElementById('stat-events').textContent = history.length;
   const hasEvent = state.event && state.event.name && state.event.name !== '게임 행사';
+
+  // 현재 진행 중인 행사가 history에 아직 없으면 +1로 표시
+  const currentEventId = state.eventId || null;
+  const currentInHistory = currentEventId && history.some(h => h.id === currentEventId);
+  const eventCount = hasEvent && !currentInHistory ? history.length + 1 : history.length;
+
+  document.getElementById('stat-events').textContent = eventCount;
   document.getElementById('stat-participants').textContent = hasEvent ? state.participants.length : 0;
   document.getElementById('stat-records').textContent = hasEvent ? state.records.length : 0;
 }
