@@ -1118,8 +1118,8 @@ function saveCurrentStep(){
       localStorage.setItem('sgp_history',JSON.stringify(history));
     }catch(e){}
   }
-  // 마지막 저장 스텝 기록 — 다음 스텝으로, 뒤로 가도 덮어쓰지 않음
-  try{const next=Math.min(cs+1,5);const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(next>cur)localStorage.setItem('sgp_last_step',String(next));}catch(e){}
+  // 마지막 저장 스텝 기록
+  try{localStorage.setItem('sgp_last_step',String(cs));}catch(e){}
   toast('저장 완료!','success',1500);
 }
 
@@ -1521,12 +1521,14 @@ function saveAll(){
 /* ── PREVIEW UPDATE ── */
 function updatePv(){
   const sh=k=>S.di[k];
+  const hasMatches=S.matches&&S.matches.length>0;
   const _en=document.getElementById('pv-ename');
   _en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
   const _tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
   _en.style.fontFamily=_tf.css;
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
-  document.getElementById('pv-chal').textContent=S.pts.length?S.pts[0].name:'—';
+  // Step4 매칭 전엔 참가자 이름 미표시
+  document.getElementById('pv-chal').textContent=hasMatches&&S.pts.length?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
   buildRanks();
   const g=ALLG.find(x=>x.id===S.selG);
@@ -1537,12 +1539,14 @@ function updatePv(){
 }
 function buildRanks(){
   const w=document.getElementById('pvr');w.innerHTML='';
+  const hasMatches=S.matches&&S.matches.length>0;
   const medals=['🥇','🥈','🥉'];
   const cnt=S.rankCount||6;
   for(let i=0;i<cnt;i++){
-    const p=S.pts[i];
+    // Step4 매칭 전엔 순위판도 비움
+    const p=hasMatches?S.pts[i]:null;
     const d=document.createElement('div');
-    d.className='rrow'+(i===0?' r1':'')+(p?'':' empty');
+    d.className='rrow'+(i===0?' r1')+(p?'':' empty');
     const rn=i<3?medals[i]:`<span style="color:var(--text3)">${i+1}</span>`;
     const clr=p?p.color:'var(--border2)';
     d.innerHTML=`<div class="rno">${rn}</div><div class="rdot" style="background:${clr}"></div><div class="rnm">${p?p.name:'—'}</div><div class="rtm">${p?'—:--':'——'}</div>`;
@@ -1551,7 +1555,9 @@ function buildRanks(){
 }
 
 function updatePvVs(){
-  const p1=S.pts[0],p2=S.pts[1];
+  const hasMatches=S.matches&&S.matches.length>0;
+  const p1=hasMatches?S.pts[0]:null;
+  const p2=hasMatches?S.pts[1]:null;
   const e1=document.getElementById('pvvs-p1');
   const e2=document.getElementById('pvvs-p2');
   if(e1)e1.textContent=p1?p1.name:'—';
