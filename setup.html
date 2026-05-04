@@ -99,6 +99,32 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .dtc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .2s}
 .dtc.on .dtc-dot{background:var(--red)}
 
+
+/* STEP 3 요약 */
+#s3-summary{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;
+}
+.s3sum-title{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:2px;}
+.s3sum-row{display:flex;gap:8px;flex-wrap:wrap;}
+.s3sum-tag{
+  display:flex;align-items:center;gap:5px;
+  background:var(--card2);border:1px solid var(--border);border-radius:6px;
+  padding:4px 10px;font-size:12px;
+}
+.s3sum-tag .s3k{color:var(--text3);font-size:10px;margin-right:2px;}
+.s3sum-tag .s3v{color:var(--text);font-weight:600;}
+/* 샘플 다운로드 */
+#s3-sample{margin-bottom:10px;}
+.s3sample-title{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:7px;}
+.s3sample-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;
+  background:transparent;border:1px solid var(--border2);color:var(--text2);
+  transition:all .2s;margin-right:6px;margin-bottom:6px;
+}
+.s3sample-btn:hover{border-color:var(--green);color:var(--green);}
+
 /* GAME GRID */
 .gtabs{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
 .gtab{
@@ -542,7 +568,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <!-- STEP 3 -->
       <div class="sp" id="s3">
         <div class="sh"><div class="sno">// STEP 03</div><div class="stitle">참가자 등록</div></div>
+        <!-- 이전 설정 요약 -->
+        <div id="s3-summary"></div>
         <div class="mgrid" id="mgrid"></div>
+        <!-- 샘플 다운로드 -->
+        <div id="s3-sample"></div>
         <div id="ptarea"></div>
       </div>
 
@@ -984,6 +1014,109 @@ function fc(){
   updatePv();
 }
 
+
+/* ── STEP3 요약 ── */
+function buildS3Summary(){
+  const el=document.getElementById('s3-summary');if(!el)return;
+  const g=ALLG.find(x=>x.id===S.selG);
+  const items=[
+    {k:'행사명', v:S.en||'—', icon:'📋'},
+    {k:'종목',   v:S.gl||(g?g.name:'—'), icon:'🏅'},
+    {k:'게임',   v:g?g.name:'—', icon:'🎮'},
+    {k:'바퀴',   v:S.laps+'바퀴', icon:'🔄'},
+    {k:'일시',   v:S.dt||'—', icon:'📅'},
+    {k:'장소',   v:S.pl||'—', icon:'📍'},
+  ].filter(x=>x.v&&x.v!=='—');
+  el.innerHTML=`
+    <div class="s3sum-title">📌 이전 설정 요약</div>
+    <div class="s3sum-row">
+      ${items.map(x=>`<div class="s3sum-tag"><span>${x.icon}</span><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}
+    </div>`;
+}
+
+/* ── STEP3 샘플 다운로드 ── */
+const SAMPLE_COLS={
+  ind:    ['이름'],
+  weight: ['이름','체급'],
+  divind: ['이름','부문','체급'],
+  team:   ['팀명','이름'],
+  teamwt: ['팀명','이름','체급'],
+  divteam:['팀명','이름','부문','체급'],
+};
+function buildS3Sample(){
+  const el=document.getElementById('s3-sample');if(!el)return;
+  const rm=REGMODES.find(x=>x.id===S.rm)||REGMODES[0];
+  const cols=SAMPLE_COLS[S.rm]||['이름'];
+  el.innerHTML=`
+    <div class="s3sample-title">📥 엑셀 샘플 다운로드</div>
+    <button class="s3sample-btn" onclick="dlSample()">⬇️ ${rm.name} 샘플 (.xlsx)</button>
+    <span style="font-size:10px;color:var(--text3)">컬럼: ${cols.join(', ')}</span>`;
+}
+function dlSample(){
+  const rm=S.rm||'ind';
+  const cols=SAMPLE_COLS[rm]||['이름'];
+  const rm_obj=REGMODES.find(x=>x.id===rm)||{name:'샘플'};
+  // 샘플 데이터
+  const samples={
+    ind:    [['이름'],['홍길동'],['김철수'],['이영희']],
+    weight: [['이름','체급'],['홍길동','55kg'],['김철수','63kg'],['이영희','72kg']],
+    divind: [['이름','부문','체급'],['홍길동','남자부','55kg'],['김철수','남자부','63kg'],['이영희','여자부','52kg']],
+    team:   [['팀명','이름'],['레드팀','홍길동'],['레드팀','김철수'],['블루팀','이영희'],['블루팀','박지수']],
+    teamwt: [['팀명','이름','체급'],['레드팀','홍길동','63kg'],['레드팀','김철수','72kg'],['블루팀','이영희','52kg']],
+    divteam:[['팀명','이름','부문','체급'],['레드팀','홍길동','남자부','63kg'],['블루팀','이영희','여자부','52kg']],
+  };
+  const rows=samples[rm]||samples['ind'];
+  // CSV로 생성 후 xlsx 확장자로 다운로드
+  const csv=rows.map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
+  const BOM='\uFEFF';
+  const blob=new Blob([BOM+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='SGP_'+rm_obj.name+'_샘플.csv';
+  a.click();URL.revokeObjectURL(url);
+  toast(rm_obj.name+' 샘플 다운로드 완료!','success');
+}
+
+/* 엑셀 업로드 (CSV/xlsx 파싱) */
+function impXlsNew(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.csv,.xlsx,.xls';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const text=ev.target.result.replace(/^\uFEFF/,''); // BOM 제거
+      const lines=text.split('\n').filter(l=>l.trim());
+      if(!lines.length)return;
+      const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+      const nameIdx=headers.findIndex(h=>h==='이름'||h==='name');
+      const teamIdx=headers.findIndex(h=>h==='팀명'||h==='team');
+      const weightIdx=headers.findIndex(h=>h==='체급'||h==='weight');
+      const divIdx=headers.findIndex(h=>h==='부문'||h==='division');
+      let added=0;
+      lines.slice(1).forEach((line,i)=>{
+        const cols=line.split(',').map(v=>v.replace(/"/g,'').trim());
+        const name=nameIdx>=0?cols[nameIdx]:'';
+        if(!name)return;
+        S.pts.push({
+          id:'p_'+Date.now()+'_'+i,
+          name,
+          team:teamIdx>=0?cols[teamIdx]:'',
+          weight:weightIdx>=0?cols[weightIdx]:'',
+          division:divIdx>=0?cols[divIdx]:'',
+          color:TC[S.pts.length%TC.length]
+        });
+        added++;
+      });
+      renderPL();updatePv();
+      try{App.setState({participants:S.pts});}catch(e2){}
+      toast(added+'명 불러오기 완료!','success');
+    };
+    reader.readAsText(file,'UTF-8');
+  };
+  input.click();
+}
+
 /* ── GAME GRID ── */
 function buildGG(){
   const games=S.gtab==='sensor'?SGAMES:PGAMES;
@@ -1009,6 +1142,7 @@ function chLaps(d){S.laps=Math.max(1,Math.min(20,S.laps+d));document.getElementB
 
 /* ── MODE GRID ── */
 function buildMG(){
+  buildS3Summary();buildS3Sample();
   const w=document.getElementById('mgrid');w.innerHTML='';
   REGMODES.forEach(m=>{
     const d=document.createElement('div');
@@ -1029,7 +1163,7 @@ function renderPA(){
         <button class="badd" onclick="addPt()">+ 추가</button>
       </div>
       <div class="plist" id="plist"></div>
-      <button class="bxls" onclick="impXls()">📊 엑셀에서 불러오기</button>
+      <button class="bxls" onclick="impXlsNew()">📂 CSV/엑셀에서 불러오기</button>
     </div>`;
   renderPL();
 }
