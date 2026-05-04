@@ -213,6 +213,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .bprev:hover{border-color:var(--border2);color:var(--text)}
 .bnext{flex:1;padding:11px;background:var(--red);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:14px;font-weight:700;letter-spacing:.5px;transition:all .2s}
 .bnext:hover{background:#c62835;transform:translateY(-1px)}
+.bsave{padding:11px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;display:none;}
+.bsave:hover{background:#05b88a;transform:translateY(-1px)}
+.saved-badge{font-size:10px;color:var(--green);letter-spacing:1px;display:none;align-items:center;gap:4px;}
 .bstart{
   flex:1;padding:12px;background:linear-gradient(135deg,var(--red),#b22232);
   color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:14px;
@@ -607,7 +610,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
     <div id="snav">
       <button class="bprev" id="bprev" onclick="prevS()" style="display:none">← 이전</button>
-      <button class="bnext" id="bnext" onclick="nextS()">다음 → 게임 모드</button>
+      <span class="saved-badge" id="saved-badge">✓ 저장됨</span>
+      <button class="bnext" id="bnext" onclick="saveAndNext()">💾 저장 후 다음</button>
     </div>
   </div>
 
@@ -948,7 +952,28 @@ let S={
 
 /* ── INIT ── */
 window.addEventListener('DOMContentLoaded',()=>{
-  try{const a=App.getState();if(a.event?.name)S.en=a.event.name;if(a.participants?.length)S.pts=[...a.participants];if(a.settings?.laps)S.laps=a.settings.laps;}catch(e){}
+  try{
+    const a=App.getState();
+    if(a.event?.name&&a.event.name!=='게임 행사'){
+      S.en=a.event.name;
+      S.sub=a.event.subtitle||'';
+    }
+    if(a.participants?.length)S.pts=[...a.participants];
+    if(a.gameType)S.selG=a.gameType;
+    if(a.mode)S.rm=a.mode;
+    if(a.settings){
+      if(a.settings.laps)S.laps=a.settings.laps;
+      if(a.settings.proc)S.proc=a.settings.proc;
+      if(a.settings.rm)S.rm=a.settings.rm;
+      if(a.settings.gl)S.gl=a.settings.gl;
+      if(a.settings.dt)S.dt=a.settings.dt;
+      if(a.settings.pl)S.pl=a.settings.pl;
+      if(a.settings.sp)S.sp=a.settings.sp;
+      if(a.settings.s1)S.s1=a.settings.s1;
+      if(a.settings.s2)S.s2=a.settings.s2;
+      if(a.settings.di)S.di={...S.di,...a.settings.di};
+    }
+  }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();
   // pvcw 크기 바뀔 때마다 scale 재계산
@@ -984,16 +1009,88 @@ function goS(n){
   if(cs===5)buildConfirm();
   updatePv();
 }
-function nextS(){if(cs<5)goS(cs+1);}
+function saveAndNext(){
+  saveCurrentStep();
+  if(cs<5)goS(cs+1);
+}
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
   buildStepSummary(cs);
   document.getElementById('bprev').style.display=cs===1?'none':'';
   const bn=document.getElementById('bnext');
-  if(cs===5){bn.style.display='none';}
-  else{bn.style.display='';const lb=['','다음 → 게임 모드','다음 → 참가자','다음 → 진행방식','다음 → 확인&시작'];bn.textContent=lb[cs]||'다음 →';}
+  const badge=document.getElementById('saved-badge');
+  if(cs===5){
+    bn.style.display='none';
+    if(badge)badge.style.display='none';
+  } else {
+    bn.style.display='';
+    const lb=['','💾 저장 후 다음 (게임 모드)','💾 저장 후 다음 (참가자)','💾 저장 후 다음 (진행방식)','💾 저장 후 다음 (확인&시작)'];
+    bn.textContent=lb[cs]||'💾 저장 후 다음';
+    // 저장 뱃지 표시
+    const saved=App.getState();
+    const isSaved=saved.event?.name&&saved.event.name!=='게임 행사';
+    if(badge){badge.style.display=isSaved?'flex':'none';}
+  }
 }
 
+
+
+/* ── 스텝 저장 ── */
+function saveCurrentStep(){
+  // 스텝1 입력값 동기화
+  const enEl=document.getElementById('f-en');
+  if(enEl)S.en=enEl.value;
+  const subEl=document.getElementById('f-sub');
+  if(subEl)S.sub=subEl.value;
+  const glEl=document.getElementById('f-gl');
+  if(glEl)S.gl=glEl.value;
+  const dtEl=document.getElementById('f-dt');
+  if(dtEl)S.dt=dtEl.value;
+  const plEl=document.getElementById('f-pl');
+  if(plEl)S.pl=plEl.value;
+  const spEl=document.getElementById('f-sp');
+  if(spEl)S.sp=spEl.value;
+  const s1El=document.getElementById('f-s1');
+  if(s1El)S.s1=s1El.value;
+  const s2El=document.getElementById('f-s2');
+  if(s2El)S.s2=s2El.value;
+
+  // 전체 저장
+  App.setState({
+    event:{
+      name:S.en||'',
+      subtitle:S.sub||'',
+      logo:null,
+      theme:'dark-racing',
+      primaryColor:'#e63946',
+      accentColor:'#4cc9f0',
+      sound:true,
+    },
+    gameType:S.selG,
+    mode:S.rm,
+    participants:S.pts,
+    settings:{
+      laps:S.laps||1,
+      proc:S.proc,
+      rm:S.rm,
+      gl:S.gl,
+      dt:S.dt,
+      pl:S.pl,
+      sp:S.sp,
+      s1:S.s1,
+      s2:S.s2,
+      di:S.di,
+    }
+  });
+
+  // 저장 뱃지 표시
+  const badge=document.getElementById('saved-badge');
+  if(badge){
+    badge.style.display='flex';
+    badge.textContent='✓ 저장됨';
+  }
+  toast('저장 완료!','success',1500);
+}
 
 /* ── RESIZER ── */
 function initResizer(){
