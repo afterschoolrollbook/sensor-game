@@ -960,6 +960,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     if(a.participants?.length)S.pts=[...a.participants];
     if(a.gameType)S.selG=a.gameType;
+    if(a.settings?.eventId)S.eventId=a.settings.eventId;
     if(a.mode)S.rm=a.mode;
     if(a.settings){
       if(a.settings.laps)S.laps=a.settings.laps;
@@ -1080,8 +1081,28 @@ function saveCurrentStep(){
       s1:S.s1,
       s2:S.s2,
       di:S.di,
+      eventId:S.eventId,
     }
   });
+
+  // sgp_history 동기화 (index.html 총행사 카운트용)
+  if(S.en&&S.en!=='게임 행사'){
+    try{
+      const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
+      const existIdx=history.findIndex(h=>h.id===S.eventId);
+      const entry={
+        id: S.eventId||(S.eventId='ev_'+Date.now()),
+        name: S.en,
+        date: S.dt||new Date().toLocaleDateString('ko-KR'),
+        game: S.selG||'',
+        mode: S.rm||'ind',
+        participants: S.pts.length,
+      };
+      if(existIdx>=0) history[existIdx]=entry;
+      else history.push(entry);
+      localStorage.setItem('sgp_history',JSON.stringify(history));
+    }catch(e){}
+  }
 
   // 저장 뱃지 표시
   const badge=document.getElementById('saved-badge');
