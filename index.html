@@ -345,11 +345,11 @@ function selectGame(id) {
 
 function loadLast() {
   const state = App.getState();
-  const hasEvent = state.event && state.event.name && state.event.name !== '게임 행사';
-  if (hasEvent) {
-    window.location.href = 'setup.html';
+  if (state.participants.length > 0) {
+    const lastStep=localStorage.getItem('sgp_last_step')||'1';
+    window.location.href='setup.html?step='+lastStep;
   } else {
-    App.toast('저장된 행사가 없어요. 새 행사를 시작하세요!', 'info');
+    App.toast('이전 행사 데이터가 없어요. 새 행사를 시작하세요!', 'info');
   }
 }
 
@@ -357,7 +357,6 @@ function updateStats() {
   const state = App.getState();
   const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
   document.getElementById('stat-events').textContent = history.length;
-  // 행사명이 있으면 현재 진행중인 행사로 인정
   const hasEvent = state.event && state.event.name && state.event.name !== '게임 행사';
   document.getElementById('stat-participants').textContent = hasEvent ? state.participants.length : 0;
   document.getElementById('stat-records').textContent = hasEvent ? state.records.length : 0;

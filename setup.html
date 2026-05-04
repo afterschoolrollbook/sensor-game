@@ -960,7 +960,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     if(a.participants?.length)S.pts=[...a.participants];
     if(a.gameType)S.selG=a.gameType;
-    if(a.settings?.eventId)S.eventId=a.settings.eventId;
     if(a.mode)S.rm=a.mode;
     if(a.settings){
       if(a.settings.laps)S.laps=a.settings.laps;
@@ -977,6 +976,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();
+  // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
+  const urlParams=new URLSearchParams(location.search);
+  const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
+  if(targetStep>1)goS(targetStep);
   // pvcw 크기 바뀔 때마다 scale 재계산
   ['pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
   // restore
@@ -1081,28 +1084,8 @@ function saveCurrentStep(){
       s1:S.s1,
       s2:S.s2,
       di:S.di,
-      eventId:S.eventId,
     }
   });
-
-  // sgp_history 동기화 (index.html 총행사 카운트용)
-  if(S.en&&S.en!=='게임 행사'){
-    try{
-      const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
-      const existIdx=history.findIndex(h=>h.id===S.eventId);
-      const entry={
-        id: S.eventId||(S.eventId='ev_'+Date.now()),
-        name: S.en,
-        date: S.dt||new Date().toLocaleDateString('ko-KR'),
-        game: S.selG||'',
-        mode: S.rm||'ind',
-        participants: S.pts.length,
-      };
-      if(existIdx>=0) history[existIdx]=entry;
-      else history.push(entry);
-      localStorage.setItem('sgp_history',JSON.stringify(history));
-    }catch(e){}
-  }
 
   // 저장 뱃지 표시
   const badge=document.getElementById('saved-badge');
@@ -1110,6 +1093,19 @@ function saveCurrentStep(){
     badge.style.display='flex';
     badge.textContent='✓ 저장됨';
   }
+  // sgp_history 동기화
+  if(S.en&&S.en!=='게임 행사'){
+    try{
+      const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
+      if(!S.eventId)S.eventId='ev_'+Date.now();
+      const entry={id:S.eventId,name:S.en,date:S.dt||new Date().toLocaleDateString('ko-KR'),game:S.selG||'',mode:S.rm||'ind',participants:S.pts.length};
+      const idx=history.findIndex(h=>h.id===S.eventId);
+      if(idx>=0)history[idx]=entry;else history.push(entry);
+      localStorage.setItem('sgp_history',JSON.stringify(history));
+    }catch(e){}
+  }
+  // 마지막 저장 스텝 기록
+  try{localStorage.setItem('sgp_last_step',String(cs));}catch(e){}
   toast('저장 완료!','success',1500);
 }
 
