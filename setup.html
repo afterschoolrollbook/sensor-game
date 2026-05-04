@@ -101,6 +101,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 
 /* STEP 3 요약 */
+.s3-sum-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;}
 #s3-summary{
   background:var(--card);border:1px solid var(--border);border-radius:10px;
   padding:12px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;
@@ -551,6 +552,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <!-- STEP 2 -->
       <div class="sp" id="s2">
         <div class="sh"><div class="sno">// STEP 02</div><div class="stitle">게임 모드</div></div>
+        <div id="s2-summary"></div>
         <div class="gtabs">
           <button class="gtab active" id="tab-s" onclick="switchTab('sensor')">⚡ 센서 게임</button>
           <button class="gtab" id="tab-p" onclick="switchTab('sport')">🏅 종목 선택</button>
@@ -579,6 +581,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <!-- STEP 4 -->
       <div class="sp" id="s4">
         <div class="sh"><div class="sno">// STEP 04</div><div class="stitle">진행 방식</div></div>
+        <div id="s4-summary"></div>
         <div class="plist2" id="proclist"></div>
       </div>
 
@@ -891,7 +894,7 @@ function goS(n){
 function nextS(){if(cs<5)goS(cs+1);}
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
-  if(cs===3){buildS3Summary();buildS3Sample();}
+  buildStepSummary(cs);
   document.getElementById('bprev').style.display=cs===1?'none':'';
   const bn=document.getElementById('bnext');
   if(cs===5){bn.style.display='none';}
@@ -1017,6 +1020,55 @@ function fc(){
 
 
 /* ── STEP3 요약 ── */
+
+function buildStepSummary(step){
+  const g=ALLG.find(x=>x.id===S.selG);
+  const rm=REGMODES.find(x=>x.id===S.rm);
+  const allItems=[
+    {k:'행사명', v:S.en, icon:'📋'},
+    {k:'종목',   v:S.gl||(g?g.name:''), icon:'🏅'},
+    {k:'게임',   v:g?g.name:'', icon:'🎮'},
+    {k:'바퀴',   v:S.laps?S.laps+'바퀴':'', icon:'🔄'},
+    {k:'일시',   v:S.dt, icon:'📅'},
+    {k:'장소',   v:S.pl, icon:'📍'},
+  ].filter(x=>x.v);
+
+  // 스텝2: 기본정보 요약
+  const s2el=document.getElementById('s2-summary');
+  if(s2el&&step===2){
+    const items=allItems.filter(x=>['행사명','일시','장소'].includes(x.k));
+    s2el.innerHTML=items.length?`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 기본 정보</div>
+        <div class="s3sum-row">${items.map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`:'';
+  }
+
+  // 스텝3: 기본정보 + 게임모드 요약
+  const s3el=document.getElementById('s3-summary');
+  if(s3el&&step===3){
+    s3el.innerHTML=allItems.length?`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 이전 설정 요약</div>
+        <div class="s3sum-row">${allItems.map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`:'';
+    buildS3Sample();
+  }
+
+  // 스텝4: 기본정보 + 게임 + 참가방식 요약
+  const s4el=document.getElementById('s4-summary');
+  if(s4el&&step===4){
+    const items=[...allItems];
+    if(rm)items.push({k:'참가방식',v:rm.name,icon:'👥'});
+    items.push({k:'참가자',v:S.pts.length+'명',icon:'🧑'});
+    s4el.innerHTML=`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 이전 설정 요약</div>
+        <div class="s3sum-row">${items.filter(x=>x.v).map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`;
+  }
+}
+
 function buildS3Summary(){
   const el=document.getElementById('s3-summary');if(!el)return;
   const g=ALLG.find(x=>x.id===S.selG);
