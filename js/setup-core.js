@@ -359,13 +359,31 @@ function togBlk(id,el){
 
 /* ── 2번/3번 화면 ── */
 function updatePv2(){
-  const p1=S.pts[0],p2=S.pts[1];
+  // 매치가 확정된 후에만 표시 (S.matches 또는 S.curMatch 존재 시)
+  const hasMatch=S.matches&&S.matches.length>0;
+  const p1=hasMatch?getCurrentMatchForPv()?.p1:null;
+  const p2=hasMatch?getCurrentMatchForPv()?.p2:null;
   document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
   document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
-  document.getElementById('pv2-info').textContent=p1&&p2?'경기 1 / '+S.pts.length:'참가자를 등록해주세요';
+  document.getElementById('pv2-info').textContent=hasMatch&&p1&&p2?'매치 진행중':'진행방식을 선택해주세요';
+}
+function getCurrentMatchForPv(){
+  if(!S.matches)return null;
+  for(let ri=0;ri<S.matches.length;ri++){
+    for(let mi=0;mi<S.matches[ri].length;mi++){
+      const m=S.matches[ri][mi];
+      if(!m.winner&&m.p1&&m.p2)return m;
+    }
+  }
+  return null;
 }
 function updatePv3(){
   const el=document.getElementById('pv3-inner');if(!el)return;el.innerHTML='';
+  // 매치 확정 후에만 표시
+  if(!S.matches||!S.matches.length){
+    el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">진행방식을 선택해주세요</div>';
+    return;
+  }
   if(!S.pts.length){el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">참가자를 등록해주세요</div>';return;}
   let pts=[...S.pts];let size=1;while(size<pts.length)size*=2;
   while(pts.length<size)pts.push(null);
