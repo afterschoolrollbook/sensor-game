@@ -17,7 +17,11 @@ function buildProc(){
     const d=document.createElement('div');
     d.className='pcard'+(S.proc===p.id?' sel':'');
     d.innerHTML=`<div class="pci">${p.icon}</div><div><div class="pc-name">${p.name}</div><div class="pc-desc">${p.desc}</div></div>`;
-    d.onclick=()=>{S.proc=p.id;buildProc();};
+    d.onclick=()=>{
+      S.proc=p.id;
+      try{const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(cur<5)localStorage.setItem('sgp_last_step','5');}catch(e){}
+      buildProc();
+    };
     cards.appendChild(d);
   });
   w.appendChild(cards);

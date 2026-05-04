@@ -17,7 +17,7 @@ function buildGG(){
     d.onclick=()=>{
       S.selG=g.id;
       // 종목 선택 즉시 다음 스텝(3)으로 저장
-      try{localStorage.setItem('sgp_last_step','3');}catch(e){}
+      try{const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(cur<3)localStorage.setItem('sgp_last_step','3');}catch(e){}
       buildGG();updatePv();
     };
     gw.appendChild(d);

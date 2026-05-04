@@ -150,6 +150,8 @@ function impXlsNew(){
       // 스텝3에서는 전광판 미리보기 업데이트 안함 (스텝4 이후에만)
       if(typeof cs!=='undefined'&&cs>=4)updatePv();
       try{App.setState({participants:S.pts});}catch(e2){}
+      // 참가자 등록 시 sgp_last_step 업데이트
+      try{const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(cur<4)localStorage.setItem('sgp_last_step','4');}catch(e2){}
       toast(added+'명 불러오기 완료! ('+added+'명)','success');
     };
     if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
@@ -201,6 +203,7 @@ function addPt(){
   inp.value='';inp.focus();renderPL();
   if(typeof cs!=='undefined'&&cs>=4)updatePv();
   try{App.setState({participants:S.pts});}catch(e){}
+  try{const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(cur<4)localStorage.setItem('sgp_last_step','4');}catch(e){}
 }
 function delPt(id){S.pts=S.pts.filter(p=>p.id!==id);renderPL();if(typeof cs!=='undefined'&&cs>=4)updatePv();try{App.setState({participants:S.pts});}catch(e){}}
 function impXls(){
