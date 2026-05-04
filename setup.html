@@ -1119,7 +1119,7 @@ function buildStepSummary(step){
   const rm=REGMODES.find(x=>x.id===S.rm);
   const allItems=[
     {k:'행사명', v:S.en, icon:'📋'},
-    {k:'종목',   v:S.gl||(g?g.name:''), icon:'🏅'},
+    {k:'종목',   v:S.gl, icon:'🏅'},
     {k:'게임',   v:g?g.name:'', icon:'🎮'},
     {k:'일시',   v:S.dt, icon:'📅'},
     {k:'장소',   v:S.pl, icon:'📍'},
