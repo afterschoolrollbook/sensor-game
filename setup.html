@@ -1105,8 +1105,8 @@ function saveCurrentStep(){
       localStorage.setItem('sgp_history',JSON.stringify(history));
     }catch(e){}
   }
-  // 마지막 저장 스텝 기록 — 다음 스텝으로 저장해야 이어서 진행 시 올바른 위치로 이동
-  try{localStorage.setItem('sgp_last_step',String(Math.min(cs+1,5)));}catch(e){}
+  // 마지막 저장 스텝 기록
+  try{localStorage.setItem('sgp_last_step',String(cs));}catch(e){}
   toast('저장 완료!','success',1500);
 }
 
@@ -1428,6 +1428,10 @@ function renderPA(){
         <input class="fi" id="pti" placeholder="${isT?'팀 이름':'참가자 이름'} 입력" onkeydown="if(event.key==='Enter')addPt()">
         <button class="badd" onclick="addPt()">+ 추가</button>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;" id="pt-count"></span>
+        <button onclick="clearAllPts()" style="font-size:11px;color:#e63946;background:transparent;border:1px solid #e63946;border-radius:4px;padding:2px 8px;cursor:pointer;">전체 삭제</button>
+      </div>
       <div class="plist" id="plist"></div>
       <button class="bxls" onclick="impXlsNew()">📂 CSV/엑셀에서 불러오기</button>
     </div>`;
@@ -1435,9 +1439,14 @@ function renderPA(){
 }
 function renderPL(){
   const l=document.getElementById('plist');if(!l)return;l.innerHTML='';
+  const cnt=document.getElementById('pt-count');if(cnt)cnt.textContent=S.pts.length?S.pts.length+'명':'';
   S.pts.forEach((p,i)=>{
     const d=document.createElement('div');d.className='ptag';
-    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div><div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
+    const tags=[];
+    if(p.weight&&p.weight.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.weight}</span>`);
+    if(p.division&&p.division.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.division}</span>`);
+    if(p.team&&p.team.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.07);border-radius:3px;padding:1px 5px;color:var(--text3)">${p.team}</span>`);
+    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div>${tags.join('')}<div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
     l.appendChild(d);
   });
 }
@@ -1449,6 +1458,7 @@ function addPt(){
   try{App.setState({participants:S.pts});}catch(e){}
 }
 function delPt(id){S.pts=S.pts.filter(p=>p.id!==id);renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}}
+function clearAllPts(){if(!S.pts.length)return;if(!confirm('참가자 전체를 삭제할까요?'))return;S.pts=[];renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}}
 function impXls(){
   try{if(typeof ExcelIO!=='undefined'&&ExcelIO.importExcel){ExcelIO.importExcel(rows=>{rows.forEach((r,i)=>{if(r.name)S.pts.push({id:'p_'+Date.now()+'_'+i,name:r.name,color:TC[S.pts.length%TC.length]});});renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}});}else toast('엑셀 기능 준비 중','info');}
   catch(e){toast('엑셀 오류','error');}
@@ -1563,30 +1573,54 @@ function togBlk(id,el){
 
 /* ── 2번/3번 화면 ── */
 function updatePv2(){
-  const p1=S.pts[0],p2=S.pts[1];
+  let p1=null,p2=null,matchInfo='참가자를 등록해주세요';
+  if(S.matches&&S.matches.length){
+    let found=null,totalM=0,completedM=0;
+    for(let ri=0;ri<S.matches.length;ri++){
+      for(let mi=0;mi<S.matches[ri].length;mi++){
+        const m=S.matches[ri][mi];
+        if(m.p1&&m.p2){
+          totalM++;
+          if(m.winner)completedM++;
+          else if(!found&&m.p1&&m.p2)found=m;
+        }
+      }
+    }
+    if(found){p1=found.p1;p2=found.p2;matchInfo='경기 '+(completedM+1)+' / '+totalM;}
+    else if(totalM>0){matchInfo='모든 경기 완료';}
+    else{matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';}
+  } else if(S.pts.length>=2){
+    // Step 4 매칭 전 — 이름 표시 안 함
+    matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';
+  }
   document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
   document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
-  document.getElementById('pv2-info').textContent=p1&&p2?'경기 1 / '+S.pts.length:'참가자를 등록해주세요';
+  document.getElementById('pv2-info').textContent=matchInfo;
 }
 function updatePv3(){
   const el=document.getElementById('pv3-inner');if(!el)return;el.innerHTML='';
-  if(!S.pts.length){el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">참가자를 등록해주세요</div>';return;}
-  let pts=[...S.pts];let size=1;while(size<pts.length)size*=2;
-  while(pts.length<size)pts.push(null);
-  let rounds=[];let cur=[...pts];
-  while(cur.length>1){const m=[];for(let i=0;i<cur.length;i+=2)m.push([cur[i],cur[i+1]]);rounds.push(m);cur=m.map(x=>x[0]);}
-  const rn=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
-  rounds.forEach((matches,ri)=>{
-    const col=document.createElement('div');col.className='pv3-col';
-    col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
-    matches.forEach(([p1,p2])=>{
-      const m=document.createElement('div');m.className='pv3-match';
-      m.innerHTML='<div class="pv3-pl" style="color:'+(p1?p1.color:'var(--text3)')+'">'+( p1?p1.name:'BYE')+'</div>'
-               +'<div class="pv3-pl" style="color:'+(p2?p2.color:'var(--text3)')+'">'+( p2?p2.name:'BYE')+'</div>';
-      col.appendChild(m);
+  // Step4 매칭이 완성된 경우 → 실제 대진표 사용
+  if(S.matches&&S.matches.length){
+    const rn=['결승','준결승','8강','16강','32강'].slice(0,S.matches.length).reverse();
+    S.matches.forEach((matches,ri)=>{
+      const col=document.createElement('div');col.className='pv3-col';
+      col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
+      matches.forEach(m=>{
+        const p1=m.p1,p2=m.p2;
+        const mc=document.createElement('div');mc.className='pv3-match';
+        const w=m.winner;
+        const styleP1=`color:${p1?(w&&w.id===p1.id?'var(--red)':p1.color):'var(--text3)'}${w&&w.id!==p1?.id?';opacity:.4':''}`;
+        const styleP2=`color:${p2?(w&&w.id===p2.id?'var(--red)':p2.color):'var(--text3)'}${w&&w.id!==p2?.id?';opacity:.4':''}`;
+        mc.innerHTML='<div class="pv3-pl" style="'+styleP1+'">'+(p1?p1.name+(w&&w.id===p1.id?' 🏆':''):'BYE')+'</div>'
+                   +'<div class="pv3-pl" style="'+styleP2+'">'+(p2?p2.name+(w&&w.id===p2.id?' 🏆':''):'BYE')+'</div>';
+        col.appendChild(mc);
+      });
+      el.appendChild(col);
     });
-    el.appendChild(col);
-  });
+    return;
+  }
+  // 매칭 없으면 안내 문구만 (Step 4 전엔 대진표 미표시)
+  el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">Step 4에서 대진 설정 후 표시됩니다</div>';
 }
 
 
