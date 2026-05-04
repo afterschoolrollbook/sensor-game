@@ -14,7 +14,12 @@ function buildGG(){
     d.className='gc'+(S.selG===g.id?' sel':'');
     if(S.selG===g.id)d.style.setProperty('--red',g.ac);
     d.innerHTML=`<div class="gc-icon">${g.icon}</div><div class="gc-name">${g.name}</div><div class="gc-desc">${g.desc}</div><div class="gc-tag">${g.tag}</div>`;
-    d.onclick=()=>{S.selG=g.id;buildGG();updatePv();};
+    d.onclick=()=>{
+      S.selG=g.id;
+      // 종목 선택 즉시 다음 스텝(3)으로 저장
+      try{localStorage.setItem('sgp_last_step','3');}catch(e){}
+      buildGG();updatePv();
+    };
     gw.appendChild(d);
   });
   if(document.getElementById('lapv'))document.getElementById('lapv').textContent=S.laps;
