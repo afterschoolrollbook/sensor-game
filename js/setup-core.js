@@ -308,7 +308,9 @@ function updatePv(){
   const g=ALLG.find(x=>x.id===S.selG);
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
-  updatePvVs();updatePv2();updatePv3();updateRankLayout();
+  // 스텝4 이전엔 2번/3번 화면 비움
+  if(typeof cs!=='undefined'&&cs<4){clearPv23();}else{updatePvVs();updatePv2();updatePv3();}
+  updateRankLayout();
   try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
 }
 function buildRanks(){
@@ -361,6 +363,14 @@ function togBlk(id,el){
 
 
 /* ── 2번/3번 화면 ── */
+
+function clearPv23(){
+  const e1=document.getElementById('pv2-p1');if(e1)e1.textContent='—';
+  const e2=document.getElementById('pv2-p2');if(e2)e2.textContent='—';
+  const ei=document.getElementById('pv2-info');if(ei)ei.textContent='진행방식을 선택해주세요';
+  const e3=document.getElementById('pv3-inner');
+  if(e3)e3.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">진행방식을 선택해주세요</div>';
+}
 function updatePv2(){
   const hasMatch=S.matches&&S.matches.length>0;
   let p1=null,p2=null;
