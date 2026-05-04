@@ -112,7 +112,6 @@
       <a class="nav-step active" data-page="home" href="index.html">홈</a>
       <a class="nav-step" data-page="setup" href="setup.html">행사 설정</a>
       <a class="nav-step" data-page="customize" href="customize.html">커스터마이징</a>
-      <a class="nav-step" data-page="display" href="display-settings.html">전광판 설정</a>
       <a class="nav-step" data-page="game" href="game.html">게임 진행</a>
       <a class="nav-step" data-page="result" href="result.html">결과</a>
     </div>
@@ -358,8 +357,14 @@ function updateStats() {
   const state = App.getState();
   const history = JSON.parse(localStorage.getItem('sgp_history') || '[]');
   document.getElementById('stat-events').textContent = history.length;
-  document.getElementById('stat-participants').textContent = state.participants.length;
-  document.getElementById('stat-records').textContent = state.records.length;
+  // 행사명이 없으면 참가자/기록 데이터 초기화
+  const hasEvent = state.event && state.event.name && state.event.name !== '게임 행사';
+  if(!hasEvent && (state.participants.length > 0 || state.records.length > 0)){
+    App.resetState();
+  }
+  document.getElementById('stat-participants').textContent = hasEvent ? state.participants.length : 0;
+  document.getElementById('stat-records').textContent = hasEvent ? state.records.length : 0;
+
 }
 
 function renderRecent() {
