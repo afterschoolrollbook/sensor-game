@@ -1024,7 +1024,6 @@ function buildStepSummary(step){
     {k:'행사명', v:S.en, icon:'📋'},
     {k:'종목',   v:S.gl||(g?g.name:''), icon:'🏅'},
     {k:'게임',   v:g?g.name:'', icon:'🎮'},
-    {k:'바퀴',   v:S.laps?S.laps+'바퀴':'', icon:'🔄'},
     {k:'일시',   v:S.dt, icon:'📅'},
     {k:'장소',   v:S.pl, icon:'📍'},
   ].filter(x=>x.v);
@@ -1072,7 +1071,6 @@ function buildS3Summary(){
     {k:'행사명', v:S.en||'—', icon:'📋'},
     {k:'종목',   v:S.gl||(g?g.name:'—'), icon:'🏅'},
     {k:'게임',   v:g?g.name:'—', icon:'🎮'},
-    {k:'바퀴',   v:S.laps+'바퀴', icon:'🔄'},
     {k:'일시',   v:S.dt||'—', icon:'📅'},
     {k:'장소',   v:S.pl||'—', icon:'📍'},
   ].filter(x=>x.v&&x.v!=='—');
@@ -1264,7 +1262,7 @@ function buildConfirm(){
   const items=[
     {k:'행사명',v:S.en||'—'},{k:'종목명',v:S.gl||g.name||'—'},
     {k:'일시',v:S.dt||'—'},{k:'장소',v:S.pl||'—'},
-    {k:'게임',v:g.name||'—'},{k:'바퀴',v:S.laps+'바퀴'},
+    {k:'게임',v:g.name||'—',
     {k:'참가방식',v:rm.name},{k:'진행방식',v:pr.name},
   ];
   const cg=document.getElementById('cgrid');cg.innerHTML='';
