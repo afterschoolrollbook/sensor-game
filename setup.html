@@ -1437,7 +1437,11 @@ function renderPL(){
   const l=document.getElementById('plist');if(!l)return;l.innerHTML='';
   S.pts.forEach((p,i)=>{
     const d=document.createElement('div');d.className='ptag';
-    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div><div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
+    const tags=[];
+    if(p.weight&&p.weight.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.weight}</span>`);
+    if(p.division&&p.division.trim())tags.push(`<span style="font-size:10px;background:rgba(76,201,240,.12);border-radius:3px;padding:1px 5px;color:var(--accent)">${p.division}</span>`);
+    if(p.team&&p.team.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.05);border-radius:3px;padding:1px 5px;color:var(--text3)">${p.team}</span>`);
+    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div>${tags.join('')}<div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
     l.appendChild(d);
   });
 }
@@ -1563,14 +1567,49 @@ function togBlk(id,el){
 
 /* ── 2번/3번 화면 ── */
 function updatePv2(){
-  const p1=S.pts[0],p2=S.pts[1];
+  let p1=null,p2=null,matchInfo='참가자를 등록해주세요';
+  if(S.matches&&S.matches.length){
+    let found=null,totalM=0,completedM=0;
+    for(let ri=0;ri<S.matches.length;ri++){
+      for(let mi=0;mi<S.matches[ri].length;mi++){
+        const m=S.matches[ri][mi];
+        if(m.p1&&m.p2){totalM++;if(m.winner)completedM++;else if(!found)found=m;}
+      }
+    }
+    if(found){p1=found.p1;p2=found.p2;matchInfo='경기 '+(completedM+1)+' / '+totalM;}
+    else if(totalM>0){matchInfo='모든 경기 완료';}
+    else{matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';}
+  } else if(S.pts.length>=2){
+    p1=S.pts[0];p2=S.pts[1];
+    matchInfo='Step 4에서 대진 설정 후 정확히 표시됩니다';
+  }
   document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
   document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
-  document.getElementById('pv2-info').textContent=p1&&p2?'경기 1 / '+S.pts.length:'참가자를 등록해주세요';
+  document.getElementById('pv2-info').textContent=matchInfo;
 }
 function updatePv3(){
   const el=document.getElementById('pv3-inner');if(!el)return;el.innerHTML='';
-  if(!S.pts.length){el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">참가자를 등록해주세요</div>';return;}
+  // Step4 실제 대진표가 있으면 우선 사용
+  if(S.matches&&S.matches.length){
+    const rn=['결승','준결승','8강','16강','32강'].slice(0,S.matches.length).reverse();
+    S.matches.forEach((matches,ri)=>{
+      const col=document.createElement('div');col.className='pv3-col';
+      col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
+      matches.forEach(m=>{
+        const p1=m.p1,p2=m.p2,w=m.winner;
+        const mc=document.createElement('div');mc.className='pv3-match';
+        const s1=`color:${p1?(w&&w.id===p1.id?'var(--red)':p1.color):'var(--text3)'}${w&&p1&&w.id!==p1.id?';opacity:.35':''}`;
+        const s2=`color:${p2?(w&&w.id===p2.id?'var(--red)':p2.color):'var(--text3)'}${w&&p2&&w.id!==p2.id?';opacity:.35':''}`;
+        mc.innerHTML='<div class="pv3-pl" style="'+s1+'">'+(p1?p1.name+(w&&w.id===p1.id?' 🏆':''):'BYE')+'</div>'
+                   +'<div class="pv3-pl" style="'+s2+'">'+(p2?p2.name+(w&&w.id===p2.id?' 🏆':''):'BYE')+'</div>';
+        col.appendChild(mc);
+      });
+      el.appendChild(col);
+    });
+    return;
+  }
+  // 대진표 없으면 참가자로 임시 표시
+  if(!S.pts.length){el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">Step 4에서 대진 설정 후 표시됩니다</div>';return;}
   let pts=[...S.pts];let size=1;while(size<pts.length)size*=2;
   while(pts.length<size)pts.push(null);
   let rounds=[];let cur=[...pts];
