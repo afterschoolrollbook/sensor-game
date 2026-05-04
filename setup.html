@@ -1112,77 +1112,113 @@ function dlSample(){
   if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로딩 중...','info');return;}
 
   const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([]);
 
-  // 체급 참고 목록
-  const weightRef=[['체급 참고 목록'],['48kg'],['52kg'],['55kg'],['57kg'],['60kg'],['63kg'],['66kg'],['69kg'],['72kg'],['75kg'],['81kg'],['91kg'],['+91kg']];
-  // 부문 참고 목록
-  const divRef=[['부문 참고 목록'],['초등부'],['중등부'],['고등부'],['성인부'],['남자부'],['여자부'],['일반부'],['오픈부']];
+  const HEADER_STYLE={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'2B2B3B'}},alignment:{horizontal:'center'}};
 
-  const samples={
+  function buildSheet(headers, groups){
+    const rows=[headers];
+    groups.forEach(([groupInfo, names])=>{
+      names.forEach((name, idx)=>{
+        const seq=idx+1;
+        const gi=Array.isArray(groupInfo)?groupInfo:[groupInfo];
+        rows.push([seq,...gi,name]);
+      });
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    // 헤더 열 너비
+    ws['!cols']=headers.map((_,i)=>{
+      const maxLen=Math.max(...rows.map(r=>String(r[i]||'').length));
+      return {wch:maxLen+4};
+    });
+    return ws;
+  }
+
+  const configs={
     ind:{
-      sheet:[
-        ['순번','이름'],
-        [1,'홍길동'],[2,'김철수'],[3,'이영희'],[4,'박민준'],[5,'최수아'],
-        [6,'정하준'],[7,'윤서연'],[8,'강도현'],[9,'임지우'],[10,'오세진'],
+      headers:['순번','이름'],
+      groups:[
+        [null,['홍길동','김철수','이영희','박민준','최수아','정하준','윤서연','강도현','임지우','오세진','이민호','박서준','김지수','최예나','강다현']],
       ],
-      refs:[]
     },
     weight:{
-      sheet:[
-        ['순번','이름','체급'],
-        [1,'홍길동','55kg'],[2,'김철수','63kg'],[3,'이영희','52kg'],[4,'박민준','72kg'],[5,'최수아','48kg'],
-        [6,'정하준','81kg'],[7,'윤서연','57kg'],[8,'강도현','91kg'],[9,'임지우','60kg'],[10,'오세진','69kg'],
+      headers:['순번','체급','이름'],
+      groups:[
+        ['48kg',['최수아','윤서연','이민지','박하은','김나연','정수빈']],
+        ['52kg',['이영희','임지우','강소이','오유진','한채원']],
+        ['55kg',['홍길동','오세진','류현우','신동혁','백승우','김태양']],
+        ['63kg',['김철수','강도현','장민혁','이준서','박성훈']],
+        ['72kg',['박민준','정하준','조현우','윤재원','서동진','한승민']],
+        ['81kg',['이강현','최준혁','김동우','박재민','강태현']],
       ],
-      refs:[{name:'체급목록',data:weightRef}]
     },
     divind:{
-      sheet:[
-        ['순번','부문','이름','체급'],
-        [1,'초등부','홍길동','55kg'],[2,'초등부','김철수','63kg'],[3,'초등부','이영희','52kg'],[4,'중등부','박민준','72kg'],[5,'중등부','최수아','48kg'],
-        [6,'고등부','정하준','81kg'],[7,'고등부','윤서연','57kg'],[8,'성인부','강도현','91kg'],[9,'성인부','임지우','60kg'],[10,'성인부','오세진','69kg'],
+      headers:['순번','부문','체급','이름'],
+      groups:[
+        [['초등부','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
+        [['초등부','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
+        [['중등부','52kg'],['이영희','임지우','강소이','오유진','한채원']],
+        [['중등부','60kg'],['김철수','강도현','장민혁','이준서','박성훈']],
+        [['고등부','63kg'],['박민준','정하준','조현우','윤재원','서동진']],
+        [['성인부','72kg'],['이강현','최준혁','김동우','박재민','강태현']],
       ],
-      refs:[{name:'부문목록',data:divRef},{name:'체급목록',data:weightRef}]
     },
     team:{
-      sheet:[
-        ['순번','팀명','이름'],
-        [1,'레드팀','홍길동'],[2,'레드팀','김철수'],[3,'레드팀','박민준'],[4,'레드팀','정하준'],[5,'레드팀','강도현'],
-        [6,'블루팀','이영희'],[7,'블루팀','최수아'],[8,'블루팀','윤서연'],[9,'블루팀','임지우'],[10,'블루팀','오세진'],
+      headers:['순번','팀명','이름'],
+      groups:[
+        ['레드팀',['홍길동','김철수','박민준','정하준','강도현','이준서','류현우']],
+        ['블루팀',['이영희','최수아','윤서연','임지우','오세진','박하은','한채원']],
+        ['그린팀',['이강현','최준혁','김동우','박재민','강태현','신동혁','조현우']],
       ],
-      refs:[]
     },
     teamwt:{
-      sheet:[
-        ['순번','팀명','이름','체급'],
-        [1,'레드팀','홍길동','63kg'],[2,'레드팀','김철수','72kg'],[3,'레드팀','박민준','81kg'],[4,'레드팀','정하준','55kg'],[5,'레드팀','강도현','91kg'],
-        [6,'블루팀','이영희','52kg'],[7,'블루팀','최수아','48kg'],[8,'블루팀','윤서연','57kg'],[9,'블루팀','임지우','60kg'],[10,'블루팀','오세진','69kg'],
+      headers:['순번','팀명','체급','이름'],
+      groups:[
+        [['레드팀','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
+        [['레드팀','63kg'],['김철수','강도현','장민혁','이준서','박성훈']],
+        [['블루팀','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
+        [['블루팀','52kg'],['이영희','임지우','강소이','오유진','한채원']],
+        [['블루팀','72kg'],['박민준','정하준','조현우','윤재원','서동진']],
       ],
-      refs:[{name:'체급목록',data:weightRef}]
     },
     divteam:{
-      sheet:[
-        ['순번','팀명','부문','이름','체급'],
-        [1,'레드팀','남자부','홍길동','63kg'],[2,'레드팀','남자부','김철수','72kg'],[3,'레드팀','남자부','박민준','81kg'],[4,'레드팀','남자부','정하준','55kg'],[5,'레드팀','남자부','강도현','91kg'],
-        [6,'블루팀','여자부','이영희','52kg'],[7,'블루팀','여자부','최수아','48kg'],[8,'블루팀','여자부','윤서연','57kg'],[9,'블루팀','여자부','임지우','60kg'],[10,'블루팀','여자부','오세진','69kg'],
+      headers:['순번','팀명','부문','체급','이름'],
+      groups:[
+        [['레드팀','남자부','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
+        [['레드팀','남자부','63kg'],['김철수','강도현','장민혁','이준서','박성훈']],
+        [['블루팀','여자부','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
+        [['블루팀','여자부','52kg'],['이영희','임지우','강소이','오유진','한채원']],
+        [['그린팀','남자부','72kg'],['박민준','정하준','조현우','윤재원','서동진']],
       ],
-      refs:[{name:'부문목록',data:divRef},{name:'체급목록',data:weightRef}]
     },
   };
 
-  const s=samples[rm]||samples['ind'];
+  const cfg=configs[rm]||configs['ind'];
 
-  // 참가자 시트
-  const ws=XLSX.utils.aoa_to_sheet(s.sheet);
-  ws['!cols']=s.sheet[0].map((_,i)=>({wch:Math.max(...s.sheet.map(r=>String(r[i]||'').length))+4}));
-  XLSX.utils.book_append_sheet(wb,ws,'참가자');
+  // 개인전은 그룹 없이 단순 리스트
+  let finalGroups=cfg.groups;
+  if(rm==='ind'){
+    finalGroups=[[null,cfg.groups[0][1]]];
+  }
 
-  // 참고 시트 (체급목록, 부문목록)
-  s.refs.forEach(ref=>{
-    const ws2=XLSX.utils.aoa_to_sheet(ref.data);
-    ws2['!cols']=[{wch:16}];
-    XLSX.utils.book_append_sheet(wb,ws2,ref.name);
+  // rows 생성
+  const rows=[cfg.headers];
+  finalGroups.forEach(([groupInfo, names])=>{
+    names.forEach((name,idx)=>{
+      const seq=idx+1;
+      if(groupInfo===null){
+        rows.push([seq,name]);
+      } else if(Array.isArray(groupInfo)){
+        rows.push([seq,...groupInfo,name]);
+      } else {
+        rows.push([seq,groupInfo,name]);
+      }
+    });
   });
 
+  const sheet=XLSX.utils.aoa_to_sheet(rows);
+  sheet['!cols']=cfg.headers.map((_,i)=>({wch:Math.max(...rows.map(r=>String(r[i]||'').length))+4}));
+  XLSX.utils.book_append_sheet(wb,sheet,'참가자');
   XLSX.writeFile(wb,'SGP_'+rm_obj.name+'_샘플.xlsx');
   toast(rm_obj.name+' 샘플 다운로드 완료!','success');
 }
