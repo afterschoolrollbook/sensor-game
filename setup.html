@@ -891,6 +891,7 @@ function goS(n){
 function nextS(){if(cs<5)goS(cs+1);}
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
+  if(cs===3){buildS3Summary();buildS3Sample();}
   document.getElementById('bprev').style.display=cs===1?'none':'';
   const bn=document.getElementById('bnext');
   if(cs===5){bn.style.display='none';}
