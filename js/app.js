@@ -29,6 +29,15 @@ const App = (() => {
       laps: 1,
       timeLimit: 0,
       countFrom: 3,
+      proc: 'ind-rec',
+      rm: 'ind',
+      gl: '',
+      dt: '',
+      pl: '',
+      sp: '',
+      s1: '',
+      s2: '',
+      di: {},
     }
   };
 
