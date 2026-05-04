@@ -126,10 +126,11 @@ function impXlsNew(){
       }
       if(!rows.length)return;
       const headers=rows[0].map(h=>String(h).trim().toLowerCase());
-      const nameIdx=headers.findIndex(h=>h==='이름'||h==='name');
-      const teamIdx=headers.findIndex(h=>h==='팀명'||h==='team');
-      const weightIdx=headers.findIndex(h=>h==='체급'||h==='weight');
-      const divIdx=headers.findIndex(h=>h==='부문'||h==='division');
+      const nameIdx=headers.findIndex(h=>['이름','name'].includes(h));
+      const teamIdx=headers.findIndex(h=>['팀명','팀','team'].includes(h));
+      const weightIdx=headers.findIndex(h=>['체급','weight','class'].includes(h));
+      const divIdx=headers.findIndex(h=>['부문','division','부서','category'].includes(h));
+      const seqIdx=headers.findIndex(h=>['순번','번호','no','seq','#'].includes(h));
       if(nameIdx<0){toast('이름 컬럼을 찾을 수 없어요','error');return;}
       let added=0;
       rows.slice(1).forEach((cols,i)=>{
@@ -186,7 +187,8 @@ function renderPL(){
   const l=document.getElementById('plist');if(!l)return;l.innerHTML='';
   S.pts.forEach((p,i)=>{
     const d=document.createElement('div');d.className='ptag';
-    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div><div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
+    const tags=[p.division,p.weight,p.team].filter(Boolean).map(t=>`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 6px;border-radius:8px;margin-left:4px;">${t}</span>`).join('');
+    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}${tags}</div><div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
     l.appendChild(d);
   });
 }
