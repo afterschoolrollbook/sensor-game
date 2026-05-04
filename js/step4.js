@@ -31,10 +31,16 @@ function buildProc(){
     return;
   }
 
-  // 선택된 진행방식에 따라 트리 렌더
+  // 참가자 분류 표시 (체급/부문/팀 기준)
+  const groupWrap=document.createElement('div');
+  groupWrap.style.cssText='margin-top:16px;';
+  buildParticipantGroups(groupWrap);
+  w.appendChild(groupWrap);
+
+  // 선택된 진행방식에 따라 매치 트리 렌더
   const treeWrap=document.createElement('div');
   treeWrap.id='proc-tree';
-  treeWrap.style.cssText='margin-top:18px;';
+  treeWrap.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:16px;';
   w.appendChild(treeWrap);
 
   if(S.proc==='ind-tour'||S.proc==='team-tour'){
@@ -44,6 +50,60 @@ function buildProc(){
   } else if(S.proc==='team-rec'||S.proc==='team-ind'){
     buildTeamList(treeWrap);
   }
+}
+
+/* ── 참가자 분류 표시 (체급/부문/팀 그룹핑) ── */
+function buildParticipantGroups(wrap){
+  const hasWeight=S.pts.some(p=>p.weight);
+  const hasDiv=S.pts.some(p=>p.division);
+  const hasTeam=S.pts.some(p=>p.team);
+
+  // 헤더
+  const hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
+  hdr.innerHTML=`
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">
+      👥 참가자 현황 <span style="font-weight:400;color:var(--text3)">(총 ${S.pts.length}명)</span>
+    </div>`;
+  wrap.appendChild(hdr);
+
+  // 그룹핑 기준 결정
+  const groups={};
+  S.pts.forEach(p=>{
+    let key='';
+    if(hasDiv&&hasWeight) key=(p.division||'미분류')+' / '+(p.weight||'미분류');
+    else if(hasDiv) key=p.division||'미분류';
+    else if(hasWeight) key=p.weight||'미분류';
+    else if(hasTeam) key=p.team||'개인';
+    else key='전체';
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+
+  // 그룹별 표시
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;';
+
+  Object.entries(groups).forEach(([groupName,members])=>{
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;';
+    box.innerHTML=`
+      <div style="padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:700;">${groupName}</span>
+        <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:2px 7px;border-radius:10px;">${members.length}명</span>
+      </div>
+      <div style="padding:6px 10px;max-height:120px;overflow-y:auto;">
+        ${members.map((p,i)=>`
+          <div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;">
+            <span style="color:var(--text3);font-size:10px;width:16px;">${i+1}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+            <span>${p.name}</span>
+          </div>`).join('')}
+      </div>`;
+    grid.appendChild(box);
+  });
+
+  wrap.appendChild(grid);
 }
 
 /* ── 토너먼트 대진표 트리 ── */
