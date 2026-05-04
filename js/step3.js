@@ -146,9 +146,11 @@ function impXlsNew(){
         });
         added++;
       });
-      renderPL();updatePv();
+      renderPL();
+      // 스텝3에서는 전광판 미리보기 업데이트 안함 (스텝4 이후에만)
+      if(typeof cs!=='undefined'&&cs>=4)updatePv();
       try{App.setState({participants:S.pts});}catch(e2){}
-      toast(added+'명 불러오기 완료!','success');
+      toast(added+'명 불러오기 완료! ('+added+'명)','success');
     };
     if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
     else reader.readAsArrayBuffer(file);
@@ -196,10 +198,11 @@ function addPt(){
   const inp=document.getElementById('pti');if(!inp)return;
   const nm=inp.value.trim();if(!nm){toast('이름을 입력해주세요.','error');return;}
   S.pts.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),name:nm,color:TC[S.pts.length%TC.length]});
-  inp.value='';inp.focus();renderPL();updatePv();
+  inp.value='';inp.focus();renderPL();
+  if(typeof cs!=='undefined'&&cs>=4)updatePv();
   try{App.setState({participants:S.pts});}catch(e){}
 }
-function delPt(id){S.pts=S.pts.filter(p=>p.id!==id);renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}}
+function delPt(id){S.pts=S.pts.filter(p=>p.id!==id);renderPL();if(typeof cs!=='undefined'&&cs>=4)updatePv();try{App.setState({participants:S.pts});}catch(e){}}
 function impXls(){
   try{if(typeof ExcelIO!=='undefined'&&ExcelIO.importExcel){ExcelIO.importExcel(rows=>{rows.forEach((r,i)=>{if(r.name)S.pts.push({id:'p_'+Date.now()+'_'+i,name:r.name,color:TC[S.pts.length%TC.length]});});renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}});}else toast('엑셀 기능 준비 중','info');}
   catch(e){toast('엑셀 오류','error');}
