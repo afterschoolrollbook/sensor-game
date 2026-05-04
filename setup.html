@@ -1118,8 +1118,8 @@ function saveCurrentStep(){
       localStorage.setItem('sgp_history',JSON.stringify(history));
     }catch(e){}
   }
-  // 마지막 저장 스텝 기록
-  try{localStorage.setItem('sgp_last_step',String(cs));}catch(e){}
+  // 마지막 저장 스텝 기록 — 다음 스텝으로, 뒤로 가도 덮어쓰지 않음
+  try{const next=Math.min(cs+1,5);const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(next>cur)localStorage.setItem('sgp_last_step',String(next));}catch(e){}
   toast('저장 완료!','success',1500);
 }
 
