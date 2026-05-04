@@ -1104,118 +1104,20 @@ function buildS3Sample(){
 function dlSample(){
   const rm=S.rm||'ind';
   const rm_obj=REGMODES.find(x=>x.id===rm)||{name:'샘플'};
-  if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로딩 중...','info');return;}
-
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([]);
-
-  const HEADER_STYLE={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'2B2B3B'}},alignment:{horizontal:'center'}};
-
-  function buildSheet(headers, groups){
-    const rows=[headers];
-    groups.forEach(([groupInfo, names])=>{
-      names.forEach((name, idx)=>{
-        const seq=idx+1;
-        const gi=Array.isArray(groupInfo)?groupInfo:[groupInfo];
-        rows.push([seq,...gi,name]);
-      });
-    });
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    // 헤더 열 너비
-    ws['!cols']=headers.map((_,i)=>{
-      const maxLen=Math.max(...rows.map(r=>String(r[i]||'').length));
-      return {wch:maxLen+4};
-    });
-    return ws;
-  }
-
-  const configs={
-    ind:{
-      headers:['순번','이름'],
-      groups:[
-        [null,['홍길동','김철수','이영희','박민준','최수아','정하준','윤서연','강도현','임지우','오세진','이민호','박서준','김지수','최예나','강다현']],
-      ],
-    },
-    weight:{
-      headers:['순번','체급','이름'],
-      groups:[
-        ['48kg',['최수아','윤서연','이민지','박하은','김나연','정수빈']],
-        ['52kg',['이영희','임지우','강소이','오유진','한채원']],
-        ['55kg',['홍길동','오세진','류현우','신동혁','백승우','김태양']],
-        ['63kg',['김철수','강도현','장민혁','이준서','박성훈']],
-        ['72kg',['박민준','정하준','조현우','윤재원','서동진','한승민']],
-        ['81kg',['이강현','최준혁','김동우','박재민','강태현']],
-      ],
-    },
-    divind:{
-      headers:['순번','부문','체급','이름'],
-      groups:[
-        [['초등부','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
-        [['초등부','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
-        [['중등부','52kg'],['이영희','임지우','강소이','오유진','한채원']],
-        [['중등부','60kg'],['김철수','강도현','장민혁','이준서','박성훈']],
-        [['고등부','63kg'],['박민준','정하준','조현우','윤재원','서동진']],
-        [['성인부','72kg'],['이강현','최준혁','김동우','박재민','강태현']],
-      ],
-    },
-    team:{
-      headers:['순번','팀명','이름'],
-      groups:[
-        ['레드팀',['홍길동','김철수','박민준','정하준','강도현','이준서','류현우']],
-        ['블루팀',['이영희','최수아','윤서연','임지우','오세진','박하은','한채원']],
-        ['그린팀',['이강현','최준혁','김동우','박재민','강태현','신동혁','조현우']],
-      ],
-    },
-    teamwt:{
-      headers:['순번','팀명','체급','이름'],
-      groups:[
-        [['레드팀','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
-        [['레드팀','63kg'],['김철수','강도현','장민혁','이준서','박성훈']],
-        [['블루팀','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
-        [['블루팀','52kg'],['이영희','임지우','강소이','오유진','한채원']],
-        [['블루팀','72kg'],['박민준','정하준','조현우','윤재원','서동진']],
-      ],
-    },
-    divteam:{
-      headers:['순번','팀명','부문','체급','이름'],
-      groups:[
-        [['레드팀','남자부','55kg'],['홍길동','오세진','류현우','신동혁','백승우']],
-        [['레드팀','남자부','63kg'],['김철수','강도현','장민혁','이준서','박성훈']],
-        [['블루팀','여자부','48kg'],['최수아','윤서연','이민지','박하은','김나연']],
-        [['블루팀','여자부','52kg'],['이영희','임지우','강소이','오유진','한채원']],
-        [['그린팀','남자부','72kg'],['박민준','정하준','조현우','윤재원','서동진']],
-      ],
-    },
+  const fileMap={
+    ind:     'samples/SGP_개인전_샘플.xlsx',
+    weight:  'samples/SGP_체급개인전_샘플.xlsx',
+    divind:  'samples/SGP_부문체급개인전_샘플.xlsx',
+    team:    'samples/SGP_팀전_샘플.xlsx',
+    teamwt:  'samples/SGP_체급팀전_샘플.xlsx',
+    divteam: 'samples/SGP_부문체급팀전_샘플.xlsx',
   };
-
-  const cfg=configs[rm]||configs['ind'];
-
-  // 개인전은 그룹 없이 단순 리스트
-  let finalGroups=cfg.groups;
-  if(rm==='ind'){
-    finalGroups=[[null,cfg.groups[0][1]]];
-  }
-
-  // rows 생성
-  const rows=[cfg.headers];
-  finalGroups.forEach(([groupInfo, names])=>{
-    names.forEach((name,idx)=>{
-      const seq=idx+1;
-      if(groupInfo===null){
-        rows.push([seq,name]);
-      } else if(Array.isArray(groupInfo)){
-        rows.push([seq,...groupInfo,name]);
-      } else {
-        rows.push([seq,groupInfo,name]);
-      }
-    });
-  });
-
-  const sheet=XLSX.utils.aoa_to_sheet(rows);
-  sheet['!cols']=cfg.headers.map((_,i)=>({wch:Math.max(...rows.map(r=>String(r[i]||'').length))+4}));
-  XLSX.utils.book_append_sheet(wb,sheet,'참가자');
-  XLSX.writeFile(wb,'SGP_'+rm_obj.name+'_샘플.xlsx');
-  toast(rm_obj.name+' 샘플 다운로드 완료!','success');
+  const url=fileMap[rm]||fileMap['ind'];
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=url.split('/').pop();
+  a.click();
+  toast(rm_obj.name+' 샘플 다운로드!','success');
 }
 
 /* 엑셀 업로드 (CSV/xlsx 파싱) */
@@ -1226,25 +1128,37 @@ function impXlsNew(){
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=ev=>{
-      const text=ev.target.result.replace(/^\uFEFF/,''); // BOM 제거
-      const lines=text.split('\n').filter(l=>l.trim());
-      if(!lines.length)return;
-      const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+      let rows=[];
+      const isCsv=file.name.endsWith('.csv');
+      if(isCsv){
+        // CSV 파싱
+        const text=ev.target.result.replace(/^\uFEFF/,'');
+        const lines=text.split('\n').filter(l=>l.trim());
+        rows=lines.map(l=>l.split(',').map(v=>v.replace(/"/g,'').trim()));
+      } else {
+        // XLSX 파싱
+        const data=new Uint8Array(ev.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      }
+      if(!rows.length)return;
+      const headers=rows[0].map(h=>String(h).trim().toLowerCase());
       const nameIdx=headers.findIndex(h=>h==='이름'||h==='name');
       const teamIdx=headers.findIndex(h=>h==='팀명'||h==='team');
       const weightIdx=headers.findIndex(h=>h==='체급'||h==='weight');
       const divIdx=headers.findIndex(h=>h==='부문'||h==='division');
+      if(nameIdx<0){toast('이름 컬럼을 찾을 수 없어요','error');return;}
       let added=0;
-      lines.slice(1).forEach((line,i)=>{
-        const cols=line.split(',').map(v=>v.replace(/"/g,'').trim());
-        const name=nameIdx>=0?cols[nameIdx]:'';
+      rows.slice(1).forEach((cols,i)=>{
+        const name=String(cols[nameIdx]||'').trim();
         if(!name)return;
         S.pts.push({
           id:'p_'+Date.now()+'_'+i,
           name,
-          team:teamIdx>=0?cols[teamIdx]:'',
-          weight:weightIdx>=0?cols[weightIdx]:'',
-          division:divIdx>=0?cols[divIdx]:'',
+          team:teamIdx>=0?String(cols[teamIdx]||'').trim():'',
+          weight:weightIdx>=0?String(cols[weightIdx]||'').trim():'',
+          division:divIdx>=0?String(cols[divIdx]||'').trim():'',
           color:TC[S.pts.length%TC.length]
         });
         added++;
@@ -1253,7 +1167,8 @@ function impXlsNew(){
       try{App.setState({participants:S.pts});}catch(e2){}
       toast(added+'명 불러오기 완료!','success');
     };
-    reader.readAsText(file,'UTF-8');
+    if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
+    else reader.readAsArrayBuffer(file);
   };
   input.click();
 }
