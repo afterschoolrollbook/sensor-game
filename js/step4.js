@@ -177,15 +177,21 @@ function _wrap(wrap,svg){
   d.style.cssText='overflow:auto;padding-bottom:8px;';
   d.appendChild(svg);wrap.appendChild(d);
 }
-/* 공통: 라운드 라벨 */
-function _rlabel(svg,x,y,ri,total){
+/* ── 공통: 라운드 이름 반환 ── */
+function _roundName(ri,total){
   const names=['1라운드','2라운드','3라운드','4라운드','5라운드'];
-  const name=ri===total-1&&total>1?'결승':ri===total-2&&total>2?'준결승':names[ri]||`${ri+1}라운드`;
+  if(total>1&&ri===total-1)return'결승';
+  if(total>2&&ri===total-2)return'준결승';
+  return names[ri]||`${ri+1}라운드`;
+}
+
+/* ── 라운드 라벨 */
+function _rlabel(svg,x,y,ri,total){
   const t=document.createElementNS('http://www.w3.org/2000/svg','text');
   t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('text-anchor','middle');
   t.setAttribute('fill','#444');t.setAttribute('font-size','8');
   t.setAttribute('font-family','Share Tech Mono,monospace');t.setAttribute('letter-spacing','1');
-  t.textContent=name;svg.appendChild(t);
+  t.textContent=_roundName(ri,total);svg.appendChild(t);
 }
 
 /* 가로형 박스 (A/D용): "이름 VS 이름" 한 줄 */
@@ -346,14 +352,14 @@ function _drawLinks(svg,rounds,xFn,cyFn,dir,sz){
       const midX=(lx+rlx)/2;
       const byeY=cyFn(ri,0);
       const m1Y=cyFn(ri,1);
-      const toY=cyFn(ri+1,0);
       const midY=(byeY+m1Y)/2;
-      // bye → midY
+      // bye → midX 수평선
       LN(lx,byeY,midX,byeY);
-      LN(midX,byeY,midX,m1Y);
-      // 1번 → midY
+      // 1번 → midX 수평선
       LN(lx,m1Y,midX,m1Y);
-      // midY → 다음 라운드
+      // 두 선을 수직으로 연결
+      LN(midX,byeY,midX,m1Y);
+      // 중점 → 다음 라운드
       LN(midX,midY,rlx,midY);
       // 나머지 일반 매치들 (2,3), (4,5)...
       const normals=matches.slice(1); // bye 제외
@@ -437,14 +443,13 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
+    col.dataset.col=ri;
     col.style.cssText=`display:flex;flex-direction:column;height:100%;width:180px;flex-shrink:0;`;
 
     // 라운드 라벨
     const lbl=document.createElement('div');
-    const names=['1라운드','2라운드','3라운드','4라운드','5라운드'];
-    const name=ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':names[ri]||`${ri+1}라운드`;
     lbl.style.cssText='font-size:9px;color:#444;letter-spacing:2px;font-family:Share Tech Mono,monospace;text-align:center;margin-bottom:0;height:24px;line-height:24px;flex-shrink:0;';
-    lbl.textContent=name;
+    lbl.textContent=_roundName(ri,T);
     col.appendChild(lbl);
 
     const matchArea=document.createElement('div');
@@ -456,16 +461,15 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
       const p1=m.p1,p2=m.p2;
 
-      // 박스 중앙 Y: 소스 박스들의 평균으로 계산
-      let slotCenterY;
-      if(ri===0){
-        slotCenterY=mi*SLOT_H+SLOT_H/2;
-      } else {
-        const srcA=mi*2, srcB=mi*2+1;
-        const cyA=srcA*SLOT_H+SLOT_H/2;
-        const cyB=srcB<rounds[ri-1].length?srcB*SLOT_H+SLOT_H/2:cyA;
-        slotCenterY=(cyA+cyB)/2;
-      }
+      // 박스 중앙 Y: 소스 박스들의 평균으로 재귀 계산 (라운드별 슬롯 밀도 반영)
+      const _slotCY=(rIdx,mIdx)=>{
+        if(rIdx===0)return mIdx*SLOT_H+SLOT_H/2;
+        const sA=mIdx*2, sB=mIdx*2+1;
+        const cyA=_slotCY(rIdx-1,sA);
+        const cyB=sB<rounds[rIdx-1].length?_slotCY(rIdx-1,sB):cyA;
+        return(cyA+cyB)/2;
+      };
+      const slotCenterY=_slotCY(ri,mi);
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
@@ -652,16 +656,18 @@ function addNextRound(){
   const byeIdx=lastRound.findIndex(m=>m.bye);
 
   if(byeIdx>=0){
+    // bye와 바로 다음 일반 매치가 다음 라운드 첫 매치로 합쳐짐
     next.push({
-      p1:{name:`${ri+1}-0 승자`,tbd:true},
-      p2:{name:`${ri+1}-1 승자`,tbd:true},
+      p1:{name:`${ri+1}-${byeIdx+1} 승자`,tbd:true},
+      p2:{name:`${ri+1}-${byeIdx===0?2:1} 승자`,tbd:true},
       bye:false
     });
-    const normals=lastRound.filter((_,i)=>i!==byeIdx);
-    for(let i=1;i<normals.length;i+=2){
+    const normals=lastRound.filter((_,i)=>i!==byeIdx&&i!==(byeIdx===0?1:0));
+    for(let i=0;i<normals.length;i+=2){
+      const baseIdx=lastRound.indexOf(normals[i]);
       next.push({
-        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
-        p2:normals[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        p1:{name:`${ri+1}-${baseIdx+1} 승자`,tbd:true},
+        p2:normals[i+1]?{name:`${ri+1}-${lastRound.indexOf(normals[i+1])+1} 승자`,tbd:true}:null,
         bye:!normals[i+1]
       });
     }
