@@ -1684,7 +1684,7 @@ function toast(msg,type='info'){
 }
 </script>
 <!-- 참가자 보기 팝업 -->
-<div id="pts-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);">
+<div id="pts-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.80);">
   <div id="pts-popup-box" style="
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
@@ -1788,7 +1788,7 @@ function openPtsPopup(){
   document.getElementById('pts-popup').style.display='block';
   const box=document.getElementById('pts-popup-box');
   box.style.top='50%';box.style.left='50%';box.style.transform='translate(-50%,-50%)';
-  renderPtsPopup();
+  requestAnimationFrame(()=>setTimeout(renderPtsPopup,0));
 }
 
 function closePtsPopup(){document.getElementById('pts-popup').style.display='none';}
@@ -2032,6 +2032,7 @@ function renderBracketView(groupIdx){
   label.textContent=g.label;
   view.innerHTML='';
 
+  requestAnimationFrame(()=>{
   // 슬롯 지정하기 모드 패널
   if(_assignMode){
     const panel=document.createElement('div');
@@ -2070,6 +2071,7 @@ function renderBracketView(groupIdx){
   }finally{
     S.matches=savedMatches;
   }
+  }); // end requestAnimationFrame
 }
 function selectSlot(num){
   _assignSlotNum=_assignSlotNum===num?null:num;
