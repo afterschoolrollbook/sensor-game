@@ -435,7 +435,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const totalH=r0len*SLOT_H+32;
   container.style.cssText=`display:flex;flex-direction:row;gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
 
-  // 박스 배치 cy 재귀 계산
+  // 재귀 cy 계산: 해당 매치가 커버하는 1라운드 박스들의 세로 중앙
   const calcCy=(ri,mi)=>{
     if(ri===0)return mi*SLOT_H+SLOT_H/2;
     const srcA=mi*2,srcB=mi*2+1;
@@ -443,6 +443,9 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     const cyB=srcB<rounds[ri-1].length?calcCy(ri-1,srcB):cyA;
     return(cyA+cyB)/2;
   };
+
+  // direction별 col 세로 정렬 오프셋
+  const totalSlotH=r0len*SLOT_H;
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
@@ -466,8 +469,14 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
       const p1=m.p1,p2=m.p2;
 
-      // 박스 중앙 Y: 재귀로 소스박스 평균 계산
-      const slotCenterY=calcCy(ri,mi);
+      // direction별 offset 적용
+      const dirOff_=()=>{
+        const usedH=matches.length*SLOT_H;
+        if(direction==='bottom') return totalSlotH-usedH;
+        if(direction==='center') return (totalSlotH-usedH)/2;
+        return 0;
+      };
+      const slotCenterY=(ri===0?dirOff_():0)+calcCy(ri,mi);
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
@@ -535,32 +544,41 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   outerWrap.appendChild(container);
   wrap.appendChild(outerWrap);
 
-  // 연결선: 슬롯 수학으로 직접 계산 (getBoundingClientRect 제거)
+  // 연결선: cy=재귀, left=DOM실측, direction 반영
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const LABEL_H=24,PAD=8,BOX_W=180,COL_GAP=40;
+    const LABEL_H=24,PAD=8,BOX_W=180;
     const W=container.scrollWidth,H=container.scrollHeight+40;
 
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
     svg.setAttribute('width',W);svg.setAttribute('height',H);
 
-    // getBox: cy를 재귀적으로 소스박스 평균으로 계산 (모든 라운드 정확)
+    const cr=container.getBoundingClientRect();
+
+    // direction별 각 라운드 matchArea top offset
+    const dirOff=(ri)=>{
+      const usedH=rounds[ri].length*SLOT_H;
+      if(direction==='bottom') return totalSlotH-usedH;
+      if(direction==='center') return (totalSlotH-usedH)/2;
+      return 0;
+    };
+
+    // cy 재귀: 1라운드 박스 기준으로 상위 라운드 중앙 계산
+    const getBoxCy=(ri,mi)=>{
+      if(ri===0) return LABEL_H+PAD+dirOff(0)+mi*SLOT_H+SLOT_H/2;
+      const srcA=mi*2, srcB=mi*2+1;
+      const cyA=getBoxCy(ri-1,srcA);
+      const cyB=srcB<rounds[ri-1].length?getBoxCy(ri-1,srcB):cyA;
+      return(cyA+cyB)/2;
+    };
+
     const getBox=(ri,mi)=>{
-      let cy;
-      if(ri===0){
-        cy=LABEL_H+PAD+mi*SLOT_H+SLOT_H/2;
-      } else {
-        const srcA=mi*2, srcB=mi*2+1;
-        const cyA=getBox(ri-1,srcA).cy;
-        const cyB=srcB<rounds[ri-1].length?getBox(ri-1,srcB).cy:cyA;
-        cy=(cyA+cyB)/2;
-      }
+      const cy=getBoxCy(ri,mi);
       const colEl=container.querySelector(`[data-col="${ri}"]`);
-      const cr=container.getBoundingClientRect();
       const colR=colEl?colEl.getBoundingClientRect():null;
-      const left=colR?colR.left-cr.left:PAD+ri*(BOX_W+COL_GAP);
+      const left=colR?colR.left-cr.left:PAD+ri*220;
       const right=colR?colR.right-cr.left:left+BOX_W;
-      return{left, right, cy};
+      return{left,right,cy};
     };
 
     const PATH=(d)=>{
