@@ -289,8 +289,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const r1=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r1.setAttribute('x',x1);r1.setAttribute('y',y1);r1.setAttribute('width',bw);r1.setAttribute('height',bh);
   r1.setAttribute('rx','4');r1.setAttribute('fill','#0d0d1a');
-  r1.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r1.setAttribute('stroke-width',isCur?'2':'1');
-  if(isCur)r1.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
+  r1.setAttribute('stroke','#1e1e30');r1.setAttribute('stroke-width','1');
   svg.appendChild(r1);
   n1.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -310,8 +309,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const r2=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r2.setAttribute('x',x2);r2.setAttribute('y',y2);r2.setAttribute('width',bw);r2.setAttribute('height',bh);
   r2.setAttribute('rx','4');r2.setAttribute('fill','#0d0d1a');
-  r2.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r2.setAttribute('stroke-width',isCur?'2':'1');
-  if(isCur)r2.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
+  r2.setAttribute('stroke','#1e1e30');r2.setAttribute('stroke-width','1');
   svg.appendChild(r2);
   n2.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
