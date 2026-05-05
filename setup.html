@@ -1779,6 +1779,7 @@ let _ptsGroups={};
 let _ptsMode='tournament';
 
 function openPtsPopup(){
+  document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
   _ptsSortKeys=[];_ptsGroups={};_ptsMode='tournament';
   document.querySelectorAll('.pts-sort-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';});
@@ -2206,7 +2207,6 @@ function initPtsPopupDrag(){
     bx=r.left;by=r.top;ox=e.clientX;oy=e.clientY;
     dragging=true;
     hdr.style.cursor='grabbing';
-    e.preventDefault();
     document.addEventListener('mousemove',onMove);
     document.addEventListener('mouseup',onUp);
   });
