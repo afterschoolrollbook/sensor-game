@@ -994,7 +994,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
-  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();
+  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
   const urlParams=new URLSearchParams(location.search);
   const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
@@ -1788,7 +1788,6 @@ function openPtsPopup(){
   const box=document.getElementById('pts-popup-box');
   box.style.top='50%';box.style.left='50%';box.style.transform='translate(-50%,-50%)';
   renderPtsPopup();
-  initPtsPopupDrag();
 }
 
 function closePtsPopup(){document.getElementById('pts-popup').style.display='none';}
@@ -2174,7 +2173,7 @@ function makeTournament(members,label){
   toast((label||'전체')+' 토너먼트 생성! ('+pts.length+'명)','success');
 }
 
-/* 드래그 이동 */
+/* 드래그 이동 — 페이지 로드 시 1회만 초기화 */
 function initPtsPopupDrag(){
   const hdr=document.getElementById('pts-popup-hdr');
   const box=document.getElementById('pts-popup-box');
@@ -2189,21 +2188,25 @@ function initPtsPopupDrag(){
     box.style.left=bx+'px';box.style.top=by+'px';
   }
   function onUp(){
-    dragging=false;hdr.style.cursor='grab';
+    if(!dragging)return;
+    dragging=false;
+    hdr.style.cursor='grab';
     document.removeEventListener('mousemove',onMove);
     document.removeEventListener('mouseup',onUp);
   }
-  // 기존 mousedown 핸들러 중복 방지
-  const newHdr=hdr.cloneNode(true);
-  hdr.parentNode.replaceChild(newHdr,hdr);
-  newHdr.onmousedown=e=>{
-    if(e.target.tagName==='BUTTON')return;
+  hdr.addEventListener('mousedown',e=>{
+    if(e.target.closest('button'))return;
     const r=box.getBoundingClientRect();
-    box.style.transform='none';box.style.left=r.left+'px';box.style.top=r.top+'px';
-    bx=r.left;by=r.top;ox=e.clientX;oy=e.clientY;dragging=true;newHdr.style.cursor='grabbing';e.preventDefault();
+    box.style.transform='none';
+    box.style.left=r.left+'px';
+    box.style.top=r.top+'px';
+    bx=r.left;by=r.top;ox=e.clientX;oy=e.clientY;
+    dragging=true;
+    hdr.style.cursor='grabbing';
+    e.preventDefault();
     document.addEventListener('mousemove',onMove);
     document.addEventListener('mouseup',onUp);
-  };
+  });
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePtsPopup();});
