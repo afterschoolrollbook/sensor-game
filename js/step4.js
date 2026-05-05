@@ -6,26 +6,6 @@ function buildProc(){
   if(!w)return;
   w.innerHTML='';
 
-  // 참가방식에 따라 보여줄 진행방식 필터링
-  const isTeam=S.rm&&(S.rm.startsWith('team')||S.rm==='divteam');
-  const filtered=PROCS.filter(p=>isTeam?p.id.startsWith('team')||p.id==='ind-rec':!p.id.startsWith('team')||p.id==='ind-rec');
-
-  // 진행방식 카드
-  const cards=document.createElement('div');
-  cards.className='proc-cards';
-  filtered.forEach(p=>{
-    const d=document.createElement('div');
-    d.className='pcard'+(S.proc===p.id?' sel':'');
-    d.innerHTML=`<div class="pci">${p.icon}</div><div><div class="pc-name">${p.name}</div><div class="pc-desc">${p.desc}</div></div>`;
-    d.onclick=()=>{
-      S.proc=p.id;
-      try{const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(cur<5)localStorage.setItem('sgp_last_step','5');}catch(e){}
-      buildProc();
-    };
-    cards.appendChild(d);
-  });
-  w.appendChild(cards);
-
   // 참가자가 없으면 안내
   if(!S.pts.length){
     const msg=document.createElement('div');
