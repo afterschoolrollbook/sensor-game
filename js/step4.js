@@ -422,34 +422,37 @@ function _vtree_cy(ri,mi,baseY,rowH,dir){
 /* ── HTML flex 기반 공통 대진표 렌더러 ── */
 function _renderBracketHTML(wrap, rounds, direction, reversed){
   const T=rounds.length;
-  // 1라운드 매치 수 기준으로 전체 슬롯 수 계산 (2의 거듭제곱 정렬용)
+  // 1라운드 매치 수 → 전체 슬롯 깊이 기준
   const r0len=rounds[0].length;
+  // 슬롯 1개당 고정 높이 (px). 박스 높이 ~70px + 위아래 여백
+  const SLOT_H=90;
 
   const outerWrap=document.createElement('div');
   outerWrap.style.cssText='position:relative;overflow:auto;padding-bottom:8px;';
 
   const container=document.createElement('div');
-  container.style.cssText='display:flex;flex-direction:row;gap:32px;align-items:stretch;padding:8px 8px 24px 8px;min-width:max-content;';
+  // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이
+  const totalH=r0len*SLOT_H+32;
+  container.style.cssText=`display:flex;flex-direction:row;gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
-    col.style.cssText='display:flex;flex-direction:column;';
+    col.style.cssText=`display:flex;flex-direction:column;height:100%;`;
 
     // 라운드 라벨
     const lbl=document.createElement('div');
     const names=['1라운드','2라운드','3라운드','4라운드','5라운드'];
     const name=ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':names[ri]||`${ri+1}라운드`;
-    lbl.style.cssText='font-size:9px;color:#444;letter-spacing:2px;font-family:Share Tech Mono,monospace;text-align:center;margin-bottom:8px;height:16px;flex-shrink:0;';
+    lbl.style.cssText='font-size:9px;color:#444;letter-spacing:2px;font-family:Share Tech Mono,monospace;text-align:center;margin-bottom:0;height:24px;line-height:24px;flex-shrink:0;';
     lbl.textContent=name;
     col.appendChild(lbl);
 
-    // 이 라운드의 슬롯 수: 1라운드는 r0len, 이후는 절반씩
-    const slots=Math.ceil(r0len/Math.pow(2,ri));
-    // 각 매치가 차지하는 슬롯 수
-    const slotsPerMatch=slots/matches.length;
+    // 이 라운드에서 매치 1개가 차지하는 슬롯 수 (1라운드=1, 2라운드=2, ...)
+    const slotsPerMatch=Math.pow(2,ri);
+    const slotPx=slotsPerMatch*SLOT_H;
 
-    const matchWrap=document.createElement('div');
-    matchWrap.style.cssText='display:flex;flex-direction:column;flex:1;';
+    const matchArea=document.createElement('div');
+    matchArea.style.cssText=`flex:1;position:relative;`;
 
     matches.forEach((m,mi)=>{
       const isBye=m.p1&&!m.p2;
@@ -457,69 +460,74 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
       const p1=m.p1,p2=m.p2;
 
-      // 슬롯 래퍼: 매치 박스를 슬롯 중앙에 배치, 최소 패딩으로 숨통
-      const slot=document.createElement('div');
-      slot.style.cssText='display:flex;flex-direction:column;justify-content:center;min-height:80px;padding:6px 0;';
-      // flex-grow로 각 슬롯이 균등 높이 차지
-      slot.style.flexGrow=slotsPerMatch;
+      // 슬롯 중앙 Y = mi * slotPx + slotPx/2
+      // 박스를 절대 위치로 중앙에 고정
+      const slotCenterY=mi*slotPx+slotPx/2;
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
-      let borderColor=isSel?'#4cc9f0':isCur?'var(--red)':m.winner?'#1a3a2a':isBye?'#1a1a28':'#1e1e30';
-      box.style.cssText=`border-radius:6px;overflow:hidden;cursor:pointer;border:${isSel||isCur?'1.5px':'1px'} solid ${borderColor};${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}`;
+      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#0d2a1a':isBye?'#1a1a28':'#1e1e30';
+      box.style.cssText=`
+        position:absolute;left:0;right:0;
+        transform:translateY(-50%);
+        top:${slotCenterY}px;
+        border-radius:6px;overflow:hidden;cursor:pointer;
+        border:${isSel||isCur?'1.5px':'1px'} solid ${borderColor};
+        min-width:160px;
+        ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
+      `;
       box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
 
+      // 헤더
       const header=document.createElement('div');
       header.style.cssText='display:flex;justify-content:space-between;padding:2px 6px;background:#080810;';
-      header.innerHTML=`<span style="font-size:9px;color:${isBye?'#4cc9f0':isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span>${isBye?'<span style="font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;">BYE</span>':m.winner?`<span style="font-size:9px;color:#06d6a0;font-family:Share Tech Mono,monospace;">WIN</span>`:''}`;
+      const matchLabel=isBye?'BYE':m.winner?'WIN':'';
+      const labelColor=isBye?'#4cc9f0':m.winner?'#06d6a0':'';
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
       box.appendChild(header);
 
       if(isBye){
         const row=document.createElement('div');
-        row.style.cssText='padding:7px 10px;background:#0a0a14;font-size:12px;font-weight:600;color:#d0d0d0;';
+        row.style.cssText='padding:8px 12px;background:#0a0a14;font-size:13px;font-weight:600;color:#d0d0d0;';
         row.textContent=p1?p1.name:'?';
         box.appendChild(row);
       } else {
         const mkRow=(p,isWin,isLose)=>{
           const row=document.createElement('div');
-          row.style.cssText=`display:flex;align-items:center;gap:6px;padding:6px 10px;${isWin?'background:rgba(6,214,160,.06);':isLose?'opacity:.45;':'background:#0d0d1a;'}`;
+          row.style.cssText=`display:flex;align-items:center;gap:8px;padding:8px 12px;background:${isWin?'rgba(6,214,160,.07)':'#0d0d1a'};${isLose?'opacity:.4;':''}`;
           if(p&&p.color){
             const dot=document.createElement('div');
-            dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${p.color};flex-shrink:0;`;
+            dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0;`;
             row.appendChild(dot);
           }
           const nm=document.createElement('span');
-          nm.style.cssText='font-size:12px;font-weight:'+(isWin?'700':'600')+';color:'+(p?'#d0d0d0':'#2a2a3e')+';flex:1;';
+          nm.style.cssText='font-size:13px;font-weight:'+(isWin?'700':'500')+';color:'+(p?'#d0d0d0':'#2a2a3e')+';flex:1;';
           nm.textContent=p?p.name:'?';
           row.appendChild(nm);
-          if(isWin){const chk=document.createElement('span');chk.style.cssText='font-size:10px;color:#06d6a0;';chk.textContent='✓';row.appendChild(chk);}
+          if(isWin){const chk=document.createElement('span');chk.style.cssText='font-size:11px;color:#06d6a0;';chk.textContent='✓';row.appendChild(chk);}
           return row;
         };
         const isW1=m.winner&&m.winner===p1,isW2=m.winner&&m.winner===p2;
-        // 구분선
-        const sep=document.createElement('div');sep.style.cssText='height:1px;background:#1e1e30;margin:0;';
         box.appendChild(mkRow(p1,isW1,!isW1&&!!m.winner));
-        box.appendChild(sep);
-        // VS 배지
+        // VS 구분
         const vsRow=document.createElement('div');
-        vsRow.style.cssText='display:flex;justify-content:center;padding:1px 0;background:#08080e;';
-        vsRow.innerHTML=`<span style="font-size:9px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:2px;">VS</span>`;
+        vsRow.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:2px 12px;background:#08080e;';
+        vsRow.innerHTML=`<div style="flex:1;height:1px;background:#1e1e30;"></div><span style="font-size:10px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:2px;flex-shrink:0;">VS</span><div style="flex:1;height:1px;background:#1e1e30;"></div>`;
         box.appendChild(vsRow);
         box.appendChild(mkRow(p2,isW2,!isW2&&!!m.winner));
       }
-      slot.appendChild(box);
-      matchWrap.appendChild(slot);
+      matchArea.appendChild(box);
     });
 
-    col.appendChild(matchWrap);
+    col.appendChild(matchArea);
     container.appendChild(col);
   });
 
   outerWrap.appendChild(container);
   wrap.appendChild(outerWrap);
 
-  // DOM 렌더 후 연결선 그리기 (fromA/fromB 없이 라운드 순서로 자동 연결)
-  requestAnimationFrame(()=>{
+  // 레이아웃 완전히 잡힌 후 연결선 그리기 (double rAF)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const cRect=container.getBoundingClientRect();
     const W=container.scrollWidth,H=container.scrollHeight+40;
 
@@ -534,51 +542,73 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       return{
         left:r.left-cRect.left,
         right:r.right-cRect.left,
-        cx:r.left-cRect.left+r.width/2,
-        cy:r.top-cRect.top+r.height/2,
-        w:r.width,h:r.height
+        cy:r.top-cRect.top+r.height/2
       };
     };
 
-    const PATH=(d,color='#2a2a40',sw=1.5)=>{
+    const PATH=(d)=>{
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-      p.setAttribute('d',d);p.setAttribute('stroke',color);
-      p.setAttribute('stroke-width',sw);p.setAttribute('fill','none');
-      p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
+      p.setAttribute('d',d);
+      p.setAttribute('stroke','#2a2a50');
+      p.setAttribute('stroke-width','1.5');
+      p.setAttribute('fill','none');
+      p.setAttribute('stroke-linecap','square');
+      p.setAttribute('stroke-linejoin','miter');
       svg.appendChild(p);
     };
 
-    // 라운드 간 연결: ri → ri+1
-    // reversed=true면 오른쪽(큰 ri)이 1라운드, 왼쪽(작은 ri)이 결승
     rounds.forEach((matches,ri)=>{
       if(ri>=rounds.length-1)return;
       const nextMatches=rounds[ri+1];
       nextMatches.forEach((nm,nmi)=>{
-        const srcA=nmi*2, srcB=nmi*2+1;
+        const srcA=nmi*2;
+        const srcB=nmi*2+1;
+        const hasB=srcB<matches.length;
         const a=getBox(ri,srcA);
-        const b=srcB<matches.length?getBox(ri,srcB):null;
+        const b=hasB?getBox(ri,srcB):null;
         const t=getBox(ri+1,nmi);
         if(!a||!t)return;
-        // reversed: 연결선이 왼쪽(a.left)에서 나가서 오른쪽(t.right)으로 들어옴
-        const ax=reversed?a.left:a.right;
-        const tx=reversed?t.right:t.left;
-        const ay=a.cy, ty=t.cy;
-        const midX=(ax+tx)/2;
-        if(b){
-          const by=b.cy;
-          const bx=reversed?b.left:b.right;
-          const midY=(ay+by)/2;
-          PATH(`M${ax},${ay} H${midX} V${midY}`);
-          PATH(`M${bx},${by} H${midX}`);
-          PATH(`M${midX},${midY} H${tx}`);
+
+        if(reversed){
+          // 선이 박스 왼쪽에서 나감
+          const ax=a.left, bx=b?b.left:a.left;
+          const tx=t.right;
+          const ay=a.cy, ty=t.cy;
+          const midX=(ax+tx)/2;
+          if(b){
+            const by=b.cy;
+            const midY=(ay+by)/2;
+            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t
+            PATH(`M${ax},${ay} H${midX}`);
+            PATH(`M${bx},${by} H${midX}`);
+            PATH(`M${midX},${ay} V${by}`);
+            PATH(`M${midX},${midY} H${tx}`);
+          } else {
+            PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+          }
         } else {
-          PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+          // 선이 박스 오른쪽에서 나감
+          const ax=a.right, bx=b?b.right:a.right;
+          const tx=t.left;
+          const ay=a.cy, ty=t.cy;
+          const midX=(ax+tx)/2;
+          if(b){
+            const by=b.cy;
+            const midY=(ay+by)/2;
+            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t
+            PATH(`M${ax},${ay} H${midX}`);
+            PATH(`M${bx},${by} H${midX}`);
+            PATH(`M${midX},${ay} V${by}`);
+            PATH(`M${midX},${midY} H${tx}`);
+          } else {
+            PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+          }
         }
       });
     });
 
     outerWrap.appendChild(svg);
-  });
+  }));
 }
 
 /* A: 위 정렬 */
