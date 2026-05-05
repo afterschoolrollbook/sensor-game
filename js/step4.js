@@ -194,8 +194,6 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const y=cy-mh/2,p1=match.p1,p2=match.p2;
   const isBye=p1&&!p2;
   const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
-  // 부전승이면 자동 승자 처리
-  if(isBye&&!match.winner)match.winner=p1;
 
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
@@ -250,7 +248,6 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const p1=match.p1,p2=match.p2;
   const isBye=p1&&!p2;
   const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
-  if(isBye&&!match.winner)match.winner=p1;
 
   const n1=p1?p1.name:'?',n2=p2?p2.name:'?';
 
@@ -520,21 +517,30 @@ function renderBracketE(wrap){
 function addNextRound(){
   if(!S.matches||!S.matches.length){toast('대진표가 없어요','error');return;}
   const lastRound=S.matches[S.matches.length-1];
+  const ri=S.matches.length-1;
   if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
 
   const next=[];
   const byeIdx=lastRound.findIndex(m=>m.bye);
   if(byeIdx>=0){
     const byeP=lastRound[byeIdx].p1;
-    const others=lastRound.filter((_,i)=>i!==byeIdx).map(m=>m.p1);
-    next.push({p1:byeP,p2:others[0]||null,bye:!others[0]});
-    for(let i=1;i<others.length;i+=2){
-      next.push({p1:others[i],p2:others[i+1]||null,bye:!others[i+1]});
+    const others=lastRound.filter((_,i)=>i!==byeIdx);
+    next.push({p1:byeP,p2:{name:`${ri+1}-${1} 승자`,tbd:true},bye:false});
+    for(let i=0;i<others.length-1;i+=2){
+      next.push({
+        p1:{name:`${ri+1}-${i+2} 승자`,tbd:true},
+        p2:{name:`${ri+1}-${i+3} 승자`,tbd:true},
+        bye:false
+      });
     }
   } else {
-    lastRound.forEach((m,i)=>{
-      if(i%2===0) next.push({p1:m.p1,p2:lastRound[i+1]?.p1||null,bye:!lastRound[i+1]});
-    });
+    for(let i=0;i<lastRound.length;i+=2){
+      next.push({
+        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
+        p2:lastRound[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        bye:!lastRound[i+1]
+      });
+    }
   }
 
   S.matches.push(next);
