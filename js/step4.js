@@ -193,18 +193,17 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const {mw,mh}=sz;
   const y=cy-mh/2,p1=match.p1,p2=match.p2;
   const isBye=p1&&!p2;
-  const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
+  
   const isSel=typeof _linkSel!=='undefined'&&_linkSel&&_linkSel.ri===ri&&_linkSel.mi===mi;
 
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
   r.setAttribute('rx','4');r.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
-  r.setAttribute('stroke',isSel?'#4cc9f0':isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
-  r.setAttribute('stroke-width',isSel||isCur?'2':'1');
+  r.setAttribute('stroke',isSel?'#4cc9f0':isBye?'#1a1a28':'#1e1e30');
+  r.setAttribute('stroke-width',isSel?'2':'1');
   r.style.cursor='pointer';
   r.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
   if(isSel)r.setAttribute('filter','drop-shadow(0 0 6px rgba(76,201,240,.6))');
-  else if(isCur)r.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r);
 
   const fs=Math.max(8,Math.floor(mh*0.38));
@@ -255,7 +254,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const lh=fs+3;
   const p1=match.p1,p2=match.p2;
   const isBye=p1&&!p2;
-  const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
+  
 
   const n1=p1?p1.name:'?',n2=p2?p2.name:'?';
 
