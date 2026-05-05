@@ -435,22 +435,31 @@ function renderBracketA(wrap){
   // 수동 연결선 그리기
   rounds.forEach((matches,ri)=>{
     matches.forEach((m,mi)=>{
-      if(!m.fromA&&!m.fromB)return;
+      if(!m.fromA)return;
       const [aRi,aMi]=m.fromA.split('-').map(Number);
-      const [bRi,bMi]=m.fromB.split('-').map(Number);
-      const ax=xFn(aRi)+mw, ay=cyFn(aRi,aMi);
-      const bx=xFn(bRi)+mw, by=cyFn(bRi,bMi);
       const tx=xFn(ri), ty=cyFn(ri,mi);
-      const midX=(ax+tx)/2;
+      const ax=xFn(aRi)+mw, ay=cyFn(aRi,aMi);
       const LN=(x1,y1,x2,y2)=>{
         const l=document.createElementNS('http://www.w3.org/2000/svg','line');
         l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
         l.setAttribute('stroke','#2a2a40');l.setAttribute('stroke-width','1.5');svg.appendChild(l);
       };
-      LN(ax,ay,midX,ay);
-      LN(bx,by,midX,by);
-      LN(midX,ay,midX,by);
-      LN(midX,ty,tx,ty);
+      if(m.fromB){
+        // 두 경기 연결
+        const [bRi,bMi]=m.fromB.split('-').map(Number);
+        const bx=xFn(bRi)+mw, by=cyFn(bRi,bMi);
+        const midX=(ax+tx)/2;
+        LN(ax,ay,midX,ay);
+        LN(bx,by,midX,by);
+        LN(midX,ay,midX,by);
+        LN(midX,ty,tx,ty);
+      } else {
+        // 직행: 단순 선 하나
+        const midX=(ax+tx)/2;
+        LN(ax,ay,midX,ay);
+        LN(midX,ay,midX,ty);
+        LN(midX,ty,tx,ty);
+      }
     });
   });
 
