@@ -473,14 +473,14 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         top:${slotCenterY}px;
         border-radius:6px;overflow:hidden;cursor:pointer;
         border:${isSel||isCur?'1.5px':'1px'} solid ${borderColor};
-        min-width:160px;
+        width:180px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
       box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
 
       // 헤더
       const header=document.createElement('div');
-      header.style.cssText='display:flex;justify-content:space-between;padding:2px 6px;background:#080810;';
+      header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
       const matchLabel=isBye?'BYE':m.winner?'WIN':'';
       const labelColor=isBye?'#4cc9f0':m.winner?'#06d6a0':'';
       header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
@@ -495,17 +495,13 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       } else {
         // 가로 한 줄: [dot] 이름1  VS  이름2 [dot]
         const row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;background:#0d0d1a;';
+        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#0d0d1a;width:100%;';
 
         const mkName=(p,isWin,isLose)=>{
-          const wrap=document.createElement('div');
-          wrap.style.cssText='display:flex;align-items:center;gap:5px;';
-          if(p&&p.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0;`;wrap.appendChild(dot);}
-          const nm=document.createElement('span');
-          nm.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
-          nm.textContent=p?p.name:'?';
-          wrap.appendChild(nm);
-          return wrap;
+          const span=document.createElement('span');
+          span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
+          span.textContent=p?p.name:'?';
+          return span;
         };
 
         const isW1=m.winner&&m.winner===p1,isW2=m.winner&&m.winner===p2;
@@ -513,9 +509,15 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';
         vs.textContent='VS';
 
-        row.appendChild(mkName(p1,isW1,!isW1&&!!m.winner));
+        const mk1=mkName(p1,isW1,!isW1&&!!m.winner);
+        const mk2=mkName(p2,isW2,!isW2&&!!m.winner);
+
+        // 컬러 닷
+        if(p1&&p1.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p1.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
+        row.appendChild(mk1);
         row.appendChild(vs);
-        row.appendChild(mkName(p2,isW2,!isW2&&!!m.winner));
+        if(p2&&p2.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p2.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
+        row.appendChild(mk2);
         box.appendChild(row);
       }
       matchArea.appendChild(box);
