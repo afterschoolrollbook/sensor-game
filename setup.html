@@ -2107,30 +2107,29 @@ let _linkSel=null; // {ri, mi} 첫번째 선택된 매치
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
-    // 첫번째 선택
+    // 첫번째 선택 → 하이라이트 + 액션바 표시
     _linkSel={ri,mi};
-    toast(`${ri+1}-${mi+1} 선택됨. 연결할 경기를 클릭하세요.`,'info');
     renderBracketView(S.activeGroup);
+    _showLinkBar(ri,mi);
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){
-      // 같은거 클릭하면 취소
+      // 같은거 클릭 → 취소
       _linkSel=null;
+      _hideLinkBar();
       renderBracketView(S.activeGroup);
       return;
     }
-    // 두번째 선택 → 다음 라운드에 매치 생성
+    // 두번째 클릭 → 두 경기 연결
     const a=_linkSel,b={ri,mi};
     _linkSel=null;
+    _hideLinkBar();
 
-    // 두 매치가 같은 라운드인지 확인
     if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
 
     const roundIdx=a.ri;
-    // 해당 라운드 다음 라운드가 없으면 생성
-    if(!g.matches[roundIdx+1]) g.matches.push([]);
+    if(!g.matches[roundIdx+1])g.matches.push([]);
     const nextRound=g.matches[roundIdx+1];
 
-    // 이미 연결된 매치인지 확인
     const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
     const already=nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey);
     if(already){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
@@ -2146,8 +2145,54 @@ function onMatchClick(ri,mi){
   }
 }
 
+/* 선택됐을 때 액션바 표시 */
+function _showLinkBar(ri,mi){
+  let bar=document.getElementById('link-action-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='link-action-bar';
+    bar.style.cssText='position:sticky;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;z-index:10;';
+    document.getElementById('pts-bracket-view').parentNode.appendChild(bar);
+  }
+  bar.innerHTML=`
+    <span style="font-size:11px;color:var(--accent);font-weight:700;">${ri+1}-${mi+1} 선택됨</span>
+    <span style="font-size:11px;color:var(--text3);">→ 다른 경기 클릭시 연결 / 또는:</span>
+    <button onclick="advanceMatch(${ri},${mi})" style="padding:4px 12px;background:var(--green);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">▶ 다음으로 직행</button>
+    <button onclick="_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>
+  `;
+}
+
+function _hideLinkBar(){
+  const bar=document.getElementById('link-action-bar');
+  if(bar)bar.remove();
+}
+
+/* 선택된 경기 단독 다음 라운드 직행 (부전승) */
+function advanceMatch(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];
+  _linkSel=null;
+  _hideLinkBar();
+
+  const roundIdx=ri;
+  if(!g.matches[roundIdx+1])g.matches.push([]);
+  const nextRound=g.matches[roundIdx+1];
+
+  const aKey=`${ri}-${mi}`;
+  const already=nextRound.find(m=>m.fromA===aKey||m.fromB===aKey);
+  if(already){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+
+  nextRound.push({
+    p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},
+    p2:null,
+    fromA:aKey,fromB:null,bye:true
+  });
+
+  renderBracketView(S.activeGroup);
+  toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+}
+
 function addRound(){
-  toast('경기 박스를 클릭해서 연결하세요 (클릭 → 클릭)','info');
+  toast('경기 박스를 클릭해서 연결하세요','info');
 }
 
 function removePopupLastRound(){
