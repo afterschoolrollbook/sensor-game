@@ -232,41 +232,6 @@ function _drawLinks(svg,rounds,xFn,cyFn,dir){
   });
 }
 
-/* ── 공통: 수직 연결선 (위→아래 또는 아래→위) ── */
-function _drawLinksV(svg,rounds,xFn,cyFn,dir){
-  // dir: 'down'=위에서 아래로, 'up'=아래에서 위로
-  rounds.forEach((matches,ri)=>{
-    if(ri>=rounds.length-1)return;
-    matches.forEach((match,mi)=>{
-      const cx=xFn(ri,mi);
-      const fromY=cyFn(ri,mi);
-      const toY=cyFn(ri+1,Math.floor(mi/2));
-      const midY=(fromY+toY)/2;
-      // 박스 위/아래 끝에서 출발
-      const fromEdge=dir==='down'?fromY+_MH/2:fromY-_MH/2;
-      const toEdge=dir==='down'?toY-_MH/2:toY+_MH/2;
-      const midPt=(fromEdge+toEdge)/2;
-      const v1=document.createElementNS('http://www.w3.org/2000/svg','line');
-      v1.setAttribute('x1',cx+_MW/2);v1.setAttribute('y1',fromEdge);
-      v1.setAttribute('x2',cx+_MW/2);v1.setAttribute('y2',midPt);
-      v1.setAttribute('stroke','#1e1e30');v1.setAttribute('stroke-width','2');svg.appendChild(v1);
-      if(mi%2===1){
-        const prevCx=xFn(ri,mi-1);
-        const prevEdge=dir==='down'?cyFn(ri,mi-1)+_MH/2:cyFn(ri,mi-1)-_MH/2;
-        const h1=document.createElementNS('http://www.w3.org/2000/svg','line');
-        h1.setAttribute('x1',prevCx+_MW/2);h1.setAttribute('y1',midPt);
-        h1.setAttribute('x2',cx+_MW/2);h1.setAttribute('y2',midPt);
-        h1.setAttribute('stroke','#1e1e30');h1.setAttribute('stroke-width','2');svg.appendChild(h1);
-        const nextCx=xFn(ri+1,Math.floor(mi/2));
-        const v2=document.createElementNS('http://www.w3.org/2000/svg','line');
-        v2.setAttribute('x1',nextCx+_MW/2);v2.setAttribute('y1',midPt);
-        v2.setAttribute('x2',nextCx+_MW/2);v2.setAttribute('y2',toEdge);
-        v2.setAttribute('stroke','#1e1e30');v2.setAttribute('stroke-width','2');svg.appendChild(v2);
-      }
-    });
-  });
-}
-
 /* A: 좌→우  1라운드 왼쪽, 결승 오른쪽 */
 function renderBracketA(wrap){
   const rounds=S.matches,T=rounds.length;
@@ -282,76 +247,120 @@ function renderBracketA(wrap){
   _wrap(wrap,svg);
 }
 
-/* B: 아래→위  1라운드 맨 아래, 2R은 1R 쌍의 위 중간, 결승 맨 위 */
+/* ── B/C용 공통: 수직 트리 Y 좌표 계산 ──
+   ri=0이 기준 행, 각 라운드는 2칸씩 위/아래로 합쳐짐
+   baseY: ri=0의 첫 매치 중심 Y
+   rowH: 행 간격
+   dir: 'up'이면 위로 올라감, 'down'이면 아래로 내려감
+*/
+function _vtree_cy(ri,mi,baseY,rowH,dir){
+  if(ri===0)return baseY+mi*rowH*(dir==='up'?-1:1); // 부전승 포함 mi 순서
+  // 실제로는 mi*2, mi*2+1의 중간
+  const y0=_vtree_cy(ri-1,mi*2,baseY,rowH,dir);
+  const y1=_vtree_cy(ri-1,mi*2+1,baseY,rowH,dir);
+  return (y0+y1)/2;
+}
+
+/* ── B/C용: 수직 연결선 ── */
+function _drawLinksBC(svg,rounds,xFn,cyFn){
+  const LN=(x1,y1,x2,y2)=>{
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');
+    svg.appendChild(l);
+  };
+  rounds.forEach((matches,ri)=>{
+    if(ri>=rounds.length-1)return;
+    matches.forEach((match,mi)=>{
+      const cx=xFn(ri)+_MW/2;
+      const ncx=xFn(ri+1)+_MW/2;
+      const y=cyFn(ri,mi);
+      const ny=cyFn(ri+1,Math.floor(mi/2));
+      const mid=(y+ny)/2;
+      LN(cx,y,cx,mid);
+      if(mi%2===1){
+        const pcy=cyFn(ri,mi-1);
+        const pmid=(pcy+ny)/2;
+        const pcx=xFn(ri)+_MW/2;
+        LN(pcx,pmid,cx,mid); // 두 형제 연결
+        LN(ncx,mid,ncx,ny);  // 다음 라운드로
+      }
+    });
+  });
+}
+
+/* B: 아래→위
+   - X: 라운드별 열(왼→오, 1R=왼쪽)
+   - Y: 1R 맨 아래, 쌍의 중간이 위에 배치됨 */
 function renderBracketB(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
-  // 세로 배치: X축=라운드별 열(왼→오), Y축=위일수록 후기라운드
-  // 각 라운드 열 너비를 _MW, 열 간격 _GAP
+  const rowH=_ROW;
+  const padY=_MH/2+16;
+  const H=Math.max(200,r0*rowH+padY*2);
   const W=T*(_MW+_GAP)+40;
-  // 높이: 1라운드 매치 수 기준
-  const H=Math.max(200,r0*_ROW+60);
   const svg=_mkSvg(W,H);
 
-  // X: 라운드 순서대로 왼→오 (1R=맨왼쪽)
+  // 1R의 첫 매치(mi=0)는 맨 아래, 위로 올라감
+  const baseY=H-padY;
   const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  // Y: 1라운드는 맨 아래에서부터 위로, 라운드 올라갈수록 위 중간값
-  // _cy_bot: 아래에서 위로 배치 (ri=0이 맨 아래)
-  const cyFn=(ri,mi)=>_cy_bot(ri,mi,H);
+  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,rowH,'up');
 
-  _drawLinks(svg,rounds,xFn,cyFn,'right');
+  _drawLinksBC(svg,rounds,xFn,cyFn);
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T); // 라운드 라벨 아래
+    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
     matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
   });
   _wrap(wrap,svg);
 }
 
-/* C: 위→아래  B의 반대 — 1R 맨 위, 결승 맨 아래, X는 오→왼(결승 오른쪽) */
+/* C: 위→아래  (B의 반대)
+   - X: 라운드별 열(왼→오, 1R=왼쪽)
+   - Y: 1R 맨 위, 쌍의 중간이 아래에 배치됨 */
 function renderBracketC(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
+  const rowH=_ROW;
+  const padY=_MH/2+16;
+  const H=Math.max(200,r0*rowH+padY*2);
   const W=T*(_MW+_GAP)+40;
-  const H=Math.max(200,r0*_ROW+60);
   const svg=_mkSvg(W,H);
 
-  // X: 1R=맨왼쪽, 결승=맨오른쪽 (B와 동일 방향)
+  // 1R의 첫 매치(mi=0)는 맨 위, 아래로 내려감
+  const baseY=padY;
   const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  // Y: 위에서 아래로 (_cy_top), 1R=위, 결승=아래
-  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
+  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,rowH,'down');
 
-  _drawLinks(svg,rounds,xFn,cyFn,'right');
+  _drawLinksBC(svg,rounds,xFn,cyFn);
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T); // 라벨 아래
+    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T);
     matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
   });
   _wrap(wrap,svg);
 }
 
-/* D: 양쪽→가운데  A의 좌우 대칭 (왼쪽 절반 A형, 오른쪽 절반 거울) */
+/* D: 양쪽→가운데  (A의 좌우 대칭)
+   전체 매치를 왼/오로 반반 나눠 A형으로 각각 그리고 가운데 결승 공유 */
 function renderBracketD(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
-  // 왼쪽 절반, 오른쪽 절반 분리
-  const lCount=Math.ceil(r0/2);
-  const rCount=Math.floor(r0/2);
+  const lCount=Math.ceil(r0/2); // 왼쪽 1R 매치 수
+  const rCount=Math.floor(r0/2); // 오른쪽 1R 매치 수
   const H=Math.max(200,lCount*_ROW+40);
-
-  // 왼쪽: T개 컬럼, 오른쪽: T개 컬럼, 사이 여백 없이 결승 공유
-  // 총 너비 = 왼쪽(T컬럼) + GAP + 오른쪽(T컬럼) - 결승 중복
+  // 왼쪽 T컬럼 + 오른쪽 T컬럼, 결승은 가장 안쪽 컬럼 공유 → 총 T*2-1 컬럼
   const W=(T*2-1)*(_MW+_GAP)+40;
   const svg=_mkSvg(W,H);
 
-  // 왼쪽 라운드별 슬라이스 (앞 절반)
+  // 라운드별 왼쪽/오른쪽 매치 분리
   const lRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  // 오른쪽 라운드별 슬라이스 (뒤 절반) — 라운드 역순(큰쪽→결승)
   const rRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
 
-  // 왼쪽: 1R=맨왼쪽, 결승=가운데로
+  // 왼쪽: 1R=맨왼쪽 → 결승=오른쪽(가운데)
   const lxFn=(ri)=>ri*(_MW+_GAP)+20;
   const lcyFn=(ri,mi)=>_cy_top(ri,mi,H);
 
-  // 오른쪽: 1R=맨오른쪽, 결승=가운데로 (xFn 역순)
+  // 오른쪽: 1R=맨오른쪽 → 결승=왼쪽(가운데)
   const rxFn=(ri)=>W-20-_MW-ri*(_MW+_GAP);
   const rcyFn=(ri,mi)=>_cy_top(ri,mi,H);
 
@@ -365,37 +374,43 @@ function renderBracketD(wrap){
     _drawLinks(svg,rRounds,rxFn,rcyFn,'left');
     rRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
+      _rlabel(svg,rxFn(ri)+_MW/2,12,ri,T);
       matches.forEach((m,mi)=>_mbox(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi));
     });
   }
   _wrap(wrap,svg);
 }
 
-/* E: 위아래→가운데  B의 위아래 대칭 (위 절반은 위→아래, 아래 절반은 아래→위, 결승 가운데) */
+/* E: 위아래→가운데  (B의 위아래 대칭)
+   위 절반: B형(1R 위, 아래로 수렴) — X는 왼→오
+   아래 절반: B형 뒤집기(1R 아래, 위로 수렴) — 같은 X
+   가운데 결승에서 만남 */
 function renderBracketE(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
   const tCount=Math.ceil(r0/2);
   const bCount=Math.floor(r0/2);
 
-  // X: 모든 라운드 같은 열 위치
+  const rowH=_ROW;
+  const padY=_MH/2+16;
+  const halfH=Math.max(120,tCount*rowH+padY*2);
+  const H=halfH*2;
   const W=T*(_MW+_GAP)+40;
-  // 높이: 위 절반(tCount) + 아래 절반(bCount)
-  const halfH=Math.max(120,tCount*_ROW+30);
-  const H=halfH*2+_MH; // 가운데 결승 공간
   const svg=_mkSvg(W,H);
 
   const xFn=(ri)=>ri*(_MW+_GAP)+20;
 
-  // 위 절반: 1R 맨 위, 아래로 진행 (_cy_top 기준)
+  // 위 절반 매치: 1R 맨 위, 아래로 수렴 (C형 Y)
   const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  const tcyFn=(ri,mi)=>_cy_top(ri,mi,halfH);
+  const tBaseY=padY;
+  const tcyFn=(ri,mi)=>_vtree_cy(ri,mi,tBaseY,rowH,'down');
 
-  // 아래 절반: 1R 맨 아래, 위로 진행 (_cy_bot 기준, halfH 오프셋)
+  // 아래 절반 매치: 1R 맨 아래, 위로 수렴 (B형 Y, 오프셋 halfH)
   const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-  const bcyFn=(ri,mi)=>H-_cy_top(ri,mi,halfH);
+  const bBaseY=H-padY;
+  const bcyFn=(ri,mi)=>_vtree_cy(ri,mi,bBaseY,rowH,'up');
 
-  _drawLinks(svg,topRounds,xFn,tcyFn,'right');
+  _drawLinksBC(svg,topRounds,xFn,tcyFn);
   topRounds.forEach((matches,ri)=>{
     if(!matches.length)return;
     _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
@@ -403,7 +418,7 @@ function renderBracketE(wrap){
   });
 
   if(bCount>0){
-    _drawLinks(svg,botRounds,xFn,bcyFn,'right');
+    _drawLinksBC(svg,botRounds,xFn,bcyFn);
     botRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
       matches.forEach((m,mi)=>_mbox(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi));
