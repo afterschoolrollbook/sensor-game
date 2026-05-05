@@ -520,17 +520,33 @@ function renderBracketE(wrap){
 function addNextRound(){
   if(!S.matches||!S.matches.length){toast('대진표가 없어요','error');return;}
   const lastRound=S.matches[S.matches.length-1];
-  const winners=lastRound.map(m=>m.winner||null);
-  if(winners.every(w=>!w)){toast('1라운드 승자를 먼저 결정해주세요','info');return;}
+  const allDone=lastRound.every(m=>m.winner);
+  if(!allDone){toast('이번 라운드 모든 경기 승자를 먼저 결정해주세요','info');return;}
+
+  const winners=lastRound.map(m=>m.winner);
   if(winners.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
 
-  // 승자들로 다음 라운드 생성 (BYE 없이 실제 승자만)
-  const nextPlayers=winners.filter(w=>w!==null);
-  const matches=[];
-  for(let i=0;i<nextPlayers.length;i+=2){
-    matches.push({p1:nextPlayers[i],p2:nextPlayers[i+1]||null,winner:null});
+  const next=[];
+  // 부전승 승자가 있으면 다음 라운드 첫 번째 일반 승자와 짝지음
+  const byeIdx=lastRound.findIndex(m=>m.bye);
+  if(byeIdx>=0){
+    const byeWinner=winners[byeIdx];
+    const others=winners.filter((_,i)=>i!==byeIdx);
+    // 부전승 승자 + 첫 번째 일반 승자
+    next.push({p1:byeWinner,p2:others[0]||null,winner:others[0]?null:byeWinner,bye:!others[0]});
+    // 나머지 일반 승자들끼리
+    for(let i=1;i<others.length;i+=2){
+      const p1=others[i],p2=others[i+1]||null;
+      next.push({p1,p2,winner:p2?null:p1,bye:!p2});
+    }
+  } else {
+    for(let i=0;i<winners.length;i+=2){
+      const p1=winners[i],p2=winners[i+1]||null;
+      next.push({p1,p2,winner:p2?null:p1,bye:!p2});
+    }
   }
-  S.matches.push(matches);
+
+  S.matches.push(next);
   buildProc();
   toast(`${S.matches.length}라운드 추가됨!`,'success');
 }
@@ -644,34 +660,30 @@ function buildTeamList(wrap){
 
 /* ── 브라켓 생성 ──
    5명 예시:
-   bye = 5 % 2 = 1명 → 2라운드 직행
-   1라운드: (5-1)/2 = 2경기 (4명이 붙음)
-
-   1라운드      2라운드     결승
-   A vs B → 승자 ─┐
-   C vs D → 승자 ─┼→ 승자 ─┐
-   E(bye) ────────┘         └→ 우승
+   1-0: E (부전승) ─────────────┐
+   1-1: A vs B → 승자 ──────────┤→ 2-1: E vs 1-1승자
+   1-2: C vs D → 승자 → 2-2 대기┘       → 결승
 */
 function generateBracket(pts){
   const players=[...pts];
   const n=players.length;
   if(!n)return[[]];
 
-  // 홀수면 1명만 부전승, 나머지는 1라운드
-  const byeCount=n%2; // 0 or 1
-  const round1Players=players.slice(0,n-byeCount);
-  const byePlayers=players.slice(n-byeCount);
-
   const round1=[];
-  for(let i=0;i<round1Players.length;i+=2){
-    round1.push({p1:round1Players[i],p2:round1Players[i+1],winner:null});
+  const isOdd=n%2===1;
+
+  // 홀수면 첫 번째 선수를 1-0 부전승으로
+  if(isOdd){
+    round1.push({p1:players[0],p2:null,winner:players[0],bye:true});
   }
 
-  if(byeCount===0)return[round1];
+  // 나머지 선수들 1-1, 1-2... 배치
+  const rest=isOdd?players.slice(1):players;
+  for(let i=0;i<rest.length;i+=2){
+    round1.push({p1:rest[i],p2:rest[i+1]||null,winner:null,bye:false});
+  }
 
-  // 부전승 1명을 2라운드에 배치 (winner 자동 확정)
-  const round2=[{p1:byePlayers[0],p2:null,winner:byePlayers[0]}];
-  return[round1,round2];
+  return[round1];
 }
 
 /* ── 마지막 라운드 삭제 ── */
@@ -734,12 +746,10 @@ function recordWin(playerIdx){
   const winner=playerIdx===0?cur.p1:cur.p2;
   S.matches[cur.ri][cur.mi].winner=winner;
 
-  // localStorage로 display.html에 현재경기 전달
   const next=getCurrentMatch();
   if(next){
     try{localStorage.setItem('sgp_current_match',JSON.stringify({p1:next.p1?.name,p2:next.p2?.name}));}catch(e){}
   }
-
   buildProc();
   try{if(typeof updatePv==='function')updatePv();}catch(e){}
   toast(winner.name+' 승리!','success');
