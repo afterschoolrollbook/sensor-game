@@ -96,9 +96,10 @@ let _bracketLayout='A';
 function buildTournamentTree(wrap){
   const pts=[...S.pts];
   if(!pts.length)return;
-  if(!S.matches||S.matchProc!==S.proc||S.matchPts!==pts.map(p=>p.id).join(',')){
+  // 이미 대진표가 있으면 재생성하지 않음 (팝업에서 적용한 대진표 유지)
+  if(!S.matches||!S.matches.length){
     S.matches=generateBracket(pts);
-    S.matchProc=S.proc;
+    S.matchProc='tournament';
     S.matchPts=pts.map(p=>p.id).join(',');
     S.curMatch=0;
     try{if(typeof updatePv==="function")updatePv();}catch(e){}
@@ -538,133 +539,7 @@ function recordWin(playerIdx){
   toast(winner.name+' 승리!','success');
 }
 
-/* ══ 참가자 보기 팝업 ══ */
-let _ptsSort='all';
-
-function openPtsPopup(){
-  if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  _ptsSort='all';
-  document.getElementById('pts-popup').style.display='flex';
-  renderPtsPopup();
-}
-
-function closePtsPopup(){
-  document.getElementById('pts-popup').style.display='none';
-}
-
-function sortPtsPopup(by){
-  _ptsSort=by;
-  document.querySelectorAll('.pts-sort-btn').forEach(b=>{
-    const isActive=b.id==='sort-'+by;
-    b.style.borderColor=isActive?'var(--red)':'var(--border)';
-    b.style.background=isActive?'rgba(230,57,70,.15)':'transparent';
-    b.style.color=isActive?'var(--text)':'var(--text3)';
-  });
-  renderPtsPopup();
-}
-
-function renderPtsPopup(){
-  const list=document.getElementById('pts-popup-list');
-  const actions=document.getElementById('pts-popup-actions');
-  const title=document.getElementById('pts-popup-title');
-  title.textContent='참가자 명단 (총 '+S.pts.length+'명)';
-
-  // 그룹핑
-  const groups=groupPts(_ptsSort);
-  list.innerHTML='';
-
-  Object.entries(groups).forEach(([gname,members])=>{
-    const sec=document.createElement('div');
-    sec.style.cssText='margin-bottom:16px;';
-    sec.innerHTML=`
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">${gname}</div>
-        <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:10px;">${members.length}명</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;">
-        ${members.map((p,i)=>`
-          <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;">
-            <span style="font-size:10px;color:var(--text3);width:18px;font-family:'Share Tech Mono',monospace;">${i+1}</span>
-            <div style="width:6px;height:6px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-              ${p.weight||p.division?`<div style="font-size:10px;color:var(--text3);">${[p.division,p.weight].filter(Boolean).join(' / ')}</div>`:''}
-            </div>
-          </div>`).join('')}
-      </div>`;
-    list.appendChild(sec);
-  });
-
-  // 하단 액션 버튼 — 그룹별 리그/토너먼트
-  actions.innerHTML='';
-  const groupEntries=Object.entries(groups);
-
-  if(groupEntries.length===1&&groupEntries[0][0]==='전체'){
-    // 그룹 없을 때: 전체로 리그/토너먼트
-    actions.innerHTML=`
-      <button onclick="makeLeague(null);closePtsPopup();" style="padding:8px 16px;background:rgba(76,201,240,.1);border:1px solid var(--accent);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">📋 리그전 만들기</button>
-      <button onclick="makeTournament(null);closePtsPopup();" style="padding:8px 16px;background:rgba(230,57,70,.1);border:1px solid var(--red);color:var(--red);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">🏆 토너먼트 만들기</button>`;
-  } else {
-    // 그룹별 버튼
-    groupEntries.forEach(([gname,members])=>{
-      const btn1=document.createElement('button');
-      btn1.style.cssText='padding:6px 12px;background:rgba(76,201,240,.08);border:1px solid var(--accent);color:var(--accent);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;';
-      btn1.innerHTML=`📋 ${gname} 리그`;
-      btn1.onclick=()=>{makeLeague(members,gname);closePtsPopup();};
-      actions.appendChild(btn1);
-
-      const btn2=document.createElement('button');
-      btn2.style.cssText='padding:6px 12px;background:rgba(230,57,70,.08);border:1px solid var(--red);color:var(--red);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;';
-      btn2.innerHTML=`🏆 ${gname} 토너먼트`;
-      btn2.onclick=()=>{makeTournament(members,gname);closePtsPopup();};
-      actions.appendChild(btn2);
-    });
-  }
-}
-
-function groupPts(by){
-  const groups={};
-  S.pts.forEach(p=>{
-    let key;
-    if(by==='division') key=p.division||'미분류';
-    else if(by==='weight') key=p.weight||'미분류';
-    else if(by==='team') key=p.team||'개인';
-    else key='전체';
-    if(!groups[key])groups[key]=[];
-    groups[key].push(p);
-  });
-  return groups;
-}
-
-function makeLeague(members,label){
-  const pts=members||S.pts;
-  // 리그전: 모든 참가자가 서로 한 번씩 대결 (라운드로빈)
-  const matches=[];
-  for(let i=0;i<pts.length;i++){
-    for(let j=i+1;j<pts.length;j++){
-      matches.push({p1:pts[i],p2:pts[j],winner:null});
-    }
-  }
-  S.matches=[matches];
-  S.matchProc='league';
-  S.matchLabel=label||'전체';
-  S.proc='ind-tour';
-  S.matchPts=pts.map(p=>p.id).join(',');
-  S.curMatch=0;
-  buildProc();
-  try{if(typeof updatePv==='function')updatePv();}catch(e){}
-  toast((label||'전체')+' 리그전 생성! ('+matches.length+'경기)','success');
-}
-
-function makeTournament(members,label){
-  const pts=members||S.pts;
-  S.matches=generateBracket([...pts].sort(()=>Math.random()-.5));
-  S.matchProc='tournament';
-  S.matchLabel=label||'전체';
-  S.proc='ind-tour';
-  S.matchPts=pts.map(p=>p.id).join(',');
-  S.curMatch=0;
-  buildProc();
-  try{if(typeof updatePv==='function')updatePv();}catch(e){}
-  toast((label||'전체')+' 토너먼트 생성! ('+pts.length+'명)','success');
-}
+/* ══ 참가자 보기 팝업 ══
+   openPtsPopup / closePtsPopup / renderPtsPopup / groupPts /
+   makeLeague / makeTournament 는 setup.html 인라인 스크립트에서 정의합니다.
+   (구버전 중복 함수 제거) */
