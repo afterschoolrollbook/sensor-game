@@ -426,11 +426,11 @@ function _renderBracketHTML(wrap, rounds, direction){
   const maxMatches=Math.max(...rounds.map(r=>r.length));
 
   const container=document.createElement('div');
-  container.style.cssText='display:flex;flex-direction:row;gap:28px;align-items:stretch;padding:8px;min-width:max-content;';
+  container.style.cssText='display:flex;flex-direction:row;gap:28px;align-items:stretch;padding:8px;min-width:max-content;justify-content:center;';
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
-    col.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:160px;`;
+    col.style.cssText=`display:flex;flex-direction:column;gap:0;`;
 
     // 라운드 라벨
     const lbl=document.createElement('div');
@@ -461,23 +461,24 @@ function _renderBracketHTML(wrap, rounds, direction){
       box.appendChild(header);
 
       if(isBye){
-        // 부전승: 이름만
         const row=document.createElement('div');
-        row.style.cssText='padding:8px 10px;background:#0a0a14;font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;';
+        row.style.cssText='padding:6px 10px;background:#0a0a14;font-size:12px;font-weight:600;color:#d0d0d0;';
         row.textContent=p1?p1.name:'?';
         box.appendChild(row);
       } else {
-        // 일반: p1 / VS / p2
-        const r1=document.createElement('div');
-        r1.style.cssText='padding:7px 10px;background:#0d0d1a;font-size:13px;font-weight:600;color:'+(p1?'#d0d0d0':'#2a2a3e')+';border-bottom:1px solid #111122;';
-        r1.textContent=p1?p1.name:'?';
-        const vs=document.createElement('div');
-        vs.style.cssText='text-align:center;font-size:10px;color:#e63946;background:#080812;padding:1px 0;font-family:Bebas Neue,cursive;letter-spacing:2px;';
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0d0d1a;';
+        const n1=document.createElement('span');
+        n1.style.cssText='font-size:12px;font-weight:600;color:'+(p1?'#d0d0d0':'#2a2a3e')+';flex:1;';
+        n1.textContent=p1?p1.name:'?';
+        const vs=document.createElement('span');
+        vs.style.cssText='font-size:10px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;';
         vs.textContent='VS';
-        const r2=document.createElement('div');
-        r2.style.cssText='padding:7px 10px;background:#0d0d1a;font-size:13px;font-weight:600;color:'+(p2?'#d0d0d0':'#2a2a3e')+';';
-        r2.textContent=p2?p2.name:'?';
-        box.appendChild(r1);box.appendChild(vs);box.appendChild(r2);
+        const n2=document.createElement('span');
+        n2.style.cssText='font-size:12px;font-weight:600;color:'+(p2?'#d0d0d0':'#2a2a3e')+';flex:1;text-align:right;';
+        n2.textContent=p2?p2.name:'?';
+        row.appendChild(n1);row.appendChild(vs);row.appendChild(n2);
+        box.appendChild(row);
       }
       matchWrap.appendChild(box);
     });
