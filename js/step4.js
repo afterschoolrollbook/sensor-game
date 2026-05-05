@@ -27,12 +27,19 @@ function buildProc(){
   treeWrap.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:16px;';
   w.appendChild(treeWrap);
 
-  if(S.matches&&S.matches.length||(S.proc==='ind-tour'||S.proc==='team-tour')){
+  if(S.matches&&S.matches.length){
+    // 대진표가 있으면 항상 토너먼트/리그 트리 표시
     buildTournamentTree(treeWrap);
   } else if(S.proc==='ind-rec'){
     buildOrderList(treeWrap);
   } else if(S.proc==='team-rec'||S.proc==='team-ind'){
     buildTeamList(treeWrap);
+  } else {
+    // 대진표 없음 안내
+    const msg=document.createElement('div');
+    msg.style.cssText='color:var(--text3);font-size:13px;text-align:center;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;';
+    msg.innerHTML='위 <b style="color:var(--text2)">👥 참가자 보기</b> 버튼을 눌러 대진표를 만들어주세요';
+    treeWrap.appendChild(msg);
   }
 }
 
@@ -116,10 +123,13 @@ function buildTournamentTree(wrap){
   hdr.innerHTML=`
     <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">🏆 토너먼트 대진표</div>
     <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
-      ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.2)':'transparent'};border:1px solid ${_bracketLayout===l.id?'#e63946':'#2a2a3e'};color:${_bracketLayout===l.id?'#e63946':'#666'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;">${l.label}</button>`).join('')}
-      <button onclick="addNextRound()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">➕ 다음 라운드</button>
-      <button onclick="removeLastRound()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">➖ 라운드 삭제</button>
-      <button onclick="shuffleBracket()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">🔀 무작위</button>
+      <span style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-right:2px;">레이아웃:</span>
+      ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.25)':'rgba(255,255,255,.04)'};border:1px solid ${_bracketLayout===l.id?'var(--red)':'var(--border2)'};color:${_bracketLayout===l.id?'#e63946':'var(--text2)'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;transition:all .15s;">${l.label}</button>`).join('')}
+      <span style="width:1px;height:16px;background:var(--border);margin:0 2px;"></span>
+      <button onclick="addNextRound()" style="padding:3px 9px;background:rgba(76,201,240,.08);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➕ 라운드 추가</button>
+      <button onclick="removeLastRound()" style="padding:3px 9px;background:rgba(230,57,70,.06);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➖ 라운드 삭제</button>
+      <button onclick="shuffleBracket()" style="padding:3px 9px;background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">🔀 무작위</button>
+      <button onclick="resetBracket()" style="padding:3px 9px;background:rgba(255,214,10,.06);border:1px solid var(--border2);color:var(--text3);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text3)'">✕ 초기화</button>
     </div>`;
   wrap.appendChild(hdr);
   const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
@@ -494,6 +504,17 @@ function shuffleBracket(){
   S.curMatch=0;
   buildProc();
   toast('대진표 새로 배정됨','success');
+}
+
+/* ── 대진표 초기화 ── */
+function resetBracket(){
+  S.matches=null;
+  S.matchProc=null;
+  S.matchPts=null;
+  S.curMatch=0;
+  S.proc='ind-rec';
+  buildProc();
+  toast('대진표가 초기화되었어요','info');
 }
 
 /* ── 순서 섞기 ── */
