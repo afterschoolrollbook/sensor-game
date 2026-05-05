@@ -192,47 +192,93 @@ function _rlabel(svg,x,y,ri,total){
 function _mboxH(svg,x,cy,match,ri,mi,sz){
   const {mw,mh}=sz;
   const y=cy-mh/2,p1=match.p1,p2=match.p2;
-  const isCur=isCurrentMatchIdx(ri,mi);
+  const isBye=p1&&!p2;
+  const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
+  // 부전승이면 자동 승자 처리
+  if(isBye&&!match.winner)match.winner=p1;
+
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
-  r.setAttribute('rx','4');r.setAttribute('fill','#0d0d1a');
-  r.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r.setAttribute('stroke-width',isCur?'2':'1');
+  r.setAttribute('rx','4');r.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
+  r.setAttribute('stroke',isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
+  r.setAttribute('stroke-width',isCur?'2':'1');
   if(isCur)r.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r);
-  const mx=x+mw/2;
-  const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
-  vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+mh);
-  vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+
   const fs=Math.max(8,Math.floor(mh*0.38));
-  const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
-  vs.setAttribute('x',mx);vs.setAttribute('y',cy+fs*0.35);vs.setAttribute('text-anchor','middle');
-  vs.setAttribute('fill','#e63946');vs.setAttribute('font-size',fs);vs.setAttribute('font-family','Bebas Neue,cursive');
-  vs.textContent='VS';svg.appendChild(vs);
-  [['end',p1,mx-4],['start',p2,mx+4]].forEach(([anchor,p,tx])=>{
+  if(isBye){
+    // 부전승: 이름 + BYE 표시
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',tx);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor',anchor);
-    t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size',fs);
+    t.setAttribute('x',x+mw/2);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','#d0d0d0');t.setAttribute('font-size',fs);
     t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
-    t.textContent=p?p.name:'?';svg.appendChild(t);
-  });
+    t.textContent=p1.name;svg.appendChild(t);
+    const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
+    bye.setAttribute('x',x+mw-4);bye.setAttribute('y',y+8);bye.setAttribute('text-anchor','end');
+    bye.setAttribute('fill','#4cc9f0');bye.setAttribute('font-size','7');
+    bye.setAttribute('font-family','Share Tech Mono,monospace');
+    bye.textContent='BYE';svg.appendChild(bye);
+  } else {
+    const mx=x+mw/2;
+    const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
+    vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+mh);
+    vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+    const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
+    vs.setAttribute('x',mx);vs.setAttribute('y',cy+fs*0.35);vs.setAttribute('text-anchor','middle');
+    vs.setAttribute('fill','#e63946');vs.setAttribute('font-size',fs);vs.setAttribute('font-family','Bebas Neue,cursive');
+    vs.textContent='VS';svg.appendChild(vs);
+    [['end',p1,mx-4],['start',p2,mx+4]].forEach(([anchor,p,tx])=>{
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',tx);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor',anchor);
+      t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size',fs);
+      t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+      t.textContent=p?p.name:'?';svg.appendChild(t);
+    });
+  }
   const num=document.createElementNS('http://www.w3.org/2000/svg','text');
-  num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill','#e63946');
+  num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
+  num.textContent=isBye?`${ri+1}-${mi+1} BYE`:`${ri+1}-${mi+1}`;svg.appendChild(num);
 }
 
 /* 세로형 박스 (B/C/E용): 이름을 한 글자씩 세로로 */
 function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const {mw,mh}=sz;
-  // 세로박스: 너비=mh*1.4, 높이=이름길이*글자높이
   const bw=Math.max(26,Math.floor(mh*1.4));
   const fs=Math.max(9,Math.floor(bw*0.52));
   const lh=fs+3;
   const p1=match.p1,p2=match.p2;
+  const isBye=p1&&!p2;
+  const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
+  if(isBye&&!match.winner)match.winner=p1;
+
   const n1=p1?p1.name:'?',n2=p2?p2.name:'?';
+
+  if(isBye){
+    // 부전승: 박스 하나만, 이름 세로
+    const bh=n1.length*lh+20;
+    const x1=cx-bw/2,y1=cy-bh/2;
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x1);r.setAttribute('y',y1);r.setAttribute('width',bw);r.setAttribute('height',bh);
+    r.setAttribute('rx','4');r.setAttribute('fill','#0a0a14');
+    r.setAttribute('stroke','#1a1a28');r.setAttribute('stroke-width','1');
+    svg.appendChild(r);
+    n1.split('').forEach((ch,i)=>{
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',x1+bw/2);t.setAttribute('y',y1+12+i*lh+fs);
+      t.setAttribute('text-anchor','middle');t.setAttribute('fill','#d0d0d0');
+      t.setAttribute('font-size',fs);t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+      t.textContent=ch;svg.appendChild(t);
+    });
+    const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
+    bye.setAttribute('x',x1+bw/2);bye.setAttribute('y',y1+6);bye.setAttribute('text-anchor','middle');
+    bye.setAttribute('fill','#4cc9f0');bye.setAttribute('font-size','6');bye.setAttribute('font-family','Share Tech Mono,monospace');
+    bye.textContent='BYE';svg.appendChild(bye);
+    return;
+  }
+
   const maxLen=Math.max(n1.length,n2.length,1);
-  const bh=maxLen*lh+20; // 여백
-  const isCur=isCurrentMatchIdx(ri,mi);
+  const bh=maxLen*lh+20;
 
   // p1 박스 (위)
   const x1=cx-bw-2,y1=cy-bh-4;
@@ -242,7 +288,6 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   r1.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r1.setAttribute('stroke-width',isCur?'2':'1');
   if(isCur)r1.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r1);
-  // p1 이름 세로
   n1.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x',x1+bw/2);t.setAttribute('y',y1+12+i*lh+fs);
@@ -251,7 +296,6 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
     t.textContent=ch;svg.appendChild(t);
   });
 
-  // VS
   const vsEl=document.createElementNS('http://www.w3.org/2000/svg','text');
   vsEl.setAttribute('x',cx);vsEl.setAttribute('y',cy+4);vsEl.setAttribute('text-anchor','middle');
   vsEl.setAttribute('fill','#e63946');vsEl.setAttribute('font-size',Math.max(8,fs-1));vsEl.setAttribute('font-family','Bebas Neue,cursive');
@@ -265,7 +309,6 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   r2.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r2.setAttribute('stroke-width',isCur?'2':'1');
   if(isCur)r2.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r2);
-  // p2 이름 세로
   n2.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x',x2+bw/2);t.setAttribute('y',y2+12+i*lh+fs);
@@ -274,13 +317,10 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
     t.textContent=ch;svg.appendChild(t);
   });
 
-  // 매치 번호
   const num=document.createElementNS('http://www.w3.org/2000/svg','text');
   num.setAttribute('x',x1+2);num.setAttribute('y',y1+8);num.setAttribute('fill','#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
   num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
-
-  return bh; // 박스 높이 반환 (ROW 계산에 활용)
 }
 
 /* 공통: 연결선 그리기 (가로, A/D용) */
@@ -602,20 +642,36 @@ function buildTeamList(wrap){
   });
 }
 
-/* ── 브라켓 생성 (1라운드만, BYE 자동승자 없음) ── */
-function generateBracket(pts){
-  let players=[...pts];
-  // 2의 거듭제곱으로 맞추기 (BYE 추가)
-  let size=1;
-  while(size<players.length)size*=2;
-  while(players.length<size)players.push(null);
+/* ── 브라켓 생성 ──
+   5명 예시:
+   bye = 5 % 2 = 1명 → 2라운드 직행
+   1라운드: (5-1)/2 = 2경기 (4명이 붙음)
 
-  // 1라운드만 생성
-  const matches=[];
-  for(let i=0;i<players.length;i+=2){
-    matches.push({p1:players[i],p2:players[i+1],winner:null});
+   1라운드      2라운드     결승
+   A vs B → 승자 ─┐
+   C vs D → 승자 ─┼→ 승자 ─┐
+   E(bye) ────────┘         └→ 우승
+*/
+function generateBracket(pts){
+  const players=[...pts];
+  const n=players.length;
+  if(!n)return[[]];
+
+  // 홀수면 1명만 부전승, 나머지는 1라운드
+  const byeCount=n%2; // 0 or 1
+  const round1Players=players.slice(0,n-byeCount);
+  const byePlayers=players.slice(n-byeCount);
+
+  const round1=[];
+  for(let i=0;i<round1Players.length;i+=2){
+    round1.push({p1:round1Players[i],p2:round1Players[i+1],winner:null});
   }
-  return [matches]; // 항상 1라운드만
+
+  if(byeCount===0)return[round1];
+
+  // 부전승 1명을 2라운드에 배치 (winner 자동 확정)
+  const round2=[{p1:byePlayers[0],p2:null,winner:byePlayers[0]}];
+  return[round1,round2];
 }
 
 /* ── 마지막 라운드 삭제 ── */
