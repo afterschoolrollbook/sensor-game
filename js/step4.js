@@ -488,33 +488,35 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       if(isBye){
         const row=document.createElement('div');
-        row.style.cssText='padding:8px 12px;background:#0a0a14;font-size:13px;font-weight:600;color:#d0d0d0;';
-        row.textContent=p1?p1.name:'?';
+        row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0a0a14;';
+        if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
+        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;';nm.textContent=p1?p1.name:'?';row.appendChild(nm);
         box.appendChild(row);
       } else {
-        const mkRow=(p,isWin,isLose)=>{
-          const row=document.createElement('div');
-          row.style.cssText=`display:flex;align-items:center;gap:8px;padding:8px 12px;background:${isWin?'rgba(6,214,160,.07)':'#0d0d1a'};${isLose?'opacity:.4;':''}`;
-          if(p&&p.color){
-            const dot=document.createElement('div');
-            dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0;`;
-            row.appendChild(dot);
-          }
+        // 가로 한 줄: [dot] 이름1  VS  이름2 [dot]
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;background:#0d0d1a;';
+
+        const mkName=(p,isWin,isLose)=>{
+          const wrap=document.createElement('div');
+          wrap.style.cssText='display:flex;align-items:center;gap:5px;';
+          if(p&&p.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0;`;wrap.appendChild(dot);}
           const nm=document.createElement('span');
-          nm.style.cssText='font-size:13px;font-weight:'+(isWin?'700':'500')+';color:'+(p?'#d0d0d0':'#2a2a3e')+';flex:1;';
+          nm.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
           nm.textContent=p?p.name:'?';
-          row.appendChild(nm);
-          if(isWin){const chk=document.createElement('span');chk.style.cssText='font-size:11px;color:#06d6a0;';chk.textContent='✓';row.appendChild(chk);}
-          return row;
+          wrap.appendChild(nm);
+          return wrap;
         };
+
         const isW1=m.winner&&m.winner===p1,isW2=m.winner&&m.winner===p2;
-        box.appendChild(mkRow(p1,isW1,!isW1&&!!m.winner));
-        // VS 구분
-        const vsRow=document.createElement('div');
-        vsRow.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:2px 12px;background:#08080e;';
-        vsRow.innerHTML=`<div style="flex:1;height:1px;background:#1e1e30;"></div><span style="font-size:10px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:2px;flex-shrink:0;">VS</span><div style="flex:1;height:1px;background:#1e1e30;"></div>`;
-        box.appendChild(vsRow);
-        box.appendChild(mkRow(p2,isW2,!isW2&&!!m.winner));
+        const vs=document.createElement('span');
+        vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';
+        vs.textContent='VS';
+
+        row.appendChild(mkName(p1,isW1,!isW1&&!!m.winner));
+        row.appendChild(vs);
+        row.appendChild(mkName(p2,isW2,!isW2&&!!m.winner));
+        box.appendChild(row);
       }
       matchArea.appendChild(box);
     });
