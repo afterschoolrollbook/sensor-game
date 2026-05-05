@@ -95,7 +95,6 @@ function buildTournamentTree(wrap){
   const pts=[...S.pts];
   if(!pts.length)return;
 
-  // 저장된 대진표 or 새로 생성
   if(!S.matches||S.matchProc!==S.proc||S.matchPts!==pts.map(p=>p.id).join(',')){
     S.matches=generateBracket(pts);
     S.matchProc=S.proc;
@@ -104,74 +103,154 @@ function buildTournamentTree(wrap){
     try{if(typeof updatePv==="function")updatePv();}catch(e){}
   }
 
-  const rounds=S.matches;
-
   // 헤더
   const hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
   hdr.innerHTML=`
-    <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase">🏆 토너먼트 대진표</div>
-    <button onclick="shuffleBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 무작위 배정</button>
-  `;
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">🏆 토너먼트 대진표</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="addNextRound()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">➕ 다음 라운드</button>
+      <button onclick="shuffleBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 무작위 배정</button>
+    </div>`;
   wrap.appendChild(hdr);
 
-  // 대진표 가로 스크롤 컨테이너
-  const container=document.createElement('div');
-  container.style.cssText='display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;';
+  // 라운드별 세로 렌더
+  S.matches.forEach((matches,ri)=>{
+    const totalRounds=S.matches.length;
+    const rname=ri===totalRounds-1&&totalRounds>1?'결승':ri===totalRounds-2&&totalRounds>2?'준결승':`${ri+1}라운드`;
 
-  const roundNames=['1라운드','2라운드','준결승','결승','우승'];
-  const totalRounds=rounds.length;
-
-  rounds.forEach((matches,ri)=>{
-    const col=document.createElement('div');
-    col.style.cssText='display:flex;flex-direction:column;gap:8px;min-width:160px;flex-shrink:0;';
+    const section=document.createElement('div');
+    section.style.cssText='margin-bottom:24px;';
 
     // 라운드 제목
-    const rname=ri===totalRounds-1?'결승':ri===totalRounds-2&&totalRounds>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
     const rtitle=document.createElement('div');
-    rtitle.style.cssText='font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-align:center;padding:4px;border-bottom:1px solid var(--border);margin-bottom:4px;';
-    rtitle.textContent=rname;
-    col.appendChild(rtitle);
+    rtitle.style.cssText='font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);padding:4px 0;margin-bottom:12px;border-bottom:1px solid var(--border);';
+    rtitle.textContent=rname+' ('+matches.length+'경기)';
+    section.appendChild(rtitle);
 
-    // 매치들
+    // 경기 목록
     matches.forEach((match,mi)=>{
-      const matchEl=buildMatchCard(match, ri, mi);
-      col.appendChild(matchEl);
+      const isCurrent=isCurrentMatchIdx(ri,mi);
+      const card=document.createElement('div');
+      card.style.cssText=`
+        display:flex;align-items:center;gap:0;
+        margin-bottom:10px;
+        border:1px solid ${isCurrent?'var(--red)':match.winner?'rgba(6,214,160,.4)':'var(--border)'};
+        border-radius:10px;overflow:hidden;
+        ${isCurrent?'box-shadow:0 0 16px rgba(230,57,70,.2);':''}
+        background:var(--card);
+      `;
+
+      // 경기 번호
+      const numEl=document.createElement('div');
+      numEl.style.cssText='padding:0 10px;font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--red);font-weight:700;border-right:1px solid var(--border);align-self:stretch;display:flex;align-items:center;background:rgba(230,57,70,.05);min-width:36px;justify-content:center;';
+      numEl.textContent=String(mi+1).padStart(2,'0');
+      card.appendChild(numEl);
+
+      // 선수1
+      const p1=match.p1;
+      const p1El=document.createElement('div');
+      const p1Win=match.winner&&match.winner===p1;
+      const p1Lose=match.winner&&match.winner!==p1&&p1;
+      p1El.style.cssText=`flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;${p1Win?'background:rgba(6,214,160,.06)':''}${p1Lose?';opacity:.35':''}`;
+      p1El.innerHTML=p1
+        ?`<div style="width:7px;height:7px;border-radius:50%;background:${p1.color||'var(--text3)'};flex-shrink:0;"></div>
+           <span style="font-size:13px;font-weight:${p1Win?'700':'500'};">${p1.name}</span>
+           ${p1Win?'<span style="font-size:10px;color:var(--green);margin-left:auto;">✓ WIN</span>':''}`
+        :'<span style="font-size:11px;color:var(--border2);">— BYE —</span>';
+      card.appendChild(p1El);
+
+      // VS
+      const vsEl=document.createElement('div');
+      vsEl.style.cssText='padding:0 10px;font-family:"Bebas Neue",cursive;font-size:14px;color:var(--red);border-left:1px solid var(--border);border-right:1px solid var(--border);align-self:stretch;display:flex;align-items:center;background:rgba(230,57,70,.03);';
+      vsEl.textContent='VS';
+      card.appendChild(vsEl);
+
+      // 선수2
+      const p2=match.p2;
+      const p2El=document.createElement('div');
+      const p2Win=match.winner&&match.winner===p2;
+      const p2Lose=match.winner&&match.winner!==p2&&p2;
+      p2El.style.cssText=`flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;${p2Win?'background:rgba(6,214,160,.06)':''}${p2Lose?';opacity:.35':''}`;
+      p2El.innerHTML=p2
+        ?`<div style="width:7px;height:7px;border-radius:50%;background:${p2.color||'var(--text3)'};flex-shrink:0;"></div>
+           <span style="font-size:13px;font-weight:${p2Win?'700':'500'};">${p2.name}</span>
+           ${p2Win?'<span style="font-size:10px;color:var(--green);margin-left:auto;">✓ WIN</span>':''}`
+        :'<span style="font-size:11px;color:var(--border2);">— BYE —</span>';
+      card.appendChild(p2El);
+
+      // 승자 기록 버튼 (현재 경기만)
+      if(isCurrent&&p1&&p2){
+        const btnWrap=document.createElement('div');
+        btnWrap.style.cssText='display:flex;flex-direction:column;gap:0;border-left:1px solid var(--border);flex-shrink:0;';
+        const btn1=document.createElement('button');
+        btn1.style.cssText='padding:6px 12px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;';
+        btn1.textContent=p1.name+' 승';
+        btn1.onclick=()=>recordWin(0);
+        const btn2=document.createElement('button');
+        btn2.style.cssText='padding:6px 12px;background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;';
+        btn2.textContent=p2.name+' 승';
+        btn2.onclick=()=>recordWin(1);
+        btnWrap.appendChild(btn1);
+        btnWrap.appendChild(btn2);
+        card.appendChild(btnWrap);
+      }
+
+      // 라운드 간 연결선 표시
+      if(ri>0){
+        const connector=document.createElement('div');
+        connector.style.cssText='position:relative;';
+        connector.innerHTML=`<div style="position:absolute;left:-12px;top:50%;width:12px;height:2px;background:var(--border);"></div>`;
+        card.style.position='relative';
+        card.appendChild(connector);
+      }
+
+      section.appendChild(card);
     });
 
-    container.appendChild(col);
+    wrap.appendChild(section);
+
+    // 다음 라운드가 있으면 연결선만 표시
+    if(ri < S.matches.length-1){
+      const connector=document.createElement('div');
+      connector.style.cssText='margin-bottom:8px;padding:0 4px;';
+      const lines=document.createElement('div');
+      lines.style.cssText='display:flex;flex-direction:column;gap:10px;';
+
+      matches.forEach((match,mi)=>{
+        const nextMatchIdx=Math.floor(mi/2);
+        const arrow=document.createElement('div');
+        arrow.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 10px;border-left:2px solid var(--border);';
+        arrow.innerHTML=`<span style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;">경기${mi+1} 승자 → ${nextMatchIdx+1}경기</span><span style="color:var(--border);">↓</span>`;
+        lines.appendChild(arrow);
+      });
+
+      connector.appendChild(lines);
+      wrap.appendChild(connector);
+      const divider=document.createElement('div');
+      divider.style.cssText='border-top:1px dashed var(--border);margin-bottom:20px;';
+      wrap.appendChild(divider);
+    }
   });
+}
 
-  // 우승자 컬럼
-  const winnerCol=document.createElement('div');
-  winnerCol.style.cssText='display:flex;flex-direction:column;gap:8px;min-width:120px;flex-shrink:0;align-items:center;justify-content:center;';
-  const lastRound=rounds[rounds.length-1];
-  const winner=lastRound&&lastRound[0]&&lastRound[0].winner;
-  winnerCol.innerHTML=`
-    <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--yellow);text-align:center;margin-bottom:8px;">🏆 우승</div>
-    <div style="background:rgba(255,214,10,.08);border:2px solid ${winner?'var(--yellow)':'var(--border)'};border-radius:10px;padding:14px 10px;text-align:center;min-width:100px;">
-      <div style="font-family:'Bebas Neue',cursive;font-size:18px;color:${winner?'var(--yellow)':'var(--text3)'};">${winner?winner.name:'?'}</div>
-    </div>`;
-  container.appendChild(winnerCol);
+/* ── 다음 라운드 추가 ── */
+function addNextRound(){
+  if(!S.matches||!S.matches.length){toast('대진표가 없어요','error');return;}
+  const lastRound=S.matches[S.matches.length-1];
+  const winners=lastRound.map(m=>m.winner||null);
+  if(winners.every(w=>!w)){toast('1라운드 승자를 먼저 결정해주세요','info');return;}
+  if(winners.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
 
-  wrap.appendChild(container);
-
-  // 현재 경기 안내
-  const curMatchInfo=getCurrentMatch();
-  if(curMatchInfo){
-    const info=document.createElement('div');
-    info.style.cssText='margin-top:14px;background:rgba(230,57,70,.06);border:1px solid rgba(230,57,70,.2);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;';
-    info.innerHTML=`
-      <div>
-        <div style="font-size:10px;letter-spacing:2px;color:var(--red);margin-bottom:4px;">▶ 현재 경기</div>
-        <div style="font-size:15px;font-weight:700;">${curMatchInfo.p1?.name||'?'} <span style="color:var(--red)">VS</span> ${curMatchInfo.p2?.name||'?'}</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="recordWin(0)" style="padding:7px 14px;background:rgba(76,201,240,.1);border:1px solid var(--accent);color:var(--accent);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;">${curMatchInfo.p1?.name||'?'} 승</button>
-        <button onclick="recordWin(1)" style="padding:7px 14px;background:rgba(76,201,240,.1);border:1px solid var(--accent);color:var(--accent);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;">${curMatchInfo.p2?.name||'?'} 승</button>
-      </div>`;
-    wrap.appendChild(info);
+  // 승자들로 다음 라운드 생성 (BYE 없이 실제 승자만)
+  const nextPlayers=winners.filter(w=>w!==null);
+  const matches=[];
+  for(let i=0;i<nextPlayers.length;i+=2){
+    matches.push({p1:nextPlayers[i],p2:nextPlayers[i+1]||null,winner:null});
   }
+  S.matches.push(matches);
+  buildProc();
+  toast(`${S.matches.length}라운드 추가됨!`,'success');
 }
 
 /* ── 매치 카드 ── */
@@ -208,11 +287,29 @@ function buildMatchCard(match, ri, mi){
 
 /* ── 개별 기록 순서 리스트 ── */
 function buildOrderList(wrap){
+  const hasWeight=S.pts.some(p=>p.weight);
+  const hasDiv=S.pts.some(p=>p.division);
+  const hasTeam=S.pts.some(p=>p.team);
+  const hasGroups=hasWeight||hasDiv||hasTeam;
+
+  // 그룹이 있을 때 → 대진표 팝업 안내만 표시
+  if(hasGroups){
+    const msg=document.createElement('div');
+    msg.style.cssText='padding:24px;text-align:center;';
+    msg.innerHTML=`
+      <div style="font-size:32px;margin-bottom:12px;">🏆</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">그룹별 대진표를 만들어주세요</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">체급/부문별로 분류된 참가자가 있어요.<br>👥 참가자 보기에서 그룹별 토너먼트를 만들어주세요.</div>
+      <button onclick="openPtsPopup()" style="padding:8px 20px;background:var(--red);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">👥 참가자 보기 → 대진표 만들기</button>`;
+    wrap.appendChild(msg);
+    return;
+  }
+
+  // 그룹 없을 때(순수 개인전) → 도전 순서 리스트
   const hdr=document.createElement('div');
   hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
   hdr.innerHTML=`
     <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase">🏁 도전 순서</div>
-    <button onclick="shuffleOrder()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 순서 섞기</button>
   `;
   wrap.appendChild(hdr);
 
@@ -263,33 +360,20 @@ function buildTeamList(wrap){
   });
 }
 
-/* ── 브라켓 생성 ── */
+/* ── 브라켓 생성 (1라운드만, BYE 자동승자 없음) ── */
 function generateBracket(pts){
-  // 참가자 복사 (섞기)
   let players=[...pts];
   // 2의 거듭제곱으로 맞추기 (BYE 추가)
   let size=1;
   while(size<players.length)size*=2;
-  while(players.length<size)players.push(null); // null = BYE
+  while(players.length<size)players.push(null);
 
-  const rounds=[];
-  let current=players;
-
-  while(current.length>1){
-    const matches=[];
-    for(let i=0;i<current.length;i+=2){
-      const match={p1:current[i],p2:current[i+1],winner:null};
-      // BYE 처리: 상대가 null이면 자동 진출
-      if(!match.p2)match.winner=match.p1;
-      else if(!match.p1)match.winner=match.p2;
-      matches.push(match);
-    }
-    rounds.push(matches);
-    // 다음 라운드: 승자들로 구성 (아직 미정은 null)
-    current=matches.map(m=>m.winner||null);
+  // 1라운드만 생성
+  const matches=[];
+  for(let i=0;i<players.length;i+=2){
+    matches.push({p1:players[i],p2:players[i+1],winner:null});
   }
-
-  return rounds;
+  return [matches]; // 항상 1라운드만
 }
 
 /* ── 무작위 배정 ── */
@@ -332,18 +416,6 @@ function recordWin(playerIdx){
   if(!cur)return;
   const winner=playerIdx===0?cur.p1:cur.p2;
   S.matches[cur.ri][cur.mi].winner=winner;
-
-  // 다음 라운드 해당 슬롯에 승자 배치
-  if(cur.ri+1<S.matches.length){
-    const nextMatchIdx=Math.floor(cur.mi/2);
-    const isFirst=cur.mi%2===0;
-    const nextMatch=S.matches[cur.ri+1][nextMatchIdx];
-    if(isFirst)nextMatch.p1=winner;
-    else nextMatch.p2=winner;
-    // BYE 자동처리
-    if(!nextMatch.p2&&nextMatch.p1)nextMatch.winner=nextMatch.p1;
-    if(!nextMatch.p1&&nextMatch.p2)nextMatch.winner=nextMatch.p2;
-  }
 
   // localStorage로 display.html에 현재경기 전달
   const next=getCurrentMatch();
