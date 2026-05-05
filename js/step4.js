@@ -530,24 +530,22 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   outerWrap.appendChild(container);
   wrap.appendChild(outerWrap);
 
-  // 레이아웃 완전히 잡힌 후 연결선 그리기 (double rAF)
+  // 연결선 그리기 — 슬롯 수학으로 직접 계산 (PPT 커넥터 방식, getBoundingClientRect 미사용)
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const cRect=container.getBoundingClientRect();
+    const LABEL_H=24,PAD=8,BOX_W=180,COL_GAP=40;
     const W=container.scrollWidth,H=container.scrollHeight+40;
 
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
     svg.setAttribute('width',W);svg.setAttribute('height',H);
 
+    // 슬롯 수학으로 박스 중앙 Y 직접 계산 (DOM 읽기 없음)
     const getBox=(ri,mi)=>{
-      const el=container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
-      if(!el)return null;
-      const r=el.getBoundingClientRect();
-      return{
-        left:r.left-cRect.left,
-        right:r.right-cRect.left,
-        cy:r.top-cRect.top+r.height/2
-      };
+      const slotsPerMatch=Math.pow(2,ri);
+      const slotPx=slotsPerMatch*SLOT_H;
+      const cy=LABEL_H+PAD+mi*slotPx+slotPx/2;
+      const left=PAD+ri*(BOX_W+COL_GAP);
+      return{left, right:left+BOX_W, cy};
     };
 
     const PATH=(d)=>{
@@ -581,11 +579,12 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t.cy
+            const midY=(ay+by)/2;
+            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${ty} H${tx}`);
+            PATH(`M${midX},${midY} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
@@ -597,11 +596,12 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t.cy
+            const midY=(ay+by)/2;
+            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${ty} H${tx}`);
+            PATH(`M${midX},${midY} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
