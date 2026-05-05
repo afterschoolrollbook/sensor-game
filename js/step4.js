@@ -432,42 +432,43 @@ function renderBracketA(wrap){
   const xFn=(ri)=>ri*(mw+gap)+20;
   const svg=_mkSvg(W,H);
 
-  // 수동 연결선 그리기
-  rounds.forEach((matches,ri)=>{
-    matches.forEach((m,mi)=>{
-      if(!m.fromA)return;
-      const [aRi,aMi]=m.fromA.split('-').map(Number);
-      const tx=xFn(ri), ty=cyFn(ri,mi);
-      const ax=xFn(aRi)+mw, ay=cyFn(aRi,aMi);
-      const LN=(x1,y1,x2,y2)=>{
-        const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-        l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-        l.setAttribute('stroke','#2a2a40');l.setAttribute('stroke-width','1.5');svg.appendChild(l);
-      };
-      if(m.fromB){
-        // 두 경기 연결
-        const [bRi,bMi]=m.fromB.split('-').map(Number);
-        const bx=xFn(bRi)+mw, by=cyFn(bRi,bMi);
-        const midX=(ax+tx)/2;
-        LN(ax,ay,midX,ay);
-        LN(bx,by,midX,by);
-        LN(midX,ay,midX,by);
-        LN(midX,ty,tx,ty);
-      } else {
-        // 직행: 단순 선 하나
-        const midX=(ax+tx)/2;
-        LN(ax,ay,midX,ay);
-        LN(midX,ay,midX,ty);
-        LN(midX,ty,tx,ty);
-      }
-    });
-  });
+  _drawManualLinks(svg,rounds,xFn,cyFn,mw);
 
   rounds.forEach((matches,ri)=>{
     _rlabel(svg,xFn(ri)+mw/2,12,ri,T);
     matches.forEach((m,mi)=>_mboxH(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
   });
   _wrap(wrap,svg);
+}
+
+/* 공통: 수동 연결선 그리기 (모든 레이아웃) */
+function _drawManualLinks(svg,rounds,xFn,cyFn,mw){
+  const LN=(x1,y1,x2,y2)=>{
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','#2a2a40');l.setAttribute('stroke-width','1.5');svg.appendChild(l);
+  };
+  rounds.forEach((matches,ri)=>{
+    matches.forEach((m,mi)=>{
+      if(!m.fromA)return;
+      const [aRi,aMi]=m.fromA.split('-').map(Number);
+      const ax=xFn(aRi)+(mw||0), ay=cyFn(aRi,aMi);
+      const tx=xFn(ri), ty=cyFn(ri,mi);
+      const midX=(ax+tx)/2;
+      if(m.fromB){
+        const [bRi,bMi]=m.fromB.split('-').map(Number);
+        const bx=xFn(bRi)+(mw||0), by=cyFn(bRi,bMi);
+        LN(ax,ay,midX,ay);
+        LN(bx,by,midX,by);
+        LN(midX,ay,midX,by);
+        LN(midX,ty,tx,ty);
+      } else {
+        LN(ax,ay,midX,ay);
+        LN(midX,ay,midX,ty);
+        LN(midX,ty,tx,ty);
+      }
+    });
+  });
 }
 
 /* B: 아래→위, 이름 세로 */
@@ -486,7 +487,7 @@ function renderBracketB(wrap){
   const baseY=H-padY;
   const xFn=(ri)=>ri*(colW+colGap)+20+colW/2; // 중심 X
   const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'up');
-  _drawLinksBC(svg,rounds,xFn,cyFn);
+  _drawManualLinks(svg,rounds,xFn,cyFn,0);
   rounds.forEach((matches,ri)=>{
     _rlabel(svg,xFn(ri),12,ri,T);
     matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
@@ -510,7 +511,7 @@ function renderBracketC(wrap){
   const baseY=padY;
   const xFn=(ri)=>ri*(colW+colGap)+20+colW/2;
   const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'down');
-  _drawLinksBC(svg,rounds,xFn,cyFn);
+  _drawManualLinks(svg,rounds,xFn,cyFn,0);
   rounds.forEach((matches,ri)=>{
     _rlabel(svg,xFn(ri),H-8,ri,T);
     matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
@@ -534,13 +535,13 @@ function renderBracketD(wrap){
   const lcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
   const rxFn=(ri)=>W-20-mw-ri*(mw+gap);
   const rcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
-  _drawLinks(svg,lRounds,lxFn,lcyFn,'right',sz);
+  _drawManualLinks(svg,rounds,lxFn,lcyFn,mw);
   lRounds.forEach((matches,ri)=>{
     _rlabel(svg,lxFn(ri)+mw/2,12,ri,T);
     matches.forEach((m,mi)=>_mboxH(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi,sz));
   });
   if(rCount>0){
-    _drawLinks(svg,rRounds,rxFn,rcyFn,'left',sz);
+    _drawManualLinks(svg,rounds,rxFn,rcyFn,0);
     rRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
       _rlabel(svg,rxFn(ri)+mw/2,12,ri,T);
@@ -570,14 +571,14 @@ function renderBracketE(wrap){
   const tcyFn=(ri,mi)=>_vtree_cy(ri,mi,padY,row,'down');
   const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
   const bcyFn=(ri,mi)=>_vtree_cy(ri,mi,H-padY,row,'up');
-  _drawLinksBC(svg,topRounds,xFn,tcyFn);
+  _drawManualLinks(svg,rounds,xFn,tcyFn,0);
   topRounds.forEach((matches,ri)=>{
     if(!matches.length)return;
     _rlabel(svg,xFn(ri),12,ri,T);
     matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi,sz));
   });
   if(bCount>0){
-    _drawLinksBC(svg,botRounds,xFn,bcyFn);
+    _drawManualLinks(svg,rounds,xFn,bcyFn,0);
     botRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
       matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi,sz));
