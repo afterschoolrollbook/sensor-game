@@ -138,18 +138,30 @@ function buildTournamentTree(wrap){
 
 function setBracketLayout(mode){_bracketLayout=mode;buildProc();}
 
-/* 공통 상수 */
-const _MW=200,_MH=36,_GAP=60,_ROW=56;
-
-/* 공통: Y 중심 계산 (상→하, 1라운드=위) */
-function _cy_top(ri,mi,svgH){
-  if(ri===0)return 24+_MH/2+mi*_ROW;
-  return (_cy_top(ri-1,mi*2,svgH)+_cy_top(ri-1,mi*2+1,svgH))/2;
+/* ── 팝업/패널 가용 너비 계산 ── */
+function _getAvailW(wrap){
+  // 팝업(pts-bracket-view) 또는 step4 패널 너비
+  const popup=document.getElementById('pts-bracket-view');
+  if(popup&&popup.offsetWidth>100)return popup.offsetWidth-36;
+  return wrap.offsetWidth>100?wrap.offsetWidth-36:700;
 }
-/* 공통: Y 중심 계산 (하→상, 1라운드=아래) */
-function _cy_bot(ri,mi,svgH){
-  if(ri===0)return svgH-20-_MH/2-mi*_ROW;
-  return (_cy_bot(ri-1,mi*2,svgH)+_cy_bot(ri-1,mi*2+1,svgH))/2;
+
+/* ── 동적 크기 계산 ── */
+function _calcSizes(rounds,availW){
+  const T=rounds.length,r0=rounds[0].length;
+  // 라운드 수 기반으로 박스 너비 결정 (가용폭을 라운드수+갭으로 나눔)
+  const maxMW=200,minMW=80;
+  const gap=Math.max(16,Math.floor(availW*0.06));
+  const mw=Math.min(maxMW,Math.max(minMW,Math.floor((availW-40)/(T||1))-gap));
+  const mh=Math.max(24,Math.floor(mw*0.18));
+  const row=Math.max(mh+8,Math.floor(mh*1.6));
+  return{mw,mh,gap,row};
+}
+
+/* 공통: Y 중심 계산 (상→하) */
+function _cy_top(ri,mi,mh,row){
+  if(ri===0)return 24+mh/2+mi*row;
+  return (_cy_top(ri-1,mi*2,mh,row)+_cy_top(ri-1,mi*2+1,mh,row))/2;
 }
 
 /* 공통: SVG 생성 */
@@ -175,28 +187,31 @@ function _rlabel(svg,x,y,ri,total){
   t.setAttribute('font-family','Share Tech Mono,monospace');t.setAttribute('letter-spacing','1');
   t.textContent=name;svg.appendChild(t);
 }
-/* 공통: 경기 박스 */
-function _mbox(svg,x,cy,match,ri,mi){
-  const y=cy-_MH/2,p1=match.p1,p2=match.p2;
+
+/* 가로형 박스 (A/D용): "이름 VS 이름" 한 줄 */
+function _mboxH(svg,x,cy,match,ri,mi,sz){
+  const {mw,mh}=sz;
+  const y=cy-mh/2,p1=match.p1,p2=match.p2;
   const isCur=isCurrentMatchIdx(ri,mi);
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
-  r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',_MW);r.setAttribute('height',_MH);
-  r.setAttribute('rx','5');r.setAttribute('fill','#0d0d1a');
+  r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
+  r.setAttribute('rx','4');r.setAttribute('fill','#0d0d1a');
   r.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r.setAttribute('stroke-width',isCur?'2':'1');
-  if(isCur)r.setAttribute('filter','drop-shadow(0 0 8px rgba(230,57,70,.5))');
+  if(isCur)r.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r);
-  const mx=x+_MW/2;
+  const mx=x+mw/2;
   const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
-  vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+_MH);
+  vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+mh);
   vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+  const fs=Math.max(8,Math.floor(mh*0.38));
   const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
-  vs.setAttribute('x',mx);vs.setAttribute('y',cy+4);vs.setAttribute('text-anchor','middle');
-  vs.setAttribute('fill','#e63946');vs.setAttribute('font-size','10');vs.setAttribute('font-family','Bebas Neue,cursive');
+  vs.setAttribute('x',mx);vs.setAttribute('y',cy+fs*0.35);vs.setAttribute('text-anchor','middle');
+  vs.setAttribute('fill','#e63946');vs.setAttribute('font-size',fs);vs.setAttribute('font-family','Bebas Neue,cursive');
   vs.textContent='VS';svg.appendChild(vs);
-  [['end',p1,mx-8],[' start',p2,mx+8]].forEach(([anchor,p,tx])=>{
+  [['end',p1,mx-4],['start',p2,mx+4]].forEach(([anchor,p,tx])=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',tx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor',anchor.trim());
-    t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size','12');
+    t.setAttribute('x',tx);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor',anchor);
+    t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size',fs);
     t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
     t.textContent=p?p.name:'?';svg.appendChild(t);
   });
@@ -205,63 +220,96 @@ function _mbox(svg,x,cy,match,ri,mi){
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
   num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
 }
-/* 공통: 연결선 그리기 (가로 연결) */
-function _drawLinks(svg,rounds,xFn,cyFn,dir){
-  // dir: 'right'=오른쪽으로, 'left'=왼쪽으로
+
+/* 세로형 박스 (B/C/E용): 이름을 한 글자씩 세로로 */
+function _mboxV(svg,cx,cy,match,ri,mi,sz){
+  const {mw,mh}=sz;
+  // 세로박스: 너비=mh*1.4, 높이=이름길이*글자높이
+  const bw=Math.max(26,Math.floor(mh*1.4));
+  const fs=Math.max(9,Math.floor(bw*0.52));
+  const lh=fs+3;
+  const p1=match.p1,p2=match.p2;
+  const n1=p1?p1.name:'?',n2=p2?p2.name:'?';
+  const maxLen=Math.max(n1.length,n2.length,1);
+  const bh=maxLen*lh+20; // 여백
+  const isCur=isCurrentMatchIdx(ri,mi);
+
+  // p1 박스 (위)
+  const x1=cx-bw-2,y1=cy-bh-4;
+  const r1=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r1.setAttribute('x',x1);r1.setAttribute('y',y1);r1.setAttribute('width',bw);r1.setAttribute('height',bh);
+  r1.setAttribute('rx','4');r1.setAttribute('fill','#0d0d1a');
+  r1.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r1.setAttribute('stroke-width',isCur?'2':'1');
+  if(isCur)r1.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
+  svg.appendChild(r1);
+  // p1 이름 세로
+  n1.split('').forEach((ch,i)=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x1+bw/2);t.setAttribute('y',y1+12+i*lh+fs);
+    t.setAttribute('text-anchor','middle');t.setAttribute('fill',p1?'#d0d0d0':'#2a2a3e');
+    t.setAttribute('font-size',fs);t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+    t.textContent=ch;svg.appendChild(t);
+  });
+
+  // VS
+  const vsEl=document.createElementNS('http://www.w3.org/2000/svg','text');
+  vsEl.setAttribute('x',cx);vsEl.setAttribute('y',cy+4);vsEl.setAttribute('text-anchor','middle');
+  vsEl.setAttribute('fill','#e63946');vsEl.setAttribute('font-size',Math.max(8,fs-1));vsEl.setAttribute('font-family','Bebas Neue,cursive');
+  vsEl.textContent='VS';svg.appendChild(vsEl);
+
+  // p2 박스 (아래)
+  const x2=cx+2,y2=cy+4+6;
+  const r2=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r2.setAttribute('x',x2);r2.setAttribute('y',y2);r2.setAttribute('width',bw);r2.setAttribute('height',bh);
+  r2.setAttribute('rx','4');r2.setAttribute('fill','#0d0d1a');
+  r2.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r2.setAttribute('stroke-width',isCur?'2':'1');
+  if(isCur)r2.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
+  svg.appendChild(r2);
+  // p2 이름 세로
+  n2.split('').forEach((ch,i)=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',x2+bw/2);t.setAttribute('y',y2+12+i*lh+fs);
+    t.setAttribute('text-anchor','middle');t.setAttribute('fill',p2?'#d0d0d0':'#2a2a3e');
+    t.setAttribute('font-size',fs);t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+    t.textContent=ch;svg.appendChild(t);
+  });
+
+  // 매치 번호
+  const num=document.createElementNS('http://www.w3.org/2000/svg','text');
+  num.setAttribute('x',x1+2);num.setAttribute('y',y1+8);num.setAttribute('fill','#e63946');
+  num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
+  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
+
+  return bh; // 박스 높이 반환 (ROW 계산에 활용)
+}
+
+/* 공통: 연결선 그리기 (가로, A/D용) */
+function _drawLinks(svg,rounds,xFn,cyFn,dir,sz){
+  const {mw}=sz;
   rounds.forEach((matches,ri)=>{
     if(ri>=rounds.length-1)return;
     matches.forEach((match,mi)=>{
       const x=xFn(ri),nx=xFn(ri+1);
       const fromY=cyFn(ri,mi),toY=cyFn(ri+1,Math.floor(mi/2));
-      const lx=dir==='right'?x+_MW:x; // 박스 오른쪽 or 왼쪽
-      const rlx=dir==='right'?nx:nx+_MW; // 다음 박스 왼쪽 or 오른쪽
+      const lx=dir==='right'?x+mw:x;
+      const rlx=dir==='right'?nx:nx+mw;
       const midX=(lx+rlx)/2;
-      const h1=document.createElementNS('http://www.w3.org/2000/svg','line');
-      h1.setAttribute('x1',lx);h1.setAttribute('y1',fromY);h1.setAttribute('x2',midX);h1.setAttribute('y2',fromY);
-      h1.setAttribute('stroke','#1e1e30');h1.setAttribute('stroke-width','2');svg.appendChild(h1);
+      const LN=(x1,y1,x2,y2)=>{
+        const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+        l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+        l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');svg.appendChild(l);
+      };
+      LN(lx,fromY,midX,fromY);
       if(mi%2===1){
         const prevY=cyFn(ri,mi-1);
-        const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
-        vl.setAttribute('x1',midX);vl.setAttribute('y1',prevY);vl.setAttribute('x2',midX);vl.setAttribute('y2',fromY);
-        vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','2');svg.appendChild(vl);
-        const h2=document.createElementNS('http://www.w3.org/2000/svg','line');
-        h2.setAttribute('x1',midX);h2.setAttribute('y1',toY);h2.setAttribute('x2',rlx);h2.setAttribute('y2',toY);
-        h2.setAttribute('stroke','#1e1e30');h2.setAttribute('stroke-width','2');svg.appendChild(h2);
+        LN(midX,prevY,midX,fromY);
+        LN(midX,toY,rlx,toY);
       }
     });
   });
 }
 
-/* A: 좌→우  1라운드 왼쪽, 결승 오른쪽 */
-function renderBracketA(wrap){
-  const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
-  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
-  const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  const svg=_mkSvg(W,H);
-  _drawLinks(svg,rounds,xFn,cyFn,'right');
-  rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
-    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
-  });
-  _wrap(wrap,svg);
-}
-
-/* ── B/C용 공통: 수직 트리 Y 좌표 계산 ──
-   ri=0이 기준 행, 각 라운드는 2칸씩 위/아래로 합쳐짐
-   baseY: ri=0의 첫 매치 중심 Y
-   rowH: 행 간격
-   dir: 'up'이면 위로 올라감, 'down'이면 아래로 내려감
-*/
-function _vtree_cy(ri,mi,baseY,rowH,dir){
-  if(ri===0)return baseY+mi*rowH*(dir==='up'?-1:1); // 부전승 포함 mi 순서
-  // 실제로는 mi*2, mi*2+1의 중간
-  const y0=_vtree_cy(ri-1,mi*2,baseY,rowH,dir);
-  const y1=_vtree_cy(ri-1,mi*2+1,baseY,rowH,dir);
-  return (y0+y1)/2;
-}
-
-/* ── B/C용: 수직 연결선 ── */
+/* 공통: 연결선 그리기 (수직, B/C/E용) */
 function _drawLinksBC(svg,rounds,xFn,cyFn){
   const LN=(x1,y1,x2,y2)=>{
     const l=document.createElementNS('http://www.w3.org/2000/svg','line');
@@ -272,156 +320,157 @@ function _drawLinksBC(svg,rounds,xFn,cyFn){
   };
   rounds.forEach((matches,ri)=>{
     if(ri>=rounds.length-1)return;
-    matches.forEach((match,mi)=>{
-      const cx=xFn(ri)+_MW/2;
-      const ncx=xFn(ri+1)+_MW/2;
-      const y=cyFn(ri,mi);
+    for(let mi=0;mi<matches.length;mi+=2){
+      const cx=xFn(ri);
+      const ncx=xFn(ri+1);
+      const y0=cyFn(ri,mi);
+      const y1=mi+1<matches.length?cyFn(ri,mi+1):y0;
       const ny=cyFn(ri+1,Math.floor(mi/2));
-      const mid=(y+ny)/2;
-      LN(cx,y,cx,mid);
-      if(mi%2===1){
-        const pcy=cyFn(ri,mi-1);
-        const pmid=(pcy+ny)/2;
-        const pcx=xFn(ri)+_MW/2;
-        LN(pcx,pmid,cx,mid); // 두 형제 연결
-        LN(ncx,mid,ncx,ny);  // 다음 라운드로
-      }
-    });
+      const midY=(y0+y1)/2;
+      LN(cx,y0,cx,midY);
+      if(mi+1<matches.length)LN(cx,y1,cx,midY);
+      LN(cx,midY,ncx,midY);
+      LN(ncx,midY,ncx,ny);
+    }
   });
 }
 
-/* B: 아래→위
-   - X: 라운드별 열(왼→오, 1R=왼쪽)
-   - Y: 1R 맨 아래, 쌍의 중간이 위에 배치됨 */
+function _vtree_cy(ri,mi,baseY,rowH,dir){
+  if(ri===0)return baseY+mi*rowH*(dir==='up'?-1:1);
+  const y0=_vtree_cy(ri-1,mi*2,baseY,rowH,dir);
+  const y1=_vtree_cy(ri-1,mi*2+1,baseY,rowH,dir);
+  return (y0+y1)/2;
+}
+
+/* A: 좌→우 */
+function renderBracketA(wrap){
+  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
+  const availW=_getAvailW(wrap);
+  const sz=_calcSizes(rounds,availW);
+  const {mw,mh,gap,row}=sz;
+  const H=Math.max(200,r0*row+40),W=T*(mw+gap)+40;
+  const cyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
+  const xFn=(ri)=>ri*(mw+gap)+20;
+  const svg=_mkSvg(W,H);
+  _drawLinks(svg,rounds,xFn,cyFn,'right',sz);
+  rounds.forEach((matches,ri)=>{
+    _rlabel(svg,xFn(ri)+mw/2,12,ri,T);
+    matches.forEach((m,mi)=>_mboxH(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
+  });
+  _wrap(wrap,svg);
+}
+
+/* B: 아래→위, 이름 세로 */
 function renderBracketB(wrap){
-  const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length;
-  const rowH=_ROW;
-  const padY=_MH/2+16;
-  const H=Math.max(200,r0*rowH+padY*2);
-  const W=T*(_MW+_GAP)+40;
+  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
+  const availW=_getAvailW(wrap);
+  const sz=_calcSizes(rounds,availW);
+  const {mw,mh,gap,row}=sz;
+  const bw=Math.max(26,Math.floor(mh*1.4));
+  const colW=bw*2+20; // 세로박스 2개+VS 너비
+  const colGap=Math.max(20,gap);
+  const padY=mh+20;
+  const H=Math.max(200,r0*row+padY*2);
+  const W=T*(colW+colGap)+40;
   const svg=_mkSvg(W,H);
-
-  // 1R의 첫 매치(mi=0)는 맨 아래, 위로 올라감
   const baseY=H-padY;
-  const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,rowH,'up');
-
+  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2; // 중심 X
+  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'up');
   _drawLinksBC(svg,rounds,xFn,cyFn);
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
-    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
+    _rlabel(svg,xFn(ri),12,ri,T);
+    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
   });
   _wrap(wrap,svg);
 }
 
-/* C: 위→아래  (B의 반대)
-   - X: 라운드별 열(왼→오, 1R=왼쪽)
-   - Y: 1R 맨 위, 쌍의 중간이 아래에 배치됨 */
+/* C: 위→아래, 이름 세로 */
 function renderBracketC(wrap){
-  const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length;
-  const rowH=_ROW;
-  const padY=_MH/2+16;
-  const H=Math.max(200,r0*rowH+padY*2);
-  const W=T*(_MW+_GAP)+40;
+  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
+  const availW=_getAvailW(wrap);
+  const sz=_calcSizes(rounds,availW);
+  const {mw,mh,gap,row}=sz;
+  const bw=Math.max(26,Math.floor(mh*1.4));
+  const colW=bw*2+20;
+  const colGap=Math.max(20,gap);
+  const padY=mh+20;
+  const H=Math.max(200,r0*row+padY*2);
+  const W=T*(colW+colGap)+40;
   const svg=_mkSvg(W,H);
-
-  // 1R의 첫 매치(mi=0)는 맨 위, 아래로 내려감
   const baseY=padY;
-  const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,rowH,'down');
-
+  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2;
+  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'down');
   _drawLinksBC(svg,rounds,xFn,cyFn);
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T);
-    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
+    _rlabel(svg,xFn(ri),H-8,ri,T);
+    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
   });
   _wrap(wrap,svg);
 }
 
-/* D: 양쪽→가운데  (A의 좌우 대칭)
-   전체 매치를 왼/오로 반반 나눠 A형으로 각각 그리고 가운데 결승 공유 */
+/* D: 양쪽→가운데 */
 function renderBracketD(wrap){
-  const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length;
-  const lCount=Math.ceil(r0/2); // 왼쪽 1R 매치 수
-  const rCount=Math.floor(r0/2); // 오른쪽 1R 매치 수
-  const H=Math.max(200,lCount*_ROW+40);
-  // 왼쪽 T컬럼 + 오른쪽 T컬럼, 결승은 가장 안쪽 컬럼 공유 → 총 T*2-1 컬럼
-  const W=(T*2-1)*(_MW+_GAP)+40;
+  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
+  const availW=_getAvailW(wrap);
+  const sz=_calcSizes(rounds,availW);
+  const {mw,mh,gap,row}=sz;
+  const lCount=Math.ceil(r0/2),rCount=Math.floor(r0/2);
+  const H=Math.max(200,lCount*row+40);
+  const W=(T*2-1)*(mw+gap)+40;
   const svg=_mkSvg(W,H);
-
-  // 라운드별 왼쪽/오른쪽 매치 분리
   const lRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
   const rRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-
-  // 왼쪽: 1R=맨왼쪽 → 결승=오른쪽(가운데)
-  const lxFn=(ri)=>ri*(_MW+_GAP)+20;
-  const lcyFn=(ri,mi)=>_cy_top(ri,mi,H);
-
-  // 오른쪽: 1R=맨오른쪽 → 결승=왼쪽(가운데)
-  const rxFn=(ri)=>W-20-_MW-ri*(_MW+_GAP);
-  const rcyFn=(ri,mi)=>_cy_top(ri,mi,H);
-
-  _drawLinks(svg,lRounds,lxFn,lcyFn,'right');
+  const lxFn=(ri)=>ri*(mw+gap)+20;
+  const lcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
+  const rxFn=(ri)=>W-20-mw-ri*(mw+gap);
+  const rcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
+  _drawLinks(svg,lRounds,lxFn,lcyFn,'right',sz);
   lRounds.forEach((matches,ri)=>{
-    _rlabel(svg,lxFn(ri)+_MW/2,12,ri,T);
-    matches.forEach((m,mi)=>_mbox(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi));
+    _rlabel(svg,lxFn(ri)+mw/2,12,ri,T);
+    matches.forEach((m,mi)=>_mboxH(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi,sz));
   });
-
   if(rCount>0){
-    _drawLinks(svg,rRounds,rxFn,rcyFn,'left');
+    _drawLinks(svg,rRounds,rxFn,rcyFn,'left',sz);
     rRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
-      _rlabel(svg,rxFn(ri)+_MW/2,12,ri,T);
-      matches.forEach((m,mi)=>_mbox(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi));
+      _rlabel(svg,rxFn(ri)+mw/2,12,ri,T);
+      matches.forEach((m,mi)=>_mboxH(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi,sz));
     });
   }
   _wrap(wrap,svg);
 }
 
-/* E: 위아래→가운데  (B의 위아래 대칭)
-   위 절반: B형(1R 위, 아래로 수렴) — X는 왼→오
-   아래 절반: B형 뒤집기(1R 아래, 위로 수렴) — 같은 X
-   가운데 결승에서 만남 */
+/* E: 위아래→가운데, 이름 세로 */
 function renderBracketE(wrap){
-  const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length;
-  const tCount=Math.ceil(r0/2);
-  const bCount=Math.floor(r0/2);
-
-  const rowH=_ROW;
-  const padY=_MH/2+16;
-  const halfH=Math.max(120,tCount*rowH+padY*2);
+  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
+  const availW=_getAvailW(wrap);
+  const sz=_calcSizes(rounds,availW);
+  const {mw,mh,gap,row}=sz;
+  const bw=Math.max(26,Math.floor(mh*1.4));
+  const colW=bw*2+20;
+  const colGap=Math.max(20,gap);
+  const tCount=Math.ceil(r0/2),bCount=Math.floor(r0/2);
+  const padY=mh+20;
+  const halfH=Math.max(120,tCount*row+padY*2);
   const H=halfH*2;
-  const W=T*(_MW+_GAP)+40;
+  const W=T*(colW+colGap)+40;
   const svg=_mkSvg(W,H);
-
-  const xFn=(ri)=>ri*(_MW+_GAP)+20;
-
-  // 위 절반 매치: 1R 맨 위, 아래로 수렴 (C형 Y)
+  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2;
   const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  const tBaseY=padY;
-  const tcyFn=(ri,mi)=>_vtree_cy(ri,mi,tBaseY,rowH,'down');
-
-  // 아래 절반 매치: 1R 맨 아래, 위로 수렴 (B형 Y, 오프셋 halfH)
+  const tcyFn=(ri,mi)=>_vtree_cy(ri,mi,padY,row,'down');
   const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-  const bBaseY=H-padY;
-  const bcyFn=(ri,mi)=>_vtree_cy(ri,mi,bBaseY,rowH,'up');
-
+  const bcyFn=(ri,mi)=>_vtree_cy(ri,mi,H-padY,row,'up');
   _drawLinksBC(svg,topRounds,xFn,tcyFn);
   topRounds.forEach((matches,ri)=>{
     if(!matches.length)return;
-    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
-    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi));
+    _rlabel(svg,xFn(ri),12,ri,T);
+    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi,sz));
   });
-
   if(bCount>0){
     _drawLinksBC(svg,botRounds,xFn,bcyFn);
     botRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
-      matches.forEach((m,mi)=>_mbox(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi));
+      matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi,sz));
     });
   }
   _wrap(wrap,svg);
