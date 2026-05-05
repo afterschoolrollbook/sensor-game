@@ -522,15 +522,19 @@ function addNextRound(){
 
   const next=[];
   const byeIdx=lastRound.findIndex(m=>m.bye);
+
   if(byeIdx>=0){
-    const byeP=lastRound[byeIdx].p1;
-    const others=lastRound.filter((_,i)=>i!==byeIdx);
-    next.push({p1:byeP,p2:{name:`${ri+1}-${1} 승자`,tbd:true},bye:false});
-    for(let i=0;i<others.length-1;i+=2){
+    next.push({
+      p1:{name:`${ri+1}-0 승자`,tbd:true},
+      p2:{name:`${ri+1}-1 승자`,tbd:true},
+      bye:false
+    });
+    const normals=lastRound.filter((_,i)=>i!==byeIdx);
+    for(let i=1;i<normals.length;i+=2){
       next.push({
-        p1:{name:`${ri+1}-${i+2} 승자`,tbd:true},
-        p2:{name:`${ri+1}-${i+3} 승자`,tbd:true},
-        bye:false
+        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
+        p2:normals[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        bye:!normals[i+1]
       });
     }
   } else {
