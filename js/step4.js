@@ -437,7 +437,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
-    col.style.cssText=`display:flex;flex-direction:column;height:100%;`;
+    col.dataset.col=ri;
+    col.style.cssText=`display:flex;flex-direction:column;height:100%;width:180px;flex-shrink:0;`;
 
     // 라운드 라벨
     const lbl=document.createElement('div');
@@ -447,9 +448,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     lbl.textContent=name;
     col.appendChild(lbl);
 
-    // 이 라운드에서 매치 1개가 차지하는 슬롯 수 (1라운드=1, 2라운드=2, ...)
-    const slotsPerMatch=Math.pow(2,ri);
-    const slotPx=slotsPerMatch*SLOT_H;
+    // 이 라운드에서 매치 1개가 차지하는 슬롯 수 (1라운드 전체 매치수 기준)
+    const slotPx=(r0len/matches.length)*SLOT_H;
 
     const matchArea=document.createElement('div');
     matchArea.style.cssText=`flex:1;position:relative;`;
@@ -530,7 +530,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   outerWrap.appendChild(container);
   wrap.appendChild(outerWrap);
 
-  // 연결선 그리기 — 슬롯 수학으로 직접 계산 (PPT 커넥터 방식, getBoundingClientRect 미사용)
+  // 연결선: 슬롯 수학으로 직접 계산 (getBoundingClientRect 제거)
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const LABEL_H=24,PAD=8,BOX_W=180,COL_GAP=40;
     const W=container.scrollWidth,H=container.scrollHeight+40;
@@ -539,13 +539,16 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
     svg.setAttribute('width',W);svg.setAttribute('height',H);
 
-    // 슬롯 수학으로 박스 중앙 Y 직접 계산 (DOM 읽기 없음)
     const getBox=(ri,mi)=>{
-      const slotsPerMatch=Math.pow(2,ri);
-      const slotPx=slotsPerMatch*SLOT_H;
+      const rlen=rounds[ri].length;
+      const slotPx=(r0len/rlen)*SLOT_H;
       const cy=LABEL_H+PAD+mi*slotPx+slotPx/2;
-      const left=PAD+ri*(BOX_W+COL_GAP);
-      return{left, right:left+BOX_W, cy};
+      const colEl=container.querySelector(`[data-col="${ri}"]`);
+      const cr=container.getBoundingClientRect();
+      const colR=colEl?colEl.getBoundingClientRect():null;
+      const left=colR?colR.left-cr.left:PAD+ri*(BOX_W+COL_GAP);
+      const right=colR?colR.right-cr.left:left+BOX_W;
+      return{left, right, cy};
     };
 
     const PATH=(d)=>{
@@ -579,12 +582,11 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            const midY=(ay+by)/2;
-            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t
+            // ㄷ자: a ←── midX, b ←── midX, 세로선, midY → t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${midY} H${tx}`);
+            PATH(`M${midX},${ty} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
@@ -596,12 +598,11 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            const midY=(ay+by)/2;
-            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t
+            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, midY → t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${midY} H${tx}`);
+            PATH(`M${midX},${ty} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
