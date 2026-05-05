@@ -111,92 +111,20 @@ function buildTournamentTree(wrap){
     S.curMatch=0;
     try{if(typeof updatePv==="function")updatePv();}catch(e){}
   }
-  // 레이아웃 SVG 아이콘 정의
-  const layoutIcons={
-    A:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/>
-      <path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M10 12h2v7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-    </svg>`,
-    B:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/>
-      <path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M31 21v-2h-6" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-    </svg>`,
-    C:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/>
-      <rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
-      <rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/>
-      <path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M31 7v2h-6" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-      <path d="M25.5 16v2h-7" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
-    </svg>`,
-    D:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/>
-      <rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M7 13h2v-3.5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M17 20h1.5v-7" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-    </svg>`,
-    E:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/>
-      <rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/>
-      <rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
-      <path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M23 5v1.5h-5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M14 11v1h8v1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-      <path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
-    </svg>`,
-  };
-  const layoutTips={A:'A: 좌→우',B:'B: 아래→위',C:'C: 위→아래',D:'D: 양쪽→가운데',E:'E: 위아래→가운데'};
+  const layouts=[
+    {id:'A',label:'A 좌→우'},
+    {id:'B',label:'B 아래→위'},
+    {id:'C',label:'C 위→아래'},
+    {id:'D',label:'D 양쪽→가운데'},
+    {id:'E',label:'E 위아래→가운데'},
+  ];
   const hdr=document.createElement('div');
   hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;';
   hdr.innerHTML=`
     <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">🏆 토너먼트 대진표</div>
     <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
       <span style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-right:2px;">레이아웃:</span>
-      ${['A','B','C','D','E'].map(id=>`<button onclick="setBracketLayout('${id}')" title="${layoutTips[id]}" style="padding:3px 5px;background:${_bracketLayout===id?'rgba(230,57,70,.2)':'rgba(255,255,255,.04)'};border:1px solid ${_bracketLayout===id?'var(--red)':'var(--border2)'};color:${_bracketLayout===id?'#e63946':'var(--text2)'};border-radius:5px;cursor:pointer;line-height:0;transition:all .15s;">${layoutIcons[id]}</button>`).join('')}
+      ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.25)':'rgba(255,255,255,.04)'};border:1px solid ${_bracketLayout===l.id?'var(--red)':'var(--border2)'};color:${_bracketLayout===l.id?'#e63946':'var(--text2)'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;transition:all .15s;">${l.label}</button>`).join('')}
       <span style="width:1px;height:16px;background:var(--border);margin:0 2px;"></span>
       <button onclick="addNextRound()" style="padding:3px 9px;background:rgba(76,201,240,.08);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➕ 라운드 추가</button>
       <button onclick="removeLastRound()" style="padding:3px 9px;background:rgba(230,57,70,.06);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➖ 라운드 삭제</button>
@@ -304,7 +232,42 @@ function _drawLinks(svg,rounds,xFn,cyFn,dir){
   });
 }
 
-/* A: 좌→우 */
+/* ── 공통: 수직 연결선 (위→아래 또는 아래→위) ── */
+function _drawLinksV(svg,rounds,xFn,cyFn,dir){
+  // dir: 'down'=위에서 아래로, 'up'=아래에서 위로
+  rounds.forEach((matches,ri)=>{
+    if(ri>=rounds.length-1)return;
+    matches.forEach((match,mi)=>{
+      const cx=xFn(ri,mi);
+      const fromY=cyFn(ri,mi);
+      const toY=cyFn(ri+1,Math.floor(mi/2));
+      const midY=(fromY+toY)/2;
+      // 박스 위/아래 끝에서 출발
+      const fromEdge=dir==='down'?fromY+_MH/2:fromY-_MH/2;
+      const toEdge=dir==='down'?toY-_MH/2:toY+_MH/2;
+      const midPt=(fromEdge+toEdge)/2;
+      const v1=document.createElementNS('http://www.w3.org/2000/svg','line');
+      v1.setAttribute('x1',cx+_MW/2);v1.setAttribute('y1',fromEdge);
+      v1.setAttribute('x2',cx+_MW/2);v1.setAttribute('y2',midPt);
+      v1.setAttribute('stroke','#1e1e30');v1.setAttribute('stroke-width','2');svg.appendChild(v1);
+      if(mi%2===1){
+        const prevCx=xFn(ri,mi-1);
+        const prevEdge=dir==='down'?cyFn(ri,mi-1)+_MH/2:cyFn(ri,mi-1)-_MH/2;
+        const h1=document.createElementNS('http://www.w3.org/2000/svg','line');
+        h1.setAttribute('x1',prevCx+_MW/2);h1.setAttribute('y1',midPt);
+        h1.setAttribute('x2',cx+_MW/2);h1.setAttribute('y2',midPt);
+        h1.setAttribute('stroke','#1e1e30');h1.setAttribute('stroke-width','2');svg.appendChild(h1);
+        const nextCx=xFn(ri+1,Math.floor(mi/2));
+        const v2=document.createElementNS('http://www.w3.org/2000/svg','line');
+        v2.setAttribute('x1',nextCx+_MW/2);v2.setAttribute('y1',midPt);
+        v2.setAttribute('x2',nextCx+_MW/2);v2.setAttribute('y2',toEdge);
+        v2.setAttribute('stroke','#1e1e30');v2.setAttribute('stroke-width','2');svg.appendChild(v2);
+      }
+    });
+  });
+}
+
+/* A: 좌→우  1라운드 왼쪽, 결승 오른쪽 */
 function renderBracketA(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
@@ -319,53 +282,77 @@ function renderBracketA(wrap){
   _wrap(wrap,svg);
 }
 
-/* B: 아래→위 (1라운드 아래, 결승 위, 왼→오 진행) */
+/* B: 아래→위  1라운드 맨 아래, 2R은 1R 쌍의 위 중간, 결승 맨 위 */
 function renderBracketB(wrap){
   const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
-  const cyFn=(ri,mi)=>_cy_bot(ri,mi,H);
-  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  const r0=rounds[0].length;
+  // 세로 배치: X축=라운드별 열(왼→오), Y축=위일수록 후기라운드
+  // 각 라운드 열 너비를 _MW, 열 간격 _GAP
+  const W=T*(_MW+_GAP)+40;
+  // 높이: 1라운드 매치 수 기준
+  const H=Math.max(200,r0*_ROW+60);
   const svg=_mkSvg(W,H);
+
+  // X: 라운드 순서대로 왼→오 (1R=맨왼쪽)
+  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  // Y: 1라운드는 맨 아래에서부터 위로, 라운드 올라갈수록 위 중간값
+  // _cy_bot: 아래에서 위로 배치 (ri=0이 맨 아래)
+  const cyFn=(ri,mi)=>_cy_bot(ri,mi,H);
+
   _drawLinks(svg,rounds,xFn,cyFn,'right');
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T); // 라운드 라벨 아래
     matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
   });
   _wrap(wrap,svg);
 }
 
-/* C: 위→아래 (1라운드 위, 결승 아래, 왼→오 진행) */
+/* C: 위→아래  B의 반대 — 1R 맨 위, 결승 맨 아래, X는 오→왼(결승 오른쪽) */
 function renderBracketC(wrap){
   const rounds=S.matches,T=rounds.length;
-  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
-  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
-  const xFn=(ri)=>(T-1-ri)*(_MW+_GAP)+20; // 결승이 왼쪽
+  const r0=rounds[0].length;
+  const W=T*(_MW+_GAP)+40;
+  const H=Math.max(200,r0*_ROW+60);
   const svg=_mkSvg(W,H);
-  _drawLinks(svg,rounds,xFn,cyFn,'left');
+
+  // X: 1R=맨왼쪽, 결승=맨오른쪽 (B와 동일 방향)
+  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  // Y: 위에서 아래로 (_cy_top), 1R=위, 결승=아래
+  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
+
+  _drawLinks(svg,rounds,xFn,cyFn,'right');
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    _rlabel(svg,xFn(ri)+_MW/2,H-8,ri,T); // 라벨 아래
     matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
   });
   _wrap(wrap,svg);
 }
 
-/* D: 양쪽→가운데 (좌우 대칭, 결승 가운데) */
+/* D: 양쪽→가운데  A의 좌우 대칭 (왼쪽 절반 A형, 오른쪽 절반 거울) */
 function renderBracketD(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
-  const half=Math.ceil(r0/2);
-  const H=Math.max(200,half*_ROW*2+40);
+  // 왼쪽 절반, 오른쪽 절반 분리
+  const lCount=Math.ceil(r0/2);
+  const rCount=Math.floor(r0/2);
+  const H=Math.max(200,lCount*_ROW+40);
+
+  // 왼쪽: T개 컬럼, 오른쪽: T개 컬럼, 사이 여백 없이 결승 공유
+  // 총 너비 = 왼쪽(T컬럼) + GAP + 오른쪽(T컬럼) - 결승 중복
   const W=(T*2-1)*(_MW+_GAP)+40;
-  const center=Math.floor(W/2);
   const svg=_mkSvg(W,H);
 
-  // 왼쪽 절반 (1라운드 맨 왼쪽)
+  // 왼쪽 라운드별 슬라이스 (앞 절반)
   const lRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
+  // 오른쪽 라운드별 슬라이스 (뒤 절반) — 라운드 역순(큰쪽→결승)
   const rRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
 
+  // 왼쪽: 1R=맨왼쪽, 결승=가운데로
   const lxFn=(ri)=>ri*(_MW+_GAP)+20;
-  const rxFn=(ri)=>W-20-_MW-ri*(_MW+_GAP);
   const lcyFn=(ri,mi)=>_cy_top(ri,mi,H);
+
+  // 오른쪽: 1R=맨오른쪽, 결승=가운데로 (xFn 역순)
+  const rxFn=(ri)=>W-20-_MW-ri*(_MW+_GAP);
   const rcyFn=(ri,mi)=>_cy_top(ri,mi,H);
 
   _drawLinks(svg,lRounds,lxFn,lcyFn,'right');
@@ -374,33 +361,39 @@ function renderBracketD(wrap){
     matches.forEach((m,mi)=>_mbox(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi));
   });
 
-  if(rRounds[0].length>0){
+  if(rCount>0){
     _drawLinks(svg,rRounds,rxFn,rcyFn,'left');
     rRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
-      _rlabel(svg,rxFn(ri)+_MW/2,12,ri,T);
       matches.forEach((m,mi)=>_mbox(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi));
     });
   }
   _wrap(wrap,svg);
 }
 
-/* E: 위아래→가운데 (상하 대칭, 결승 가운데) */
+/* E: 위아래→가운데  B의 위아래 대칭 (위 절반은 위→아래, 아래 절반은 아래→위, 결승 가운데) */
 function renderBracketE(wrap){
   const rounds=S.matches,T=rounds.length;
   const r0=rounds[0].length;
-  const H=Math.max(300,r0*_ROW+60);
+  const tCount=Math.ceil(r0/2);
+  const bCount=Math.floor(r0/2);
+
+  // X: 모든 라운드 같은 열 위치
   const W=T*(_MW+_GAP)+40;
+  // 높이: 위 절반(tCount) + 아래 절반(bCount)
+  const halfH=Math.max(120,tCount*_ROW+30);
+  const H=halfH*2+_MH; // 가운데 결승 공간
   const svg=_mkSvg(W,H);
 
-  // 위쪽 절반 (1라운드 맨 위)
-  const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  // 아래쪽 절반 (1라운드 맨 아래)
-  const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-
   const xFn=(ri)=>ri*(_MW+_GAP)+20;
-  const tcyFn=(ri,mi)=>_cy_top(ri,mi,H/2);
-  const bcyFn=(ri,mi)=>H-_cy_top(ri,mi,H/2);
+
+  // 위 절반: 1R 맨 위, 아래로 진행 (_cy_top 기준)
+  const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
+  const tcyFn=(ri,mi)=>_cy_top(ri,mi,halfH);
+
+  // 아래 절반: 1R 맨 아래, 위로 진행 (_cy_bot 기준, halfH 오프셋)
+  const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
+  const bcyFn=(ri,mi)=>H-_cy_top(ri,mi,halfH);
 
   _drawLinks(svg,topRounds,xFn,tcyFn,'right');
   topRounds.forEach((matches,ri)=>{
@@ -409,7 +402,7 @@ function renderBracketE(wrap){
     matches.forEach((m,mi)=>_mbox(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi));
   });
 
-  if(botRounds[0].length>0){
+  if(bCount>0){
     _drawLinks(svg,botRounds,xFn,bcyFn,'right');
     botRounds.forEach((matches,ri)=>{
       if(!matches.length)return;
