@@ -457,9 +457,9 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
       const p1=m.p1,p2=m.p2;
 
-      // 슬롯 래퍼: 매치 박스를 슬롯 중앙에 배치
+      // 슬롯 래퍼: 매치 박스를 슬롯 중앙에 배치, 최소 패딩으로 숨통
       const slot=document.createElement('div');
-      slot.style.cssText='display:flex;flex-direction:column;justify-content:center;';
+      slot.style.cssText='display:flex;flex-direction:column;justify-content:center;min-height:80px;padding:6px 0;';
       // flex-grow로 각 슬롯이 균등 높이 차지
       slot.style.flexGrow=slotsPerMatch;
 
