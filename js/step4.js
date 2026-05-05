@@ -437,7 +437,6 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
-    col.dataset.col=ri;
     col.style.cssText=`display:flex;flex-direction:column;height:100%;width:180px;flex-shrink:0;`;
 
     // 라운드 라벨
@@ -448,9 +447,6 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     lbl.textContent=name;
     col.appendChild(lbl);
 
-    // 이 라운드에서 매치 1개가 차지하는 슬롯 수 (1라운드 전체 매치수 기준)
-    const slotPx=(r0len/matches.length)*SLOT_H;
-
     const matchArea=document.createElement('div');
     matchArea.style.cssText=`flex:1;position:relative;`;
 
@@ -460,9 +456,16 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
       const p1=m.p1,p2=m.p2;
 
-      // 슬롯 중앙 Y = mi * slotPx + slotPx/2
-      // 박스를 절대 위치로 중앙에 고정
-      const slotCenterY=mi*slotPx+slotPx/2;
+      // 박스 중앙 Y: 소스 박스들의 평균으로 계산
+      let slotCenterY;
+      if(ri===0){
+        slotCenterY=mi*SLOT_H+SLOT_H/2;
+      } else {
+        const srcA=mi*2, srcB=mi*2+1;
+        const cyA=srcA*SLOT_H+SLOT_H/2;
+        const cyB=srcB<rounds[ri-1].length?srcB*SLOT_H+SLOT_H/2:cyA;
+        slotCenterY=(cyA+cyB)/2;
+      }
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
@@ -539,10 +542,23 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
     svg.setAttribute('width',W);svg.setAttribute('height',H);
 
+    // 박스 cy: 1라운드 slotPx 기준으로 직접 계산
+    const getSlotCy=(ri,mi)=>{
+      const slotPx=(r0len/rounds[ri].length)*SLOT_H;
+      return LABEL_H+PAD+mi*slotPx+slotPx/2;
+    };
     const getBox=(ri,mi)=>{
-      const rlen=rounds[ri].length;
-      const slotPx=(r0len/rlen)*SLOT_H;
-      const cy=LABEL_H+PAD+mi*slotPx+slotPx/2;
+      // cy: 해당 매치가 커버하는 소스 박스들의 평균
+      let cy;
+      if(ri===0){
+        cy=getSlotCy(0,mi);
+      } else {
+        // 이 매치의 소스: 이전 라운드의 mi*2, mi*2+1
+        const srcA=mi*2, srcB=mi*2+1;
+        const cyA=getSlotCy(ri-1,srcA);
+        const cyB=srcB<rounds[ri-1].length?getSlotCy(ri-1,srcB):cyA;
+        cy=(cyA+cyB)/2;
+      }
       const colEl=container.querySelector(`[data-col="${ri}"]`);
       const cr=container.getBoundingClientRect();
       const colR=colEl?colEl.getBoundingClientRect():null;
