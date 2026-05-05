@@ -2104,20 +2104,29 @@ function shuffleGroupBracket(){
 function addRound(){
   const g=S.groupBrackets[S.activeGroup];
   const lastRound=g.matches[g.matches.length-1];
+  const ri=g.matches.length-1;
   if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
   const newMatches=[];
   const byeIdx=lastRound.findIndex(m=>m.bye);
   if(byeIdx>=0){
     const byeP=lastRound[byeIdx].p1;
-    const others=lastRound.filter((_,i)=>i!==byeIdx).map(m=>m.p1);
-    newMatches.push({p1:byeP,p2:others[0]||null,bye:!others[0]});
-    for(let i=1;i<others.length;i+=2){
-      newMatches.push({p1:others[i],p2:others[i+1]||null,bye:!others[i+1]});
+    const others=lastRound.filter((_,i)=>i!==byeIdx);
+    newMatches.push({p1:byeP,p2:{name:`${ri+1}-${others[0]?others[0].num||1:1} 승자`,tbd:true},bye:false});
+    for(let i=0;i<others.length-1;i+=2){
+      newMatches.push({
+        p1:{name:`${ri+1}-${others[i].num||i+2} 승자`,tbd:true},
+        p2:{name:`${ri+1}-${others[i+1]?.num||i+3} 승자`,tbd:true},
+        bye:false
+      });
     }
   } else {
-    lastRound.forEach((m,i)=>{
-      if(i%2===0) newMatches.push({p1:m.p1,p2:lastRound[i+1]?.p1||null,bye:!lastRound[i+1]});
-    });
+    for(let i=0;i<lastRound.length;i+=2){
+      newMatches.push({
+        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
+        p2:lastRound[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        bye:!lastRound[i+1]
+      });
+    }
   }
   g.matches.push(newMatches);
   renderBracketView(S.activeGroup);
