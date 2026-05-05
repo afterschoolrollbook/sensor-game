@@ -419,170 +419,93 @@ function _vtree_cy(ri,mi,baseY,rowH,dir){
   return (y0+y1)/2;
 }
 
-/* A: 좌→우 */
-function renderBracketA(wrap){
-  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
-  const availW=_getAvailW(wrap);
-  const sz=_calcSizes(rounds,availW);
-  const {mw,mh,gap,row}=sz;
-  const H=Math.max(200,r0*row+40),W=T*(mw+gap)+40;
-  const cyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
-  const xFn=(ri)=>ri*(mw+gap)+20;
-  const svg=_mkSvg(W,H);
+/* ── HTML flex 기반 공통 대진표 렌더러 ── */
+function _renderBracketHTML(wrap, rounds, direction){
+  // direction: 'top'=위정렬, 'bottom'=아래정렬, 'center'=가운데정렬
+  const T=rounds.length;
+  const maxMatches=Math.max(...rounds.map(r=>r.length));
 
-  _drawManualLinks(svg,rounds,xFn,cyFn,mw);
+  const container=document.createElement('div');
+  container.style.cssText='display:flex;flex-direction:row;gap:28px;align-items:stretch;padding:8px;min-width:max-content;';
 
   rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri)+mw/2,12,ri,T);
-    matches.forEach((m,mi)=>_mboxH(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
-  });
-  _wrap(wrap,svg);
-}
+    const col=document.createElement('div');
+    col.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:160px;`;
 
-/* 공통: 수동 연결선 그리기 (모든 레이아웃) */
-function _drawManualLinks(svg,rounds,xFn,cyFn,mw){
-  const LN=(x1,y1,x2,y2)=>{
-    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-    l.setAttribute('stroke','#2a2a40');l.setAttribute('stroke-width','1.5');svg.appendChild(l);
-  };
-  rounds.forEach((matches,ri)=>{
+    // 라운드 라벨
+    const lbl=document.createElement('div');
+    const names=['1라운드','2라운드','3라운드','4라운드','5라운드'];
+    const name=ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':names[ri]||`${ri+1}라운드`;
+    lbl.style.cssText='font-size:9px;color:#444;letter-spacing:2px;font-family:Share Tech Mono,monospace;text-align:center;margin-bottom:6px;';
+    lbl.textContent=name;
+    col.appendChild(lbl);
+
+    // 매치들을 감싸는 flex 컨테이너
+    const matchWrap=document.createElement('div');
+    const justify=direction==='bottom'?'flex-end':direction==='center'?'center':'flex-start';
+    matchWrap.style.cssText=`display:flex;flex-direction:column;flex:1;justify-content:${justify};gap:8px;`;
+
     matches.forEach((m,mi)=>{
-      if(!m.fromA)return;
-      const [aRi,aMi]=m.fromA.split('-').map(Number);
-      const ax=xFn(aRi)+(mw||0), ay=cyFn(aRi,aMi);
-      const tx=xFn(ri), ty=cyFn(ri,mi);
-      const midX=(ax+tx)/2;
-      if(m.fromB){
-        const [bRi,bMi]=m.fromB.split('-').map(Number);
-        const bx=xFn(bRi)+(mw||0), by=cyFn(bRi,bMi);
-        LN(ax,ay,midX,ay);
-        LN(bx,by,midX,by);
-        LN(midX,ay,midX,by);
-        LN(midX,ty,tx,ty);
+      const isBye=m.p1&&!m.p2;
+      const isSel=typeof _linkSel!=='undefined'&&_linkSel&&_linkSel.ri===ri&&_linkSel.mi===mi;
+      const p1=m.p1,p2=m.p2;
+
+      const box=document.createElement('div');
+      box.style.cssText=`border-radius:6px;overflow:hidden;cursor:pointer;border:${isSel?'1.5px solid #4cc9f0':isBye?'1px solid #1a1a28':'1px solid #1e1e30'};${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':''}`;
+      box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
+
+      // 매치 번호 + BYE 태그
+      const header=document.createElement('div');
+      header.style.cssText='display:flex;justify-content:space-between;padding:2px 6px;background:#080810;';
+      header.innerHTML=`<span style="font-size:9px;color:#e63946;font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}${isBye?' BYE':''}</span>${isBye?'<span style="font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;">BYE</span>':''}`;
+      box.appendChild(header);
+
+      if(isBye){
+        // 부전승: 이름만
+        const row=document.createElement('div');
+        row.style.cssText='padding:8px 10px;background:#0a0a14;font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;';
+        row.textContent=p1?p1.name:'?';
+        box.appendChild(row);
       } else {
-        LN(ax,ay,midX,ay);
-        LN(midX,ay,midX,ty);
-        LN(midX,ty,tx,ty);
+        // 일반: p1 / VS / p2
+        const r1=document.createElement('div');
+        r1.style.cssText='padding:7px 10px;background:#0d0d1a;font-size:13px;font-weight:600;color:'+(p1?'#d0d0d0':'#2a2a3e')+';border-bottom:1px solid #111122;';
+        r1.textContent=p1?p1.name:'?';
+        const vs=document.createElement('div');
+        vs.style.cssText='text-align:center;font-size:10px;color:#e63946;background:#080812;padding:1px 0;font-family:Bebas Neue,cursive;letter-spacing:2px;';
+        vs.textContent='VS';
+        const r2=document.createElement('div');
+        r2.style.cssText='padding:7px 10px;background:#0d0d1a;font-size:13px;font-weight:600;color:'+(p2?'#d0d0d0':'#2a2a3e')+';';
+        r2.textContent=p2?p2.name:'?';
+        box.appendChild(r1);box.appendChild(vs);box.appendChild(r2);
       }
+      matchWrap.appendChild(box);
     });
+    col.appendChild(matchWrap);
+    container.appendChild(col);
   });
+
+  const d=document.createElement('div');
+  d.style.cssText='overflow:auto;padding-bottom:8px;';
+  d.appendChild(container);
+  wrap.appendChild(d);
 }
 
-/* B: 아래→위, 이름 세로 */
-function renderBracketB(wrap){
-  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
-  const availW=_getAvailW(wrap);
-  const sz=_calcSizes(rounds,availW);
-  const {mw,mh,gap,row}=sz;
-  const bw=Math.max(26,Math.floor(mh*1.4));
-  const colW=bw*2+20; // 세로박스 2개+VS 너비
-  const colGap=Math.max(20,gap);
-  const padY=mh+20;
-  const H=Math.max(200,r0*row+padY*2);
-  const W=T*(colW+colGap)+40;
-  const svg=_mkSvg(W,H);
-  const baseY=H-padY;
-  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2; // 중심 X
-  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'up');
-  _drawManualLinks(svg,rounds,xFn,cyFn,0);
-  rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri),12,ri,T);
-    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
-  });
-  _wrap(wrap,svg);
-}
-
-/* C: 위→아래, 이름 세로 */
-function renderBracketC(wrap){
-  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
-  const availW=_getAvailW(wrap);
-  const sz=_calcSizes(rounds,availW);
-  const {mw,mh,gap,row}=sz;
-  const bw=Math.max(26,Math.floor(mh*1.4));
-  const colW=bw*2+20;
-  const colGap=Math.max(20,gap);
-  const padY=mh+20;
-  const H=Math.max(200,r0*row+padY*2);
-  const W=T*(colW+colGap)+40;
-  const svg=_mkSvg(W,H);
-  const baseY=padY;
-  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2;
-  const cyFn=(ri,mi)=>_vtree_cy(ri,mi,baseY,row,'down');
-  _drawManualLinks(svg,rounds,xFn,cyFn,0);
-  rounds.forEach((matches,ri)=>{
-    _rlabel(svg,xFn(ri),H-8,ri,T);
-    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
-  });
-  _wrap(wrap,svg);
-}
-
-/* D: 양쪽→가운데 */
+/* A: 위 정렬 */
+function renderBracketA(wrap){_renderBracketHTML(wrap,S.matches,'top');}
+/* B: 아래 정렬 */
+function renderBracketB(wrap){_renderBracketHTML(wrap,S.matches,'bottom');}
+/* C: 가운데 정렬 */
+function renderBracketC(wrap){_renderBracketHTML(wrap,S.matches,'center');}
+/* D: 양쪽→가운데 (라운드 역순 배치) */
 function renderBracketD(wrap){
-  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
-  const availW=_getAvailW(wrap);
-  const sz=_calcSizes(rounds,availW);
-  const {mw,mh,gap,row}=sz;
-  const lCount=Math.ceil(r0/2),rCount=Math.floor(r0/2);
-  const H=Math.max(200,lCount*row+40);
-  const W=(T*2-1)*(mw+gap)+40;
-  const svg=_mkSvg(W,H);
-  const lRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  const rRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-  const lxFn=(ri)=>ri*(mw+gap)+20;
-  const lcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
-  const rxFn=(ri)=>W-20-mw-ri*(mw+gap);
-  const rcyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
-  _drawManualLinks(svg,rounds,lxFn,lcyFn,mw);
-  lRounds.forEach((matches,ri)=>{
-    _rlabel(svg,lxFn(ri)+mw/2,12,ri,T);
-    matches.forEach((m,mi)=>_mboxH(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi,sz));
-  });
-  if(rCount>0){
-    _drawManualLinks(svg,rounds,rxFn,rcyFn,0);
-    rRounds.forEach((matches,ri)=>{
-      if(!matches.length)return;
-      _rlabel(svg,rxFn(ri)+mw/2,12,ri,T);
-      matches.forEach((m,mi)=>_mboxH(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi,sz));
-    });
-  }
-  _wrap(wrap,svg);
+  const rev=[...S.matches].reverse();
+  _renderBracketHTML(wrap,rev,'center');
 }
-
-/* E: 위아래→가운데, 이름 세로 */
+/* E: 위→아래 (라운드 역순) */
 function renderBracketE(wrap){
-  const rounds=S.matches,T=rounds.length,r0=rounds[0].length;
-  const availW=_getAvailW(wrap);
-  const sz=_calcSizes(rounds,availW);
-  const {mw,mh,gap,row}=sz;
-  const bw=Math.max(26,Math.floor(mh*1.4));
-  const colW=bw*2+20;
-  const colGap=Math.max(20,gap);
-  const tCount=Math.ceil(r0/2),bCount=Math.floor(r0/2);
-  const padY=mh+20;
-  const halfH=Math.max(120,tCount*row+padY*2);
-  const H=halfH*2;
-  const W=T*(colW+colGap)+40;
-  const svg=_mkSvg(W,H);
-  const xFn=(ri)=>ri*(colW+colGap)+20+colW/2;
-  const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
-  const tcyFn=(ri,mi)=>_vtree_cy(ri,mi,padY,row,'down');
-  const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
-  const bcyFn=(ri,mi)=>_vtree_cy(ri,mi,H-padY,row,'up');
-  _drawManualLinks(svg,rounds,xFn,tcyFn,0);
-  topRounds.forEach((matches,ri)=>{
-    if(!matches.length)return;
-    _rlabel(svg,xFn(ri),12,ri,T);
-    matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi,sz));
-  });
-  if(bCount>0){
-    _drawManualLinks(svg,rounds,xFn,bcyFn,0);
-    botRounds.forEach((matches,ri)=>{
-      if(!matches.length)return;
-      matches.forEach((m,mi)=>_mboxV(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi,sz));
-    });
-  }
-  _wrap(wrap,svg);
+  const rev=[...S.matches].reverse();
+  _renderBracketHTML(wrap,rev,'top');
 }
 
 /* ── 다음 라운드 추가 ── */
