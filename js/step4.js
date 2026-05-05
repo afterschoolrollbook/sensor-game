@@ -90,11 +90,12 @@ function buildParticipantGroups(wrap){
   wrap.appendChild(grid);
 }
 
-/* ── 토너먼트 대진표 트리 ── */
+/* ── 토너먼트 대진표 트리 (피라미드) ── */
+let _bracketLayout='A';
+
 function buildTournamentTree(wrap){
   const pts=[...S.pts];
   if(!pts.length)return;
-
   if(!S.matches||S.matchProc!==S.proc||S.matchPts!==pts.map(p=>p.id).join(',')){
     S.matches=generateBracket(pts);
     S.matchProc=S.proc;
@@ -102,136 +103,236 @@ function buildTournamentTree(wrap){
     S.curMatch=0;
     try{if(typeof updatePv==="function")updatePv();}catch(e){}
   }
-
-  // 헤더
+  const layouts=[
+    {id:'A',label:'A 좌→우'},
+    {id:'B',label:'B 아래→위'},
+    {id:'C',label:'C 위→아래'},
+    {id:'D',label:'D 양쪽→가운데'},
+    {id:'E',label:'E 위아래→가운데'},
+  ];
   const hdr=document.createElement('div');
-  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;';
   hdr.innerHTML=`
     <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">🏆 토너먼트 대진표</div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="addNextRound()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">➕ 다음 라운드</button>
-      <button onclick="shuffleBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 무작위 배정</button>
+    <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+      ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.2)':'transparent'};border:1px solid ${_bracketLayout===l.id?'#e63946':'#2a2a3e'};color:${_bracketLayout===l.id?'#e63946':'#666'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;">${l.label}</button>`).join('')}
+      <button onclick="addNextRound()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">➕ 다음 라운드</button>
+      <button onclick="shuffleBracket()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">🔀 무작위</button>
     </div>`;
   wrap.appendChild(hdr);
+  const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
+  (fns[_bracketLayout]||renderBracketA)(wrap);
+}
 
-  // 라운드별 세로 렌더
-  S.matches.forEach((matches,ri)=>{
-    const totalRounds=S.matches.length;
-    const rname=ri===totalRounds-1&&totalRounds>1?'결승':ri===totalRounds-2&&totalRounds>2?'준결승':`${ri+1}라운드`;
+function setBracketLayout(mode){_bracketLayout=mode;buildProc();}
 
-    const section=document.createElement('div');
-    section.style.cssText='margin-bottom:24px;';
+/* 공통 상수 */
+const _MW=200,_MH=36,_GAP=60,_ROW=56;
 
-    // 라운드 제목
-    const rtitle=document.createElement('div');
-    rtitle.style.cssText='font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);padding:4px 0;margin-bottom:12px;border-bottom:1px solid var(--border);';
-    rtitle.textContent=rname+' ('+matches.length+'경기)';
-    section.appendChild(rtitle);
+/* 공통: Y 중심 계산 (상→하, 1라운드=위) */
+function _cy_top(ri,mi,svgH){
+  if(ri===0)return 24+_MH/2+mi*_ROW;
+  return (_cy_top(ri-1,mi*2,svgH)+_cy_top(ri-1,mi*2+1,svgH))/2;
+}
+/* 공통: Y 중심 계산 (하→상, 1라운드=아래) */
+function _cy_bot(ri,mi,svgH){
+  if(ri===0)return svgH-20-_MH/2-mi*_ROW;
+  return (_cy_bot(ri-1,mi*2,svgH)+_cy_bot(ri-1,mi*2+1,svgH))/2;
+}
 
-    // 경기 목록
-    matches.forEach((match,mi)=>{
-      const isCurrent=isCurrentMatchIdx(ri,mi);
-      const card=document.createElement('div');
-      card.style.cssText=`
-        display:flex;align-items:center;gap:0;
-        margin-bottom:10px;
-        border:1px solid ${isCurrent?'var(--red)':match.winner?'rgba(6,214,160,.4)':'var(--border)'};
-        border-radius:10px;overflow:hidden;
-        ${isCurrent?'box-shadow:0 0 16px rgba(230,57,70,.2);':''}
-        background:var(--card);
-      `;
-
-      // 경기 번호
-      const numEl=document.createElement('div');
-      numEl.style.cssText='padding:0 10px;font-family:"Share Tech Mono",monospace;font-size:10px;color:var(--red);font-weight:700;border-right:1px solid var(--border);align-self:stretch;display:flex;align-items:center;background:rgba(230,57,70,.05);min-width:36px;justify-content:center;';
-      numEl.textContent=String(mi+1).padStart(2,'0');
-      card.appendChild(numEl);
-
-      // 선수1
-      const p1=match.p1;
-      const p1El=document.createElement('div');
-      const p1Win=match.winner&&match.winner===p1;
-      const p1Lose=match.winner&&match.winner!==p1&&p1;
-      p1El.style.cssText=`flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;${p1Win?'background:rgba(6,214,160,.06)':''}${p1Lose?';opacity:.35':''}`;
-      p1El.innerHTML=p1
-        ?`<div style="width:7px;height:7px;border-radius:50%;background:${p1.color||'var(--text3)'};flex-shrink:0;"></div>
-           <span style="font-size:13px;font-weight:${p1Win?'700':'500'};">${p1.name}</span>
-           ${p1Win?'<span style="font-size:10px;color:var(--green);margin-left:auto;">✓ WIN</span>':''}`
-        :'<span style="font-size:11px;color:var(--border2);">— BYE —</span>';
-      card.appendChild(p1El);
-
-      // VS
-      const vsEl=document.createElement('div');
-      vsEl.style.cssText='padding:0 10px;font-family:"Bebas Neue",cursive;font-size:14px;color:var(--red);border-left:1px solid var(--border);border-right:1px solid var(--border);align-self:stretch;display:flex;align-items:center;background:rgba(230,57,70,.03);';
-      vsEl.textContent='VS';
-      card.appendChild(vsEl);
-
-      // 선수2
-      const p2=match.p2;
-      const p2El=document.createElement('div');
-      const p2Win=match.winner&&match.winner===p2;
-      const p2Lose=match.winner&&match.winner!==p2&&p2;
-      p2El.style.cssText=`flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;${p2Win?'background:rgba(6,214,160,.06)':''}${p2Lose?';opacity:.35':''}`;
-      p2El.innerHTML=p2
-        ?`<div style="width:7px;height:7px;border-radius:50%;background:${p2.color||'var(--text3)'};flex-shrink:0;"></div>
-           <span style="font-size:13px;font-weight:${p2Win?'700':'500'};">${p2.name}</span>
-           ${p2Win?'<span style="font-size:10px;color:var(--green);margin-left:auto;">✓ WIN</span>':''}`
-        :'<span style="font-size:11px;color:var(--border2);">— BYE —</span>';
-      card.appendChild(p2El);
-
-      // 승자 기록 버튼 (현재 경기만)
-      if(isCurrent&&p1&&p2){
-        const btnWrap=document.createElement('div');
-        btnWrap.style.cssText='display:flex;flex-direction:column;gap:0;border-left:1px solid var(--border);flex-shrink:0;';
-        const btn1=document.createElement('button');
-        btn1.style.cssText='padding:6px 12px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;';
-        btn1.textContent=p1.name+' 승';
-        btn1.onclick=()=>recordWin(0);
-        const btn2=document.createElement('button');
-        btn2.style.cssText='padding:6px 12px;background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;';
-        btn2.textContent=p2.name+' 승';
-        btn2.onclick=()=>recordWin(1);
-        btnWrap.appendChild(btn1);
-        btnWrap.appendChild(btn2);
-        card.appendChild(btnWrap);
-      }
-
-      // 라운드 간 연결선 표시
-      if(ri>0){
-        const connector=document.createElement('div');
-        connector.style.cssText='position:relative;';
-        connector.innerHTML=`<div style="position:absolute;left:-12px;top:50%;width:12px;height:2px;background:var(--border);"></div>`;
-        card.style.position='relative';
-        card.appendChild(connector);
-      }
-
-      section.appendChild(card);
-    });
-
-    wrap.appendChild(section);
-
-    // 다음 라운드가 있으면 연결선만 표시
-    if(ri < S.matches.length-1){
-      const connector=document.createElement('div');
-      connector.style.cssText='margin-bottom:8px;padding:0 4px;';
-      const lines=document.createElement('div');
-      lines.style.cssText='display:flex;flex-direction:column;gap:10px;';
-
-      matches.forEach((match,mi)=>{
-        const nextMatchIdx=Math.floor(mi/2);
-        const arrow=document.createElement('div');
-        arrow.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 10px;border-left:2px solid var(--border);';
-        arrow.innerHTML=`<span style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;">경기${mi+1} 승자 → ${nextMatchIdx+1}경기</span><span style="color:var(--border);">↓</span>`;
-        lines.appendChild(arrow);
-      });
-
-      connector.appendChild(lines);
-      wrap.appendChild(connector);
-      const divider=document.createElement('div');
-      divider.style.cssText='border-top:1px dashed var(--border);margin-bottom:20px;';
-      wrap.appendChild(divider);
-    }
+/* 공통: SVG 생성 */
+function _mkSvg(w,h){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width',w);svg.setAttribute('height',h);
+  svg.style.cssText='display:block;overflow:visible;';
+  return svg;
+}
+/* 공통: 스크롤 래퍼 */
+function _wrap(wrap,svg){
+  const d=document.createElement('div');
+  d.style.cssText='overflow:auto;padding-bottom:8px;';
+  d.appendChild(svg);wrap.appendChild(d);
+}
+/* 공통: 라운드 라벨 */
+function _rlabel(svg,x,y,ri,total){
+  const names=['1라운드','2라운드','3라운드','4라운드','5라운드'];
+  const name=ri===total-1&&total>1?'결승':ri===total-2&&total>2?'준결승':names[ri]||`${ri+1}라운드`;
+  const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('text-anchor','middle');
+  t.setAttribute('fill','#444');t.setAttribute('font-size','8');
+  t.setAttribute('font-family','Share Tech Mono,monospace');t.setAttribute('letter-spacing','1');
+  t.textContent=name;svg.appendChild(t);
+}
+/* 공통: 경기 박스 */
+function _mbox(svg,x,cy,match,ri,mi){
+  const y=cy-_MH/2,p1=match.p1,p2=match.p2;
+  const isCur=isCurrentMatchIdx(ri,mi);
+  const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',_MW);r.setAttribute('height',_MH);
+  r.setAttribute('rx','5');r.setAttribute('fill','#0d0d1a');
+  r.setAttribute('stroke',isCur?'#e63946':'#1e1e30');r.setAttribute('stroke-width',isCur?'2':'1');
+  if(isCur)r.setAttribute('filter','drop-shadow(0 0 8px rgba(230,57,70,.5))');
+  svg.appendChild(r);
+  const mx=x+_MW/2;
+  const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
+  vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+_MH);
+  vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+  const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
+  vs.setAttribute('x',mx);vs.setAttribute('y',cy+4);vs.setAttribute('text-anchor','middle');
+  vs.setAttribute('fill','#e63946');vs.setAttribute('font-size','10');vs.setAttribute('font-family','Bebas Neue,cursive');
+  vs.textContent='VS';svg.appendChild(vs);
+  [['end',p1,mx-8],[' start',p2,mx+8]].forEach(([anchor,p,tx])=>{
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',tx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor',anchor.trim());
+    t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size','12');
+    t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+    t.textContent=p?p.name:'?';svg.appendChild(t);
   });
+  const num=document.createElementNS('http://www.w3.org/2000/svg','text');
+  num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill','#e63946');
+  num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
+  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
+}
+/* 공통: 연결선 그리기 (가로 연결) */
+function _drawLinks(svg,rounds,xFn,cyFn,dir){
+  // dir: 'right'=오른쪽으로, 'left'=왼쪽으로
+  rounds.forEach((matches,ri)=>{
+    if(ri>=rounds.length-1)return;
+    matches.forEach((match,mi)=>{
+      const x=xFn(ri),nx=xFn(ri+1);
+      const fromY=cyFn(ri,mi),toY=cyFn(ri+1,Math.floor(mi/2));
+      const lx=dir==='right'?x+_MW:x; // 박스 오른쪽 or 왼쪽
+      const rlx=dir==='right'?nx:nx+_MW; // 다음 박스 왼쪽 or 오른쪽
+      const midX=(lx+rlx)/2;
+      const h1=document.createElementNS('http://www.w3.org/2000/svg','line');
+      h1.setAttribute('x1',lx);h1.setAttribute('y1',fromY);h1.setAttribute('x2',midX);h1.setAttribute('y2',fromY);
+      h1.setAttribute('stroke','#1e1e30');h1.setAttribute('stroke-width','2');svg.appendChild(h1);
+      if(mi%2===1){
+        const prevY=cyFn(ri,mi-1);
+        const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
+        vl.setAttribute('x1',midX);vl.setAttribute('y1',prevY);vl.setAttribute('x2',midX);vl.setAttribute('y2',fromY);
+        vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','2');svg.appendChild(vl);
+        const h2=document.createElementNS('http://www.w3.org/2000/svg','line');
+        h2.setAttribute('x1',midX);h2.setAttribute('y1',toY);h2.setAttribute('x2',rlx);h2.setAttribute('y2',toY);
+        h2.setAttribute('stroke','#1e1e30');h2.setAttribute('stroke-width','2');svg.appendChild(h2);
+      }
+    });
+  });
+}
+
+/* A: 좌→우 */
+function renderBracketA(wrap){
+  const rounds=S.matches,T=rounds.length;
+  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
+  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
+  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  const svg=_mkSvg(W,H);
+  _drawLinks(svg,rounds,xFn,cyFn,'right');
+  rounds.forEach((matches,ri)=>{
+    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
+  });
+  _wrap(wrap,svg);
+}
+
+/* B: 아래→위 (1라운드 아래, 결승 위, 왼→오 진행) */
+function renderBracketB(wrap){
+  const rounds=S.matches,T=rounds.length;
+  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
+  const cyFn=(ri,mi)=>_cy_bot(ri,mi,H);
+  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  const svg=_mkSvg(W,H);
+  _drawLinks(svg,rounds,xFn,cyFn,'right');
+  rounds.forEach((matches,ri)=>{
+    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
+  });
+  _wrap(wrap,svg);
+}
+
+/* C: 위→아래 (1라운드 위, 결승 아래, 왼→오 진행) */
+function renderBracketC(wrap){
+  const rounds=S.matches,T=rounds.length;
+  const r0=rounds[0].length,H=Math.max(200,r0*_ROW+40),W=T*(_MW+_GAP)+40;
+  const cyFn=(ri,mi)=>_cy_top(ri,mi,H);
+  const xFn=(ri)=>(T-1-ri)*(_MW+_GAP)+20; // 결승이 왼쪽
+  const svg=_mkSvg(W,H);
+  _drawLinks(svg,rounds,xFn,cyFn,'left');
+  rounds.forEach((matches,ri)=>{
+    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi));
+  });
+  _wrap(wrap,svg);
+}
+
+/* D: 양쪽→가운데 (좌우 대칭, 결승 가운데) */
+function renderBracketD(wrap){
+  const rounds=S.matches,T=rounds.length;
+  const r0=rounds[0].length;
+  const half=Math.ceil(r0/2);
+  const H=Math.max(200,half*_ROW*2+40);
+  const W=(T*2-1)*(_MW+_GAP)+40;
+  const center=Math.floor(W/2);
+  const svg=_mkSvg(W,H);
+
+  // 왼쪽 절반 (1라운드 맨 왼쪽)
+  const lRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
+  const rRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
+
+  const lxFn=(ri)=>ri*(_MW+_GAP)+20;
+  const rxFn=(ri)=>W-20-_MW-ri*(_MW+_GAP);
+  const lcyFn=(ri,mi)=>_cy_top(ri,mi,H);
+  const rcyFn=(ri,mi)=>_cy_top(ri,mi,H);
+
+  _drawLinks(svg,lRounds,lxFn,lcyFn,'right');
+  lRounds.forEach((matches,ri)=>{
+    _rlabel(svg,lxFn(ri)+_MW/2,12,ri,T);
+    matches.forEach((m,mi)=>_mbox(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi));
+  });
+
+  if(rRounds[0].length>0){
+    _drawLinks(svg,rRounds,rxFn,rcyFn,'left');
+    rRounds.forEach((matches,ri)=>{
+      if(!matches.length)return;
+      _rlabel(svg,rxFn(ri)+_MW/2,12,ri,T);
+      matches.forEach((m,mi)=>_mbox(svg,rxFn(ri),rcyFn(ri,mi),m,ri,mi));
+    });
+  }
+  _wrap(wrap,svg);
+}
+
+/* E: 위아래→가운데 (상하 대칭, 결승 가운데) */
+function renderBracketE(wrap){
+  const rounds=S.matches,T=rounds.length;
+  const r0=rounds[0].length;
+  const H=Math.max(300,r0*_ROW+60);
+  const W=T*(_MW+_GAP)+40;
+  const svg=_mkSvg(W,H);
+
+  // 위쪽 절반 (1라운드 맨 위)
+  const topRounds=rounds.map(r=>r.slice(0,Math.ceil(r.length/2)));
+  // 아래쪽 절반 (1라운드 맨 아래)
+  const botRounds=rounds.map(r=>r.slice(Math.ceil(r.length/2)));
+
+  const xFn=(ri)=>ri*(_MW+_GAP)+20;
+  const tcyFn=(ri,mi)=>_cy_top(ri,mi,H/2);
+  const bcyFn=(ri,mi)=>H-_cy_top(ri,mi,H/2);
+
+  _drawLinks(svg,topRounds,xFn,tcyFn,'right');
+  topRounds.forEach((matches,ri)=>{
+    if(!matches.length)return;
+    _rlabel(svg,xFn(ri)+_MW/2,12,ri,T);
+    matches.forEach((m,mi)=>_mbox(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi));
+  });
+
+  if(botRounds[0].length>0){
+    _drawLinks(svg,botRounds,xFn,bcyFn,'right');
+    botRounds.forEach((matches,ri)=>{
+      if(!matches.length)return;
+      matches.forEach((m,mi)=>_mbox(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi));
+    });
+  }
+  _wrap(wrap,svg);
 }
 
 /* ── 다음 라운드 추가 ── */
