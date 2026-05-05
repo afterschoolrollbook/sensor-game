@@ -111,20 +111,92 @@ function buildTournamentTree(wrap){
     S.curMatch=0;
     try{if(typeof updatePv==="function")updatePv();}catch(e){}
   }
-  const layouts=[
-    {id:'A',label:'A 좌→우'},
-    {id:'B',label:'B 아래→위'},
-    {id:'C',label:'C 위→아래'},
-    {id:'D',label:'D 양쪽→가운데'},
-    {id:'E',label:'E 위아래→가운데'},
-  ];
+  // 레이아웃 SVG 아이콘 정의
+  const layoutIcons={
+    A:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/>
+      <path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M10 12h2v7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+    </svg>`,
+    B:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/>
+      <path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M31 21v-2h-6" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+    </svg>`,
+    C:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/>
+      <rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/>
+      <rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/>
+      <path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M31 7v2h-6" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+      <path d="M25.5 16v2h-7" stroke="currentColor" stroke-width="0.8" opacity=".5"/>
+    </svg>`,
+    D:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/>
+      <rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M7 13h2v-3.5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M17 20h1.5v-7" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+    </svg>`,
+    E:`<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/>
+      <rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/>
+      <rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/>
+      <path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M23 5v1.5h-5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M14 11v1h8v1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+      <path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width="0.8" opacity=".45"/>
+    </svg>`,
+  };
+  const layoutTips={A:'A: 좌→우',B:'B: 아래→위',C:'C: 위→아래',D:'D: 양쪽→가운데',E:'E: 위아래→가운데'};
   const hdr=document.createElement('div');
   hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;';
   hdr.innerHTML=`
     <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;">🏆 토너먼트 대진표</div>
     <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
       <span style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-right:2px;">레이아웃:</span>
-      ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.25)':'rgba(255,255,255,.04)'};border:1px solid ${_bracketLayout===l.id?'var(--red)':'var(--border2)'};color:${_bracketLayout===l.id?'#e63946':'var(--text2)'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;transition:all .15s;">${l.label}</button>`).join('')}
+      ${['A','B','C','D','E'].map(id=>`<button onclick="setBracketLayout('${id}')" title="${layoutTips[id]}" style="padding:3px 5px;background:${_bracketLayout===id?'rgba(230,57,70,.2)':'rgba(255,255,255,.04)'};border:1px solid ${_bracketLayout===id?'var(--red)':'var(--border2)'};color:${_bracketLayout===id?'#e63946':'var(--text2)'};border-radius:5px;cursor:pointer;line-height:0;transition:all .15s;">${layoutIcons[id]}</button>`).join('')}
       <span style="width:1px;height:16px;background:var(--border);margin:0 2px;"></span>
       <button onclick="addNextRound()" style="padding:3px 9px;background:rgba(76,201,240,.08);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➕ 라운드 추가</button>
       <button onclick="removeLastRound()" style="padding:3px 9px;background:rgba(230,57,70,.06);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer;font-size:10px;transition:all .15s;" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">➖ 라운드 삭제</button>
