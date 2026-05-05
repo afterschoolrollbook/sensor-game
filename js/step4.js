@@ -27,7 +27,7 @@ function buildProc(){
   treeWrap.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:16px;';
   w.appendChild(treeWrap);
 
-  if(S.proc==='ind-tour'||S.proc==='team-tour'){
+  if(S.matches&&S.matches.length||(S.proc==='ind-tour'||S.proc==='team-tour')){
     buildTournamentTree(treeWrap);
   } else if(S.proc==='ind-rec'){
     buildOrderList(treeWrap);
@@ -117,6 +117,7 @@ function buildTournamentTree(wrap){
     <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
       ${layouts.map(l=>`<button onclick="setBracketLayout('${l.id}')" style="padding:3px 9px;background:${_bracketLayout===l.id?'rgba(230,57,70,.2)':'transparent'};border:1px solid ${_bracketLayout===l.id?'#e63946':'#2a2a3e'};color:${_bracketLayout===l.id?'#e63946':'#666'};border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;">${l.label}</button>`).join('')}
       <button onclick="addNextRound()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">➕ 다음 라운드</button>
+      <button onclick="removeLastRound()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">➖ 라운드 삭제</button>
       <button onclick="shuffleBracket()" style="padding:3px 9px;background:transparent;border:1px solid #2a2a3e;color:#666;border-radius:5px;cursor:pointer;font-size:10px;">🔀 무작위</button>
     </div>`;
   wrap.appendChild(hdr);
@@ -477,7 +478,15 @@ function generateBracket(pts){
   return [matches]; // 항상 1라운드만
 }
 
-/* ── 무작위 배정 ── */
+/* ── 마지막 라운드 삭제 ── */
+function removeLastRound(){
+  if(!S.matches||S.matches.length<=1){toast('1라운드는 삭제할 수 없어요','info');return;}
+  S.matches.pop();
+  buildProc();
+  toast('마지막 라운드 삭제됨','success');
+}
+
+
 function shuffleBracket(){
   const pts=[...S.pts].sort(()=>Math.random()-.5);
   S.matches=generateBracket(pts);
