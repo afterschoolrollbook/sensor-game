@@ -520,30 +520,21 @@ function renderBracketE(wrap){
 function addNextRound(){
   if(!S.matches||!S.matches.length){toast('대진표가 없어요','error');return;}
   const lastRound=S.matches[S.matches.length-1];
-  const allDone=lastRound.every(m=>m.winner);
-  if(!allDone){toast('이번 라운드 모든 경기 승자를 먼저 결정해주세요','info');return;}
-
-  const winners=lastRound.map(m=>m.winner);
-  if(winners.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
+  if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
 
   const next=[];
-  // 부전승 승자가 있으면 다음 라운드 첫 번째 일반 승자와 짝지음
   const byeIdx=lastRound.findIndex(m=>m.bye);
   if(byeIdx>=0){
-    const byeWinner=winners[byeIdx];
-    const others=winners.filter((_,i)=>i!==byeIdx);
-    // 부전승 승자 + 첫 번째 일반 승자
-    next.push({p1:byeWinner,p2:others[0]||null,winner:null,bye:!others[0]});
-    // 나머지 일반 승자들끼리
+    const byeP=lastRound[byeIdx].p1;
+    const others=lastRound.filter((_,i)=>i!==byeIdx).map(m=>m.p1);
+    next.push({p1:byeP,p2:others[0]||null,bye:!others[0]});
     for(let i=1;i<others.length;i+=2){
-      const p1=others[i],p2=others[i+1]||null;
-      next.push({p1,p2,winner:null,bye:!p2});
+      next.push({p1:others[i],p2:others[i+1]||null,bye:!others[i+1]});
     }
   } else {
-    for(let i=0;i<winners.length;i+=2){
-      const p1=winners[i],p2=winners[i+1]||null;
-      next.push({p1,p2,winner:null,bye:!p2});
-    }
+    lastRound.forEach((m,i)=>{
+      if(i%2===0) next.push({p1:m.p1,p2:lastRound[i+1]?.p1||null,bye:!lastRound[i+1]});
+    });
   }
 
   S.matches.push(next);
@@ -672,15 +663,13 @@ function generateBracket(pts){
   const round1=[];
   const isOdd=n%2===1;
 
-  // 홀수면 첫 번째 선수를 1-0 부전승으로
   if(isOdd){
-    round1.push({p1:players[0],p2:null,winner:null,bye:true});
+    round1.push({p1:players[0],p2:null,bye:true});
   }
 
-  // 나머지 선수들 1-1, 1-2... 배치
   const rest=isOdd?players.slice(1):players;
   for(let i=0;i<rest.length;i+=2){
-    round1.push({p1:rest[i],p2:rest[i+1]||null,winner:null,bye:false});
+    round1.push({p1:rest[i],p2:rest[i+1]||null,bye:false});
   }
 
   return[round1];
