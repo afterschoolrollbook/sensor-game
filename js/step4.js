@@ -581,12 +581,11 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            const midY=(ay+by)/2;
-            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t
+            // ㄷ자: a ←── midX, b ←── midX, 세로선, ──→ t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${midY} H${tx}`);
+            PATH(`M${midX},${ty} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
@@ -598,12 +597,11 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
-            const midY=(ay+by)/2;
-            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t
+            // ㄷ자: a ──→ midX, b ──→ midX, 세로선, ──→ t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${midY} H${tx}`);
+            PATH(`M${midX},${ty} H${tx}`);
           } else {
             PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
           }
