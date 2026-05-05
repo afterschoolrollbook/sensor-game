@@ -194,13 +194,17 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const y=cy-mh/2,p1=match.p1,p2=match.p2;
   const isBye=p1&&!p2;
   const isCur=!isBye&&isCurrentMatchIdx(ri,mi);
+  const isSel=typeof _linkSel!=='undefined'&&_linkSel&&_linkSel.ri===ri&&_linkSel.mi===mi;
 
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
   r.setAttribute('rx','4');r.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
-  r.setAttribute('stroke',isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
-  r.setAttribute('stroke-width',isCur?'2':'1');
-  if(isCur)r.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
+  r.setAttribute('stroke',isSel?'#4cc9f0':isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
+  r.setAttribute('stroke-width',isSel||isCur?'2':'1');
+  r.style.cursor='pointer';
+  r.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
+  if(isSel)r.setAttribute('filter','drop-shadow(0 0 6px rgba(76,201,240,.6))');
+  else if(isCur)r.setAttribute('filter','drop-shadow(0 0 6px rgba(230,57,70,.5))');
   svg.appendChild(r);
 
   const fs=Math.max(8,Math.floor(mh*0.38));
@@ -210,6 +214,8 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
     t.setAttribute('x',x+mw/2);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor','middle');
     t.setAttribute('fill','#d0d0d0');t.setAttribute('font-size',fs);
     t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+    t.style.cursor='pointer';
+    t.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
     t.textContent=p1.name;svg.appendChild(t);
     const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
     bye.setAttribute('x',x+mw-4);bye.setAttribute('y',y+8);bye.setAttribute('text-anchor','end');
@@ -230,6 +236,8 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
       t.setAttribute('x',tx);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor',anchor);
       t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');t.setAttribute('font-size',fs);
       t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+      t.style.cursor='pointer';
+      t.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
       t.textContent=p?p.name:'?';svg.appendChild(t);
     });
   }
@@ -323,26 +331,61 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
 /* 공통: 연결선 그리기 (가로, A/D용) */
 function _drawLinks(svg,rounds,xFn,cyFn,dir,sz){
   const {mw}=sz;
+  const LN=(x1,y1,x2,y2)=>{
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');svg.appendChild(l);
+  };
   rounds.forEach((matches,ri)=>{
     if(ri>=rounds.length-1)return;
-    matches.forEach((match,mi)=>{
+    const nextRound=rounds[ri+1];
+    const byeIdx=matches.findIndex(m=>m.bye);
+
+    if(byeIdx>=0){
+      // bye(0번)와 1번 매치가 다음 라운드 0번으로 연결
       const x=xFn(ri),nx=xFn(ri+1);
-      const fromY=cyFn(ri,mi),toY=cyFn(ri+1,Math.floor(mi/2));
       const lx=dir==='right'?x+mw:x;
       const rlx=dir==='right'?nx:nx+mw;
       const midX=(lx+rlx)/2;
-      const LN=(x1,y1,x2,y2)=>{
-        const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-        l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-        l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');svg.appendChild(l);
-      };
-      LN(lx,fromY,midX,fromY);
-      if(mi%2===1){
-        const prevY=cyFn(ri,mi-1);
-        LN(midX,prevY,midX,fromY);
-        LN(midX,toY,rlx,toY);
+      const byeY=cyFn(ri,0);
+      const m1Y=cyFn(ri,1);
+      const toY=cyFn(ri+1,0);
+      const midY=(byeY+m1Y)/2;
+      // bye → midY
+      LN(lx,byeY,midX,byeY);
+      LN(midX,byeY,midX,m1Y);
+      // 1번 → midY
+      LN(lx,m1Y,midX,m1Y);
+      // midY → 다음 라운드
+      LN(midX,midY,rlx,midY);
+      // 나머지 일반 매치들 (2,3), (4,5)...
+      const normals=matches.slice(1); // bye 제외
+      for(let i=1;i<normals.length;i+=2){
+        const fromY0=cyFn(ri,i+1);
+        const fromY1=cyFn(ri,i+2);
+        const ntoY=cyFn(ri+1,Math.floor((i+1)/2));
+        const nmidX=(lx+rlx)/2;
+        const nmidY=(fromY0+fromY1)/2;
+        LN(lx,fromY0,nmidX,fromY0);
+        LN(lx,fromY1,nmidX,fromY1);
+        LN(nmidX,fromY0,nmidX,fromY1);
+        LN(nmidX,nmidY,rlx,nmidY);
       }
-    });
+    } else {
+      matches.forEach((match,mi)=>{
+        const x=xFn(ri),nx=xFn(ri+1);
+        const fromY=cyFn(ri,mi),toY=cyFn(ri+1,Math.floor(mi/2));
+        const lx=dir==='right'?x+mw:x;
+        const rlx=dir==='right'?nx:nx+mw;
+        const midX=(lx+rlx)/2;
+        LN(lx,fromY,midX,fromY);
+        if(mi%2===1){
+          const prevY=cyFn(ri,mi-1);
+          LN(midX,prevY,midX,fromY);
+          LN(midX,toY,rlx,toY);
+        }
+      });
+    }
   });
 }
 
@@ -389,7 +432,29 @@ function renderBracketA(wrap){
   const cyFn=(ri,mi)=>_cy_top(ri,mi,mh,row);
   const xFn=(ri)=>ri*(mw+gap)+20;
   const svg=_mkSvg(W,H);
-  _drawLinks(svg,rounds,xFn,cyFn,'right',sz);
+
+  // 수동 연결선 그리기
+  rounds.forEach((matches,ri)=>{
+    matches.forEach((m,mi)=>{
+      if(!m.fromA&&!m.fromB)return;
+      const [aRi,aMi]=m.fromA.split('-').map(Number);
+      const [bRi,bMi]=m.fromB.split('-').map(Number);
+      const ax=xFn(aRi)+mw, ay=cyFn(aRi,aMi);
+      const bx=xFn(bRi)+mw, by=cyFn(bRi,bMi);
+      const tx=xFn(ri), ty=cyFn(ri,mi);
+      const midX=(ax+tx)/2;
+      const LN=(x1,y1,x2,y2)=>{
+        const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+        l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+        l.setAttribute('stroke','#2a2a40');l.setAttribute('stroke-width','1.5');svg.appendChild(l);
+      };
+      LN(ax,ay,midX,ay);
+      LN(bx,by,midX,by);
+      LN(midX,ay,midX,by);
+      LN(midX,ty,tx,ty);
+    });
+  });
+
   rounds.forEach((matches,ri)=>{
     _rlabel(svg,xFn(ri)+mw/2,12,ri,T);
     matches.forEach((m,mi)=>_mboxH(svg,xFn(ri),cyFn(ri,mi),m,ri,mi,sz));
