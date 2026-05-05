@@ -1751,11 +1751,11 @@ function toast(msg,type='info'){
         <div id="pts-bracket-label" style="font-size:12px;color:var(--accent);font-weight:700;margin-left:4px;"></div>
         <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:9px;color:var(--text3);letter-spacing:1px;">레이아웃:</span>
-          <button onclick="setPopupBracketLayout('A')" id="popup-lay-A" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setPopupBracketLayout('B')" id="popup-lay-B" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setPopupBracketLayout('C')" id="popup-lay-C" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setPopupBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
-          <button onclick="setPopupBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+          <button onclick="setPopupBracketLayout('A')" id="popup-lay-A" style="padding:3px 8px;border-radius:5px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);font-size:10px;font-weight:700;cursor:pointer;">A 좌→우</button>
+          <button onclick="setPopupBracketLayout('B')" id="popup-lay-B" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;">B 아래→위</button>
+          <button onclick="setPopupBracketLayout('C')" id="popup-lay-C" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;">C 위→아래</button>
+          <button onclick="setPopupBracketLayout('D')" id="popup-lay-D" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;">D 양쪽→중앙</button>
+          <button onclick="setPopupBracketLayout('E')" id="popup-lay-E" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;">E 위아래→중앙</button>
           <span style="width:1px;height:14px;background:var(--border);"></span>
           <button onclick="shuffleGroupBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 섞기</button>
           <button onclick="toggleAssignMode()" id="btn-assign" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">✏️ 지정</button>
@@ -2060,12 +2060,166 @@ function renderBracketView(groupIdx){
     view.appendChild(panel);
   }
 
-  // step4.js의 S.matches를 임시로 그룹 대진표로 교체해서 렌더 후 복원
-  const savedMatches=S.matches;
-  S.matches=g.matches;
-  const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
-  (fns[_bracketLayout]||renderBracketA)(view);
-  S.matches=savedMatches;
+  // 팝업 전용: S.matches를 건드리지 않고 그룹 대진표만 렌더
+  _renderPopupBracket(g.matches, view);
+}
+
+/* 팝업 전용 대진표 렌더 — S.matches를 절대 건드리지 않음 */
+function _renderPopupBracket(matches, wrap){
+  const MW=200,MH=36,GAP=60,ROW=56;
+  const T=matches.length;
+  if(!T)return;
+  const r0=matches[0].length;
+
+  function mkLine(svg,x1,y1,x2,y2){
+    const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');svg.appendChild(l);
+  }
+  function mkBox(svg,x,cy,match,ri,mi){
+    const y=cy-MH/2;
+    const isCur=false;
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',MW);r.setAttribute('height',MH);
+    r.setAttribute('rx','5');r.setAttribute('fill','#0d0d1a');
+    r.setAttribute('stroke',match.winner?'rgba(6,214,160,.5)':'#1e1e30');r.setAttribute('stroke-width','1');
+    svg.appendChild(r);
+    const mx=x+MW/2;
+    const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
+    vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+MH);
+    vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+    const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
+    vs.setAttribute('x',mx);vs.setAttribute('y',cy+4);vs.setAttribute('text-anchor','middle');
+    vs.setAttribute('fill','#e63946');vs.setAttribute('font-size','10');vs.setAttribute('font-family','Bebas Neue,cursive');
+    vs.textContent='VS';svg.appendChild(vs);
+    const rnames=['1라운드','2라운드','3라운드','준결승','결승'];
+    const rn=ri===T-1?'결승':ri===T-2&&T>2?'준결승':(rnames[ri]||`${ri+1}라운드`);
+    const nm=document.createElementNS('http://www.w3.org/2000/svg','text');
+    nm.setAttribute('x',x+3);nm.setAttribute('y',y+9);nm.setAttribute('fill','#e63946');
+    nm.setAttribute('font-size','7');nm.setAttribute('font-family','Share Tech Mono,monospace');
+    nm.textContent=`${ri+1}-${mi+1}`;svg.appendChild(nm);
+    [[mx-8,'end',match.p1],[mx+8,'start',match.p2]].forEach(([tx,anchor,p])=>{
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',tx);t.setAttribute('y',cy+4);t.setAttribute('text-anchor',anchor);
+      t.setAttribute('fill',p?(match.winner&&match.winner===p?'#06d6a0':'#d0d0d0'):'#2a2a3e');
+      t.setAttribute('font-size','12');t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
+      t.textContent=p?p.name:'?';svg.appendChild(t);
+    });
+  }
+
+  // Y 좌표 계산 (vtree)
+  function vtree_cy(ri,mi,baseY,rowH,dir){
+    if(ri===0)return baseY+mi*rowH*(dir==='up'?-1:1);
+    return (vtree_cy(ri-1,mi*2,baseY,rowH,dir)+vtree_cy(ri-1,mi*2+1,baseY,rowH,dir))/2;
+  }
+  // Y 좌표 계산 (A형 top)
+  function cy_top(ri,mi){
+    if(ri===0)return 24+MH/2+mi*ROW;
+    return (cy_top(ri-1,mi*2)+cy_top(ri-1,mi*2+1))/2;
+  }
+
+  // 수평 연결선 (A,D형)
+  function drawLinksH(svg,rds,xFn,cyFn,dir){
+    rds.forEach((ms,ri)=>{
+      if(ri>=rds.length-1)return;
+      ms.forEach((m,mi)=>{
+        const x=xFn(ri),nx=xFn(ri+1);
+        const fromY=cyFn(ri,mi),toY=cyFn(ri+1,Math.floor(mi/2));
+        const lx=dir==='right'?x+MW:x,rlx=dir==='right'?nx:nx+MW;
+        const midX=(lx+rlx)/2;
+        mkLine(svg,lx,fromY,midX,fromY);
+        if(mi%2===1){
+          const prevY=cyFn(ri,mi-1);
+          mkLine(svg,midX,prevY,midX,fromY);
+          mkLine(svg,midX,toY,rlx,toY);
+        }
+      });
+    });
+  }
+  // 수직 연결선 (B,C,E형)
+  function drawLinksV(svg,rds,xFn,cyFn){
+    rds.forEach((ms,ri)=>{
+      if(ri>=rds.length-1)return;
+      ms.forEach((m,mi)=>{
+        const cx=xFn(ri)+MW/2,ncx=xFn(ri+1)+MW/2;
+        const y=cyFn(ri,mi),ny=cyFn(ri+1,Math.floor(mi/2));
+        const mid=(y+ny)/2;
+        mkLine(svg,cx,y,cx,mid);
+        if(mi%2===1){
+          const pcy=cyFn(ri,mi-1),pmid=(pcy+ny)/2,pcx=xFn(ri)+MW/2;
+          mkLine(svg,pcx,pmid,cx,mid);
+          mkLine(svg,ncx,mid,ncx,ny);
+        }
+      });
+    });
+  }
+
+  const layout=_bracketLayout||'A';
+  let svg,W2,H2,xFn,cyFn;
+
+  if(layout==='A'){
+    H2=Math.max(200,r0*ROW+40);W2=T*(MW+GAP)+40;
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',W2);svg.setAttribute('height',H2);svg.style.cssText='display:block;overflow:visible;';
+    xFn=(ri)=>ri*(MW+GAP)+20; cyFn=(ri,mi)=>cy_top(ri,mi);
+    drawLinksH(svg,matches,xFn,cyFn,'right');
+    matches.forEach((ms,ri)=>ms.forEach((m,mi)=>mkBox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi)));
+
+  }else if(layout==='B'){
+    const padY=MH/2+16;H2=Math.max(200,r0*ROW+padY*2);W2=T*(MW+GAP)+40;
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',W2);svg.setAttribute('height',H2);svg.style.cssText='display:block;overflow:visible;';
+    xFn=(ri)=>ri*(MW+GAP)+20; cyFn=(ri,mi)=>vtree_cy(ri,mi,H2-padY,ROW,'up');
+    drawLinksV(svg,matches,xFn,cyFn);
+    matches.forEach((ms,ri)=>ms.forEach((m,mi)=>mkBox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi)));
+
+  }else if(layout==='C'){
+    const padY=MH/2+16;H2=Math.max(200,r0*ROW+padY*2);W2=T*(MW+GAP)+40;
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',W2);svg.setAttribute('height',H2);svg.style.cssText='display:block;overflow:visible;';
+    xFn=(ri)=>ri*(MW+GAP)+20; cyFn=(ri,mi)=>vtree_cy(ri,mi,padY,ROW,'down');
+    drawLinksV(svg,matches,xFn,cyFn);
+    matches.forEach((ms,ri)=>ms.forEach((m,mi)=>mkBox(svg,xFn(ri),cyFn(ri,mi),m,ri,mi)));
+
+  }else if(layout==='D'){
+    const lRds=matches.map(r=>r.slice(0,Math.ceil(r.length/2)));
+    const rRds=matches.map(r=>r.slice(Math.ceil(r.length/2)));
+    H2=Math.max(200,Math.ceil(r0/2)*ROW+40);W2=(T*2-1)*(MW+GAP)+40;
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',W2);svg.setAttribute('height',H2);svg.style.cssText='display:block;overflow:visible;';
+    const lxFn=(ri)=>ri*(MW+GAP)+20;
+    const rxFn=(ri)=>W2-20-MW-ri*(MW+GAP);
+    const lcyFn=(ri,mi)=>cy_top(ri,mi);
+    drawLinksH(svg,lRds,lxFn,lcyFn,'right');
+    lRds.forEach((ms,ri)=>ms.forEach((m,mi)=>mkBox(svg,lxFn(ri),lcyFn(ri,mi),m,ri,mi)));
+    if(rRds[0].length>0){
+      drawLinksH(svg,rRds,rxFn,lcyFn,'left');
+      rRds.forEach((ms,ri)=>{if(!ms.length)return;ms.forEach((m,mi)=>mkBox(svg,rxFn(ri),lcyFn(ri,mi),m,ri,mi));});
+    }
+
+  }else{ // E
+    const tCount=Math.ceil(r0/2),bCount=Math.floor(r0/2);
+    const padY=MH/2+16;
+    const halfH=Math.max(120,tCount*ROW+padY*2);
+    H2=halfH*2;W2=T*(MW+GAP)+40;
+    svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',W2);svg.setAttribute('height',H2);svg.style.cssText='display:block;overflow:visible;';
+    const tRds=matches.map(r=>r.slice(0,Math.ceil(r.length/2)));
+    const bRds=matches.map(r=>r.slice(Math.ceil(r.length/2)));
+    xFn=(ri)=>ri*(MW+GAP)+20;
+    const tcyFn=(ri,mi)=>vtree_cy(ri,mi,padY,ROW,'down');
+    const bcyFn=(ri,mi)=>vtree_cy(ri,mi,H2-padY,ROW,'up');
+    drawLinksV(svg,tRds,xFn,tcyFn);
+    tRds.forEach((ms,ri)=>{if(!ms.length)return;ms.forEach((m,mi)=>mkBox(svg,xFn(ri),tcyFn(ri,mi),m,ri,mi));});
+    if(bCount>0){
+      drawLinksV(svg,bRds,xFn,bcyFn);
+      bRds.forEach((ms,ri)=>{if(!ms.length)return;ms.forEach((m,mi)=>mkBox(svg,xFn(ri),bcyFn(ri,mi),m,ri,mi));});
+    }
+  }
+
+  const d=document.createElement('div');
+  d.style.cssText='overflow:auto;padding-bottom:8px;';
+  d.appendChild(svg);wrap.appendChild(d);
 }
 function selectSlot(num){
   _assignSlotNum=_assignSlotNum===num?null:num;
