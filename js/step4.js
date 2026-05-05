@@ -533,16 +533,16 @@ function addNextRound(){
     const byeWinner=winners[byeIdx];
     const others=winners.filter((_,i)=>i!==byeIdx);
     // 부전승 승자 + 첫 번째 일반 승자
-    next.push({p1:byeWinner,p2:others[0]||null,winner:others[0]?null:byeWinner,bye:!others[0]});
+    next.push({p1:byeWinner,p2:others[0]||null,winner:null,bye:!others[0]});
     // 나머지 일반 승자들끼리
     for(let i=1;i<others.length;i+=2){
       const p1=others[i],p2=others[i+1]||null;
-      next.push({p1,p2,winner:p2?null:p1,bye:!p2});
+      next.push({p1,p2,winner:null,bye:!p2});
     }
   } else {
     for(let i=0;i<winners.length;i+=2){
       const p1=winners[i],p2=winners[i+1]||null;
-      next.push({p1,p2,winner:p2?null:p1,bye:!p2});
+      next.push({p1,p2,winner:null,bye:!p2});
     }
   }
 
@@ -674,7 +674,7 @@ function generateBracket(pts){
 
   // 홀수면 첫 번째 선수를 1-0 부전승으로
   if(isOdd){
-    round1.push({p1:players[0],p2:null,winner:players[0],bye:true});
+    round1.push({p1:players[0],p2:null,winner:null,bye:true});
   }
 
   // 나머지 선수들 1-1, 1-2... 배치
