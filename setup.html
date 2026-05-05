@@ -2106,17 +2106,24 @@ function addRound(){
   const lastRound=g.matches[g.matches.length-1];
   const ri=g.matches.length-1;
   if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
+
   const newMatches=[];
   const byeIdx=lastRound.findIndex(m=>m.bye);
+
   if(byeIdx>=0){
-    const byeP=lastRound[byeIdx].p1;
-    const others=lastRound.filter((_,i)=>i!==byeIdx);
-    newMatches.push({p1:byeP,p2:{name:`${ri+1}-${others[0]?others[0].num||1:1} 승자`,tbd:true},bye:false});
-    for(let i=0;i<others.length-1;i+=2){
+    // 부전승(1-0) 승자 vs 1-1 승자
+    newMatches.push({
+      p1:{name:`${ri+1}-0 승자`,tbd:true},
+      p2:{name:`${ri+1}-1 승자`,tbd:true},
+      bye:false
+    });
+    // 나머지 일반 매치들끼리
+    const normals=lastRound.filter((_,i)=>i!==byeIdx);
+    for(let i=1;i<normals.length;i+=2){
       newMatches.push({
-        p1:{name:`${ri+1}-${others[i].num||i+2} 승자`,tbd:true},
-        p2:{name:`${ri+1}-${others[i+1]?.num||i+3} 승자`,tbd:true},
-        bye:false
+        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
+        p2:normals[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        bye:!normals[i+1]
       });
     }
   } else {
@@ -2128,6 +2135,7 @@ function addRound(){
       });
     }
   }
+
   g.matches.push(newMatches);
   renderBracketView(S.activeGroup);
   toast('라운드 추가됨!','success');
