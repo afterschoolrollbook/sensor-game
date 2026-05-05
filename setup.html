@@ -2103,13 +2103,21 @@ function shuffleGroupBracket(){
 
 function addRound(){
   const g=S.groupBrackets[S.activeGroup];
-  // 마지막 라운드 승자들로 새 라운드 생성
   const lastRound=g.matches[g.matches.length-1];
-  const winners=lastRound.map(m=>m.winner||null);
-  if(winners.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
+  if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
   const newMatches=[];
-  for(let i=0;i<winners.length;i+=2){
-    newMatches.push({p1:winners[i],p2:winners[i+1]||null,winner:winners[i+1]?null:winners[i]});
+  const byeIdx=lastRound.findIndex(m=>m.bye);
+  if(byeIdx>=0){
+    const byeP=lastRound[byeIdx].p1;
+    const others=lastRound.filter((_,i)=>i!==byeIdx).map(m=>m.p1);
+    newMatches.push({p1:byeP,p2:others[0]||null,bye:!others[0]});
+    for(let i=1;i<others.length;i+=2){
+      newMatches.push({p1:others[i],p2:others[i+1]||null,bye:!others[i+1]});
+    }
+  } else {
+    lastRound.forEach((m,i)=>{
+      if(i%2===0) newMatches.push({p1:m.p1,p2:lastRound[i+1]?.p1||null,bye:!lastRound[i+1]});
+    });
   }
   g.matches.push(newMatches);
   renderBracketView(S.activeGroup);
