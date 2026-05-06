@@ -102,6 +102,11 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
       </div>
     </div>
+    <!-- 홀수 경기 시 부전승 배정 버튼 -->
+    <div id="bye-notice-bar" style="display:none;padding:8px 18px;background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.2);flex-shrink:0;display:none;align-items:center;gap:10px;">
+      <span style="font-size:12px;color:var(--yellow);font-weight:700;">⚠️ 경기 수가 홀수입니다 — 부전승을 배정해주세요</span>
+      <button id="bye-notice-btn" onclick="triggerByeSelector()" style="margin-left:auto;padding:5px 14px;background:rgba(255,214,10,.15);border:1px solid var(--yellow);color:var(--yellow);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🎯 부전승 배정</button>
+    </div>
     <!-- step4.js가 getElementById('pts-bracket-tabs'), getElementById('pts-bracket-view') 로 접근 -->
     <div id="pts-bracket-tabs" style="display:none;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;gap:6px;background:var(--bg2);"></div>
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
@@ -342,6 +347,24 @@ function generateAllBrackets(){
   processNext(0);
 }
 
+// 부전승 추첨 결과 팝업
+function showByeResult(name){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;';
+  box.innerHTML=`
+    <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px;">// 부전승 추첨 결과</div>
+    <div style="font-size:14px;color:var(--text2);">부전승 대상</div>
+    <div style="font-size:28px;font-weight:700;color:var(--text);">${name}</div>
+    <button id="bye-result-ok" style="margin-top:8px;padding:10px 32px;background:var(--accent);border:none;color:#000;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">확인</button>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  box.querySelector('#bye-result-ok').addEventListener('click',()=>overlay.remove());
+}
+
 // 부전승 배정 선택 팝업
 function showByeSelector(players, groupLabel, onSelect, onRandom){
   // 기존 팝업 제거
@@ -465,7 +488,7 @@ function _checkAndHandleOddAfterLink(g, ri){
       }
       g.matches[ri+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
       renderBracketView(S.activeGroup);
-      toast(pick.name+' 랜덤 부전승!','success');
+      showByeResult(pick.name);
     }
   );
 }
@@ -532,6 +555,13 @@ function renderBracketView(groupIdx){
         });
       }
     } finally { S.matches=saved; }
+
+    // 홀수 경기 감지 → 상단 부전승 배정 버튼 표시/숨김
+    const lastRi=g.matches.length-1;
+    const lastRound=g.matches[lastRi];
+    const hasUnassignedBye=lastRound && lastRound.length>=2 && lastRound.length%2===1 && !(g.matches[lastRi+1]||[]).some(m=>m.bye);
+    const bar=document.getElementById('bye-notice-bar');
+    if(bar) bar.style.display=hasUnassignedBye?'flex':'none';
   });
 }
 
@@ -596,6 +626,13 @@ function applyBracket(){
 }
 
 // 특정 라운드가 홀수일 때 부전승 팝업
+// 상단 버튼 클릭 시 부전승 팝업 트리거
+function triggerByeSelector(){
+  const g=S.groupBrackets[S.activeGroup];
+  const lastRi=g.matches.length-1;
+  _showByeForRound(g, lastRi);
+}
+
 function _showByeForRound(g, ri){
   if(document.getElementById('bye-selector-overlay')) return;
   const round=g.matches[ri];
@@ -624,7 +661,7 @@ function _showByeForRound(g, ri){
       if(g.matches[ri+1].find(nm=>nm.fromA===key||nm.fromB===key)) return;
       g.matches[ri+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
       renderBracketView(S.activeGroup);
-      toast(pick.name+' 랜덤 부전승!','success');
+      showByeResult(pick.name);
     }
   );
 }
