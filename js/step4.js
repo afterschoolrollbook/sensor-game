@@ -435,10 +435,19 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const totalH=r0len*SLOT_H+32;
   container.style.cssText=`display:flex;flex-direction:row;gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
 
-  // 재귀 cy 계산: 해당 매치가 커버하는 1라운드 박스들의 세로 중앙
+  // 재귀 cy 계산: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCy=(ri,mi)=>{
     if(ri===0)return mi*SLOT_H+SLOT_H/2;
-    const srcA=mi*2,srcB=mi*2+1;
+    const m=rounds[ri][mi];
+    let srcA,srcB;
+    if(m&&m.fromA){
+      const [fari,fami]=m.fromA.split('-').map(Number);
+      srcA=fari===ri-1?fami:mi*2;
+    } else { srcA=mi*2; }
+    if(m&&m.fromB){
+      const [fbri,fbmi]=m.fromB.split('-').map(Number);
+      srcB=fbri===ri-1?fbmi:mi*2+1;
+    } else { srcB=mi*2+1; }
     const cyA=calcCy(ri-1,srcA);
     const cyB=srcB<rounds[ri-1].length?calcCy(ri-1,srcB):cyA;
     return(cyA+cyB)/2;
@@ -563,10 +572,19 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       return 0;
     };
 
-    // cy 재귀: 1라운드 박스 기준으로 상위 라운드 중앙 계산
+    // cy 재귀: fromA/fromB 우선, 없으면 mi*2 폴백
     const getBoxCy=(ri,mi)=>{
       if(ri===0) return LABEL_H+PAD+dirOff(0)+mi*SLOT_H+SLOT_H/2;
-      const srcA=mi*2, srcB=mi*2+1;
+      const m=rounds[ri][mi];
+      let srcA,srcB;
+      if(m&&m.fromA){
+        const [fari,fami]=m.fromA.split('-').map(Number);
+        srcA=fari===ri-1?fami:mi*2;
+      } else { srcA=mi*2; }
+      if(m&&m.fromB){
+        const [fbri,fbmi]=m.fromB.split('-').map(Number);
+        srcB=fbri===ri-1?fbmi:mi*2+1;
+      } else { srcB=mi*2+1; }
       const cyA=getBoxCy(ri-1,srcA);
       const cyB=srcB<rounds[ri-1].length?getBoxCy(ri-1,srcB):cyA;
       return(cyA+cyB)/2;
@@ -596,9 +614,17 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       if(ri>=rounds.length-1)return;
       const nextMatches=rounds[ri+1];
       nextMatches.forEach((nm,nmi)=>{
-        const srcA=nmi*2;
-        const srcB=nmi*2+1;
-        const hasB=srcB<matches.length;
+        // fromA/fromB 우선, 없으면 mi*2 폴백
+        let srcA,srcB;
+        if(nm.fromA){
+          const [fari,fami]=nm.fromA.split('-').map(Number);
+          srcA=fari===ri?fami:nmi*2;
+        } else { srcA=nmi*2; }
+        if(nm.fromB){
+          const [fbri,fbmi]=nm.fromB.split('-').map(Number);
+          srcB=fbri===ri?fbmi:nmi*2+1;
+        } else { srcB=nmi*2+1; }
+        const hasB=nm.fromB!=null?srcB<matches.length:srcB<matches.length;
         const a=getBox(ri,srcA);
         const b=hasB?getBox(ri,srcB):null;
         const t=getBox(ri+1,nmi);
@@ -654,10 +680,19 @@ function _renderBracketHoriz(wrap, rounds, direction){
   const T=rounds.length;
   const r0len=rounds[0].length;
 
-  // 각 매치의 중앙 X: 재귀로 소스 두 박스 평균
+  // 각 매치의 중앙 X: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCx=(ri,mi)=>{
     if(ri===0) return PAD+mi*(BOX_W+COL_GAP)+BOX_W/2;
-    const srcA=mi*2, srcB=mi*2+1;
+    const m=rounds[ri][mi];
+    let srcA,srcB;
+    if(m&&m.fromA){
+      const [fari,fami]=m.fromA.split('-').map(Number);
+      srcA=fari===ri-1?fami:mi*2;
+    } else { srcA=mi*2; }
+    if(m&&m.fromB){
+      const [fbri,fbmi]=m.fromB.split('-').map(Number);
+      srcB=fbri===ri-1?fbmi:mi*2+1;
+    } else { srcB=mi*2+1; }
     const cxA=calcCx(ri-1,srcA);
     const cxB=srcB<rounds[ri-1].length?calcCx(ri-1,srcB):cxA;
     return(cxA+cxB)/2;
@@ -761,7 +796,12 @@ function _renderBracketHoriz(wrap, rounds, direction){
 
       // 연결선: 현재 박스 → 다음 라운드
       if(ri<T-1){
-        const ncx=calcCx(ri+1,Math.floor(mi/2));
+        // 다음 라운드에서 현재 박스(ri-mi)를 fromA/fromB로 참조하는 매치 찾기
+        const curKey=`${ri}-${mi}`;
+        const nextRound=rounds[ri+1];
+        let nmi=nextRound.findIndex(nm=>nm.fromA===curKey||nm.fromB===curKey);
+        if(nmi<0) nmi=Math.floor(mi/2); // 폴백
+        const ncx=calcCx(ri+1,nmi);
         const nry=rowY(ri+1);
         // bottom-up: 박스 위에서 나가서 위쪽 행으로
         // top-down:  박스 아래에서 나가서 아래쪽 행으로
