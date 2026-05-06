@@ -1029,6 +1029,7 @@ function goS(n){
   cs=Math.max(1,Math.min(5,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
+  if(cs===4)buildProc();
   if(cs===5)buildConfirm();
   updatePv();
 }
@@ -1684,7 +1685,7 @@ function toast(msg,type='info'){
 }
 </script>
 <!-- 참가자 보기 팝업 -->
-<div id="pts-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.80);overflow:hidden;">
+<div id="pts-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.80);">
   <div id="pts-popup-box" style="
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
@@ -1781,31 +1782,17 @@ let _ptsMode='tournament';
 function openPtsPopup(){
   document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  try{localStorage.setItem('sgp_bw_pts', JSON.stringify(S.pts));}catch(e){}
-  if(window._ptsWin&&!window._ptsWin.closed){
-    try{window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');}catch(e){}
-    window._ptsWin.focus();return;
-  }
-  setTimeout(()=>{
-    window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
-  },50);
+  _ptsSortKeys=[];_ptsGroups={};_ptsMode='tournament';
+  document.querySelectorAll('.pts-sort-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';});
+  document.getElementById('pts-step1').style.display='flex';
+  document.getElementById('pts-step2').style.display='none';
+  document.getElementById('pts-popup').style.display='block';
+  const box=document.getElementById('pts-popup-box');
+  box.style.top='50%';box.style.left='50%';box.style.transform='translate(-50%,-50%)';
+  requestAnimationFrame(()=>setTimeout(renderPtsPopup,0));
 }
 
-// bracket-window에서 대진표 적용 요청 수신
-window.addEventListener('message',e=>{
-  if(!e.data||e.data.type!=='sgp_apply_bracket')return;
-  const d=e.data;
-  S.matches=d.matches;S.matchLabel=d.label;S.matchProc='tournament';S.proc='ind-tour';
-  S.matchPts=d.matchPts;S.curMatch=0;
-  S.groupBrackets=d.groupBrackets;S.activeGroup=d.activeGroup;
-  buildProc();try{updatePv();}catch(ex){}
-  toast(d.label+' 대진표 적용 완료!','success');
-});
-
-function closePtsPopup(){
-  if(window._ptsWin&&!window._ptsWin.closed)window._ptsWin.close();
-  document.getElementById('pts-popup').style.display='none';
-}
+function closePtsPopup(){document.getElementById('pts-popup').style.display='none';}
 
 function togglePtsSort(key){
   const idx=_ptsSortKeys.indexOf(key);
