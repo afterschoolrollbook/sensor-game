@@ -124,9 +124,351 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 <div id="tc"></div>
 
 <script>
-// ── 부모창 참조 ──
-const P = window.opener;
-const S = P.S;
+// ── 데이터: localStorage에서 읽기 (같은 도메인, cross-origin 문제 없음) ──
+let _pts = [];
+try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts')||'[]'); } catch(e){}
+
+// step4.js가 참조하는 최소 S 객체 (대진표용)
+let S = { pts:_pts, matches:[], groupBrackets:[], activeGroup:0 };
+
+// step4.js의 generateBracket, renderBracketA~E를 쓰기 위한 stub
+// (step4.js는 아래 <script src>로 로드됨 — 로드 후 함수가 전역에 등록됨)
+
+function toast(msg, type='info'){
+  const c=document.getElementById('tc');
+  const d=document.createElement('div');
+  d.className='tos '+(type||'');
+  d.textContent=msg;
+  c.appendChild(d);
+  setTimeout(()=>d.remove(), 2500);
+}
+
+// pts 갱신 수신 (부모창이 postMessage로 보냄)
+window.addEventListener('message', e=>{
+  if(!e.data||e.data.type!=='sgp_pts_update')return;
+  _pts=e.data.pts||[];S.pts=_pts;
+  renderList();
+});
+
+// ── 상태 ──
+let _sortKeys=[], _groups={}, _mode='tournament';
+let _assignMode=false, _assignSlotNum=null, _layout='A', _linkSel=null;
+
+function show(stepId){
+  ['pts-step1','pts-step2','pts-step3'].forEach(id=>{
+    document.getElementById(id).classList.toggle('on', id===stepId);
+  });
+}
+
+// ── STEP1 ──
+function togglePtsSort(key){
+  const idx=_sortKeys.indexOf(key);
+  if(idx>=0)_sortKeys.splice(idx,1);else _sortKeys.push(key);
+  const on=_sortKeys.includes(key);
+  const btn=document.getElementById('sort-'+key);
+  btn.style.borderColor=on?'var(--accent)':'var(--border)';
+  btn.style.background=on?'rgba(76,201,240,.12)':'transparent';
+  btn.style.color=on?'var(--accent)':'var(--text3)';
+  renderList();
+}
+
+function renderList(){
+  const list=document.getElementById('pts-popup-list');
+  document.getElementById('win-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
+  list.innerHTML='';
+  if(!_sortKeys.length){
+    const note=document.createElement('div');
+    note.style.cssText='color:var(--text3);font-size:12px;padding:4px 0 10px;';
+    note.textContent='그룹 기준을 선택하거나 그냥 확정하면 전체를 하나의 그룹으로 처리합니다.';
+    list.appendChild(note);
+    S.pts.forEach(p=>{
+      const d=document.createElement('div');d.className='pt-card';
+      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
+        <div style="font-size:13px;font-weight:600;">${p.name}</div>
+        ${p.weight?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.weight}</span>`:''}
+        ${p.division?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.division}</span>`:''}`;
+      list.appendChild(d);
+    });
+    return;
+  }
+  const groups={};
+  S.pts.forEach(p=>{
+    const key=_sortKeys.map(k=>p[k]||'미분류').join(' / ');
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+  Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');sec.style.marginBottom='16px';
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;font-weight:700;">${gname}</span>
+      <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span></div>`;
+    members.forEach(p=>{
+      const d=document.createElement('div');d.className='pt-card';
+      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
+        <div style="font-size:13px;font-weight:600;">${p.name}</div>`;
+      sec.appendChild(d);
+    });
+    list.appendChild(sec);
+  });
+}
+
+function confirmPtsGroup(){
+  if(!_sortKeys.length){
+    _groups={'전체':[...S.pts]};
+  } else {
+    _groups={};
+    S.pts.forEach(p=>{
+      const k=_sortKeys.map(k2=>p[k2]||'미분류').join(' / ');
+      if(!_groups[k])_groups[k]=[];
+      _groups[k].push(p);
+    });
+  }
+  show('pts-step2');setPtsMode('tournament');renderOrderArea();
+}
+function goStep1(){ show('pts-step1'); }
+function goStep2(){ show('pts-step2'); }
+
+// ── STEP2 ──
+function setPtsMode(mode){
+  _mode=mode;
+  document.querySelectorAll('.pts-mode-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';});
+  const btn=document.getElementById('mode-'+mode);
+  btn.style.borderColor=mode==='tournament'?'var(--red)':'var(--accent)';
+  btn.style.background=mode==='tournament'?'rgba(230,57,70,.15)':'rgba(76,201,240,.15)';
+  btn.style.color=mode==='tournament'?'var(--red)':'var(--accent)';
+  document.getElementById('league-overlay').style.display=mode==='league'?'flex':'none';
+  const genBtn=document.getElementById('btn-generate');
+  genBtn.style.opacity=mode==='tournament'?'1':'0.4';
+  genBtn.disabled=mode!=='tournament';
+}
+
+function renderOrderArea(){
+  const area=document.getElementById('pts-order-area');area.innerHTML='';
+  Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');sec.style.marginBottom='20px';
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;font-weight:700;">${gname}</span>
+      <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px;">이름 클릭→번호지정 · 드래그→순서변경</span></div>`;
+    const grid=document.createElement('div');grid.dataset.group=gname;
+    members.forEach((p,i)=>grid.appendChild(buildOrderRow(p,i,gname,members)));
+    initDragSort(grid,gname);sec.appendChild(grid);area.appendChild(sec);
+  });
+}
+
+function buildOrderRow(p,i,gname,members){
+  const row=document.createElement('div');row.className='order-row';row.draggable=true;row.dataset.pid=p.id;
+  row.innerHTML=`<span class="onum" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);width:20px;font-weight:700;flex-shrink:0;">${i+1}</span>
+    <div style="width:6px;height:6px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+    <span style="flex:1;font-size:13px;font-weight:600;">${p.name}</span>
+    ${p.weight||p.division?`<span style="font-size:10px;color:var(--text3);">${[p.division,p.weight].filter(Boolean).join(' / ')}</span>`:''}
+    <span style="font-size:10px;color:var(--text3);opacity:.5;">≡</span>`;
+  row.onclick=e=>{
+    if(e.target.tagName==='INPUT')return;
+    const cur=parseInt(row.querySelector('.onum').textContent);
+    const inp=document.createElement('input');
+    inp.type='number';inp.min=1;inp.max=members.length;inp.value=cur;
+    inp.style.cssText='width:40px;font-size:12px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);text-align:center;padding:2px;';
+    row.querySelector('.onum').replaceWith(inp);inp.focus();inp.select();
+    const apply=()=>{
+      const nv=Math.max(1,Math.min(members.length,parseInt(inp.value)||cur));
+      const g=_groups[gname];const fi=g.findIndex(x=>x.id===p.id);
+      g.splice(nv-1,0,g.splice(fi,1)[0]);renderOrderArea();
+    };
+    inp.onblur=apply;
+    inp.onkeydown=e2=>{if(e2.key==='Enter')apply();if(e2.key==='Escape')renderOrderArea();};
+    e.stopPropagation();
+  };
+  return row;
+}
+
+function initDragSort(grid,gname){
+  let dragEl=null;
+  grid.addEventListener('dragstart',e=>{dragEl=e.target.closest('[data-pid]');if(dragEl)setTimeout(()=>dragEl.style.opacity='.4',0);});
+  grid.addEventListener('dragend',()=>{if(dragEl){dragEl.style.opacity='1';dragEl=null;}});
+  grid.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const over=e.target.closest('[data-pid]');if(!over||over===dragEl)return;
+    const rows=[...grid.querySelectorAll('[data-pid]')];
+    const fi=rows.indexOf(dragEl),ti=rows.indexOf(over);if(fi<0||ti<0)return;
+    const g=_groups[gname];g.splice(ti,0,g.splice(fi,1)[0]);
+    g.forEach((p,idx)=>{const r=grid.querySelector(`[data-pid="${p.id}"]`);if(r){r.querySelector('.onum').textContent=idx+1;grid.appendChild(r);}});
+  });
+}
+
+function shuffleAllGroups(){
+  Object.keys(_groups).forEach(k=>{_groups[k]=[..._groups[k]].sort(()=>Math.random()-.5);});
+  renderOrderArea();toast('무작위로 섞었어요','success');
+}
+
+function generateAllBrackets(){
+  if(_mode!=='tournament'){toast('리그전은 준비중이에요','info');return;}
+  if(typeof generateBracket==='undefined'){toast('대진표 모듈 로딩 중...','info');return;}
+  S.groupBrackets=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).map(([gname,members])=>({
+    label:gname,
+    matches:generateBracket([...members]),
+    slots:members.map((p,i)=>({num:i+1,player:p}))
+  }));
+  S.activeGroup=0;_assignMode=false;_linkSel=null;
+  show('pts-step3');renderBracketTabs();renderBracketView(0);
+}
+
+// ── STEP3 ──
+function renderBracketTabs(){
+  const tabs=document.getElementById('bracket-tabs');
+  const groups=S.groupBrackets||[];tabs.innerHTML='';
+  if(groups.length<=1){tabs.style.display='none';return;}
+  tabs.style.display='flex';
+  groups.forEach((g,i)=>{
+    const btn=document.createElement('button');
+    const active=i===S.activeGroup;
+    btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
+    btn.textContent=g.label+' ('+g.slots.length+'명)';
+    btn.onclick=()=>{S.activeGroup=i;_assignMode=false;_linkSel=null;renderBracketTabs();renderBracketView(i);};
+    tabs.appendChild(btn);
+  });
+}
+
+function renderBracketView(groupIdx){
+  const g=S.groupBrackets[groupIdx];
+  const view=document.getElementById('bracket-view');
+  document.getElementById('bracket-label').textContent=g.label;
+  view.innerHTML='';
+  requestAnimationFrame(()=>{
+    if(_assignMode){
+      const panel=document.createElement('div');
+      panel.style.cssText='margin-bottom:16px;padding:12px 14px;background:rgba(76,201,240,.05);border:1px solid rgba(76,201,240,.2);border-radius:10px;';
+      panel.innerHTML=`<div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:10px;">✏️ 슬롯을 클릭해서 참가자를 지정하세요</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
+          ${g.slots.map(s=>`<div onclick="selectSlot(${s.num})" style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--card);border:1px solid ${_assignSlotNum===s.num?'var(--accent)':'var(--border)'};border-radius:7px;cursor:pointer;">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);font-weight:700;width:22px;">#${s.num}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${s.player.color||'var(--text3)'};"></div>
+            <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.player.name}</span>
+          </div>`).join('')}
+        </div>
+        ${_assignSlotNum?`<div style="margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--accent);border-radius:8px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:700;">#${_assignSlotNum} 슬롯에 배정:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${g.slots.map((s,si)=>`<button onclick="assignPlayerToSlot(${_assignSlotNum},${si})" style="padding:4px 10px;background:${s.num===_assignSlotNum?'rgba(230,57,70,.2)':'var(--card2)'};border:1px solid ${s.num===_assignSlotNum?'var(--red)':'var(--border)'};color:var(--text);border-radius:6px;font-size:11px;">#${s.num} ${s.player.name}</button>`).join('')}
+          </div></div>`:''}`;
+      view.appendChild(panel);
+    }
+    // step4.js의 render 함수 사용
+    const saved=S.matches;
+    try{
+      S.matches=g.matches;
+      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
+      (fns[_layout]||renderBracketA)(view);
+    } finally { S.matches=saved; }
+  });
+}
+
+function selectSlot(num){ _assignSlotNum=(_assignSlotNum===num)?null:num; renderBracketView(S.activeGroup); }
+
+function assignPlayerToSlot(targetNum,fromIdx){
+  const g=S.groupBrackets[S.activeGroup];
+  const ti=g.slots.findIndex(s=>s.num===targetNum);if(ti<0)return;
+  const tmp=g.slots[ti].player;g.slots[ti].player=g.slots[fromIdx].player;g.slots[fromIdx].player=tmp;
+  g.matches=generateBracket(g.slots.map(s=>s.player));
+  _assignSlotNum=null;renderBracketView(S.activeGroup);toast('슬롯 배정 완료!','success');
+}
+
+function shuffleGroupBracket(){
+  const g=S.groupBrackets[S.activeGroup];
+  g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
+  g.matches=generateBracket(g.slots.map(s=>s.player));
+  renderBracketView(S.activeGroup);toast(g.label+' 무작위로 섞었어요','success');
+}
+
+function toggleAssignMode(){
+  _assignMode=!_assignMode;_linkSel=null;
+  const btn=document.getElementById('btn-assign');
+  btn.style.borderColor=_assignMode?'var(--accent)':'var(--border)';
+  btn.style.background=_assignMode?'rgba(76,201,240,.15)':'transparent';
+  btn.style.color=_assignMode?'var(--accent)':'var(--text3)';
+  btn.textContent=_assignMode?'✏️ 지정중... (취소)':'✏️ 지정';
+  renderBracketView(S.activeGroup);
+}
+
+function setBracketLayout(mode){
+  _layout=mode;
+  ['A','B','C','D','E'].forEach(l=>{
+    const btn=document.getElementById('lay-'+l);if(!btn)return;
+    btn.style.borderColor=l===mode?'var(--red)':'var(--border2)';
+    btn.style.background=l===mode?'rgba(230,57,70,.2)':'transparent';
+    btn.style.color=l===mode?'var(--red)':'var(--text2)';
+  });
+  renderBracketView(S.activeGroup);
+}
+
+function addRound(){ toast('경기 박스를 클릭해서 연결하세요','info'); }
+
+function removeLastRound(){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!g||g.matches.length<=1){toast('1라운드는 삭제할 수 없어요','info');return;}
+  g.matches.pop();renderBracketView(S.activeGroup);toast('마지막 라운드 삭제됨','success');
+}
+
+function applyBracket(){
+  const g=S.groupBrackets[S.activeGroup];
+  // postMessage로 부모창에 전달
+  if(window.opener){
+    window.opener.postMessage({
+      type:'sgp_apply_bracket',
+      matches:g.matches,
+      label:g.label,
+      matchPts:g.slots.map(s=>s.player?.id).filter(Boolean).join(','),
+      groupBrackets:S.groupBrackets,
+      activeGroup:S.activeGroup
+    },'*');
+  }
+  toast(g.label+' 대진표 적용 완료!','success');
+  setTimeout(()=>window.close(), 700);
+}
+
+// ── 매치 클릭 연결 ──
+function onMatchClick(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!_linkSel){
+    _linkSel={ri,mi};renderBracketView(S.activeGroup);_showLinkBar(ri,mi);
+  } else {
+    if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
+    const a=_linkSel,b={ri,mi};_linkSel=null;_hideLinkBar();
+    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
+    if(!g.matches[a.ri+1])g.matches.push([]);
+    const nextRound=g.matches[a.ri+1];
+    const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
+    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+    nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+    renderBracketView(S.activeGroup);toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
+  }
+}
+
+function advanceMatch(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];_linkSel=null;_hideLinkBar();
+  if(!g.matches[ri+1])g.matches.push([]);
+  const nextRound=g.matches[ri+1];
+  const aKey=`${ri}-${mi}`;
+  if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결됨','error');renderBracketView(S.activeGroup);return;}
+  nextRound.push({p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  renderBracketView(S.activeGroup);toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+}
+
+function _showLinkBar(ri,mi){
+  let bar=document.getElementById('link-action-bar');
+  if(!bar){bar=document.createElement('div');bar.id='link-action-bar';bar.style.cssText='position:sticky;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;z-index:10;';document.getElementById('bracket-view').parentNode.appendChild(bar);}
+  bar.innerHTML=`<span style="font-size:11px;color:var(--accent);font-weight:700;">${ri+1}-${mi+1} 선택됨</span>
+    <span style="font-size:11px;color:var(--text3);">→ 다른 경기 클릭시 연결 / 또는:</span>
+    <button onclick="advanceMatch(${ri},${mi})" style="padding:4px 12px;background:var(--green);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">▶ 다음으로 직행</button>
+    <button onclick="_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>`;
+}
+function _hideLinkBar(){const bar=document.getElementById('link-action-bar');if(bar)bar.remove();}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')window.close();});
+
+// 초기화
+renderList();
+</script>
 
 function toast(msg, type='info'){
   const c=document.getElementById('tc');
@@ -472,5 +814,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')window.close();});
 // 초기화
 renderList();
 </script>
+<!-- step4.js: generateBracket, renderBracketA~E 등 대진표 렌더 함수 로드 -->
+<script src="js/step4.js"></script>
 </body>
 </html>
