@@ -112,11 +112,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 <!-- step4.js 로드: generateBracket, renderBracketA~E 함수 사용 -->
 <script src="js/step4.js"></script>
 <script>
-// ── localStorage에서 참가자 데이터 읽기 ──
 let _pts = [];
-try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) {}
-
-// step4.js가 전역에서 참조하는 S 객체
 let S = { pts:_pts, matches:[], groupBrackets:[], activeGroup:0, laps:1 };
 
 function toast(msg, type='info'){
@@ -131,6 +127,12 @@ function toast(msg, type='info'){
 window.addEventListener('message', e=>{
   if(!e.data||e.data.type!=='sgp_pts_update') return;
   _pts=e.data.pts||[]; S.pts=_pts; renderList();
+});
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) {}
+  S.pts = _pts;
+  renderList();
 });
 
 let _sortKeys=[], _groups={}, _mode='tournament';
@@ -443,7 +445,6 @@ function _showLinkBar(ri,mi){
 function _hideLinkBar(){ const bar=document.getElementById('link-action-bar'); if(bar) bar.remove(); }
 
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); });
-renderList();
 </script>
 </body>
 </html>

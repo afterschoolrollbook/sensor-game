@@ -1781,25 +1781,19 @@ let _ptsMode='tournament';
 function openPtsPopup(){
   document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  // localStorage로 참가자 데이터 전달 (cross-origin 우회)
   try{localStorage.setItem('sgp_bw_pts', JSON.stringify(S.pts));}catch(e){}
   if(window._ptsWin&&!window._ptsWin.closed){
-    // 이미 열려있으면 데이터 갱신 후 포커스
     try{window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');}catch(e){}
     window._ptsWin.focus();return;
   }
-  window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
+  setTimeout(()=>{
+    window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
+  },50);
 }
 
 // bracket-window에서 대진표 적용 요청 수신
 window.addEventListener('message',e=>{
-  if(!e.data)return;
-  // 참가자 데이터 재요청
-  if(e.data.type==='sgp_pts_request'){
-    try{e.source.postMessage({type:'sgp_pts_update',pts:S.pts},'*');}catch(ex){}
-    return;
-  }
-  if(e.data.type!=='sgp_apply_bracket')return;
+  if(!e.data||e.data.type!=='sgp_apply_bracket')return;
   const d=e.data;
   S.matches=d.matches;S.matchLabel=d.label;S.matchProc='tournament';S.proc='ind-tour';
   S.matchPts=d.matchPts;S.curMatch=0;
