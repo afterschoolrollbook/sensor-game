@@ -319,6 +319,12 @@ function renderBracketView(groupIdx){
   const g=S.groupBrackets[groupIdx];
   const view=document.getElementById('pts-bracket-view');
   document.getElementById('pts-bracket-label').textContent=g.label;
+
+  // 스크롤 위치 저장 (inner 스크롤 컨테이너 — step4.js가 overflow:auto로 생성)
+  const prevScroll=view.querySelector('div[style*="overflow:auto"], div[style*="overflow: auto"]');
+  const savedScrollLeft=prevScroll?prevScroll.scrollLeft:0;
+  const savedScrollTop=prevScroll?prevScroll.scrollTop:0;
+
   view.innerHTML='';
   requestAnimationFrame(()=>{
     if(_assignMode){
@@ -346,7 +352,13 @@ function renderBracketView(groupIdx){
       (fns[_bracketLayout]||renderBracketA)(view);
       // step4.js가 생성한 첫번째 자식 div에 flex:1 + overflow:auto 부여 → 스크롤바 1개
       const inner=view.querySelector('div:not([style*="rgba"])');
-      if(inner){inner.style.flex='1';inner.style.minHeight='0';}
+      if(inner){
+        inner.style.flex='1';
+        inner.style.minHeight='0';
+        // 스크롤 위치 복원
+        inner.scrollLeft=savedScrollLeft;
+        inner.scrollTop=savedScrollTop;
+      }
     } finally { S.matches=saved; }
   });
 }
