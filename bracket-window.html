@@ -102,11 +102,6 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
       </div>
     </div>
-    <!-- 홀수 경기 시 부전승 배정 버튼 -->
-    <div id="bye-notice-bar" style="display:none;padding:8px 18px;background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.2);flex-shrink:0;align-items:center;gap:10px;">
-      <span style="font-size:12px;color:var(--yellow);font-weight:700;">⚠️ 경기 수가 홀수입니다 — 부전승을 배정해주세요</span>
-      <button id="bye-notice-btn" onclick="triggerByeSelector()" style="margin-left:auto;padding:5px 14px;background:rgba(255,214,10,.15);border:1px solid var(--yellow);color:var(--yellow);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🎯 부전승 배정</button>
-    </div>
     <!-- step4.js가 getElementById('pts-bracket-tabs'), getElementById('pts-bracket-view') 로 접근 -->
     <div id="pts-bracket-tabs" style="display:none;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;gap:6px;background:var(--bg2);"></div>
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
@@ -568,12 +563,19 @@ function renderBracketView(groupIdx){
       }
     } finally { S.matches=saved; }
 
-    // 홀수 경기 라운드 감지 → 상단 부전승 배정 버튼 표시/숨김
-    const hasUnassignedBye=g.matches.some((round, ri)=>
-      round.length>=2 && round.length%2===1 && !(g.matches[ri+1]||[]).some(m=>m.bye)
-    );
-    const bar=document.getElementById('bye-notice-bar');
-    if(bar) bar.style.display=hasUnassignedBye?'flex':'none';
+    // 홀수 경기 라운드 감지 → 해당 라운드 컬럼 레이블 위에 버튼 삽입
+    g.matches.forEach((round, ri)=>{
+      if(round.length<2 || round.length%2===0) return;
+      if((g.matches[ri+1]||[]).some(m=>m.bye)) return;
+      // 해당 라운드 컬럼 찾기 (data-ri 속성으로)
+      const col=view.querySelector(`[data-ri="${ri}"]`)?.closest('div[style*="flex-direction:column"]');
+      if(!col) return;
+      const btn=document.createElement('button');
+      btn.style.cssText='width:100%;padding:5px 8px;background:rgba(255,214,10,.15);border:1px solid var(--yellow, #ffd60a);color:var(--yellow, #ffd60a);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:4px;';
+      btn.textContent='🎯 부전승 배정';
+      btn.onclick=()=>triggerByeSelector();
+      col.insertBefore(btn, col.firstChild);
+    });
   });
 }
 
