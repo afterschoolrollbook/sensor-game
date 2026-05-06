@@ -563,8 +563,9 @@ function renderBracketView(groupIdx){
       }
     } finally { S.matches=saved; }
 
-    // 홀수 경기 라운드 감지 → 해당 라운드 컬럼 레이블 위에 버튼 삽입
+    // 다음 라운드가 존재하고 홀수일 때 해당 라운드 컬럼 위에 버튼 삽입
     g.matches.forEach((round, ri)=>{
+      if(ri===0) return; // 1라운드는 체크 안 함
       if(round.length<2 || round.length%2===0) return;
       if((g.matches[ri+1]||[]).some(m=>m.bye)) return;
       const col=view.querySelector(`[data-col="${ri}"]`);
