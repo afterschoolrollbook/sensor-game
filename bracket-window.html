@@ -355,9 +355,11 @@ function renderBracketView(groupIdx){
       if(inner){
         inner.style.flex='1';
         inner.style.minHeight='0';
-        // 스크롤 위치 복원
-        inner.scrollLeft=savedScrollLeft;
-        inner.scrollTop=savedScrollTop;
+        // 스크롤 위치 복원 — rAF 한 번 더 뒤로 미뤄서 클릭 이벤트 처리 후 복원
+        requestAnimationFrame(()=>{
+          inner.scrollLeft=savedScrollLeft;
+          inner.scrollTop=savedScrollTop;
+        });
       }
     } finally { S.matches=saved; }
   });
