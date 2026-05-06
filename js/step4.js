@@ -650,10 +650,82 @@ function renderBracketA(wrap){_renderBracketHTML(wrap,S.matches,'top');}
 function renderBracketB(wrap){_renderBracketHTML(wrap,S.matches,'bottom');}
 /* C: 가운데 정렬 */
 function renderBracketC(wrap){_renderBracketHTML(wrap,S.matches,'center');}
-/* D: 결승→1라운드 방향 (역순) */
-function renderBracketD(wrap){_renderBracketHTML(wrap,[...S.matches].reverse(),'center',true);}
-/* E: 결승→1라운드 방향, 위 정렬 */
-function renderBracketE(wrap){_renderBracketHTML(wrap,[...S.matches].reverse(),'top',true);}
+
+
+/* ── D: 양쪽→가운데 ──
+   참가자를 절반으로 나눠 왼쪽 서브트리(→오른쪽)와
+   오른쪽 서브트리(←왼쪽)가 결승에서 만남 */
+function renderBracketD(wrap){
+  const allMatches=S.matches;
+  if(!allMatches||!allMatches.length)return;
+
+  // 1라운드를 절반씩 분리
+  const r0=allMatches[0];
+  const half=Math.ceil(r0.length/2);
+
+  // 각 라운드를 left/right로 분리
+  const leftRounds=[], rightRounds=[];
+  allMatches.forEach((round,ri)=>{
+    const size=Math.ceil(round.length/2);
+    leftRounds.push(round.slice(0,size));
+    rightRounds.push(round.slice(size));
+  });
+  // 결승은 공유 (마지막 라운드)
+  const finalMatch=allMatches[allMatches.length-1];
+
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='position:relative;display:flex;align-items:center;gap:0;overflow:auto;padding-bottom:8px;';
+
+  // 왼쪽: 정방향 세로트리
+  const leftDiv=document.createElement('div');
+  _renderBracketHTML(leftDiv, leftRounds.length>1?leftRounds:allMatches, 'top', false);
+
+  // 오른쪽: 역방향 세로트리 (결승이 왼쪽에 오도록)
+  const rightDiv=document.createElement('div');
+  _renderBracketHTML(rightDiv, rightRounds.length>1?[...rightRounds].reverse():allMatches, 'top', true);
+
+  outerWrap.appendChild(leftDiv);
+  outerWrap.appendChild(rightDiv);
+  wrap.appendChild(outerWrap);
+}
+
+/* ── E: 위아래→가운데 ──
+   참가자를 절반으로 나눠 위쪽 서브트리(↓)와
+   아래쪽 서브트리(↑)가 결승에서 만남 */
+function renderBracketE(wrap){
+  const allMatches=S.matches;
+  if(!allMatches||!allMatches.length)return;
+
+  const r0=allMatches[0];
+  const half=Math.ceil(r0.length/2);
+
+  // 각 라운드를 top/bottom으로 분리
+  const topRounds=[], botRounds=[];
+  allMatches.forEach((round,ri)=>{
+    const size=Math.ceil(round.length/2);
+    topRounds.push(round.slice(0,size));
+    botRounds.push(round.slice(size));
+  });
+
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;overflow:auto;padding-bottom:8px;';
+
+  // 위쪽: top-down 가로트리
+  const topDiv=document.createElement('div');
+  _renderBracketHoriz(topDiv, topRounds.length>1?topRounds:allMatches, 'top-down');
+
+  // 아래쪽: bottom-up 가로트리 (결승이 위쪽에 오도록, 역순)
+  const botDiv=document.createElement('div');
+  _renderBracketHoriz(botDiv, botRounds.length>1?[...botRounds].reverse():allMatches, 'bottom-up');
+
+  outerWrap.appendChild(topDiv);
+  outerWrap.appendChild(botDiv);
+  wrap.appendChild(outerWrap);
+}
+
+
+
+
 
 /* ── 다음 라운드 추가 ── */
 function addNextRound(){
