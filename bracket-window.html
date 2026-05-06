@@ -344,38 +344,45 @@ function generateAllBrackets(){
 
 // 부전승 배정 선택 팝업
 function showByeSelector(players, groupLabel, onSelect, onRandom){
+  // 기존 팝업 제거
+  const existing=document.getElementById('bye-selector-overlay');
+  if(existing) existing.remove();
+
   const overlay=document.createElement('div');
   overlay.id='bye-selector-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
 
   const box=document.createElement('div');
-  box.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:20px;min-width:320px;max-width:480px;max-height:80vh;display:flex;flex-direction:column;gap:14px;';
+  box.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:20px;min-width:340px;max-width:500px;max-height:80vh;display:flex;flex-direction:column;gap:14px;position:relative;';
 
   box.innerHTML=`
-    <div>
-      <div style="font-size:10px;color:var(--red);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:4px;">// 부전승 배정</div>
-      <div style="font-size:15px;font-weight:700;">${groupLabel} — 홀수(${players.length}명)</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">부전승을 받을 선수를 선택하거나 랜덤 추첨하세요</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-size:10px;color:var(--red);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:6px;">// 부전승 배정</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">${groupLabel}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">
+          경기 수가 홀수입니다.<br>
+          한 명이 부전승(자동 진출)을 받아야 합니다.<br>
+          아래에서 선택하거나 랜덤 추첨하세요.
+        </div>
+      </div>
+      <button id="bye-close-btn" style="flex-shrink:0;width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text3);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
-    <button id="bye-random-btn" style="padding:9px;background:rgba(76,201,240,.12);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🎲 랜덤 추첨</button>
+    <button id="bye-random-btn" style="padding:10px;background:rgba(76,201,240,.12);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🎲 랜덤 추첨</button>
     <div style="font-size:10px;color:var(--text3);text-align:center;letter-spacing:1px;">또는 직접 선택</div>
     <div id="bye-player-list" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:300px;"></div>
   `;
 
-  overlay._players=players;
-  overlay._onRandom=onRandom;
-
   const list=box.querySelector('#bye-player-list');
   players.forEach(p=>{
     const btn=document.createElement('button');
-    btn.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:13px;font-weight:600;text-align:left;transition:border-color .15s;';
+    btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:13px;font-weight:600;text-align:left;transition:border-color .15s;width:100%;';
     btn.onmouseover=()=>btn.style.borderColor='var(--red)';
     btn.onmouseout=()=>btn.style.borderColor='var(--border)';
-    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div><span>${p.name}</span>`;
+    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--accent)'};flex-shrink:0;"></div><span>${p.name}</span>`;
     btn.onclick=()=>{
       overlay.remove();
       onSelect(p);
-      toast(p.name+' 부전승 배정!','success');
     };
     list.appendChild(btn);
   });
@@ -383,10 +390,13 @@ function showByeSelector(players, groupLabel, onSelect, onRandom){
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 
-  // 랜덤 버튼 이벤트
   box.querySelector('#bye-random-btn').addEventListener('click',()=>{
     overlay.remove();
     onRandom();
+  });
+
+  box.querySelector('#bye-close-btn').addEventListener('click',()=>{
+    overlay.remove();
   });
 }
 
@@ -522,40 +532,6 @@ function renderBracketView(groupIdx){
         });
       }
     } finally { S.matches=saved; }
-
-    // 현재 보이는 경기 수가 홀수면 즉시 부전승 팝업
-    if(!document.getElementById('bye-selector-overlay')){
-      const lastRi=g.matches.length-1;
-      const lastRound=g.matches[lastRi];
-      const alreadyHasBye=(g.matches[lastRi+1]||[]).some(m=>m.bye);
-      if(lastRound && lastRound.length%2===1 && !alreadyHasBye){
-        const candidates=lastRound.map((m,mi)=>({
-          id:`bye_${lastRi}_${mi}`,
-          name:`${lastRi+1}-${mi+1} 승자`,
-          color:'var(--accent)',
-          _ri:lastRi, _mi:mi
-        }));
-        showByeSelector(
-          candidates,
-          `${lastRound.length}명 중 부전승 배정`,
-          (sel)=>{
-            if(!g.matches[lastRi+1]) g.matches.push([]);
-            const key=`${sel._ri}-${sel._mi}`;
-            g.matches[lastRi+1].push({p1:{name:sel.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
-            renderBracketView(S.activeGroup);
-            toast(sel.name+' 부전승 배정!','success');
-          },
-          ()=>{
-            const pick=candidates[Math.floor(Math.random()*candidates.length)];
-            if(!g.matches[lastRi+1]) g.matches.push([]);
-            const key=`${pick._ri}-${pick._mi}`;
-            g.matches[lastRi+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
-            renderBracketView(S.activeGroup);
-            toast(pick.name+' 랜덤 부전승!','success');
-          }
-        );
-      }
-    }
   });
 }
 
@@ -619,6 +595,40 @@ function applyBracket(){
   setTimeout(()=>window.close(), 700);
 }
 
+// 특정 라운드가 홀수일 때 부전승 팝업
+function _showByeForRound(g, ri){
+  if(document.getElementById('bye-selector-overlay')) return;
+  const round=g.matches[ri];
+  if(!round || round.length%2===0) return;
+  const candidates=round.map((m,mi)=>({
+    id:`bye_${ri}_${mi}`,
+    name:`${ri+1}-${mi+1} 승자`,
+    color:'var(--accent)',
+    _ri:ri, _mi:mi
+  }));
+  showByeSelector(
+    candidates,
+    `${round.length}명 중 부전승 배정`,
+    (sel)=>{
+      if(!g.matches[ri+1]) g.matches.push([]);
+      const key=`${sel._ri}-${sel._mi}`;
+      if(g.matches[ri+1].find(nm=>nm.fromA===key||nm.fromB===key)) return;
+      g.matches[ri+1].push({p1:{name:sel.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
+      renderBracketView(S.activeGroup);
+      toast(sel.name+' 부전승 배정!','success');
+    },
+    ()=>{
+      const pick=candidates[Math.floor(Math.random()*candidates.length)];
+      if(!g.matches[ri+1]) g.matches.push([]);
+      const key=`${pick._ri}-${pick._mi}`;
+      if(g.matches[ri+1].find(nm=>nm.fromA===key||nm.fromB===key)) return;
+      g.matches[ri+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
+      renderBracketView(S.activeGroup);
+      toast(pick.name+' 랜덤 부전승!','success');
+    }
+  );
+}
+
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
@@ -634,6 +644,17 @@ function onMatchClick(ri,mi){
     nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
     renderBracketView(S.activeGroup);
     toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
+
+    // 현재 라운드 모든 경기가 다음 라운드에 연결 완료됐는지 확인
+    const curRound=g.matches[a.ri];
+    const allLinked=curRound.every((m,mi)=>{
+      const key=`${a.ri}-${mi}`;
+      return nextRound.find(nm=>nm.fromA===key||nm.fromB===key);
+    });
+    // 모두 연결됐고 다음 라운드 경기 수가 홀수면 부전승 팝업
+    if(allLinked && nextRound.length%2===1 && !nextRound.some(m=>m.bye)){
+      _showByeForRound(g, a.ri+1);
+    }
   }
 }
 
