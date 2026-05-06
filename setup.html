@@ -1029,6 +1029,7 @@ function goS(n){
   cs=Math.max(1,Math.min(5,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
+  if(cs===4&&typeof buildProc==='function')buildProc();
   if(cs===5)buildConfirm();
   updatePv();
 }
