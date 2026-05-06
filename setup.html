@@ -1781,21 +1781,17 @@ let _ptsMode='tournament';
 function openPtsPopup(){
   document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  // 1차: localStorage에 미리 저장 (같은 origin이면 팝업이 즉시 읽을 수 있음)
+  // 1차: localStorage에 미리 저장 → bracket-window 로드 즉시 읽을 수 있음
   try{localStorage.setItem('sgp_bw_pts',JSON.stringify(S.pts));}catch(e){}
   if(window._ptsWin&&!window._ptsWin.closed){
-    // 이미 열려 있으면 최신 데이터를 직접 전송 후 포커스
+    // 이미 열려 있으면 최신 데이터 전송 후 포커스
     window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');
     window._ptsWin.focus();
     return;
   }
+  // 2차: bracket-window가 load 완료 후 sgp_pts_request를 보내면
+  //       setup.html의 message 리스너가 sgp_pts_update로 응답함 (확실한 흐름)
   window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
-  // 2차: 팝업 load 완료 후 데이터 push (타이밍 문제 방지)
-  if(window._ptsWin){
-    window._ptsWin.addEventListener('load',()=>{
-      try{window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');}catch(e){}
-    });
-  }
 }
 
 function closePtsPopup(){
@@ -2323,8 +2319,6 @@ window.addEventListener('message',e=>{
     S.proc='ind-tour';
     S.matchPts=e.data.matchPts||'';
     S.curMatch=0;
-    if(e.data.groupBrackets)S.groupBrackets=e.data.groupBrackets;
-    if(e.data.activeGroup!=null)S.activeGroup=e.data.activeGroup;
     try{if(typeof buildProc==='function')buildProc();}catch(err){}
     try{if(typeof updatePv==='function')updatePv();}catch(err){}
     toast((e.data.label||'대진표')+' 적용 완료!','success');
