@@ -1793,7 +1793,13 @@ function openPtsPopup(){
 
 // bracket-window에서 대진표 적용 요청 수신
 window.addEventListener('message',e=>{
-  if(!e.data||e.data.type!=='sgp_apply_bracket')return;
+  if(!e.data)return;
+  // 참가자 데이터 재요청
+  if(e.data.type==='sgp_pts_request'){
+    try{e.source.postMessage({type:'sgp_pts_update',pts:S.pts},'*');}catch(ex){}
+    return;
+  }
+  if(e.data.type!=='sgp_apply_bracket')return;
   const d=e.data;
   S.matches=d.matches;S.matchLabel=d.label;S.matchProc='tournament';S.proc='ind-tour';
   S.matchPts=d.matchPts;S.curMatch=0;
