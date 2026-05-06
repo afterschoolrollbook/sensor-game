@@ -103,7 +103,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       </div>
     </div>
     <!-- 홀수 경기 시 부전승 배정 버튼 -->
-    <div id="bye-notice-bar" style="display:none;padding:8px 18px;background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.2);flex-shrink:0;display:none;align-items:center;gap:10px;">
+    <div id="bye-notice-bar" style="display:none;padding:8px 18px;background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.2);flex-shrink:0;align-items:center;gap:10px;">
       <span style="font-size:12px;color:var(--yellow);font-weight:700;">⚠️ 경기 수가 홀수입니다 — 부전승을 배정해주세요</span>
       <button id="bye-notice-btn" onclick="triggerByeSelector()" style="margin-left:auto;padding:5px 14px;background:rgba(255,214,10,.15);border:1px solid var(--yellow);color:var(--yellow);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🎯 부전승 배정</button>
     </div>
@@ -634,7 +634,10 @@ function triggerByeSelector(){
 }
 
 function _showByeForRound(g, ri){
-  if(document.getElementById('bye-selector-overlay')) return;
+  // 기존 팝업 제거 후 새로 띄움 (버튼으로 재호출 시에도 작동)
+  const existing=document.getElementById('bye-selector-overlay');
+  if(existing) existing.remove();
+
   const round=g.matches[ri];
   if(!round || round.length%2===0) return;
   const candidates=round.map((m,mi)=>({
@@ -669,6 +672,13 @@ function _showByeForRound(g, ri){
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
+    // 홀수 라운드면 linkSel 세팅 전에 부전승 팝업 먼저
+    const nextRound=g.matches[ri+1]||[];
+    const alreadyHasBye=nextRound.some(m=>m.bye);
+    if(g.matches[ri].length%2===1 && !alreadyHasBye){
+      _showByeForRound(g, ri);
+      return;
+    }
     _linkSel={ri,mi}; renderBracketView(S.activeGroup); _showLinkBar(ri,mi);
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
@@ -684,8 +694,8 @@ function onMatchClick(ri,mi){
 
     // 현재 라운드 모든 경기가 다음 라운드에 연결 완료됐는지 확인
     const curRound=g.matches[a.ri];
-    const allLinked=curRound.every((m,mi)=>{
-      const key=`${a.ri}-${mi}`;
+    const allLinked=curRound.every((m,mi2)=>{
+      const key=`${a.ri}-${mi2}`;
       return nextRound.find(nm=>nm.fromA===key||nm.fromB===key);
     });
     // 모두 연결됐고 다음 라운드 경기 수가 홀수면 부전승 팝업
