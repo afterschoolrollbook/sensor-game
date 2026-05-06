@@ -567,11 +567,10 @@ function renderBracketView(groupIdx){
     g.matches.forEach((round, ri)=>{
       if(round.length<2 || round.length%2===0) return;
       if((g.matches[ri+1]||[]).some(m=>m.bye)) return;
-      // 해당 라운드 컬럼 찾기 (data-ri 속성으로)
-      const col=view.querySelector(`[data-ri="${ri}"]`)?.closest('div[style*="flex-direction:column"]');
+      const col=view.querySelector(`[data-col="${ri}"]`);
       if(!col) return;
       const btn=document.createElement('button');
-      btn.style.cssText='width:100%;padding:5px 8px;background:rgba(255,214,10,.15);border:1px solid var(--yellow, #ffd60a);color:var(--yellow, #ffd60a);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:4px;';
+      btn.style.cssText='width:100%;padding:5px 8px;background:rgba(255,214,10,.15);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:4px;flex-shrink:0;';
       btn.textContent='🎯 부전승 배정';
       btn.onclick=()=>triggerByeSelector();
       col.insertBefore(btn, col.firstChild);
