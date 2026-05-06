@@ -522,6 +522,40 @@ function renderBracketView(groupIdx){
         });
       }
     } finally { S.matches=saved; }
+
+    // 현재 보이는 경기 수가 홀수면 즉시 부전승 팝업
+    if(!document.getElementById('bye-selector-overlay')){
+      const lastRi=g.matches.length-1;
+      const lastRound=g.matches[lastRi];
+      const alreadyHasBye=(g.matches[lastRi+1]||[]).some(m=>m.bye);
+      if(lastRound && lastRound.length%2===1 && !alreadyHasBye){
+        const candidates=lastRound.map((m,mi)=>({
+          id:`bye_${lastRi}_${mi}`,
+          name:`${lastRi+1}-${mi+1} 승자`,
+          color:'var(--accent)',
+          _ri:lastRi, _mi:mi
+        }));
+        showByeSelector(
+          candidates,
+          `${lastRound.length}명 중 부전승 배정`,
+          (sel)=>{
+            if(!g.matches[lastRi+1]) g.matches.push([]);
+            const key=`${sel._ri}-${sel._mi}`;
+            g.matches[lastRi+1].push({p1:{name:sel.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
+            renderBracketView(S.activeGroup);
+            toast(sel.name+' 부전승 배정!','success');
+          },
+          ()=>{
+            const pick=candidates[Math.floor(Math.random()*candidates.length)];
+            if(!g.matches[lastRi+1]) g.matches.push([]);
+            const key=`${pick._ri}-${pick._mi}`;
+            g.matches[lastRi+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
+            renderBracketView(S.activeGroup);
+            toast(pick.name+' 랜덤 부전승!','success');
+          }
+        );
+      }
+    }
   });
 }
 
@@ -593,9 +627,6 @@ function onMatchClick(ri,mi){
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
     const a=_linkSel,b={ri,mi}; _linkSel=null; _hideLinkBar();
     if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
-
-    // 다음 라운드가 처음 생성되는 시점에 홀수 체크 → 바로 부전승 팝업
-    const isNewRound=!g.matches[a.ri+1];
     if(!g.matches[a.ri+1]) g.matches.push([]);
     const nextRound=g.matches[a.ri+1];
     const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
@@ -603,25 +634,17 @@ function onMatchClick(ri,mi){
     nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
     renderBracketView(S.activeGroup);
     toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
-    // 현재 라운드 진출자가 홀수면 부전승 팝업
-    if(isNewRound && g.matches[a.ri].length%2===1){
-      _checkAndHandleOddAfterLink(g, a.ri);
-    }
   }
 }
 
 function advanceMatch(ri,mi){
   const g=S.groupBrackets[S.activeGroup]; _linkSel=null; _hideLinkBar();
-  const isNewRound=!g.matches[ri+1];
   if(!g.matches[ri+1]) g.matches.push([]);
   const nextRound=g.matches[ri+1];
   const aKey=`${ri}-${mi}`;
   if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
   nextRound.push({p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
   renderBracketView(S.activeGroup); toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
-  if(isNewRound && g.matches[ri].length%2===1){
-    _checkAndHandleOddAfterLink(g, ri);
-  }
 }
 
 function _showLinkBar(ri,mi){
