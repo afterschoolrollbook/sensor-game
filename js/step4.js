@@ -644,87 +644,195 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   }));
 }
 
-/* A: 위 정렬 */
+
+/* ────────────────────────────────────────────────
+   가로 트리 렌더러 (B: 아래→위, C: 위→아래)
+   1라운드가 가로로 나열, 다음 라운드가 위 or 아래로 쌓임
+──────────────────────────────────────────────── */
+function _renderBracketHoriz(wrap, rounds, direction){
+  const BOX_W=160, BOX_H=52, ROW_GAP=48, COL_GAP=20, PAD=16, LABEL_H=20;
+  const T=rounds.length;
+  const r0len=rounds[0].length;
+
+  // 각 매치의 중앙 X: 재귀로 소스 두 박스 평균
+  const calcCx=(ri,mi)=>{
+    if(ri===0) return PAD+mi*(BOX_W+COL_GAP)+BOX_W/2;
+    const srcA=mi*2, srcB=mi*2+1;
+    const cxA=calcCx(ri-1,srcA);
+    const cxB=srcB<rounds[ri-1].length?calcCx(ri-1,srcB):cxA;
+    return(cxA+cxB)/2;
+  };
+
+  // 각 라운드의 top Y
+  // bottom-up: ri=0이 맨 아래
+  // top-down:  ri=0이 맨 위
+  const rowY=(ri)=>{
+    const labelOff=LABEL_H+8;
+    if(direction==='bottom-up') return labelOff+(T-1-ri)*(BOX_H+ROW_GAP);
+    return labelOff+ri*(BOX_H+ROW_GAP);
+  };
+
+  const totalW=PAD*2+r0len*(BOX_W+COL_GAP)-COL_GAP;
+  const totalH=LABEL_H+8+T*(BOX_H+ROW_GAP)-ROW_GAP+16;
+
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='position:relative;overflow:auto;padding-bottom:8px;';
+
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width',Math.max(totalW,300));
+  svg.setAttribute('height',totalH);
+  svg.style.cssText='display:block;overflow:visible;';
+
+  const PATH=(d)=>{
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',d);
+    p.setAttribute('stroke','#2a2a50');
+    p.setAttribute('stroke-width','1.5');
+    p.setAttribute('fill','none');
+    svg.appendChild(p);
+  };
+
+  const names=['1라운드','2라운드','3라운드','4라운드','준결승','결승'];
+  const getName=(ri)=>ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':names[ri]||`${ri+1}라운드`;
+
+  rounds.forEach((matches,ri)=>{
+    const ry=rowY(ri);
+
+    // 라운드 라벨
+    const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    lt.setAttribute('x',calcCx(ri,0));
+    lt.setAttribute('y',direction==='bottom-up'?ry-6:ry-6);
+    lt.setAttribute('text-anchor','middle');
+    lt.setAttribute('fill','#444');lt.setAttribute('font-size','9');
+    lt.setAttribute('font-family','Share Tech Mono,monospace');
+    lt.textContent=getName(ri); svg.appendChild(lt);
+
+    matches.forEach((m,mi)=>{
+      const cx=calcCx(ri,mi);
+      const x=cx-BOX_W/2, y=ry;
+      const isBye=m.p1&&!m.p2;
+      const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
+
+      // 박스
+      const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x',x);rect.setAttribute('y',y);
+      rect.setAttribute('width',BOX_W);rect.setAttribute('height',BOX_H);
+      rect.setAttribute('rx','5');
+      rect.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
+      rect.setAttribute('stroke',isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
+      rect.setAttribute('stroke-width',isCur?'1.5':'1');
+      svg.appendChild(rect);
+
+      // 매치 번호
+      const num=document.createElementNS('http://www.w3.org/2000/svg','text');
+      num.setAttribute('x',x+5);num.setAttribute('y',y+11);
+      num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
+      num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
+      num.textContent=isBye?`${ri+1}-${mi+1} BYE`:`${ri+1}-${mi+1}`; svg.appendChild(num);
+
+      const cy=y+BOX_H/2;
+      if(isBye){
+        const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+        t.setAttribute('x',cx);t.setAttribute('y',cy+5);
+        t.setAttribute('text-anchor','middle');t.setAttribute('fill','#d0d0d0');
+        t.setAttribute('font-size','12');t.setAttribute('font-weight','600');
+        t.setAttribute('font-family','Noto Sans KR,sans-serif');
+        t.textContent=m.p1?m.p1.name:'?'; svg.appendChild(t);
+      } else {
+        const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
+        vl.setAttribute('x1',cx);vl.setAttribute('y1',y);
+        vl.setAttribute('x2',cx);vl.setAttribute('y2',y+BOX_H);
+        vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1'); svg.appendChild(vl);
+        const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
+        vs.setAttribute('x',cx);vs.setAttribute('y',cy+5);
+        vs.setAttribute('text-anchor','middle');vs.setAttribute('fill','#e63946');
+        vs.setAttribute('font-size','11');vs.setAttribute('font-family','Bebas Neue,cursive');
+        vs.textContent='VS'; svg.appendChild(vs);
+        [[cx-BOX_W/4,'end',m.p1],[cx+BOX_W/4,'start',m.p2]].forEach(([tx,anchor,p])=>{
+          const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+          t.setAttribute('x',tx);t.setAttribute('y',cy+5);
+          t.setAttribute('text-anchor',anchor);
+          t.setAttribute('fill',p?'#d0d0d0':'#2a2a3e');
+          t.setAttribute('font-size','11');t.setAttribute('font-weight','600');
+          t.setAttribute('font-family','Noto Sans KR,sans-serif');
+          t.textContent=p?p.name:'?'; svg.appendChild(t);
+        });
+      }
+
+      // 연결선: 현재 박스 → 다음 라운드
+      if(ri<T-1){
+        const ncx=calcCx(ri+1,Math.floor(mi/2));
+        const nry=rowY(ri+1);
+        // bottom-up: 박스 위에서 나가서 위쪽 행으로
+        // top-down:  박스 아래에서 나가서 아래쪽 행으로
+        const fromY=direction==='bottom-up'?y:y+BOX_H;
+        const toY=direction==='bottom-up'?nry+BOX_H:nry;
+        const midY=(fromY+toY)/2;
+        PATH(`M${cx},${fromY} V${midY} H${ncx} V${toY}`);
+      }
+    });
+  });
+
+  outerWrap.appendChild(svg);
+  wrap.appendChild(outerWrap);
+}
+
+/* ────────────────────────────────────────────────
+   A: 세로 트리 (왼→오, 1라운드 위에서 아래로)
+   B: 가로 트리 (1라운드 맨 아래 → 결승 맨 위)
+   C: 가로 트리 (1라운드 맨 위 → 결승 맨 아래)
+   D: 세로 트리 두 개가 양쪽에서 가운데 결승으로
+   E: 가로 트리 두 개가 위아래에서 가운데 결승으로
+──────────────────────────────────────────────── */
 function renderBracketA(wrap){_renderBracketHTML(wrap,S.matches,'top');}
-/* B: 아래 정렬 */
-function renderBracketB(wrap){_renderBracketHTML(wrap,S.matches,'bottom');}
-/* C: 가운데 정렬 */
-function renderBracketC(wrap){_renderBracketHTML(wrap,S.matches,'center');}
+function renderBracketB(wrap){_renderBracketHoriz(wrap,S.matches,'bottom-up');}
+function renderBracketC(wrap){_renderBracketHoriz(wrap,S.matches,'top-down');}
 
-
-/* ── D: 양쪽→가운데 ──
-   참가자를 절반으로 나눠 왼쪽 서브트리(→오른쪽)와
-   오른쪽 서브트리(←왼쪽)가 결승에서 만남 */
 function renderBracketD(wrap){
-  const allMatches=S.matches;
-  if(!allMatches||!allMatches.length)return;
-
-  // 1라운드를 절반씩 분리
-  const r0=allMatches[0];
-  const half=Math.ceil(r0.length/2);
-
-  // 각 라운드를 left/right로 분리
+  if(!S.matches||!S.matches.length)return;
+  // 각 라운드를 절반으로 나눠 왼쪽/오른쪽 서브트리 구성
   const leftRounds=[], rightRounds=[];
-  allMatches.forEach((round,ri)=>{
-    const size=Math.ceil(round.length/2);
-    leftRounds.push(round.slice(0,size));
-    rightRounds.push(round.slice(size));
+  S.matches.forEach(round=>{
+    const h=Math.ceil(round.length/2);
+    leftRounds.push(round.slice(0,h));
+    rightRounds.push(round.slice(h));
   });
-  // 결승은 공유 (마지막 라운드)
-  const finalMatch=allMatches[allMatches.length-1];
-
+  // 결승은 마지막 라운드 공유 — 왼쪽 마지막 라운드가 결승
   const outerWrap=document.createElement('div');
-  outerWrap.style.cssText='position:relative;display:flex;align-items:center;gap:0;overflow:auto;padding-bottom:8px;';
-
-  // 왼쪽: 정방향 세로트리
-  const leftDiv=document.createElement('div');
-  _renderBracketHTML(leftDiv, leftRounds.length>1?leftRounds:allMatches, 'top', false);
-
-  // 오른쪽: 역방향 세로트리 (결승이 왼쪽에 오도록)
-  const rightDiv=document.createElement('div');
-  _renderBracketHTML(rightDiv, rightRounds.length>1?[...rightRounds].reverse():allMatches, 'top', true);
-
-  outerWrap.appendChild(leftDiv);
-  outerWrap.appendChild(rightDiv);
+  outerWrap.style.cssText='display:flex;flex-direction:row;align-items:center;overflow:auto;padding-bottom:8px;';
+  const lDiv=document.createElement('div');
+  const rDiv=document.createElement('div');
+  // 왼쪽: 정방향 (결승이 오른쪽)
+  _renderBracketHTML(lDiv,leftRounds,'top',false);
+  // 오른쪽: 역방향 (결승이 왼쪽)
+  const rightReversed=[...rightRounds].reverse();
+  _renderBracketHTML(rDiv,rightReversed,'top',true);
+  outerWrap.appendChild(lDiv);
+  outerWrap.appendChild(rDiv);
   wrap.appendChild(outerWrap);
 }
 
-/* ── E: 위아래→가운데 ──
-   참가자를 절반으로 나눠 위쪽 서브트리(↓)와
-   아래쪽 서브트리(↑)가 결승에서 만남 */
 function renderBracketE(wrap){
-  const allMatches=S.matches;
-  if(!allMatches||!allMatches.length)return;
-
-  const r0=allMatches[0];
-  const half=Math.ceil(r0.length/2);
-
-  // 각 라운드를 top/bottom으로 분리
+  if(!S.matches||!S.matches.length)return;
+  // 각 라운드를 절반으로 나눠 위/아래 서브트리 구성
   const topRounds=[], botRounds=[];
-  allMatches.forEach((round,ri)=>{
-    const size=Math.ceil(round.length/2);
-    topRounds.push(round.slice(0,size));
-    botRounds.push(round.slice(size));
+  S.matches.forEach(round=>{
+    const h=Math.ceil(round.length/2);
+    topRounds.push(round.slice(0,h));
+    botRounds.push(round.slice(h));
   });
-
   const outerWrap=document.createElement('div');
-  outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;overflow:auto;padding-bottom:8px;';
-
-  // 위쪽: top-down 가로트리
-  const topDiv=document.createElement('div');
-  _renderBracketHoriz(topDiv, topRounds.length>1?topRounds:allMatches, 'top-down');
-
-  // 아래쪽: bottom-up 가로트리 (결승이 위쪽에 오도록, 역순)
-  const botDiv=document.createElement('div');
-  _renderBracketHoriz(botDiv, botRounds.length>1?[...botRounds].reverse():allMatches, 'bottom-up');
-
-  outerWrap.appendChild(topDiv);
-  outerWrap.appendChild(botDiv);
+  outerWrap.style.cssText='display:flex;flex-direction:column;overflow:auto;padding-bottom:8px;';
+  const tDiv=document.createElement('div');
+  const bDiv=document.createElement('div');
+  // 위쪽: top-down (결승이 아래)
+  _renderBracketHoriz(tDiv,topRounds,'top-down');
+  // 아래쪽: bottom-up 역순 (결승이 위)
+  _renderBracketHoriz(bDiv,[...botRounds].reverse(),'bottom-up');
+  outerWrap.appendChild(tDiv);
+  outerWrap.appendChild(bDiv);
   wrap.appendChild(outerWrap);
 }
-
-
-
 
 
 /* ── 다음 라운드 추가 ── */
