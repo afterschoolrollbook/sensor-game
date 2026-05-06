@@ -142,7 +142,9 @@ window.addEventListener('load', ()=>{
 });
 
 let _sortKeys=[], _groups={}, _mode='tournament';
-let _assignMode=false, _assignSlotNum=null, _bracketLayout='A', _linkSel=null;
+let _assignMode=false, _assignSlotNum=null, _linkSel=null;
+// _bracketLayout은 step4.js에서 선언됨 — 중복 선언 금지
+
 
 function show(stepId){
   ['pts-step1','pts-step2','pts-step3'].forEach(id=>{
