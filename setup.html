@@ -1781,7 +1781,14 @@ let _ptsMode='tournament';
 function openPtsPopup(){
   document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  if(window._ptsWin&&!window._ptsWin.closed){window._ptsWin.focus();return;}
+  // bracket-window가 localStorage로 1차 읽기 시도하므로 미리 저장
+  try{localStorage.setItem('sgp_bw_pts',JSON.stringify(S.pts));}catch(e){}
+  if(window._ptsWin&&!window._ptsWin.closed){
+    // 이미 열려 있으면 최신 데이터를 직접 전송 후 포커스
+    window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');
+    window._ptsWin.focus();
+    return;
+  }
   window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
 }
 
@@ -2292,5 +2299,30 @@ function initPtsPopupDrag(){
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePtsPopup();});
 document.getElementById('pts-popup').addEventListener('click',e=>{if(e.target===document.getElementById('pts-popup'))closePtsPopup();});
+
+// bracket-window.html과의 메시지 통신
+window.addEventListener('message',e=>{
+  if(!e.data) return;
+  // bracket-window가 열리자마자 데이터 재요청하는 경우 응답
+  if(e.data.type==='sgp_pts_request'){
+    if(window._ptsWin&&!window._ptsWin.closed){
+      window._ptsWin.postMessage({type:'sgp_pts_update',pts:S.pts},'*');
+    }
+  }
+  // bracket-window에서 대진표 확정 & 적용 시 수신
+  if(e.data.type==='sgp_apply_bracket'){
+    S.matches=e.data.matches||[];
+    S.matchLabel=e.data.label||'';
+    S.matchProc='tournament';
+    S.proc='ind-tour';
+    S.matchPts=e.data.matchPts||'';
+    S.curMatch=0;
+    if(e.data.groupBrackets)S.groupBrackets=e.data.groupBrackets;
+    if(e.data.activeGroup!=null)S.activeGroup=e.data.activeGroup;
+    try{if(typeof buildProc==='function')buildProc();}catch(err){}
+    try{if(typeof updatePv==='function')updatePv();}catch(err){}
+    toast((e.data.label||'대진표')+' 적용 완료!','success');
+  }
+});
 </script>
 </body>
