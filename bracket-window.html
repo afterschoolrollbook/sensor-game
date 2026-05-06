@@ -133,13 +133,6 @@ window.addEventListener('message', e=>{
   _pts=e.data.pts||[]; S.pts=_pts; renderList();
 });
 
-// localStorage가 비어있으면 부모창에 데이터 재요청
-if(!_pts.length && window.opener){
-  try{
-    window.opener.postMessage({type:'sgp_pts_request'},'*');
-  }catch(e){}
-}
-
 let _sortKeys=[], _groups={}, _mode='tournament';
 let _assignMode=false, _assignSlotNum=null, _bracketLayout='A', _linkSel=null;
 
