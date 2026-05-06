@@ -994,7 +994,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
-  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();
+  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
   const urlParams=new URLSearchParams(location.search);
   const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
@@ -1029,7 +1029,6 @@ function goS(n){
   cs=Math.max(1,Math.min(5,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
-  if(cs===4&&typeof buildProc==='function')buildProc();
   if(cs===5)buildConfirm();
   updatePv();
 }
@@ -1684,154 +1683,557 @@ function toast(msg,type='info'){
   c.appendChild(d);setTimeout(()=>d.remove(),3000);
 }
 </script>
-<!-- 참가자 보기 (새 창으로 열림) -->
-<div id="pts-popup" style="display:none;"></div>
+<!-- 참가자 보기 팝업 -->
+<div id="pts-popup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.80);overflow:hidden;">
+  <div id="pts-popup-box" style="
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+    width:820px;height:620px;min-width:420px;min-height:340px;
+    display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:0 24px 64px rgba(0,0,0,.6);
+  ">
+    <!-- 헤더 (드래그핸들) -->
+    <div id="pts-popup-hdr" style="padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;cursor:grab;user-select:none;background:var(--bg2);border-radius:14px 14px 0 0;">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:3px;">// PARTICIPANTS</div>
+        <div style="font-size:15px;font-weight:700;" id="pts-popup-title">참가자 명단</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;">드래그 이동 · 우측하단 크기조절</span>
+        <button onclick="closePtsPopup()" style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);font-size:14px;cursor:pointer;padding:4px 10px;border-radius:6px;">✕</button>
+      </div>
+    </div>
+
+    <!-- STEP 1: 그룹 기준 선택 -->
+    <div id="pts-step1" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">① 그룹 기준 선택:</span>
+        <button onclick="togglePtsSort('division')" id="sort-division" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">부문별</button>
+        <button onclick="togglePtsSort('weight')" id="sort-weight" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">체급별</button>
+        <button onclick="togglePtsSort('team')" id="sort-team" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">팀별</button>
+        <span style="font-size:10px;color:var(--text3);">복수 선택 가능</span>
+        <button onclick="confirmPtsGroup()" style="margin-left:auto;padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">확정 →</button>
+      </div>
+      <div id="pts-popup-list" style="flex:1;overflow-y:auto;padding:14px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+    </div>
+
+    <!-- STEP 2: 방식 선택 + 순서 설정 -->
+    <div id="pts-step2" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <!-- 상단: 방식 선택 -->
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;">
+        <button onclick="goStep1Popup()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">← 뒤로</button>
+        <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">② 방식 선택:</span>
+        <button onclick="setPtsMode('tournament')" id="mode-tournament" class="pts-mode-btn" style="padding:5px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-weight:600;transition:all .15s;">🏆 토너먼트</button>
+        <button onclick="setPtsMode('league')" id="mode-league" class="pts-mode-btn" style="padding:5px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-weight:600;transition:all .15s;">📋 리그전</button>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button onclick="shuffleAllGroups()" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:7px;cursor:pointer;font-size:11px;">🔀 무작위 섞기</button>
+          <button onclick="generateAllBrackets()" id="btn-generate" disabled style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;opacity:.4;">대진표 만들기</button>
+        </div>
+      </div>
+
+      <!-- 그룹별 참가자 순서 지정 -->
+      <div id="pts-order-area" style="flex:1;overflow-y:auto;padding:14px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+
+      <!-- 리그 준비중 오버레이 -->
+      <div id="league-overlay" style="display:none;position:absolute;inset:0;background:rgba(10,10,15,.85);z-index:10;align-items:center;justify-content:center;border-radius:14px;flex-direction:column;gap:12px;">
+        <div style="font-size:40px;">🚧</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);">리그전 준비중입니다</div>
+        <div style="font-size:12px;color:var(--text3);">곧 업데이트될 예정이에요</div>
+        <button onclick="setPtsMode('tournament')" style="margin-top:8px;padding:7px 20px;background:var(--red);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">토너먼트로 변경</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: 대진표 뷰 -->
+    <div id="pts-step3" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div style="padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;">
+        <button onclick="goStep2Popup()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">← 뒤로</button>
+        <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">③ 대진표 확인 &amp; 수정</span>
+        <div id="pts-bracket-label" style="font-size:12px;color:var(--accent);font-weight:700;margin-left:4px;"></div>
+        <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:9px;color:var(--text3);letter-spacing:1px;">레이아웃:</span>
+          <button onclick="setPopupBracketLayout('A')" id="popup-lay-A" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+          <button onclick="setPopupBracketLayout('B')" id="popup-lay-B" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+          <button onclick="setPopupBracketLayout('C')" id="popup-lay-C" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+          <button onclick="setPopupBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+          <button onclick="setPopupBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+          <span style="width:1px;height:14px;background:var(--border);"></span>
+          <button onclick="shuffleGroupBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">🔀 섞기</button>
+          <button onclick="toggleAssignMode()" id="btn-assign" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">✏️ 지정</button>
+          <button onclick="addRound()" style="padding:4px 10px;background:rgba(76,201,240,.08);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:11px;">➕ 라운드 추가</button>
+          <button onclick="removePopupLastRound()" style="padding:4px 10px;background:rgba(230,57,70,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:11px;">➖ 라운드 삭제</button>
+          <button onclick="applyBracketToMain()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">✅ 확정 & 적용</button>
+        </div>
+      </div>
+      <!-- 그룹 탭 -->
+      <div id="pts-bracket-tabs" style="padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;background:var(--bg2);"></div>
+      <!-- 대진표 내용 -->
+      <div id="pts-bracket-view" style="flex:1;overflow:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ══ 참가자 팝업 (새 창) ══ */
+/* ══ 참가자 팝업 ══ */
 let _ptsSortKeys=[];
 let _ptsGroups={};
 let _ptsMode='tournament';
 
-let _ptsWin=null;
 function openPtsPopup(){
   document.activeElement?.blur();
   if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
-  // 이미 열려있으면 포커스만
-  if(_ptsWin&&!_ptsWin.closed){_ptsWin.focus();return;}
-
-  const w=window.open('','sgp_pts','width=960,height=720,resizable=yes,scrollbars=no');
-  _ptsWin=w;
-
-  // ── 새 창 HTML 작성 ──
-  w.document.write(`<!DOCTYPE html><html lang="ko"><head>
-<meta charset="UTF-8">
-<title>참가자 명단 — SGP</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08080f;--bg2:#0f0f1a;--card:#13131f;--card2:#1a1a2a;
-  --border:#2a2a40;--border2:#3a3a55;
-  --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
-  --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;--radius:10px;
+  if(window._ptsWin&&!window._ptsWin.closed){window._ptsWin.focus();return;}
+  window._ptsWin=window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
 }
-html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;}
-#wrap{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
-/* 헤더 */
-#hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg2);}
-/* 스텝 컨테이너 */
-.step{display:none;flex-direction:column;flex:1;overflow:hidden;}
-.step.on{display:flex;}
-/* 서브헤더 */
-.subhdr{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;}
-/* 스크롤 영역: 팝업 테두리에만 스크롤 */
-.scroll-area{flex:1;overflow:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.scroll-area::-webkit-scrollbar{width:6px;height:6px;}
-.scroll-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
-/* 탭 */
-#bracket-tabs{padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;background:var(--bg2);}
-/* 버튼 */
-button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
-.btn-back{padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;}
-.btn-red{padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;}
-.pts-sort-btn,.pts-mode-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;transition:all .15s;}
-/* 참가자 카드 */
-.pt-card{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
-/* order row */
-.order-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;cursor:grab;user-select:none;transition:all .15s;margin-bottom:4px;}
-/* toast */
-#tc{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:6px;z-index:9999;}
-.tos{padding:9px 14px;border-radius:8px;font-size:12px;font-weight:600;background:var(--card2);border:1px solid var(--border2);color:var(--text);box-shadow:0 4px 12px rgba(0,0,0,.4);animation:tsin .25s ease;}
-.tos.success{border-color:var(--green);color:var(--green);}
-.tos.error{border-color:var(--red);color:var(--red);}
-@keyframes tsin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-/* league overlay */
-#league-overlay{display:none;position:absolute;inset:0;background:rgba(10,10,15,.85);z-index:10;align-items:center;justify-content:center;border-radius:0;flex-direction:column;gap:12px;}
-</style>
-</head><body>
-<div id="wrap">
-  <!-- 헤더 -->
-  <div id="hdr">
-    <div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:3px;">// PARTICIPANTS</div>
-      <div style="font-size:15px;font-weight:700;" id="popup-title">참가자 명단</div>
-    </div>
-    <button onclick="window.close()" style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);font-size:13px;padding:5px 12px;border-radius:6px;">✕ 닫기</button>
-  </div>
 
-  <!-- STEP1: 그룹 기준 선택 -->
-  <div id="pts-step1" class="step on">
-    <div class="subhdr">
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">① 그룹 기준 선택:</span>
-      <button onclick="togglePtsSort('division')" id="sort-division" class="pts-sort-btn">부문별</button>
-      <button onclick="togglePtsSort('weight')" id="sort-weight" class="pts-sort-btn">체급별</button>
-      <button onclick="togglePtsSort('team')" id="sort-team" class="pts-sort-btn">팀별</button>
-      <span style="font-size:10px;color:var(--text3);">복수 선택 가능</span>
-      <button onclick="confirmPtsGroup()" class="btn-red" style="margin-left:auto;">확정 →</button>
-    </div>
-    <div id="pts-popup-list" class="scroll-area"></div>
-  </div>
+function closePtsPopup(){
+  if(window._ptsWin&&!window._ptsWin.closed)window._ptsWin.close();
+  document.getElementById('pts-popup').style.display='none';
+}
 
-  <!-- STEP2: 방식 선택 + 순서 설정 -->
-  <div id="pts-step2" class="step" style="position:relative;">
-    <div class="subhdr">
-      <button onclick="goStep1Popup()" class="btn-back">← 뒤로</button>
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">② 방식 선택:</span>
-      <button onclick="setPtsMode('tournament')" id="mode-tournament" class="pts-mode-btn">🏆 토너먼트</button>
-      <button onclick="setPtsMode('league')" id="mode-league" class="pts-mode-btn">📋 리그전</button>
-      <div style="margin-left:auto;display:flex;gap:6px;">
-        <button onclick="shuffleAllGroups()" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:7px;font-size:11px;">🔀 무작위 섞기</button>
-        <button onclick="generateAllBrackets()" id="btn-generate" disabled style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;opacity:.4;">대진표 만들기</button>
+function togglePtsSort(key){
+  const idx=_ptsSortKeys.indexOf(key);
+  if(idx>=0)_ptsSortKeys.splice(idx,1);else _ptsSortKeys.push(key);
+  const on=_ptsSortKeys.includes(key);
+  const btn=document.getElementById('sort-'+key);
+  btn.style.borderColor=on?'var(--accent)':'var(--border)';
+  btn.style.background=on?'rgba(76,201,240,.15)':'transparent';
+  btn.style.color=on?'var(--accent)':'var(--text3)';
+  renderPtsPopup();
+}
+
+function groupPts(keys){
+  const groups={};
+  S.pts.forEach(p=>{
+    let key=!keys.length?'전체':keys.map(k=>k==='division'?p.division||'미분류':k==='weight'?p.weight||'미분류':p.team||'개인').filter(Boolean).join(' / ');
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+  return groups;
+}
+
+function renderPtsPopup(){
+  const list=document.getElementById('pts-popup-list');
+  document.getElementById('pts-popup-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
+  const groups=groupPts(_ptsSortKeys);
+  list.innerHTML='';
+  Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');sec.style.cssText='margin-bottom:16px;';
+    sec.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;font-weight:700;">${gname}</span>
+        <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span>
       </div>
-    </div>
-    <div id="pts-order-area" class="scroll-area"></div>
-    <div id="league-overlay" style="display:none;position:absolute;inset:0;background:rgba(10,10,15,.85);z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-      <div style="font-size:40px;">🚧</div>
-      <div style="font-size:18px;font-weight:700;color:var(--text);">리그전 준비중입니다</div>
-      <div style="font-size:12px;color:var(--text3);">곧 업데이트될 예정이에요</div>
-    </div>
-  </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;">
+        ${members.map((p,i)=>`
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 9px;background:var(--card);border:1px solid var(--border);border-radius:7px;">
+            <span style="font-size:10px;color:var(--text3);width:14px;font-family:'Share Tech Mono',monospace;flex-shrink:0;">${i+1}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+              ${p.weight||p.division?`<div style="font-size:9px;color:var(--text3);">${[p.division,p.weight].filter(Boolean).join(' / ')}</div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    list.appendChild(sec);
+  });
+}
 
-  <!-- STEP3: 대진표 뷰 -->
-  <div id="pts-step3" class="step">
-    <div class="subhdr">
-      <button onclick="goStep2Popup()" class="btn-back">← 뒤로</button>
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">③ 대진표 확인 &amp; 수정</span>
-      <div id="pts-bracket-label" style="font-size:12px;color:var(--accent);font-weight:700;margin-left:4px;"></div>
-      <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:9px;color:var(--text3);letter-spacing:1px;">레이아웃:</span>
-        <button onclick="setPopupBracketLayout('A')" id="popup-lay-A" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-        <button onclick="setPopupBracketLayout('B')" id="popup-lay-B" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-        <button onclick="setPopupBracketLayout('C')" id="popup-lay-C" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-        <button onclick="setPopupBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
-        <button onclick="setPopupBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;transition:all .15s;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
-        <span style="width:1px;height:14px;background:var(--border);"></span>
-        <button onclick="shuffleGroupBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;">🔀 섞기</button>
-        <button onclick="toggleAssignMode()" id="btn-assign" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;">✏️ 지정</button>
-        <button onclick="addRound()" style="padding:4px 10px;background:rgba(76,201,240,.08);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➕ 라운드 추가</button>
-        <button onclick="removePopupLastRound()" style="padding:4px 10px;background:rgba(230,57,70,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➖ 라운드 삭제</button>
-        <button onclick="applyBracketToMain()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
+function confirmPtsGroup(){
+  _ptsGroups=groupPts(_ptsSortKeys);
+  document.getElementById('pts-step1').style.display='none';
+  document.getElementById('pts-step2').style.display='flex';
+  document.getElementById('league-overlay').style.display='none';
+  setPtsMode('tournament');
+  renderOrderArea();
+}
+
+function goStep1Popup(){
+  document.getElementById('pts-step1').style.display='flex';
+  document.getElementById('pts-step2').style.display='none';
+}
+
+function setPtsMode(mode){
+  _ptsMode=mode;
+  document.querySelectorAll('.pts-mode-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';});
+  const btn=document.getElementById('mode-'+mode);
+  btn.style.borderColor=mode==='tournament'?'var(--red)':'var(--accent)';
+  btn.style.background=mode==='tournament'?'rgba(230,57,70,.15)':'rgba(76,201,240,.15)';
+  btn.style.color=mode==='tournament'?'var(--red)':'var(--accent)';
+  const overlay=document.getElementById('league-overlay');
+  overlay.style.display=mode==='league'?'flex':'none';
+  const genBtn=document.getElementById('btn-generate');
+  genBtn.style.opacity=mode==='tournament'?'1':'0.4';
+  genBtn.disabled=mode!=='tournament';
+}
+
+/* 순서 지정 영역 */
+function renderOrderArea(){
+  const area=document.getElementById('pts-order-area');
+  area.innerHTML='';
+  const entries=Object.entries(_ptsGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  entries.forEach(([gname,members])=>{
+    const sec=document.createElement('div');
+    sec.style.cssText='margin-bottom:20px;';
+    sec.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;font-weight:700;">${gname}</span>
+        <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span>
+        <span style="font-size:10px;color:var(--text3);margin-left:4px;">이름 클릭 → 번호 지정 · 드래그 → 순서 변경</span>
+      </div>`;
+    const grid=document.createElement('div');
+    grid.style.cssText='display:flex;flex-direction:column;gap:4px;';
+    grid.dataset.group=gname;
+    members.forEach((p,i)=>{
+      const row=buildOrderRow(p,i,gname,members);
+      grid.appendChild(row);
+    });
+    initDragSort(grid,gname);
+    sec.appendChild(grid);
+    area.appendChild(sec);
+  });
+}
+
+function buildOrderRow(p,i,gname,members){
+  const row=document.createElement('div');
+  row.draggable=true;
+  row.dataset.pid=p.id;
+  row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;cursor:grab;user-select:none;transition:all .15s;';
+  row.innerHTML=`
+    <span class="order-num" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);width:20px;font-weight:700;flex-shrink:0;">${i+1}</span>
+    <div style="width:6px;height:6px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+    <span style="flex:1;font-size:13px;font-weight:600;">${p.name}</span>
+    ${p.weight||p.division?`<span style="font-size:10px;color:var(--text3);">${[p.division,p.weight].filter(Boolean).join(' / ')}</span>`:''}
+    <span style="font-size:10px;color:var(--text3);opacity:.5;">≡</span>`;
+  // 이름 클릭 → 번호 입력
+  row.onclick=e=>{
+    if(e.target.tagName==='INPUT')return;
+    const cur=parseInt(row.querySelector('.order-num').textContent);
+    const input=document.createElement('input');
+    input.type='number';input.min=1;input.max=members.length;input.value=cur;
+    input.style.cssText='width:40px;font-size:12px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);text-align:center;padding:2px;';
+    const numEl=row.querySelector('.order-num');
+    numEl.replaceWith(input);
+    input.focus();input.select();
+    const apply=()=>{
+      const newNum=Math.max(1,Math.min(members.length,parseInt(input.value)||cur));
+      const group=_ptsGroups[gname];
+      const fromIdx=group.findIndex(x=>x.id===p.id);
+      const toIdx=newNum-1;
+      group.splice(toIdx,0,group.splice(fromIdx,1)[0]);
+      renderOrderArea();
+    };
+    input.onblur=apply;
+    input.onkeydown=e2=>{if(e2.key==='Enter')apply();if(e2.key==='Escape'){renderOrderArea();}};
+    e.stopPropagation();
+  };
+  return row;
+}
+
+/* 드래그 정렬 */
+function initDragSort(grid,gname){
+  let dragEl=null;
+  grid.addEventListener('dragstart',e=>{
+    dragEl=e.target.closest('[data-pid]');
+    if(dragEl)setTimeout(()=>dragEl.style.opacity='.4',0);
+  });
+  grid.addEventListener('dragend',()=>{if(dragEl){dragEl.style.opacity='1';dragEl=null;}});
+  grid.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const over=e.target.closest('[data-pid]');
+    if(!over||over===dragEl)return;
+    const rows=[...grid.querySelectorAll('[data-pid]')];
+    const fromIdx=rows.indexOf(dragEl);
+    const toIdx=rows.indexOf(over);
+    if(fromIdx<0||toIdx<0)return;
+    const group=_ptsGroups[gname];
+    group.splice(toIdx,0,group.splice(fromIdx,1)[0]);
+    // DOM 재정렬
+    group.forEach((p,i)=>{
+      const r=grid.querySelector(`[data-pid="${p.id}"]`);
+      if(r){r.querySelector('.order-num').textContent=i+1;grid.appendChild(r);}
+    });
+  });
+}
+
+function shuffleAllGroups(){
+  Object.keys(_ptsGroups).forEach(k=>{_ptsGroups[k]=[..._ptsGroups[k]].sort(()=>Math.random()-.5);});
+  renderOrderArea();
+  toast('무작위로 섞었어요','success');
+}
+
+function generateAllBrackets(){
+  if(_ptsMode!=='tournament'){toast('리그전은 준비중이에요','info');return;}
+  const entries=Object.entries(_ptsGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  S.groupBrackets=entries.map(([gname,members])=>({
+    label:gname,
+    matches:generateBracket([...members]),
+    slots:buildSlots([...members]) // 슬롯 번호 부여
+  }));
+  S.activeGroup=0;
+  _assignMode=false;
+  document.getElementById('pts-step2').style.display='none';
+  document.getElementById('pts-step3').style.display='flex';
+  renderBracketTabs();
+  renderBracketView(0);
+}
+
+function goStep2Popup(){
+  document.getElementById('pts-step3').style.display='none';
+  document.getElementById('pts-step2').style.display='flex';
+}
+
+/* 슬롯 생성 - 참가자에 번호 부여 */
+function buildSlots(members){
+  return members.map((p,i)=>({num:i+1, player:p}));
+}
+
+/* 슬롯 번호로 대진표 재생성 */
+function slotsToMatches(slots){
+  let players=slots.map(s=>s.player);
+  return generateBracket(players);
+}
+
+let _assignMode=false;
+let _assignSlotNum=null;
+
+function toggleAssignMode(){
+  _assignMode=!_assignMode;
+  const btn=document.getElementById('btn-assign');
+  btn.style.borderColor=_assignMode?'var(--accent)':'var(--border)';
+  btn.style.background=_assignMode?'rgba(76,201,240,.15)':'transparent';
+  btn.style.color=_assignMode?'var(--accent)':'var(--text3)';
+  btn.textContent=_assignMode?'✏️ 지정중... (취소)':'✏️ 지정하기';
+  renderBracketView(S.activeGroup);
+}
+
+function renderBracketTabs(){
+  const tabs=document.getElementById('pts-bracket-tabs');
+  const groups=S.groupBrackets||[];
+  tabs.innerHTML='';
+  if(groups.length<=1){tabs.style.display='none';return;}
+  tabs.style.display='flex';
+  groups.forEach((g,i)=>{
+    const btn=document.createElement('button');
+    const active=i===S.activeGroup;
+    btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
+    btn.textContent=g.label+' ('+g.slots.length+'명)';
+    btn.onclick=()=>{S.activeGroup=i;_assignMode=false;renderBracketTabs();renderBracketView(i);};
+    tabs.appendChild(btn);
+  });
+}
+
+function renderBracketView(groupIdx){
+  const g=S.groupBrackets[groupIdx];
+  const view=document.getElementById('pts-bracket-view');
+  const label=document.getElementById('pts-bracket-label');
+  label.textContent=g.label;
+  view.innerHTML='';
+
+  requestAnimationFrame(()=>{
+  // 슬롯 지정하기 모드 패널
+  if(_assignMode){
+    const panel=document.createElement('div');
+    panel.style.cssText='margin-bottom:16px;padding:12px 14px;background:rgba(76,201,240,.05);border:1px solid rgba(76,201,240,.2);border-radius:10px;';
+    const slotMap2={};
+    g.slots.forEach(s=>{if(s.player)slotMap2[s.player.id]=s.num;});
+    panel.innerHTML=`
+      <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:10px;">✏️ 슬롯을 클릭해서 참가자를 지정하세요</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
+        ${g.slots.map(s=>`
+          <div onclick="selectSlot(${s.num})" style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--card);border:1px solid ${_assignSlotNum===s.num?'var(--accent)':'var(--border)'};border-radius:7px;cursor:pointer;transition:all .15s;">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);font-weight:700;width:22px;">#${s.num}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${s.player.color||'var(--text3)'};flex-shrink:0;"></div>
+            <span style="font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.player.name}</span>
+          </div>`).join('')}
       </div>
-    </div>
-    <div id="pts-bracket-tabs" style="padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;background:var(--bg2);"></div>
-    <div id="pts-bracket-view" class="scroll-area"></div>
-  </div>
-</div>
-<div id="tc"></div>
+      ${_assignSlotNum?`
+        <div style="margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--accent);border-radius:8px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:700;">#${_assignSlotNum} 슬롯에 배정할 참가자 선택:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${g.slots.map(s=>`
+              <button onclick="assignPlayerToSlot(${_assignSlotNum},${g.slots.indexOf(s)})" style="padding:4px 10px;background:${s.num===_assignSlotNum?'rgba(230,57,70,.2)':'var(--card2)'};border:1px solid ${s.num===_assignSlotNum?'var(--red)':'var(--border)'};color:var(--text);border-radius:6px;cursor:pointer;font-size:11px;">
+                #${s.num} ${s.player.name}
+              </button>`).join('')}
+          </div>
+        </div>`:''}`;
+    view.appendChild(panel);
+  }
 
-<script>
-// ── 부모창 참조 ──
-const P=window.opener;
-// S, 유틸 함수 모두 부모창에서 가져옴
-const S=P.S;
-const TC=P.TC;
+  // try-finally로 S.matches 복원 보장
+  const savedMatches=S.matches;
+  try{
+    S.matches=g.matches;
+    const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
+    (fns[_bracketLayout]||renderBracketA)(view);
+  }finally{
+    S.matches=savedMatches;
+  }
+  }); // end requestAnimationFrame
+}
+function selectSlot(num){
+  _assignSlotNum=_assignSlotNum===num?null:num;
+  renderBracketView(S.activeGroup);
+}
 
-function toast(msg,type='info'){
-  const c=document.getElementById('tc');
-  const d=document.createElement('div');d.className='tos '+(type||'');d.textContent=msg;
-  c.appendChild(d);setTimeout(()=>d.remove(),2500);
+function assignPlayerToSlot(targetNum,fromIdx){
+  const g=S.groupBrackets[S.activeGroup];
+  const targetIdx=g.slots.findIndex(s=>s.num===targetNum);
+  if(targetIdx<0)return;
+  // 두 슬롯 스왑
+  const tmp=g.slots[targetIdx].player;
+  g.slots[targetIdx].player=g.slots[fromIdx].player;
+  g.slots[fromIdx].player=tmp;
+  // 대진표 재생성
+  g.matches=slotsToMatches(g.slots);
+  _assignSlotNum=null;
+  renderBracketView(S.activeGroup);
+  toast('슬롯 배정 완료!','success');
+}
+
+function shuffleGroupBracket(){
+  const g=S.groupBrackets[S.activeGroup];
+  g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
+  g.matches=slotsToMatches(g.slots);
+  renderBracketView(S.activeGroup);
+  toast(g.label+' 무작위로 섞었어요','success');
+}
+
+/* ── 수동 연결 상태 ── */
+let _linkSel=null; // {ri, mi} 첫번째 선택된 매치
+
+function onMatchClick(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!_linkSel){
+    // 첫번째 선택 → 하이라이트 + 액션바 표시
+    _linkSel={ri,mi};
+    renderBracketView(S.activeGroup);
+    _showLinkBar(ri,mi);
+  } else {
+    if(_linkSel.ri===ri&&_linkSel.mi===mi){
+      // 같은거 클릭 → 취소
+      _linkSel=null;
+      _hideLinkBar();
+      renderBracketView(S.activeGroup);
+      return;
+    }
+    // 두번째 클릭 → 두 경기 연결
+    const a=_linkSel,b={ri,mi};
+    _linkSel=null;
+    _hideLinkBar();
+
+    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
+
+    const roundIdx=a.ri;
+    if(!g.matches[roundIdx+1])g.matches.push([]);
+    const nextRound=g.matches[roundIdx+1];
+
+    const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
+    const already=nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey);
+    if(already){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+
+    nextRound.push({
+      p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},
+      p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},
+      fromA:aKey,fromB:bKey,bye:false
+    });
+
+    renderBracketView(S.activeGroup);
+    toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
+  }
+}
+
+/* 선택됐을 때 액션바 표시 */
+function _showLinkBar(ri,mi){
+  let bar=document.getElementById('link-action-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='link-action-bar';
+    bar.style.cssText='position:sticky;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;z-index:10;';
+    document.getElementById('pts-bracket-view').parentNode.appendChild(bar);
+  }
+  bar.innerHTML=`
+    <span style="font-size:11px;color:var(--accent);font-weight:700;">${ri+1}-${mi+1} 선택됨</span>
+    <span style="font-size:11px;color:var(--text3);">→ 다른 경기 클릭시 연결 / 또는:</span>
+    <button onclick="advanceMatch(${ri},${mi})" style="padding:4px 12px;background:var(--green);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">▶ 다음으로 직행</button>
+    <button onclick="_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>
+  `;
+}
+
+function _hideLinkBar(){
+  const bar=document.getElementById('link-action-bar');
+  if(bar)bar.remove();
+}
+
+/* 선택된 경기 단독 다음 라운드 직행 (부전승) */
+function advanceMatch(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];
+  _linkSel=null;
+  _hideLinkBar();
+
+  const roundIdx=ri;
+  if(!g.matches[roundIdx+1])g.matches.push([]);
+  const nextRound=g.matches[roundIdx+1];
+
+  const aKey=`${ri}-${mi}`;
+  const already=nextRound.find(m=>m.fromA===aKey||m.fromB===aKey);
+  if(already){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+
+  nextRound.push({
+    p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},
+    p2:null,
+    fromA:aKey,fromB:null,bye:true
+  });
+
+  renderBracketView(S.activeGroup);
+  toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+}
+
+function addRound(){
+  toast('경기 박스를 클릭해서 연결하세요','info');
+}
+
+function removePopupLastRound(){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!g||g.matches.length<=1){toast('1라운드는 삭제할 수 없어요','info');return;}
+  g.matches.pop();
+  renderBracketView(S.activeGroup);
+  toast('마지막 라운드 삭제됨','success');
+}
+
+// 팝업 A~E 레이아웃: step4.js의 _bracketLayout 공유 사용
+function setPopupBracketLayout(mode){
+  _bracketLayout=mode; // step4.js 전역변수 공유
+  ['A','B','C','D','E'].forEach(l=>{
+    const btn=document.getElementById('popup-lay-'+l);
+    if(!btn)return;
+    const on=l===mode;
+    btn.style.borderColor=on?'var(--red)':'var(--border2)';
+    btn.style.background=on?'rgba(230,57,70,.2)':'transparent';
+    btn.style.color=on?'var(--red)':'var(--text2)';
+  });
+  renderBracketView(S.activeGroup);
+}
+
+function countGroupMembers(matches){
+  const ids=new Set();
+  (matches||[]).forEach(round=>round.forEach(m=>{if(m.p1)ids.add(m.p1.id);if(m.p2)ids.add(m.p2.id);}));
+  return ids.size;
+}
+
+function shuffleBracketPopup(){shuffleGroupBracket();}
+
+function applyBracketToMain(){
+  const g=S.groupBrackets[S.activeGroup];
+  S.matches=g.matches;
+  S.matchLabel=g.label;
+  S.matchProc='tournament';
+  S.proc='ind-tour';
+  S.matchPts=g.slots.map(s=>s.player?.id).filter(Boolean).join(',');
+  S.curMatch=0;
+  buildProc();
+  try{if(typeof updatePv==='function')updatePv();}catch(e){}
+  closePtsPopup();
+  toast(g.label+' 대진표 적용 완료!','success');
 }
 
 function makeLeague(members,label){
@@ -1852,5 +2254,43 @@ function makeTournament(members,label){
   buildProc();try{if(typeof updatePv==='function')updatePv();}catch(e){}
   toast((label||'전체')+' 토너먼트 생성! ('+pts.length+'명)','success');
 }
+
+/* 드래그 이동 — 페이지 로드 시 1회만 초기화 */
+function initPtsPopupDrag(){
+  const hdr=document.getElementById('pts-popup-hdr');
+  const box=document.getElementById('pts-popup-box');
+  let ox=0,oy=0,bx=0,by=0,dragging=false;
+
+  function onMove(e){
+    if(!dragging)return;
+    bx+=e.clientX-ox;by+=e.clientY-oy;ox=e.clientX;oy=e.clientY;
+    const vw=window.innerWidth,vh=window.innerHeight;
+    bx=Math.max(0,Math.min(bx,vw-box.offsetWidth));
+    by=Math.max(0,Math.min(by,vh-box.offsetHeight));
+    box.style.left=bx+'px';box.style.top=by+'px';
+  }
+  function onUp(){
+    if(!dragging)return;
+    dragging=false;
+    hdr.style.cursor='grab';
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+  }
+  hdr.addEventListener('mousedown',e=>{
+    if(e.target.closest('button'))return;
+    const r=box.getBoundingClientRect();
+    box.style.transform='none';
+    box.style.left=r.left+'px';
+    box.style.top=r.top+'px';
+    bx=r.left;by=r.top;ox=e.clientX;oy=e.clientY;
+    dragging=true;
+    hdr.style.cursor='grabbing';
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePtsPopup();});
+document.getElementById('pts-popup').addEventListener('click',e=>{if(e.target===document.getElementById('pts-popup'))closePtsPopup();});
 </script>
 </body>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>대진표 — SGP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08080f;--bg2:#0f0f1a;--card:#13131f;--card2:#1a1a2a;
+  --border:#2a2a40;--border2:#3a3a55;
+  --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
+  --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;}
+button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+
+/* 레이아웃 */
+#wrap{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+#hdr{padding:11px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg2);}
+.step{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.step.on{display:flex;}
+.subhdr{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;}
+/* 스크롤은 이 하나에만 — 팝업 테두리(=창 테두리)에 생김 */
+.scroll-area{flex:1;overflow:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+.scroll-area::-webkit-scrollbar{width:6px;height:6px;}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* 버튼 */
+.btn-back{padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;}
+.btn-red{padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;}
+.pts-sort-btn,.pts-mode-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;transition:all .15s;}
+
+/* 참가자 카드 */
+.pt-card{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
+/* order row */
+.order-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:7px;cursor:grab;user-select:none;transition:all .15s;margin-bottom:4px;}
+
+/* 탭 */
+#bracket-tabs{padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;background:var(--bg2);}
+
+/* 리그 오버레이 */
+#league-overlay{display:none;position:absolute;inset:0;background:rgba(10,10,15,.88);z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+
+/* toast */
+#tc{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:6px;z-index:9999;}
+.tos{padding:9px 14px;border-radius:8px;font-size:12px;font-weight:600;background:var(--card2);border:1px solid var(--border2);color:var(--text);box-shadow:0 4px 12px rgba(0,0,0,.4);animation:tsin .25s ease;}
+.tos.success{border-color:var(--green);color:var(--green);}
+.tos.error{border-color:var(--red);color:var(--red);}
+@keyframes tsin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <!-- 헤더 -->
+  <div id="hdr">
+    <div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:2px;">// PARTICIPANTS</div>
+      <div style="font-size:15px;font-weight:700;" id="win-title">참가자 명단</div>
+    </div>
+    <button onclick="window.close()" style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);font-size:13px;padding:5px 14px;border-radius:6px;font-weight:700;">✕ 닫기</button>
+  </div>
+
+  <!-- STEP 1: 그룹 기준 선택 -->
+  <div id="pts-step1" class="step on">
+    <div class="subhdr">
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">① 그룹 기준 선택:</span>
+      <button onclick="togglePtsSort('division')" id="sort-division" class="pts-sort-btn">부문별</button>
+      <button onclick="togglePtsSort('weight')"   id="sort-weight"   class="pts-sort-btn">체급별</button>
+      <button onclick="togglePtsSort('team')"     id="sort-team"     class="pts-sort-btn">팀별</button>
+      <span style="font-size:10px;color:var(--text3);">복수 선택 가능</span>
+      <button onclick="confirmPtsGroup()" class="btn-red" style="margin-left:auto;">확정 →</button>
+    </div>
+    <div id="pts-popup-list" class="scroll-area"></div>
+  </div>
+
+  <!-- STEP 2: 방식 선택 + 순서 설정 -->
+  <div id="pts-step2" class="step" style="position:relative;">
+    <div class="subhdr">
+      <button onclick="goStep1()" class="btn-back">← 뒤로</button>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">② 방식 선택:</span>
+      <button onclick="setPtsMode('tournament')" id="mode-tournament" class="pts-mode-btn">🏆 토너먼트</button>
+      <button onclick="setPtsMode('league')"     id="mode-league"     class="pts-mode-btn">📋 리그전</button>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <button onclick="shuffleAllGroups()" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:7px;font-size:11px;">🔀 무작위 섞기</button>
+        <button onclick="generateAllBrackets()" id="btn-generate" disabled style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;opacity:.4;">대진표 만들기</button>
+      </div>
+    </div>
+    <div id="pts-order-area" class="scroll-area"></div>
+    <div id="league-overlay">
+      <div style="font-size:40px;">🚧</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);">리그전 준비중입니다</div>
+      <div style="font-size:12px;color:var(--text3);">곧 업데이트될 예정이에요</div>
+      <button onclick="setPtsMode('tournament')" style="margin-top:8px;padding:7px 20px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;">토너먼트로 변경</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 대진표 뷰 -->
+  <div id="pts-step3" class="step">
+    <div class="subhdr">
+      <button onclick="goStep2()" class="btn-back">← 뒤로</button>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">③ 대진표 확인 &amp; 수정</span>
+      <div id="bracket-label" style="font-size:12px;color:var(--accent);font-weight:700;margin-left:4px;"></div>
+      <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:9px;color:var(--text3);letter-spacing:1px;">레이아웃:</span>
+        <button onclick="setBracketLayout('A')" id="lay-A" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+        <button onclick="setBracketLayout('B')" id="lay-B" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+        <button onclick="setBracketLayout('C')" id="lay-C" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+        <button onclick="setBracketLayout('D')" id="lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+        <button onclick="setBracketLayout('E')" id="lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+        <span style="width:1px;height:14px;background:var(--border);"></span>
+        <button onclick="shuffleGroupBracket()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;">🔀 섞기</button>
+        <button onclick="toggleAssignMode()" id="btn-assign" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;">✏️ 지정</button>
+        <button onclick="addRound()" style="padding:4px 10px;background:rgba(76,201,240,.08);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➕ 라운드 추가</button>
+        <button onclick="removeLastRound()" style="padding:4px 10px;background:rgba(230,57,70,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➖ 라운드 삭제</button>
+        <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
+      </div>
+    </div>
+    <div id="bracket-tabs"></div>
+    <div id="bracket-view" class="scroll-area"></div>
+  </div>
+</div>
+<div id="tc"></div>
+
+<script>
+// ── 부모창 참조 ──
+const P = window.opener;
+const S = P.S;
+
+function toast(msg, type='info'){
+  const c=document.getElementById('tc');
+  const d=document.createElement('div');
+  d.className='tos '+(type||'');
+  d.textContent=msg;
+  c.appendChild(d);
+  setTimeout(()=>d.remove(), 2500);
+}
+
+// ── 상태 ──
+let _sortKeys=[];
+let _groups={};
+let _mode='tournament';
+let _assignMode=false;
+let _assignSlotNum=null;
+let _layout='A';
+let _linkSel=null;
+
+// ── STEP1 ──
+function show(stepId){
+  ['pts-step1','pts-step2','pts-step3'].forEach(id=>{
+    document.getElementById(id).classList.toggle('on', id===stepId);
+  });
+}
+
+function togglePtsSort(key){
+  const idx=_sortKeys.indexOf(key);
+  if(idx>=0) _sortKeys.splice(idx,1); else _sortKeys.push(key);
+  const on=_sortKeys.includes(key);
+  const btn=document.getElementById('sort-'+key);
+  btn.style.borderColor=on?'var(--accent)':'var(--border)';
+  btn.style.background=on?'rgba(76,201,240,.12)':'transparent';
+  btn.style.color=on?'var(--accent)':'var(--text3)';
+  renderList();
+}
+
+function renderList(){
+  const list=document.getElementById('pts-popup-list');
+  document.getElementById('win-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
+  list.innerHTML='';
+  if(!_sortKeys.length){
+    const note=document.createElement('div');
+    note.style.cssText='color:var(--text3);font-size:12px;padding:4px 0 10px;';
+    note.textContent='그룹 기준을 선택하거나 그냥 확정하면 전체를 하나의 그룹으로 처리합니다.';
+    list.appendChild(note);
+    S.pts.forEach(p=>{
+      const d=document.createElement('div');d.className='pt-card';
+      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
+        <div style="font-size:13px;font-weight:600;">${p.name}</div>
+        ${p.weight?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.weight}</span>`:''}
+        ${p.division?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.division}</span>`:''}`;
+      list.appendChild(d);
+    });
+    return;
+  }
+  const groups={};
+  S.pts.forEach(p=>{
+    const key=_sortKeys.map(k=>p[k]||'미분류').join(' / ');
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+  Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');sec.style.marginBottom='16px';
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;font-weight:700;">${gname}</span>
+      <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span></div>`;
+    members.forEach(p=>{
+      const d=document.createElement('div');d.className='pt-card';
+      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
+        <div style="font-size:13px;font-weight:600;">${p.name}</div>`;
+      sec.appendChild(d);
+    });
+    list.appendChild(sec);
+  });
+}
+
+function confirmPtsGroup(){
+  if(!_sortKeys.length){
+    _groups={'전체':[...S.pts]};
+  } else {
+    _groups={};
+    S.pts.forEach(p=>{
+      const k=_sortKeys.map(k2=>p[k2]||'미분류').join(' / ');
+      if(!_groups[k])_groups[k]=[];
+      _groups[k].push(p);
+    });
+  }
+  show('pts-step2');
+  setPtsMode('tournament');
+  renderOrderArea();
+}
+
+function goStep1(){ show('pts-step1'); }
+function goStep2(){ show('pts-step2'); }
+
+// ── STEP2 ──
+function setPtsMode(mode){
+  _mode=mode;
+  document.querySelectorAll('.pts-mode-btn').forEach(b=>{
+    b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';
+  });
+  const btn=document.getElementById('mode-'+mode);
+  btn.style.borderColor=mode==='tournament'?'var(--red)':'var(--accent)';
+  btn.style.background=mode==='tournament'?'rgba(230,57,70,.15)':'rgba(76,201,240,.15)';
+  btn.style.color=mode==='tournament'?'var(--red)':'var(--accent)';
+  document.getElementById('league-overlay').style.display=mode==='league'?'flex':'none';
+  const genBtn=document.getElementById('btn-generate');
+  genBtn.style.opacity=mode==='tournament'?'1':'0.4';
+  genBtn.disabled=mode!=='tournament';
+}
+
+function renderOrderArea(){
+  const area=document.getElementById('pts-order-area');area.innerHTML='';
+  Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');sec.style.marginBottom='20px';
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;font-weight:700;">${gname}</span>
+      <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px;">이름 클릭→번호지정 · 드래그→순서변경</span></div>`;
+    const grid=document.createElement('div');grid.dataset.group=gname;
+    members.forEach((p,i)=>grid.appendChild(buildOrderRow(p,i,gname,members)));
+    initDragSort(grid,gname);
+    sec.appendChild(grid);area.appendChild(sec);
+  });
+}
+
+function buildOrderRow(p,i,gname,members){
+  const row=document.createElement('div');row.className='order-row';row.draggable=true;row.dataset.pid=p.id;
+  row.innerHTML=`<span class="onum" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);width:20px;font-weight:700;flex-shrink:0;">${i+1}</span>
+    <div style="width:6px;height:6px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+    <span style="flex:1;font-size:13px;font-weight:600;">${p.name}</span>
+    ${p.weight||p.division?`<span style="font-size:10px;color:var(--text3);">${[p.division,p.weight].filter(Boolean).join(' / ')}</span>`:''}
+    <span style="font-size:10px;color:var(--text3);opacity:.5;">≡</span>`;
+  row.onclick=e=>{
+    if(e.target.tagName==='INPUT')return;
+    const cur=parseInt(row.querySelector('.onum').textContent);
+    const inp=document.createElement('input');
+    inp.type='number';inp.min=1;inp.max=members.length;inp.value=cur;
+    inp.style.cssText='width:40px;font-size:12px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);text-align:center;padding:2px;';
+    row.querySelector('.onum').replaceWith(inp);inp.focus();inp.select();
+    const apply=()=>{
+      const nv=Math.max(1,Math.min(members.length,parseInt(inp.value)||cur));
+      const g=_groups[gname];const fi=g.findIndex(x=>x.id===p.id);
+      g.splice(nv-1,0,g.splice(fi,1)[0]);renderOrderArea();
+    };
+    inp.onblur=apply;
+    inp.onkeydown=e2=>{if(e2.key==='Enter')apply();if(e2.key==='Escape')renderOrderArea();};
+    e.stopPropagation();
+  };
+  return row;
+}
+
+function initDragSort(grid,gname){
+  let dragEl=null;
+  grid.addEventListener('dragstart',e=>{dragEl=e.target.closest('[data-pid]');if(dragEl)setTimeout(()=>dragEl.style.opacity='.4',0);});
+  grid.addEventListener('dragend',()=>{if(dragEl){dragEl.style.opacity='1';dragEl=null;}});
+  grid.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const over=e.target.closest('[data-pid]');if(!over||over===dragEl)return;
+    const rows=[...grid.querySelectorAll('[data-pid]')];
+    const fi=rows.indexOf(dragEl),ti=rows.indexOf(over);if(fi<0||ti<0)return;
+    const g=_groups[gname];g.splice(ti,0,g.splice(fi,1)[0]);
+    g.forEach((p,i)=>{const r=grid.querySelector(`[data-pid="${p.id}"]`);if(r){r.querySelector('.onum').textContent=i+1;grid.appendChild(r);}});
+  });
+}
+
+function shuffleAllGroups(){
+  Object.keys(_groups).forEach(k=>{_groups[k]=[..._groups[k]].sort(()=>Math.random()-.5);});
+  renderOrderArea();toast('무작위로 섞었어요','success');
+}
+
+function generateAllBrackets(){
+  if(_mode!=='tournament'){toast('리그전은 준비중이에요','info');return;}
+  S.groupBrackets=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).map(([gname,members])=>({
+    label:gname,
+    matches:P.generateBracket([...members]),
+    slots:members.map((p,i)=>({num:i+1,player:p}))
+  }));
+  S.activeGroup=0;_assignMode=false;_linkSel=null;
+  show('pts-step3');
+  renderBracketTabs();renderBracketView(0);
+}
+
+// ── STEP3 ──
+function renderBracketTabs(){
+  const tabs=document.getElementById('bracket-tabs');
+  const groups=S.groupBrackets||[];tabs.innerHTML='';
+  if(groups.length<=1){tabs.style.display='none';return;}
+  tabs.style.display='flex';
+  groups.forEach((g,i)=>{
+    const btn=document.createElement('button');
+    const active=i===S.activeGroup;
+    btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
+    btn.textContent=g.label+' ('+g.slots.length+'명)';
+    btn.onclick=()=>{S.activeGroup=i;_assignMode=false;_linkSel=null;renderBracketTabs();renderBracketView(i);};
+    tabs.appendChild(btn);
+  });
+}
+
+function renderBracketView(groupIdx){
+  const g=S.groupBrackets[groupIdx];
+  const view=document.getElementById('bracket-view');
+  document.getElementById('bracket-label').textContent=g.label;
+  view.innerHTML='';
+  requestAnimationFrame(()=>{
+    if(_assignMode){
+      const panel=document.createElement('div');
+      panel.style.cssText='margin-bottom:16px;padding:12px 14px;background:rgba(76,201,240,.05);border:1px solid rgba(76,201,240,.2);border-radius:10px;';
+      panel.innerHTML=`<div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:10px;">✏️ 슬롯을 클릭해서 참가자를 지정하세요</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
+          ${g.slots.map(s=>`<div onclick="selectSlot(${s.num})" style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--card);border:1px solid ${_assignSlotNum===s.num?'var(--accent)':'var(--border)'};border-radius:7px;cursor:pointer;">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);font-weight:700;width:22px;">#${s.num}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${s.player.color||'var(--text3)'};"></div>
+            <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.player.name}</span>
+          </div>`).join('')}
+        </div>
+        ${_assignSlotNum?`<div style="margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--accent);border-radius:8px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:700;">#${_assignSlotNum} 슬롯에 배정할 참가자 선택:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${g.slots.map((s,si)=>`<button onclick="assignPlayerToSlot(${_assignSlotNum},${si})" style="padding:4px 10px;background:${s.num===_assignSlotNum?'rgba(230,57,70,.2)':'var(--card2)'};border:1px solid ${s.num===_assignSlotNum?'var(--red)':'var(--border)'};color:var(--text);border-radius:6px;font-size:11px;">#${s.num} ${s.player.name}</button>`).join('')}
+          </div></div>`:''}`;
+      view.appendChild(panel);
+    }
+    // 부모창 render 함수 사용 (S.matches 임시 교체)
+    const saved=S.matches;
+    try{
+      S.matches=g.matches;
+      const fns={A:P.renderBracketA,B:P.renderBracketB,C:P.renderBracketC,D:P.renderBracketD,E:P.renderBracketE};
+      (fns[_layout]||P.renderBracketA)(view);
+    } finally { S.matches=saved; }
+  });
+}
+
+function selectSlot(num){
+  _assignSlotNum=(_assignSlotNum===num)?null:num;
+  renderBracketView(S.activeGroup);
+}
+
+function assignPlayerToSlot(targetNum,fromIdx){
+  const g=S.groupBrackets[S.activeGroup];
+  const ti=g.slots.findIndex(s=>s.num===targetNum);if(ti<0)return;
+  const tmp=g.slots[ti].player;
+  g.slots[ti].player=g.slots[fromIdx].player;
+  g.slots[fromIdx].player=tmp;
+  g.matches=P.generateBracket(g.slots.map(s=>s.player));
+  _assignSlotNum=null;renderBracketView(S.activeGroup);toast('슬롯 배정 완료!','success');
+}
+
+function shuffleGroupBracket(){
+  const g=S.groupBrackets[S.activeGroup];
+  g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
+  g.matches=P.generateBracket(g.slots.map(s=>s.player));
+  renderBracketView(S.activeGroup);toast(g.label+' 무작위로 섞었어요','success');
+}
+
+function toggleAssignMode(){
+  _assignMode=!_assignMode;_linkSel=null;
+  const btn=document.getElementById('btn-assign');
+  btn.style.borderColor=_assignMode?'var(--accent)':'var(--border)';
+  btn.style.background=_assignMode?'rgba(76,201,240,.15)':'transparent';
+  btn.style.color=_assignMode?'var(--accent)':'var(--text3)';
+  btn.textContent=_assignMode?'✏️ 지정중... (취소)':'✏️ 지정';
+  renderBracketView(S.activeGroup);
+}
+
+function setBracketLayout(mode){
+  _layout=mode;
+  if(P._bracketLayout!==undefined) P._bracketLayout=mode;
+  ['A','B','C','D','E'].forEach(l=>{
+    const btn=document.getElementById('lay-'+l);if(!btn)return;
+    const on=l===mode;
+    btn.style.borderColor=on?'var(--red)':'var(--border2)';
+    btn.style.background=on?'rgba(230,57,70,.2)':'transparent';
+    btn.style.color=on?'var(--red)':'var(--text2)';
+  });
+  renderBracketView(S.activeGroup);
+}
+
+function addRound(){ toast('경기 박스를 클릭해서 연결하세요','info'); }
+
+function removeLastRound(){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!g||g.matches.length<=1){toast('1라운드는 삭제할 수 없어요','info');return;}
+  g.matches.pop();renderBracketView(S.activeGroup);toast('마지막 라운드 삭제됨','success');
+}
+
+function applyBracket(){
+  const g=S.groupBrackets[S.activeGroup];
+  S.matches=g.matches;S.matchLabel=g.label;S.matchProc='tournament';S.proc='ind-tour';
+  S.matchPts=g.slots.map(s=>s.player?.id).filter(Boolean).join(',');S.curMatch=0;
+  P.buildProc();
+  try{P.updatePv();}catch(e){}
+  toast(g.label+' 대진표 적용 완료!','success');
+  setTimeout(()=>window.close(), 700);
+}
+
+// ── 매치 클릭 연결 (onMatchClick — step4.js에서 호출됨) ──
+function onMatchClick(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];
+  if(!_linkSel){
+    _linkSel={ri,mi};renderBracketView(S.activeGroup);_showLinkBar(ri,mi);
+  } else {
+    if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
+    const a=_linkSel,b={ri,mi};_linkSel=null;_hideLinkBar();
+    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
+    if(!g.matches[a.ri+1])g.matches.push([]);
+    const nextRound=g.matches[a.ri+1];
+    const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
+    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+    nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+    renderBracketView(S.activeGroup);toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
+  }
+}
+
+function advanceMatch(ri,mi){
+  const g=S.groupBrackets[S.activeGroup];_linkSel=null;_hideLinkBar();
+  if(!g.matches[ri+1])g.matches.push([]);
+  const nextRound=g.matches[ri+1];
+  const aKey=`${ri}-${mi}`;
+  if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+  nextRound.push({p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  renderBracketView(S.activeGroup);toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+}
+
+function _showLinkBar(ri,mi){
+  let bar=document.getElementById('link-action-bar');
+  if(!bar){
+    bar=document.createElement('div');bar.id='link-action-bar';
+    bar.style.cssText='position:sticky;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;z-index:10;';
+    document.getElementById('bracket-view').parentNode.appendChild(bar);
+  }
+  bar.innerHTML=`<span style="font-size:11px;color:var(--accent);font-weight:700;">${ri+1}-${mi+1} 선택됨</span>
+    <span style="font-size:11px;color:var(--text3);">→ 다른 경기 클릭시 연결 / 또는:</span>
+    <button onclick="advanceMatch(${ri},${mi})" style="padding:4px 12px;background:var(--green);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">▶ 다음으로 직행</button>
+    <button onclick="_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>`;
+}
+function _hideLinkBar(){const bar=document.getElementById('link-action-bar');if(bar)bar.remove();}
+
+// Esc 닫기
+document.addEventListener('keydown',e=>{if(e.key==='Escape')window.close();});
+
+// 초기화
+renderList();
+</script>
+</body>
+</html>
