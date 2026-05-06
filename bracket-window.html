@@ -129,11 +129,12 @@ window.addEventListener('message', e=>{
   _pts=e.data.pts||[]; S.pts=_pts; renderList();
 });
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) {}
-  S.pts = _pts;
-  renderList();
-});
+// localStorage에서 읽기, 안되면 opener에서 직접
+try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) {}
+if(!_pts.length && window.opener && window.opener.S && window.opener.S.pts){
+  _pts = window.opener.S.pts;
+}
+S.pts = _pts;
 
 let _sortKeys=[], _groups={}, _mode='tournament';
 let _assignMode=false, _assignSlotNum=null, _bracketLayout='A', _linkSel=null;
@@ -445,6 +446,7 @@ function _showLinkBar(ri,mi){
 function _hideLinkBar(){ const bar=document.getElementById('link-action-bar'); if(bar) bar.remove(); }
 
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); });
+renderList();
 </script>
 </body>
 </html>
