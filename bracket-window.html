@@ -129,10 +129,15 @@ window.addEventListener('message', e=>{
   _pts=e.data.pts||[]; S.pts=_pts; renderList();
 });
 
-// localStorage에서 읽기, 안되면 opener에서 직접
-try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) {}
-if(!_pts.length && window.opener && window.opener.S && window.opener.S.pts){
-  _pts = window.opener.S.pts;
+// opener에서 직접 읽기 (가장 확실), 실패시 localStorage
+try {
+  if(window.opener && window.opener.S && window.opener.S.pts && window.opener.S.pts.length){
+    _pts = window.opener.S.pts;
+  } else {
+    _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]');
+  }
+} catch(e) {
+  try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e2) {}
 }
 S.pts = _pts;
 
