@@ -1378,6 +1378,7 @@ function impXlsNew(){
       const teamIdx=headers.findIndex(h=>h==='팀명'||h==='team');
       const weightIdx=headers.findIndex(h=>h==='체급'||h==='weight');
       const divIdx=headers.findIndex(h=>h==='부문'||h==='division');
+      const genderIdx=headers.findIndex(h=>h==='성별'||h==='gender');
       if(nameIdx<0){toast('이름 컬럼을 찾을 수 없어요','error');return;}
       let added=0;
       rows.slice(1).forEach((cols,i)=>{
@@ -1389,6 +1390,7 @@ function impXlsNew(){
           team:teamIdx>=0?String(cols[teamIdx]||'').trim():'',
           weight:weightIdx>=0?String(cols[weightIdx]||'').trim():'',
           division:divIdx>=0?String(cols[divIdx]||'').trim():'',
+          gender:genderIdx>=0?String(cols[genderIdx]||'').trim():'',
           color:TC[S.pts.length%TC.length]
         });
         added++;
@@ -1446,6 +1448,11 @@ function renderPA(){
     <div class="pa">
       <div class="par">
         <input class="fi" id="pti" placeholder="${isT?'팀 이름':'참가자 이름'} 입력" onkeydown="if(event.key==='Enter')addPt()">
+        <select id="ptg" style="padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;cursor:pointer;">
+          <option value="">성별</option>
+          <option value="남">남</option>
+          <option value="여">여</option>
+        </select>
         <button class="badd" onclick="addPt()">+ 추가</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
@@ -1463,6 +1470,7 @@ function renderPL(){
   S.pts.forEach((p,i)=>{
     const d=document.createElement('div');d.className='ptag';
     const tags=[];
+    if(p.gender&&p.gender.trim())tags.push(`<span style="font-size:10px;background:${p.gender==='남'?'rgba(76,201,240,0.2)':'rgba(255,100,150,0.2)'};border-radius:3px;padding:1px 5px;color:${p.gender==='남'?'var(--accent)':'#ff6496'}">${p.gender}</span>`);
     if(p.weight&&p.weight.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.weight}</span>`);
     if(p.division&&p.division.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.division}</span>`);
     if(p.team&&p.team.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.07);border-radius:3px;padding:1px 5px;color:var(--text3)">${p.team}</span>`);
@@ -1473,7 +1481,8 @@ function renderPL(){
 function addPt(){
   const inp=document.getElementById('pti');if(!inp)return;
   const nm=inp.value.trim();if(!nm){toast('이름을 입력해주세요.','error');return;}
-  S.pts.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),name:nm,color:TC[S.pts.length%TC.length]});
+  const gender=(document.getElementById('ptg')||{value:''}).value;
+  S.pts.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),name:nm,gender,color:TC[S.pts.length%TC.length]});
   inp.value='';inp.focus();renderPL();updatePv();
   try{App.setState({participants:S.pts});}catch(e){}
 }
@@ -1709,6 +1718,7 @@ function toast(msg,type='info'){
     <div id="pts-step1" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
       <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;">
         <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">① 그룹 기준 선택:</span>
+        <button onclick="togglePtsSort('gender')" id="sort-gender" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">성별</button>
         <button onclick="togglePtsSort('division')" id="sort-division" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">부문별</button>
         <button onclick="togglePtsSort('weight')" id="sort-weight" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">체급별</button>
         <button onclick="togglePtsSort('team')" id="sort-team" class="pts-sort-btn" style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .15s;">팀별</button>
@@ -1814,7 +1824,12 @@ function togglePtsSort(key){
 function groupPts(keys){
   const groups={};
   S.pts.forEach(p=>{
-    let key=!keys.length?'전체':keys.map(k=>k==='division'?p.division||'미분류':k==='weight'?p.weight||'미분류':p.team||'개인').filter(Boolean).join(' / ');
+    let key=!keys.length?'전체':keys.map(k=>
+      k==='division'?p.division||'미분류':
+      k==='weight'?p.weight||'미분류':
+      k==='gender'?p.gender||'미분류':
+      p.team||'개인'
+    ).filter(Boolean).join(' / ');
     if(!groups[key])groups[key]=[];
     groups[key].push(p);
   });
