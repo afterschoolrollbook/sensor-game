@@ -253,7 +253,9 @@ function toast(msg, type='info'){
 
 window.addEventListener('message', e=>{
   if(!e.data||e.data.type!=='sgp_pts_update') return;
-  _pts=e.data.pts||[]; S.pts=_pts; renderList();
+  _pts=e.data.pts||[]; S.pts=_pts;
+  autoDetectSortKeys();
+  renderList();
 });
 
 // 완전히 로드된 뒤 부모창에 "준비됨" 신호 → 부모가 데이터를 밀어줌
@@ -268,6 +270,23 @@ let _sortKeys=[], _groups={}, _mode='tournament';
 let _assignMode=false, _assignSlotNum=null, _linkSel=null;
 let _byeAssigned=null; // {ri, mi} 부전승 배정된 경기
 // _bracketLayout은 step4.js에서 선언됨 — 중복 선언 금지
+
+function autoDetectSortKeys(){
+  _sortKeys=[];
+  if(S.pts.some(p=>p.gender&&p.gender.trim())) _sortKeys.push('gender');
+  if(S.pts.some(p=>p.division&&p.division.trim())) _sortKeys.push('division');
+  if(S.pts.some(p=>p.weight&&p.weight.trim())) _sortKeys.push('weight');
+  if(S.pts.some(p=>p.team&&p.team.trim()) && !_sortKeys.length) _sortKeys.push('team');
+  // 버튼 하이라이트 동기화
+  ['gender','division','weight','team'].forEach(k=>{
+    const btn=document.getElementById('sort-'+k);
+    if(!btn) return;
+    const on=_sortKeys.includes(k);
+    btn.style.borderColor=on?'var(--accent)':'var(--border)';
+    btn.style.background=on?'rgba(76,201,240,.12)':'transparent';
+    btn.style.color=on?'var(--accent)':'var(--text3)';
+  });
+}
 
 
 function show(stepId){
@@ -291,38 +310,35 @@ function renderList(){
   const list=document.getElementById('pts-popup-list');
   document.getElementById('win-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
   list.innerHTML='';
-  if(!_sortKeys.length){
-    const note=document.createElement('div');
-    note.style.cssText='color:var(--text3);font-size:12px;padding:4px 0 10px;';
-    note.textContent='그룹 기준을 선택하거나 그냥 확정하면 전체를 하나의 그룹으로 처리합니다.';
-    list.appendChild(note);
-    S.pts.forEach(p=>{
-      const d=document.createElement('div'); d.className='pt-card';
-      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
-        <div style="font-size:13px;font-weight:600;">${p.name}</div>
-        ${p.weight?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.weight}</span>`:''}
-        ${p.division?`<span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${p.division}</span>`:''}`;
-      list.appendChild(d);
-    });
-    return;
-  }
+
   const groups={};
-  S.pts.forEach(p=>{
-    const key=_sortKeys.map(k=>p[k]||'미분류').join(' / ');
-    if(!groups[key]) groups[key]=[];
-    groups[key].push(p);
-  });
-  Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
-    const sec=document.createElement('div'); sec.style.marginBottom='16px';
-    sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;font-weight:700;">${gname}</span>
-      <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 8px;border-radius:10px;">${members.length}명</span></div>`;
-    members.forEach(p=>{
-      const d=document.createElement('div'); d.className='pt-card';
-      d.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--text3)'}"></div>
-        <div style="font-size:13px;font-weight:600;">${p.name}</div>`;
-      sec.appendChild(d);
+  if(!_sortKeys.length){
+    groups['전체']=[...S.pts];
+  } else {
+    S.pts.forEach(p=>{
+      const key=_sortKeys.map(k=>p[k]||'미분류').join(' / ');
+      if(!groups[key]) groups[key]=[];
+      groups[key].push(p);
     });
+  }
+
+  Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
+    const sec=document.createElement('div');
+    sec.style.cssText='margin-bottom:14px;';
+    sec.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);">
+        <span style="font-size:11px;font-weight:700;">${gname}</span>
+        <span style="font-size:10px;color:var(--text3);background:var(--card2);padding:1px 7px;border-radius:8px;">${members.length}명</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:4px;">
+        ${members.map((p,i)=>`
+          <div style="display:flex;align-items:center;gap:5px;padding:4px 7px;background:var(--card);border:1px solid var(--border);border-radius:5px;min-width:0;">
+            <span style="font-size:9px;color:var(--text3);flex-shrink:0;">${i+1}</span>
+            <div style="width:5px;height:5px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+            ${p.gender?`<span style="font-size:8px;padding:0 3px;border-radius:2px;flex-shrink:0;background:${p.gender==='남'?'rgba(76,201,240,0.2)':'rgba(255,100,150,0.2)'};color:${p.gender==='남'?'#4cc9f0':'#ff6496'}">${p.gender}</span>`:''}
+            <span style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</span>
+          </div>`).join('')}
+      </div>`;
     list.appendChild(sec);
   });
 }
@@ -1059,6 +1075,7 @@ function clearSavedAndRestart(){
   toast('초기화됐어요','info');
 }
 
+autoDetectSortKeys();
 renderList();
 </script>
 </body>
