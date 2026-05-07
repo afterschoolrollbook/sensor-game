@@ -263,6 +263,7 @@ window.addEventListener('message', e=>{
   _pts=e.data.pts||[]; S.pts=_pts;
   autoDetectSortKeys();
   renderList();
+  renderPtsOverview();
 });
 
 // 완전히 로드된 뒤 부모창에 "준비됨" 신호 → 부모가 데이터를 밀어줌
@@ -381,6 +382,14 @@ function confirmPtsGroup(){
   } catch(e){}
   toast('그룹 저장 완료!', 'success');
   show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
+  setCompType(_compType||'national');
+  setCourtCount(_courtCount||1);
+  _bracketLayout='A';
+  setLayoutAndHighlight('A');
+  requestAnimationFrame(_initLayoutTooltips);
+  document.getElementById('bracket-preview-panel').style.display='block';
+  updateBracketPreview();
+  renderPtsOverview();
 }
 function goStep1(){ show('pts-step1'); }
 let _compType='national';
@@ -1154,9 +1163,11 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); }
   try {
     const savedGroups = localStorage.getItem('sgp_groups');
     const savedKeys   = localStorage.getItem('sgp_sortKeys');
+    const savedPts    = localStorage.getItem('sgp_pts');
     if(savedGroups){
       _groups   = JSON.parse(savedGroups);
       _sortKeys = JSON.parse(savedKeys||'[]');
+      if(savedPts){ _pts=JSON.parse(savedPts); S.pts=_pts; }
       setTimeout(()=>{ goStep2(); toast('이전 설정 불러왔어요','info'); }, 0);
     }
   } catch(e){}
