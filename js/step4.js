@@ -506,7 +506,28 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
       const matchLabel=isBye?'BYE':m.winner?'WIN':'';
       const labelColor=isBye?'#4cc9f0':m.winner?'#06d6a0':'';
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
+
+      // 이 경기에 오기까지 치른 경기 수 계산 (BYE는 경기 수 0으로 처리)
+      const calcGameCount=(ri,mi)=>{
+        if(ri===0) return 0; // 1라운드 자체가 1번째 경기
+        const m=rounds[ri][mi];
+        let countA=0, countB=0;
+        if(m&&m.fromA){
+          const [fari,fami]=m.fromA.split('-').map(Number);
+          const srcM=rounds[fari]?.[fami];
+          countA=(srcM&&srcM.bye)?calcGameCount(fari,fami):calcGameCount(fari,fami)+1;
+        }
+        if(m&&m.fromB){
+          const [fbri,fbmi]=m.fromB.split('-').map(Number);
+          const srcM=rounds[fbri]?.[fbmi];
+          countB=(srcM&&srcM.bye)?calcGameCount(fbri,fbmi):calcGameCount(fbri,fbmi)+1;
+        }
+        return Math.max(countA,countB);
+      };
+      const gameCount=calcGameCount(ri,mi)+1; // 이 경기가 몇 번째인지
+      const gameCountLabel=`${gameCount}경기`;
+
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#555;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
       box.appendChild(header);
 
       if(isBye){
