@@ -1075,51 +1075,52 @@ function generateAllBrackets(){
 function _redrawBracketView(){
   const courts=_courtCount||1;
   const view=document.getElementById('pts-bracket-view');
-  if(!view) return;
+  if(!view||!S.groupBrackets?.length) return;
   view.innerHTML='';
 
-  // BYE 제거 헬퍼
   const noByeMatches=matches=>(matches||[]).filter(m=>!m.bye);
+  const saved=S.matches;
 
   if(_bracketLayout==='D' && courts>=2){
-    const court1Groups=(S.groupBrackets||[]).filter(g=>g.court===1);
-    const court2Groups=(S.groupBrackets||[]).filter(g=>g.court===2);
-    const court1Matches=court1Groups.flatMap(g=>noByeMatches(g.matches[0]));
-    const court2Matches=court2Groups.flatMap(g=>noByeMatches(g.matches[0]));
+    const court1Matches=(S.groupBrackets||[]).filter(g=>g.court===1).flatMap(g=>noByeMatches(g.matches[0]));
+    const court2Matches=(S.groupBrackets||[]).filter(g=>g.court===2).flatMap(g=>noByeMatches(g.matches[0]));
 
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
 
     const lDiv=document.createElement('div');
     lDiv.style.cssText='flex:1;border-right:2px solid var(--border);padding:12px;min-width:0;';
-    const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
-    const mkLabel=(txt)=>{ const d=document.createElement('div'); d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;'; d.textContent=txt; return d; };
+    const rDiv=document.createElement('div');
+    rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
+
+    const mkLabel=(txt)=>{ const d=document.createElement('div'); d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;'; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1'));
     rDiv.appendChild(mkLabel('// 경기장 2'));
 
-    const saved=S.matches;
     if(court1Matches.length){ S.matches=[court1Matches]; renderBracketA(lDiv); }
-    if(court2Matches.length){ S.matches=[court2Matches]; renderBracketA(rDiv); }
-    S.matches=saved;
+    if(court2Matches.length){
+      const rContent=document.createElement('div');
+      rContent.style.cssText='display:flex;flex-direction:column;align-items:flex-end;width:100%;';
+      S.matches=[court2Matches]; renderBracketA(rContent);
+      // 내부 컨텐츠 오른쪽 정렬
+      rContent.querySelectorAll('[style*="position:relative"],[style*="overflow:auto"]').forEach(el=>{
+        el.style.marginLeft='auto';
+      });
+      rDiv.appendChild(rContent);
+    }
 
-    // 내부 scroll 제거
     _stripInnerScroll(lDiv);
     _stripInnerScroll(rDiv);
-
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
   } else {
-    const g=S.groupBrackets?.[0];
-    if(g){
-      const saved=S.matches;
-      S.matches=[noByeMatches(g.matches[0])];
-      renderBracketA(view);
-      S.matches=saved;
-    }
+    const allMatches=(S.groupBrackets||[]).flatMap(g=>noByeMatches(g.matches[0]));
+    S.matches=allMatches.length?[allMatches]:[[]];
+    renderBracketA(view);
   }
+  S.matches=saved;
 }
 
 // 부전승 배정 선택 팝업
@@ -1203,7 +1204,8 @@ function renderBracketTabs(){
     const active=i===S.activeGroup;
     btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
     btn.textContent=g.label+' ('+g.slots.length+'명)'+(g.court?` · 경기장${g.court}`:'');
-    btn.style.cursor='default';
+    btn.style.cursor='pointer';
+    btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
     tabs.appendChild(btn);
   });
 }
