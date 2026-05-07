@@ -151,7 +151,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
           <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
         </div>
-        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow:auto;min-height:360px;"></div>
+        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow:auto;min-height:300px;display:flex;align-items:center;justify-content:center;"></div>
         <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
       </div>
 
@@ -461,42 +461,27 @@ function getBracketPreviewSVG(courts,layout){
       ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
     </svg>`;
     const svgsByCount={
-      2:`<svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:0 auto;">
-        ${txt(310,12,'D형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
-        <text transform="rotate(-90, 0, 85)" x="0" y="85" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
-        <text transform="rotate(90, 618, 85)" x="618" y="85" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
-        ${txt(30,36,'1R','rgba(76,201,240,0.4)',7)}
-        ${txt(110,36,'2R','rgba(76,201,240,0.4)',7)}
-        ${txt(190,36,'3R','rgba(76,201,240,0.4)',7)}
-        ${txt(310,36,'결승','rgba(230,57,70,0.7)',7)}
-        ${txt(430,36,'3R','rgba(76,201,240,0.4)',7)}
-        ${txt(510,36,'2R','rgba(76,201,240,0.4)',7)}
-        ${txt(590,36,'1R','rgba(76,201,240,0.4)',7)}
-        ${box(4,44,52,20)}${box(4,70,52,20)}
-        ${box(4,100,52,20)}${box(4,126,52,20)}
-        ${box(84,57,52,20)}${box(84,113,52,20)}
-        ${box(164,85,52,20)}
-        ${line('M56 54 H70 V67 H84')}${line('M56 80 H70 V67')}
-        ${line('M56 110 H70 V123 H84')}${line('M56 136 H70 V123')}
-        ${line('M136 67 H150 V95 H164')}${line('M136 123 H150 V95')}
-        ${line('M216 95 H248','0.6')}
-        ${fbox(248,85,124,20)}
-        ${txt(310,98,'🏆 결승','rgba(230,57,70,0.95)',9)}
-        ${line('M372 95 H404','0.6')}
-        ${box(404,85,52,20)}
-        ${box(484,57,52,20)}${box(484,113,52,20)}
-        ${box(564,44,52,20)}${box(564,70,52,20)}
-        ${box(564,100,52,20)}${box(564,126,52,20)}
-        ${line('M404 95 H470 V67 H484')}${line('M404 95 H470 V123 H484')}
-        ${line('M536 67 H550 V54 H564')}${line('M536 67 H550 V80 H564')}
-        ${line('M536 123 H550 V110 H564')}${line('M536 123 H550 V136 H564')}
-        ${txt(30,170,'1R','rgba(76,201,240,0.4)',7)}
-        ${txt(110,170,'2R','rgba(76,201,240,0.4)',7)}
-        ${txt(190,170,'3R','rgba(76,201,240,0.4)',7)}
-        ${txt(310,170,'결승','rgba(230,57,70,0.7)',7)}
-        ${txt(430,170,'3R','rgba(76,201,240,0.4)',7)}
-        ${txt(510,170,'2R','rgba(76,201,240,0.4)',7)}
-        ${txt(590,170,'1R','rgba(76,201,240,0.4)',7)}
+      2:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+        ${txt(200,12,'D형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
+        ${fbox(161,66,78,28)}
+        ${txt(200,83,'🏆 결승','rgba(230,57,70,0.95)',9)}
+        ${box(74,66,72,28)}
+        ${box(254,66,72,28)}
+        ${line('M146 80 H161','0.6')}
+        ${line('M254 80 H239','0.6')}
+        ${box(10,36,52,24)}${box(10,100,52,24)}
+        ${box(338,36,52,24)}${box(338,100,52,24)}
+        ${line('M62 48 H68 V80 H74')}
+        ${line('M62 112 H68 V80 H68')}
+        ${line('M338 48 H332 V80 H326')}
+        ${line('M338 112 H332 V80 H332')}
+        <text transform="rotate(-90,2,80)" x="2" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
+        <text transform="rotate(90,398,80)" x="398" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
+        ${txt(36,150,'1R','rgba(76,201,240,0.4)',7)}
+        ${txt(110,150,'2R','rgba(76,201,240,0.4)',7)}
+        ${txt(200,150,'결승','rgba(230,57,70,0.7)',7)}
+        ${txt(290,150,'2R','rgba(76,201,240,0.4)',7)}
+        ${txt(364,150,'1R','rgba(76,201,240,0.4)',7)}
       </svg>`,
       4:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
         ${txt(200,12,'D형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
