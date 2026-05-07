@@ -1034,14 +1034,19 @@ function generateBracket(pts){
 
   const round1=[];
   const isOdd=n%2===1;
+  let slotNum=1;
 
   if(isOdd){
-    round1.push({p1:players[0],p2:null,bye:true});
+    round1.push({p1:{name:`${slotNum++}번`,id:slotNum-1},p2:null,bye:true});
   }
 
   const rest=isOdd?players.slice(1):players;
   for(let i=0;i<rest.length;i+=2){
-    round1.push({p1:rest[i],p2:rest[i+1]||null,bye:false});
+    round1.push({
+      p1:{name:`${slotNum++}번`,id:slotNum-1},
+      p2:{name:`${slotNum++}번`,id:slotNum-1},
+      bye:false
+    });
   }
 
   return[round1];
