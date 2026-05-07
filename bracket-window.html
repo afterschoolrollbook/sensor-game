@@ -456,6 +456,8 @@ function confirmPtsGroup(){
     localStorage.setItem('sgp_groups', JSON.stringify(_groups));
     localStorage.setItem('sgp_sortKeys', JSON.stringify(_sortKeys));
     localStorage.setItem('sgp_pts', JSON.stringify(S.pts));
+    localStorage.setItem('sgp_courtCount', String(_courtCount||1));
+    localStorage.setItem('sgp_layout', _bracketLayout||'A');
   } catch(e){}
   toast('저장 완료!', 'success');
   show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
@@ -484,6 +486,7 @@ function setCompType(type){
 
 function setCourtCount(n){
   _courtCount=n;
+  try{ localStorage.setItem('sgp_courtCount', String(n)); }catch(e){}
   document.querySelectorAll('.court-btn').forEach(b=>{
     const active=Number(b.dataset.count)===n;
     b.style.borderColor=active?'var(--red)':'var(--border)';
@@ -940,7 +943,10 @@ async function runBracketAnalysis(){
 
 function applyAnalysisLayout(layoutCode){
   setLayoutAndHighlight(layoutCode);
-  // 대진표 만들기 버튼 강조 + 스크롤
+  try{
+    localStorage.setItem('sgp_courtCount', String(_courtCount||1));
+    localStorage.setItem('sgp_layout', layoutCode);
+  }catch(e){}
   const btn=document.getElementById('btn-generate');
   if(btn){
     btn.style.transition='all .2s';
@@ -1055,7 +1061,11 @@ function generateAllBrackets(){
   }));
 
   S.activeGroup=0; _assignMode=false; _linkSel=null;
-  try{ localStorage.setItem('sgp_step','3'); }catch(e){}
+  try{
+    localStorage.setItem('sgp_step','3');
+    localStorage.setItem('sgp_courtCount', String(_courtCount||1));
+    localStorage.setItem('sgp_layout', _bracketLayout||'A');
+  }catch(e){}
   show('pts-step3');
   renderBracketTabs();
   renderBracketView(0);
@@ -1378,6 +1388,10 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); }
       _groups   = JSON.parse(savedGroups);
       _sortKeys = JSON.parse(savedKeys||'[]');
       if(savedPts){ _pts=JSON.parse(savedPts); S.pts=_pts; }
+      const savedCourtCount = localStorage.getItem('sgp_courtCount');
+      const savedLayout     = localStorage.getItem('sgp_layout');
+      if(savedCourtCount) _courtCount=parseInt(savedCourtCount);
+      if(savedLayout) _bracketLayout=savedLayout;
       setTimeout(()=>{
         if(savedStep==='3'){
           show('pts-step3');
