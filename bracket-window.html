@@ -69,7 +69,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="generateAllBrackets()" id="btn-generate" style="padding:5px 18px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">대진표 만들기 →</button>
       </div>
     </div>
-    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
+    <div class="scroll-area" style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
 
       <!-- 경기 규모 -->
       <div style="display:flex;align-items:center;gap:16px;">
@@ -151,7 +151,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
           <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
         </div>
-        <div id="bracket-preview-svg" style="padding:16px 12px;background:var(--bg);overflow-x:auto;"></div>
+        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow-x:auto;min-height:180px;"></div>
         <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
       </div>
 
@@ -392,18 +392,25 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='B'){
-    return `<svg viewBox="0 0 340 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto;">
-      ${txt(170,10,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
-      ${txt(30,108,'1R','rgba(76,201,240,0.5)',8)}${txt(110,108,'2R','rgba(76,201,240,0.5)',8)}${txt(190,108,'3R','rgba(76,201,240,0.5)',8)}${txt(280,108,'결승','rgba(230,57,70,0.7)',8)}
-      ${box(4,84,52,18)}${box(4,60,52,18)}${box(4,36,52,18)}${box(4,12,52,18)}
-      ${box(84,72,52,18)}${box(84,24,52,18)}
-      ${box(164,48,52,18)}
-      ${fbox(254,48,72,18)}
-      ${line('M56 93 H70 V81 H84')}${line('M56 69 H70 V81 H84')}
-      ${line('M56 45 H70 V33 H84')}${line('M56 21 H70 V33 H84')}
-      ${line('M136 81 H150 V57 H164')}${line('M136 33 H150 V57 H164')}
-      ${line('M216 57 H254','0.7')}
-      ${txt(290,57,'🏆 결승','rgba(230,57,70,0.9)',9)}
+    // B형: 아래→위. 결승 상단, 1R 하단
+    return `<svg viewBox="0 0 340 165" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:420px;display:block;margin:0 auto;">
+      ${txt(170,12,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
+      ${txt(280,24,'결승','rgba(230,57,70,0.7)',8)}
+      ${txt(190,24,'3R','rgba(76,201,240,0.5)',8)}
+      ${txt(110,24,'2R','rgba(76,201,240,0.5)',8)}
+      ${txt(30,158,'1R','rgba(76,201,240,0.5)',8)}
+      ${fbox(254,28,72,18)}
+      ${txt(290,41,'🏆 결승','rgba(230,57,70,0.9)',9)}
+      ${box(164,60,52,18)}
+      ${box(84,80,52,18)}${box(84,118,52,18)}
+      ${box(4,96,52,18)}${box(4,114,52,18)}${box(4,122,52,18)}${box(4,140,52,18)}
+      ${line('M216 69 V37 H254','0.7')}
+      ${line('M136 89 H150 V74 H164')}
+      ${line('M136 127 H150 V74 H164')}
+      ${line('M56 105 H70 V89 H84')}
+      ${line('M56 123 H70 V127 H84')}
+      ${line('M56 131 H70 V127 H84')}
+      ${line('M56 149 H70 V127 H84')}
     </svg>`;
   }
   if(layout==='C'){
