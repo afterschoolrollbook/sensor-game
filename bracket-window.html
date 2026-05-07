@@ -1031,12 +1031,29 @@ function shuffleAllGroups(){
 }
 
 function generateAllBrackets(){
+  // 경기장 수에 따라 레이아웃 자동 설정
+  const courts=_courtCount||1;
+  _bracketLayout = courts >= 2 ? 'D' : 'A';
+
   const entries=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+
+  // 경기장별 그룹 배정 (분석과 동일 로직 — 경기 수 균등 분배)
+  const courtSlots=Array.from({length:courts},(_,i)=>({court:i+1,groups:[],matchCount:0}));
+  [...entries].sort((a,b)=>b[1].length-a[1].length).forEach(([gname,members])=>{
+    courtSlots.sort((a,b)=>a.matchCount-b.matchCount);
+    courtSlots[0].groups.push(gname);
+    courtSlots[0].matchCount+=members.length-1;
+  });
+  courtSlots.sort((a,b)=>a.court-b.court);
+
+  // groupBrackets 생성 (탭용 — 빈 matches)
   S.groupBrackets=entries.map(([gname,members])=>({
     label:gname,
     matches:[[]],
-    slots:members.map((p,i)=>({num:i+1,player:p}))
+    slots:members.map((p,i)=>({num:i+1,player:p})),
+    court:courtSlots.findIndex(c=>c.groups.includes(gname))+1
   }));
+
   S.activeGroup=0; _assignMode=false; _linkSel=null;
   try{ localStorage.setItem('sgp_step','3'); }catch(e){}
   show('pts-step3');
@@ -1124,7 +1141,7 @@ function renderBracketTabs(){
     const btn=document.createElement('button');
     const active=i===S.activeGroup;
     btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
-    btn.textContent=g.label+' ('+g.slots.length+'명)';
+    btn.textContent=g.label+' ('+g.slots.length+'명)'+(g.court?` · 경기장${g.court}`:'');
     btn.style.cursor='default';
     tabs.appendChild(btn);
   });
@@ -1163,18 +1180,19 @@ function renderBracketView(groupIdx){
     const saved=S.matches;
     try{
       S.matches=g.matches;
-      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
-      (fns[_bracketLayout]||renderBracketA)(view);
-      // step4.js가 생성한 첫번째 자식 div에 flex:1 + overflow:auto 부여 → 스크롤바 1개
-      const inner=view.querySelector('div:not([style*="rgba"])');
-      if(inner){
-        inner.style.flex='1';
-        inner.style.minHeight='0';
-        // 스크롤 위치 복원 — rAF 한 번 더 뒤로 미뤄서 클릭 이벤트 처리 후 복원
-        requestAnimationFrame(()=>{
-          inner.scrollLeft=savedScrollLeft;
-          inner.scrollTop=savedScrollTop;
-        });
+      const isEmpty=!g.matches||!g.matches[0]||g.matches[0].length===0;
+      if(!isEmpty){
+        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
+        (fns[_bracketLayout]||renderBracketA)(view);
+        const inner=view.querySelector('div:not([style*="rgba"])');
+        if(inner){
+          inner.style.flex='1';
+          inner.style.minHeight='0';
+          requestAnimationFrame(()=>{
+            inner.scrollLeft=savedScrollLeft;
+            inner.scrollTop=savedScrollTop;
+          });
+        }
       }
     } finally { S.matches=saved; }
 
