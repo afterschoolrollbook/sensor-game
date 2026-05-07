@@ -200,14 +200,54 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       </div>
 
       <!-- 대진표 미리보기 패널 -->
-      <div id="bracket-preview-panel" style="display:none;border:1px solid var(--border);border-radius:10px;">
+      <div id="bracket-preview-panel" style="display:block;border:1px solid var(--border);border-radius:10px;">
         <div style="padding:8px 14px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
           <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 레이아웃 미리보기</span>
-          <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
-          <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
+          <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;">A형 (좌→우)</span>
+          <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;">경기장 1개 적합</span>
         </div>
-        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);"></div>
-        <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
+        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);">
+          <svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+            <text x="250" y="12" text-anchor="middle" fill="rgba(76,201,240,0.7)" font-size="10" font-family="'Share Tech Mono',monospace">A형 — 좌→우 단방향</text>
+            <text x="30"  y="24" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="8" font-family="'Share Tech Mono',monospace">1R</text>
+            <text x="130" y="24" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="8" font-family="'Share Tech Mono',monospace">2R</text>
+            <text x="220" y="24" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="8" font-family="'Share Tech Mono',monospace">3R</text>
+            <text x="400" y="24" text-anchor="middle" fill="rgba(230,57,70,0.8)"  font-size="8" font-family="'Share Tech Mono',monospace">결승</text>
+            <rect x="4"   y="28"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="54"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="84"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="110" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="140" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="166" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="196" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="4"   y="222" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="84"  y="41"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="84"  y="97"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="84"  y="153" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="84"  y="209" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="164" y="69"  width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="164" y="181" width="52" height="20" rx="3" fill="rgba(76,201,240,0.25)" stroke="rgba(76,201,240,0.55)" stroke-width="1"/>
+            <rect x="320" y="115" width="120" height="30" rx="3" fill="rgba(230,57,70,0.5)" stroke="rgba(230,57,70,0.8)" stroke-width="1.5"/>
+            <text x="380" y="134" text-anchor="middle" fill="rgba(230,57,70,0.95)" font-size="10" font-family="'Share Tech Mono',monospace">🏆 결승</text>
+            <path d="M56 38 H70 V51 H84"  fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 64 H70 V51"      fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 94 H70 V107 H84" fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 120 H70 V107"    fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 150 H70 V163 H84" fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 176 H70 V163"    fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 206 H70 V219 H84" fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M56 232 H70 V219"    fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M136 51 H150 V79 H164"  fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M136 107 H150 V79"      fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M136 163 H150 V191 H164" fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M136 219 H150 V191"     fill="none" stroke="rgba(76,201,240,0.4)" stroke-width="0.9"/>
+            <path d="M216 79 H268 V130 H320"  fill="none" stroke="rgba(76,201,240,0.7)" stroke-width="0.9"/>
+            <path d="M216 191 H268 V130"      fill="none" stroke="rgba(76,201,240,0.7)" stroke-width="0.9"/>
+          </svg>
+        </div>
+        <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; 1경기장 &nbsp;/&nbsp; 4라운드</span>
+        </div>
       </div>
 
     </div>
