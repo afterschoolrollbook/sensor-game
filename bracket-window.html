@@ -1082,23 +1082,39 @@ function _redrawBracketView(){
   const saved=S.matches;
 
   if(_bracketLayout==='D' && courts>=2){
-    const court1Matches=(S.groupBrackets||[]).filter(g=>g.court===1).flatMap(g=>noByeMatches(g.matches[0]));
-    const court2Matches=(S.groupBrackets||[]).filter(g=>g.court===2).flatMap(g=>noByeMatches(g.matches[0]));
+    // 경기장별 그룹 매칭 데이터 수집 — 각 경기에 그룹+순번 태그 부여
+    const taggedMatches=(courtNum)=>{
+      const matched=[];
+      (S.groupBrackets||[]).filter(g=>g.court===courtNum).forEach(g=>{
+        const first=noByeMatches(g.matches[0]);
+        first.forEach((m,mi)=>{
+          // 그룹명 약칭: 체급만 추출 (예: "남 / 고등부 / 60kg" → "60kg")
+          const labelParts=g.label.split('/');
+          const shortLabel=labelParts[labelParts.length-1].trim();
+          matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1});
+        });
+      });
+      return matched;
+    };
+    const court1Matches=taggedMatches(1);
+    const court2Matches=taggedMatches(2);
 
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='flex:1;border-right:2px solid var(--border);padding:12px;min-width:0;';
+    lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
     const rDiv=document.createElement('div');
     rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
 
-    const mkLabel=(txt)=>{ const d=document.createElement('div'); d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;'; d.textContent=txt; return d; };
-    lDiv.appendChild(mkLabel('// 경기장 1'));
-    rDiv.appendChild(mkLabel('// 경기장 2'));
+    const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
+    lDiv.appendChild(mkLabel('// 경기장 1','left'));
+    rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    if(court1Matches.length){ S.matches=[court1Matches]; renderBracketA(lDiv); }
+    if(court1Matches.length){
+      S.matches=[court1Matches]; renderBracketA(lDiv);
+    }
     if(court2Matches.length){
       const rContent=document.createElement('div');
       rContent.style.cssText='display:flex;flex-direction:column;align-items:flex-end;width:100%;';
