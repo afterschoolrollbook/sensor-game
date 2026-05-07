@@ -1082,13 +1082,11 @@ function _redrawBracketView(){
   const saved=S.matches;
 
   if(_bracketLayout==='D' && courts>=2){
-    // 경기장별 그룹 매칭 데이터 수집 — 각 경기에 그룹+순번 태그 부여
     const taggedMatches=(courtNum)=>{
       const matched=[];
       (S.groupBrackets||[]).filter(g=>g.court===courtNum).forEach(g=>{
         const first=noByeMatches(g.matches[0]);
         first.forEach((m,mi)=>{
-          // 그룹명 약칭: 체급만 추출 (예: "남 / 고등부 / 60kg" → "60kg")
           const labelParts=g.label.split('/');
           const shortLabel=labelParts[labelParts.length-1].trim();
           matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1});
@@ -1112,9 +1110,7 @@ function _redrawBracketView(){
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    if(court1Matches.length){
-      S.matches=[court1Matches]; renderBracketA(lDiv);
-    }
+    if(court1Matches.length){ S.matches=[court1Matches]; renderBracketA(lDiv); }
     if(court2Matches.length){
       const rContent=document.createElement('div');
       rContent.style.cssText='display:flex;flex-direction:column;align-items:flex-end;width:100%;';
@@ -1189,10 +1185,10 @@ function _checkAndHandleOddAfterLink(g, ri){
       const key=`${sel._ri}-${sel._mi}`;
       if(g.matches[ri+1].find(nm=>nm.fromA===key||nm.fromB===key)){
         toast('이미 연결된 경기입니다','error');
-        renderBracketView(S.activeGroup); return;
+        _redrawBracketView(); return;
       }
       g.matches[ri+1].push({p1:{name:sel.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
-      renderBracketView(S.activeGroup);
+      _redrawBracketView();
       toast(sel.name+' 부전승 배정!','success');
     },
     ()=>{
@@ -1201,10 +1197,10 @@ function _checkAndHandleOddAfterLink(g, ri){
       if(!g.matches[ri+1]) g.matches.push([]);
       const key=`${pick._ri}-${pick._mi}`;
       if(g.matches[ri+1].find(nm=>nm.fromA===key||nm.fromB===key)){
-        renderBracketView(S.activeGroup); return;
+        _redrawBracketView(); return;
       }
       g.matches[ri+1].push({p1:{name:pick.name,tbd:true},p2:null,fromA:key,fromB:null,bye:true});
-      renderBracketView(S.activeGroup);
+      _redrawBracketView();
       showByeResult(pick.name);
     }
   );
@@ -1299,21 +1295,21 @@ function renderBracketView(groupIdx){
   });
 }
 
-function selectSlot(num){ _assignSlotNum=(_assignSlotNum===num)?null:num; renderBracketView(S.activeGroup); }
+function selectSlot(num){ _assignSlotNum=(_assignSlotNum===num)?null:num; _redrawBracketView(); }
 
 function assignPlayerToSlot(targetNum,fromIdx){
   const g=S.groupBrackets[S.activeGroup];
   const ti=g.slots.findIndex(s=>s.num===targetNum); if(ti<0) return;
   const tmp=g.slots[ti].player; g.slots[ti].player=g.slots[fromIdx].player; g.slots[fromIdx].player=tmp;
   g.matches=generateBracket(g.slots.map(s=>s.player));
-  _assignSlotNum=null; renderBracketView(S.activeGroup); toast('슬롯 배정 완료!','success');
+  _assignSlotNum=null; _redrawBracketView(); toast('슬롯 배정 완료!','success');
 }
 
 function shuffleGroupBracket(){
   const g=S.groupBrackets[S.activeGroup];
   g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
   g.matches=generateBracket(g.slots.map(s=>s.player));
-  renderBracketView(S.activeGroup); toast(g.label+' 무작위로 섞었어요','success');
+  _redrawBracketView(); toast(g.label+' 무작위로 섞었어요','success');
 }
 
 function toggleAssignMode(){
@@ -1323,7 +1319,7 @@ function toggleAssignMode(){
   btn.style.background=_assignMode?'rgba(76,201,240,.15)':'transparent';
   btn.style.color=_assignMode?'var(--accent)':'var(--text3)';
   btn.textContent=_assignMode?'✏️ 지정중... (취소)':'✏️ 지정';
-  renderBracketView(S.activeGroup);
+  _redrawBracketView();
 }
 
 function setBracketLayout(mode){
@@ -1334,7 +1330,7 @@ function setBracketLayout(mode){
     btn.style.background=l===mode?'rgba(230,57,70,.2)':'transparent';
     btn.style.color=l===mode?'var(--red)':'var(--text2)';
   });
-  renderBracketView(S.activeGroup);
+  _redrawBracketView();
 }
 
 function addRound(){ toast('경기 박스를 클릭해서 연결하세요','info'); }
@@ -1342,7 +1338,7 @@ function addRound(){ toast('경기 박스를 클릭해서 연결하세요','info
 function removeLastRound(){
   const g=S.groupBrackets[S.activeGroup];
   if(!g||g.matches.length<=1){toast('1라운드는 삭제할 수 없어요','info');return;}
-  g.matches.pop(); renderBracketView(S.activeGroup); toast('마지막 라운드 삭제됨','success');
+  g.matches.pop(); _redrawBracketView(); toast('마지막 라운드 삭제됨','success');
 }
 
 function applyBracket(){
@@ -1394,17 +1390,17 @@ function _showByeForRound(g, ri){
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
-    _linkSel={ri,mi}; renderBracketView(S.activeGroup); _showLinkBar(ri,mi);
+    _linkSel={ri,mi}; _redrawBracketView(); _showLinkBar(ri,mi);
   } else {
-    if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
+    if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();_redrawBracketView();return;}
     const a=_linkSel,b={ri,mi}; _linkSel=null; _hideLinkBar();
-    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');renderBracketView(S.activeGroup);return;}
+    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');_redrawBracketView();return;}
     if(!g.matches[a.ri+1]) g.matches.push([]);
     const nextRound=g.matches[a.ri+1];
     const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
-    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){toast('이미 연결된 경기입니다','error');_redrawBracketView();return;}
     nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
-    renderBracketView(S.activeGroup);
+    _redrawBracketView();
     toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
 
     // 현재 라운드 모든 경기가 다음 라운드에 연결 완료됐는지 확인
@@ -1425,9 +1421,9 @@ function advanceMatch(ri,mi){
   if(!g.matches[ri+1]) g.matches.push([]);
   const nextRound=g.matches[ri+1];
   const aKey=`${ri}-${mi}`;
-  if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결된 경기입니다','error');renderBracketView(S.activeGroup);return;}
+  if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결된 경기입니다','error');_redrawBracketView();return;}
   nextRound.push({p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
-  renderBracketView(S.activeGroup); toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+  _redrawBracketView(); toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
 }
 
 function _showLinkBar(ri,mi){
@@ -1440,7 +1436,7 @@ function _showLinkBar(ri,mi){
   bar.innerHTML=`<span style="font-size:11px;color:var(--accent);font-weight:700;">${ri+1}-${mi+1} 선택됨</span>
     <span style="font-size:11px;color:var(--text3);">→ 다른 경기 클릭시 연결 / 또는:</span>
     <button onclick="advanceMatch(${ri},${mi})" style="padding:4px 12px;background:var(--green);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">▶ 다음으로 직행</button>
-    <button onclick="_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>`;
+    <button onclick="_linkSel=null;_hideLinkBar();_redrawBracketView();" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;cursor:pointer;font-size:11px;">취소</button>`;
 }
 function _hideLinkBar(){ const bar=document.getElementById('link-action-bar'); if(bar) bar.remove(); }
 
