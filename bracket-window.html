@@ -462,9 +462,9 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
     const svgsByCount={
       2:`<svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:0 auto;">
-        ${txt(310,12,'D형 — 경기장 2개 (16명 기준)','rgba(76,201,240,0.7)',10)}
-        ${txt(100,24,'경기장1','rgba(76,201,240,0.35)',7)}
-        ${txt(520,24,'경기장2','rgba(76,201,240,0.35)',7)}
+        ${txt(310,12,'D형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
+        <text transform="rotate(-90, 0, 85)" x="0" y="85" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
+        <text transform="rotate(90, 618, 85)" x="618" y="85" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
         ${txt(30,36,'1R','rgba(76,201,240,0.4)',7)}
         ${txt(110,36,'2R','rgba(76,201,240,0.4)',7)}
         ${txt(190,36,'3R','rgba(76,201,240,0.4)',7)}
@@ -488,8 +488,8 @@ function getBracketPreviewSVG(courts,layout){
         ${box(564,44,52,20)}${box(564,70,52,20)}
         ${box(564,100,52,20)}${box(564,126,52,20)}
         ${line('M404 95 H470 V67 H484')}${line('M404 95 H470 V123 H484')}
-        ${line('M484 67 H550 V54 H564')}${line('M484 67 H550 V80 H564')}
-        ${line('M484 123 H550 V110 H564')}${line('M484 123 H550 V136 H564')}
+        ${line('M536 67 H550 V54 H564')}${line('M536 67 H550 V80 H564')}
+        ${line('M536 123 H550 V110 H564')}${line('M536 123 H550 V136 H564')}
         ${txt(30,170,'1R','rgba(76,201,240,0.4)',7)}
         ${txt(110,170,'2R','rgba(76,201,240,0.4)',7)}
         ${txt(190,170,'3R','rgba(76,201,240,0.4)',7)}
