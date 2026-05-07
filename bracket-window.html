@@ -1277,6 +1277,7 @@ function renderBracketTabs(){
 
       btn.innerHTML=`
         <span style="font-size:10px;">${shortLabel}</span>
+        <span style="font-size:9px;color:var(--text3);">(${g.slots.length}명)</span>
         <span style="display:inline-flex;gap:1px;align-items:center;">${checkboxes}</span>
       `;
       btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
