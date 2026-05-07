@@ -1089,13 +1089,16 @@ function _redrawBracketView(){
         first.forEach((m,mi)=>{
           const labelParts=g.label.split('/');
           const shortLabel=labelParts[labelParts.length-1].trim();
-          matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1});
+          matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1, _groupObj:g, _origMi:mi, _court:courtNum});
         });
       });
       return matched;
     };
     const court1Matches=taggedMatches(1);
     const court2Matches=taggedMatches(2);
+    // 클릭 시점에 참조할 수 있도록 전역 보존
+    window._currentCourt1=court1Matches;
+    window._currentCourt2=court2Matches;
 
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
@@ -1110,11 +1113,11 @@ function _redrawBracketView(){
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    if(court1Matches.length){ S.matches=[court1Matches]; renderBracketA(lDiv); }
+    if(court1Matches.length){ S.matches=[court1Matches]; window._lastMatchesCourt=1; renderBracketA(lDiv); }
     if(court2Matches.length){
       const rContent=document.createElement('div');
       rContent.style.cssText='display:flex;flex-direction:column;align-items:flex-end;width:100%;';
-      S.matches=[court2Matches]; renderBracketA(rContent);
+      S.matches=[court2Matches]; window._lastMatchesCourt=2; renderBracketA(rContent);
       // 내부 컨텐츠 오른쪽 정렬
       rContent.querySelectorAll('[style*="position:relative"],[style*="overflow:auto"]').forEach(el=>{
         el.style.marginLeft='auto';
@@ -1387,32 +1390,34 @@ function _showByeForRound(g, ri){
   );
 }
 
-function onMatchClick(ri,mi){
-  const g=S.groupBrackets[S.activeGroup];
+function onMatchClick(ri,mi,matchObj){
+  const grpObj = matchObj&&matchObj._groupObj ? matchObj._groupObj : null;
+  const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
+
   if(!_linkSel){
-    _linkSel={ri,mi}; _redrawBracketView(); _showLinkBar(ri,mi);
+    _linkSel={ri,mi,grpObj,origMi}; _redrawBracketView(); _showLinkBar(ri,mi);
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();_redrawBracketView();return;}
-    const a=_linkSel,b={ri,mi}; _linkSel=null; _hideLinkBar();
-    if(a.ri!==b.ri){toast('같은 라운드 경기끼리만 연결할 수 있어요','error');_redrawBracketView();return;}
-    if(!g.matches[a.ri+1]) g.matches.push([]);
-    const nextRound=g.matches[a.ri+1];
-    const aKey=`${a.ri}-${a.mi}`,bKey=`${b.ri}-${b.mi}`;
-    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){toast('이미 연결된 경기입니다','error');_redrawBracketView();return;}
-    nextRound.push({p1:{name:`${a.ri+1}-${a.mi+1} 승자`,tbd:true},p2:{name:`${b.ri+1}-${b.mi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
-    _redrawBracketView();
-    toast(`${a.ri+1}-${a.mi+1} 승자 vs ${b.ri+1}-${b.mi+1} 승자 연결됨!`,'success');
 
-    // 현재 라운드 모든 경기가 다음 라운드에 연결 완료됐는지 확인
-    const curRound=g.matches[a.ri];
-    const allLinked=curRound.every((m,mi2)=>{
-      const key=`${a.ri}-${mi2}`;
-      return nextRound.find(nm=>nm.fromA===key||nm.fromB===key);
-    });
-    // 모두 연결됐고 다음 라운드 경기 수가 홀수면 부전승 팝업
-    if(allLinked && nextRound.length%2===1 && !nextRound.some(m=>m.bye)){
-      _showByeForRound(g, a.ri+1);
+    const a=_linkSel, b={ri,mi,grpObj,origMi};
+    _linkSel=null; _hideLinkBar();
+
+    // 그룹 결정: 통합뷰면 _groupObj, 단일뷰면 activeGroup
+    const grpA = a.grpObj || S.groupBrackets[S.activeGroup];
+    const grpB = b.grpObj || S.groupBrackets[S.activeGroup];
+
+    if(grpA !== grpB){toast('같은 체급 경기끼리만 연결할 수 있어요','error');_redrawBracketView();return;}
+
+    const grp = grpA;
+    if(!grp.matches[1]) grp.matches.push([]);
+    const nextRound = grp.matches[1];
+    const aKey=`0-${a.origMi}`, bKey=`0-${b.origMi}`;
+    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){
+      toast('이미 연결된 경기입니다','error');_redrawBracketView();return;
     }
+    nextRound.push({p1:{name:`1-${a.origMi+1} 승자`,tbd:true},p2:{name:`1-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+    _redrawBracketView();
+    toast(`${grp.label} ${a.origMi+1}번 vs ${b.origMi+1}번 연결됨!`,'success');
   }
 }
 
