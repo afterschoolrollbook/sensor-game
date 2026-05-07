@@ -21,8 +21,9 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .step.on{display:flex;}
 .subhdr{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--bg);flex-wrap:wrap;}
 /* 스크롤은 이 영역에만 — 창 테두리에 스크롤바 1개만 */
-.scroll-area{flex:1;overflow:auto;padding:16px 18px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;scrollbar-gutter:stable;}
+.scroll-area{flex:1;overflow:auto;padding:16px 18px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--border2) var(--bg2);scrollbar-gutter:stable;}
 .scroll-area::-webkit-scrollbar{width:6px;height:6px;}
+.scroll-area::-webkit-scrollbar-track{background:var(--bg2);}
 .scroll-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 .btn-back{padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;}
 .pts-sort-btn,.pts-mode-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;transition:all .15s;}
