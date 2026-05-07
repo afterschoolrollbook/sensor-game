@@ -67,7 +67,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
   <div id="pts-step2" class="step" style="position:relative;">
     <div class="subhdr">
       <button onclick="goStep1()" class="btn-back">← 뒤로</button>
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">② 대진표 설정</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">② 조건 설정</span>
       <div style="margin-left:auto;">
         <button onclick="generateAllBrackets()" id="btn-generate" style="padding:5px 18px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">대진표 만들기 →</button>
       </div>
@@ -102,8 +102,18 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         </div>
       </div>
 
-
-      <!-- 참가 현황 요약 -->
+      <!-- 대진표 분석 -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 대진표 분석</span>
+        <button onclick="runBracketAnalysis()" id="btn-analyze" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;">🔍 대진표 분석</button>
+      </div>
+      <div id="analysis-result" style="display:none;margin-bottom:20px;border:1px solid rgba(76,201,240,0.3);border-radius:10px;overflow:hidden;">
+        <div style="padding:8px 14px;background:rgba(76,201,240,0.08);border-bottom:1px solid rgba(76,201,240,0.2);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// AI 분석 결과</span>
+          <span id="analysis-status" style="font-size:10px;color:var(--text3);"></span>
+        </div>
+        <div id="analysis-body" style="padding:14px 16px;font-size:12px;line-height:1.8;color:var(--text2);"></div>
+      </div>
       <div id="pts-overview" style="margin-bottom:16px;display:none;">
         <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 참가 현황</span>
         <div id="pts-overview-body" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-start;"></div>
@@ -727,6 +737,137 @@ function renderPtsOverview(){
     box.innerHTML=html;
     body.appendChild(box);
   });
+}
+
+
+async function runBracketAnalysis(){
+  const btn=document.getElementById('btn-analyze');
+  const result=document.getElementById('analysis-result');
+  const body=document.getElementById('analysis-body');
+  const status=document.getElementById('analysis-status');
+
+  const allPts=Object.values(_groups).flat();
+  if(!allPts.length){ toast('참가자 데이터가 없어요','error'); return; }
+
+  btn.disabled=true; btn.textContent='분석 중...'; btn.style.opacity='0.6';
+  result.style.display='block'; body.innerHTML=''; status.textContent='';
+
+  const entries=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  const totalGroups=entries.length;
+  const courts=_courtCount||1;
+
+  // ── 그룹별 분석 ──
+  let totalMatches=0;
+  const groupStats=entries.map(([gname,members])=>{
+    const n=members.length;
+    const rounds=Math.ceil(Math.log2(n));
+    const matches=n-1; // 토너먼트 총 경기수 = 참가자-1
+    const hasBye=n&(n-1); // 2의 거듭제곱이 아니면 부전승 있음
+    totalMatches+=matches;
+    return {gname,n,rounds,matches,hasBye:!!hasBye};
+  });
+
+  // ── 레이아웃 추천 ──
+  let layoutRec, layoutReason;
+  if(courts===1){
+    layoutRec='A형 (좌→우)';
+    layoutReason='경기장 1개는 단방향 흐름이 가장 보기 편합니다.';
+  } else if(courts===2){
+    layoutRec='D형 (양방향→중앙)';
+    layoutReason='경기장 2개는 좌우로 나눠 진행하고 가운데서 결승하는 D형이 최적입니다.';
+  } else if(courts>=3 && courts%2===0){
+    layoutRec='D형 (양방향→중앙)';
+    layoutReason=`경기장 ${courts}개(짝수)는 좌우 균등 분배 D형을 권장합니다.`;
+  } else {
+    layoutRec='E형 (상하→중앙)';
+    layoutReason=`경기장 ${courts}개(홀수)는 위아래로 나눠 가운데 결승하는 E형을 권장합니다.`;
+  }
+
+  // ── 경기 배정 추천: 그룹을 경기장에 나눠 배치 ──
+  // 인원 많은 그룹 → 여러 경기장에 분산, 적은 그룹 → 한 경기장에 집중
+  const sortedBig=[...groupStats].sort((a,b)=>b.n-a.n);
+  const courtAssign=Array.from({length:courts},(_,i)=>({court:i+1,groups:[],matches:0}));
+  sortedBig.forEach(g=>{
+    // 현재 경기 수가 가장 적은 경기장에 배정
+    courtAssign.sort((a,b)=>a.matches-b.matches);
+    courtAssign[0].groups.push(g.gname);
+    courtAssign[0].matches+=g.matches;
+  });
+  courtAssign.sort((a,b)=>a.court-b.court);
+
+  // ── 예상 소요 시간 (경기당 5분) ──
+  const estMin=Math.ceil(totalMatches/courts)*5;
+  const estH=Math.floor(estMin/60), estM=estMin%60;
+  const estStr=estH>0?`약 ${estH}시간 ${estM}분`:`약 ${estM}분`;
+
+  // ── 부전승 필요 그룹 ──
+  const byeGroups=groupStats.filter(g=>g.hasBye);
+
+  // ── HTML 결과 렌더링 ──
+  let html='';
+
+  // 요약 카드
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:20px;font-weight:700;color:var(--accent);">${allPts.length}<span style="font-size:11px;color:var(--text3);margin-left:2px;">명</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">전체 참가자</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:20px;font-weight:700;color:var(--accent);">${totalGroups}<span style="font-size:11px;color:var(--text3);margin-left:2px;">그룹</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">체급/부문 수</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:20px;font-weight:700;color:var(--yellow);">${totalMatches}<span style="font-size:11px;color:var(--text3);margin-left:2px;">경기</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">총 예상 경기 수</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:20px;font-weight:700;color:var(--green);">${estStr}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">경기장 ${courts}개 기준 예상 시간</div>
+    </div>
+  </div>`;
+
+  // 레이아웃 추천
+  html+=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(76,201,240,0.07);border:1px solid rgba(76,201,240,0.25);border-radius:8px;">
+    <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-bottom:5px;">// 레이아웃 추천</div>
+    <span style="font-size:13px;font-weight:700;color:var(--text);">${layoutRec}</span>
+    <span style="font-size:11px;color:var(--text3);margin-left:8px;">${layoutReason}</span>
+  </div>`;
+
+  // 경기장별 배정
+  html+=`<div style="margin-bottom:12px;">
+    <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-bottom:7px;">// 경기장별 그룹 배정 추천</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">`;
+  courtAssign.forEach(c=>{
+    html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:120px;">
+      <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:5px;">경기장 ${c.court} <span style="color:var(--text3);font-weight:400;">(${c.matches}경기)</span></div>
+      ${c.groups.map(g=>`<div style="font-size:11px;color:var(--text2);padding:1px 0;">${g}</div>`).join('')}
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  // 부전승
+  if(byeGroups.length){
+    html+=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.3);border-radius:8px;">
+      <div style="font-size:10px;color:var(--yellow);font-family:'Share Tech Mono',monospace;margin-bottom:5px;">// 부전승 필요 그룹</div>
+      <div style="font-size:11px;color:var(--text2);">${byeGroups.map(g=>`<b>${g.gname}</b> (${g.n}명)`).join(' · ')}은 홀수 인원이므로 1라운드에서 부전승 1명을 지정해야 합니다.</div>
+    </div>`;
+  }
+
+  // 그룹별 세부 라운드 수
+  html+=`<div>
+    <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-bottom:7px;">// 그룹별 라운드 구성</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+    ${groupStats.map(g=>`<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;">
+      <span style="color:var(--text2);">${g.gname}</span>
+      <span style="color:var(--text3);margin-left:6px;">${g.n}명 / ${g.rounds}라운드 / ${g.matches}경기</span>
+    </div>`).join('')}
+    </div>
+  </div>`;
+
+  status.textContent='분석 완료';
+  status.style.color='var(--green)';
+  body.innerHTML=html;
+  btn.disabled=false; btn.textContent='🔍 대진표 분석'; btn.style.opacity='1';
 }
 
 
