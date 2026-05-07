@@ -563,14 +563,21 @@ function renderBracketView(groupIdx){
       }
     } finally { S.matches=saved; }
 
-    // 다음 라운드가 존재하고 홀수일 때 해당 라운드 컬럼 레이블 아래에 버튼 삽입
+    // 이전 라운드 모든 경기가 연결 완료됐을 때만 해당 라운드 컬럼 레이블 아래에 버튼 삽입
     g.matches.forEach((round, ri)=>{
       if(ri===0) return;
       if(round.length<2 || round.length%2===0) return;
       if((g.matches[ri+1]||[]).some(m=>m.bye)) return;
+      // 이전 라운드 모든 경기가 현재 라운드로 연결됐는지 확인
+      const prevRound=g.matches[ri-1];
+      const allLinked=prevRound.every((m,mi)=>{
+        const key=`${ri-1}-${mi}`;
+        return round.find(nm=>nm.fromA===key||nm.fromB===key);
+      });
+      if(!allLinked) return;
       const col=view.querySelector(`[data-col="${ri}"]`);
       if(!col) return;
-      const lbl=col.firstChild; // 레이블
+      const lbl=col.firstChild;
       const btn=document.createElement('button');
       btn.style.cssText='width:100%;padding:5px 8px;background:rgba(255,214,10,.15);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:4px;flex-shrink:0;box-sizing:border-box;';
       btn.textContent='🎯 부전승 배정';
