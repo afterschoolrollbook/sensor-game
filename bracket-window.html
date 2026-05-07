@@ -291,6 +291,13 @@ function confirmPtsGroup(){
       _groups[k].push(p);
     });
   }
+  // localStorage에 그룹 정보 저장
+  try {
+    localStorage.setItem('sgp_groups', JSON.stringify(_groups));
+    localStorage.setItem('sgp_sortKeys', JSON.stringify(_sortKeys));
+    localStorage.setItem('sgp_pts', JSON.stringify(S.pts));
+  } catch(e){}
+  toast('그룹 저장 완료!', 'success');
   show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
 }
 function goStep1(){ show('pts-step1'); }
@@ -1056,6 +1063,43 @@ function _showLinkBar(ri,mi){
 function _hideLinkBar(){ const bar=document.getElementById('link-action-bar'); if(bar) bar.remove(); }
 
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); });
+
+// localStorage 복원 — 이전 저장 상태가 있으면 STEP 2로 바로 이동
+(function restoreFromStorage(){
+  try {
+    const savedGroups = localStorage.getItem('sgp_groups');
+    const savedKeys   = localStorage.getItem('sgp_sortKeys');
+    if(savedGroups){
+      _groups   = JSON.parse(savedGroups);
+      _sortKeys = JSON.parse(savedKeys||'[]');
+      const groupCount  = Object.keys(_groups).length;
+      const memberCount = Object.values(_groups).reduce((a,b)=>a+b.length,0);
+      // 복원 배너 표시
+      const banner = document.createElement('div');
+      banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(76,201,240,0.12);border-bottom:1px solid rgba(76,201,240,0.3);padding:8px 18px;display:flex;align-items:center;gap:10px;font-size:12px;';
+      banner.innerHTML=`<span style="color:var(--accent);font-weight:700;">💾 이전 저장 복원됨</span>
+        <span style="color:var(--text2);">${groupCount}개 그룹 · ${memberCount}명</span>
+        <button onclick="restoreThenGo()" style="margin-left:auto;padding:4px 14px;background:var(--accent);border:none;color:#000;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">이어서 진행 →</button>
+        <button onclick="clearSavedAndRestart()" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;">처음부터</button>`;
+      document.getElementById('wrap').prepend(banner);
+      window._restoreBanner = banner;
+    }
+  } catch(e){}
+})();
+
+function restoreThenGo(){
+  if(window._restoreBanner) window._restoreBanner.remove();
+  show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
+  goStep2();
+  toast('이어서 진행합니다!','success');
+}
+
+function clearSavedAndRestart(){
+  try{ localStorage.removeItem('sgp_groups'); localStorage.removeItem('sgp_sortKeys'); localStorage.removeItem('sgp_pts'); }catch(e){}
+  if(window._restoreBanner) window._restoreBanner.remove();
+  toast('초기화됐어요','info');
+}
+
 renderList();
 </script>
 </body>
