@@ -86,13 +86,17 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <!-- 동시 경기장 수 -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
         <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 경기장 수</span>
-        <div style="display:flex;gap:6px;" id="court-count-btns">
-          <button onclick="setCourtCount(1)" data-count="1" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">1</button>
-          <button onclick="setCourtCount(2)" data-count="2" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">2</button>
-          <button onclick="setCourtCount(3)" data-count="3" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">3</button>
-          <button onclick="setCourtCount(4)" data-count="4" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">4</button>
-          <button onclick="setCourtCount(5)" data-count="5" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">5</button>
-          <button onclick="setCourtCount(6)" data-count="6" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">6</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="court-count-btns">
+          <button onclick="setCourtCount(1)"  data-count="1"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">1</button>
+          <button onclick="setCourtCount(2)"  data-count="2"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">2</button>
+          <button onclick="setCourtCount(3)"  data-count="3"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">3</button>
+          <button onclick="setCourtCount(4)"  data-count="4"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">4</button>
+          <button onclick="setCourtCount(5)"  data-count="5"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">5</button>
+          <button onclick="setCourtCount(6)"  data-count="6"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">6</button>
+          <button onclick="setCourtCount(7)"  data-count="7"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">7</button>
+          <button onclick="setCourtCount(8)"  data-count="8"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">8</button>
+          <button onclick="setCourtCount(9)"  data-count="9"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">9</button>
+          <button onclick="setCourtCount(10)" data-count="10" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">10</button>
         </div>
         <span id="court-info" style="font-size:11px;color:var(--text3);"></span>
       </div>
@@ -355,7 +359,7 @@ function updateBracketPreview(){
   const desc=document.getElementById('preview-desc');
   const stats=document.getElementById('preview-stats');
   const n=_courtCount||1, ly=_bracketLayout||'A';
-  if(!n||!ly){panel.style.display='none';return;}
+  if(!ly){panel.style.display='none';return;}
   panel.style.display='block';
 
   const layoutNames={A:'A형 (좌→우)',B:'B형 (아래→위)',C:'C형 (위→아래)',D:'D형 (양방향→중앙)',E:'E형 (상하→중앙)'};
@@ -469,12 +473,10 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='D'){
-    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
-      ${txt(170,30,'D형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
-      ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
-    </svg>`;
+    const courtNotice=(courts<2)?`<text x="250" y="16" text-anchor="middle" fill="rgba(76,201,240,0.7)" font-size="9" font-family="'Share Tech Mono',monospace">※ 2개 이상의 경기장에서 진행할 때 선택해 주세요</text>`:'';
     const svgsByCount={
       2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        ${courtNotice}
         ${txt(250,12,'D형','rgba(76,201,240,0.7)',10)}
         <text x="4" y="65" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">1</text>
         <text x="4" y="75" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경</text>
@@ -517,12 +519,10 @@ function getBracketPreviewSVG(courts,layout){
     return svgsByCount[key]||svgsByCount[2];
   }
   if(layout==='E'){
-    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
-      ${txt(170,30,'E형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
-      ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
-    </svg>`;
+    const courtNotice=(courts<2)?`<text x="250" y="16" text-anchor="middle" fill="rgba(76,201,240,0.7)" font-size="9" font-family="'Share Tech Mono',monospace">※ 2개 이상의 경기장에서 진행할 때 선택해 주세요</text>`:'';
     const svgsByCount={
       2:`<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        ${courtNotice}
         ${txt(250,12,'E형','rgba(76,201,240,0.7)',10)}
         <text x="10" y="26" fill="rgba(76,201,240,0.45)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
         ${txt(102,40,'1R','rgba(76,201,240,0.4)',7)}${txt(398,40,'1R','rgba(76,201,240,0.4)',7)}
