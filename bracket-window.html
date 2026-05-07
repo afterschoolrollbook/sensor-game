@@ -153,7 +153,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 
       <!-- 레이아웃 선택 -->
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 레이아웃</span>
+        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 레이아웃 예시</span>
         <div style="display:flex;gap:8px;" id="layout-btns">
 
           <div style="position:relative;display:inline-block;">
@@ -638,7 +638,8 @@ function goStep2(){
   renderOrderArea();
   setCompType(_compType||'national');
   setCourtCount(_courtCount||1);
-  setLayoutAndHighlight(_bracketLayout||'A');
+  _bracketLayout='A';
+  setLayoutAndHighlight('A');
   requestAnimationFrame(_initLayoutTooltips);
   requestAnimationFrame(updateBracketPreview);
 }
