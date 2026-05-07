@@ -1087,8 +1087,8 @@ function _redrawBracketView(){
       (S.groupBrackets||[]).filter(g=>g.court===courtNum).forEach(g=>{
         const first=noByeMatches(g.matches[0]);
         first.forEach((m,mi)=>{
-          const labelParts=g.label.split('/');
-          const shortLabel=labelParts[labelParts.length-1].trim();
+          const labelParts=g.label.split('/').map(s=>s.trim());
+          const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
           matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1, _groupObj:g, _origMi:mi, _court:courtNum});
         });
       });
@@ -1248,18 +1248,18 @@ function renderBracketTabs(){
 
     courts[courtNum].forEach(({g,i})=>{
       // 필요 경기 수: 1라운드 non-bye 경기 수
-      const r0=g.matches[0]||[];
-      const totalNeeded=r0.filter(m=>!m.bye).length;
-      // 완료된 연결 수: matches[1] 이상에 존재하는 경기 수 합산
-      const linkedCount=(g.matches[1]||[]).filter(m=>!m.bye).length;
-      const done=linkedCount>=Math.ceil(totalNeeded/2);
+      // 총 필요 경기 수 = 참가자 수 - 1 (토너먼트 공식)
+      const totalNeeded=g.slots.length-1;
+      // 완료된 경기 수: 전체 라운드에서 연결된 non-bye 경기 합산
+      const linkedCount=g.matches.reduce((acc,round)=>acc+round.filter(m=>!m.bye&&m.winner).length, 0);
+      const done=linkedCount>=totalNeeded;
 
       const btn=document.createElement('button');
       const active=i===S.activeGroup;
 
-      // 체크 표시: 전체 라운드 연결 완료 여부
-      const checkIcon=done?'✓ ':'';
-      const matchInfo=`${linkedCount}/${Math.ceil(totalNeeded/2)}경기`;
+      // 레이블 축약: "남 / 고등부 / 60kg" → "남·고등·60kg"
+      const labelParts=g.label.split('/').map(s=>s.trim());
+      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
 
       btn.style.cssText=`
         display:inline-flex;align-items:center;gap:5px;
@@ -1271,13 +1271,13 @@ function renderBracketTabs(){
         white-space:nowrap;
       `;
 
-      // 체급명만 추출 (마지막 / 뒤)
-      const labelParts=g.label.split('/');
-      const shortLabel=labelParts[labelParts.length-1].trim();
+      const checkboxes=Array.from({length:totalNeeded},(_,ci)=>
+        `<span style="font-size:11px;color:${ci<linkedCount?'var(--green)':'var(--border2)'};">${ci<linkedCount?'☑':'☐'}</span>`
+      ).join('');
 
       btn.innerHTML=`
-        <span style="font-size:10px;">${checkIcon}${shortLabel}</span>
-        <span style="font-size:9px;opacity:.6;font-family:'Share Tech Mono',monospace;">${matchInfo}</span>
+        <span style="font-size:10px;">${shortLabel}</span>
+        <span style="display:inline-flex;gap:1px;align-items:center;">${checkboxes}</span>
       `;
       btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
       list.appendChild(btn);
