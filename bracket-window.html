@@ -443,16 +443,7 @@ function renderList(){
 }
 
 function confirmPtsGroup(){
-  if(!_sortKeys.length){ _groups={'전체':[...S.pts]}; }
-  else {
-    _groups={};
-    S.pts.forEach(p=>{
-      const k=_sortKeys.map(k2=>p[k2]||'미분류').join(' / ');
-      if(!_groups[k]) _groups[k]=[];
-      _groups[k].push(p);
-    });
-  }
-  // localStorage에 그룹 정보 저장
+  _groups={'전체':[...S.pts]};
   try {
     localStorage.setItem('sgp_groups', JSON.stringify(_groups));
     localStorage.setItem('sgp_sortKeys', JSON.stringify(_sortKeys));
@@ -1032,47 +1023,10 @@ function shuffleAllGroups(){
 }
 
 function generateAllBrackets(){
-  if(_mode!=='tournament'){toast('리그전은 준비중이에요','info');return;}
-  // 경기장 1개인데 D/E형이면 A형으로 교정
-  if((_courtCount||1)===1 && (_bracketLayout==='D'||_bracketLayout==='E')){
-    _bracketLayout='A';
-  }
-
-  const entries=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
-  const results=[];
-  function processNext(idx){
-    if(idx>=entries.length){
-      S.groupBrackets=results;
-      S.activeGroup=0; _assignMode=false; _linkSel=null;
-      show('pts-step3');
-      // 모든 그룹 대진표를 한 번에 렌더링 후 숨김, 탭은 show/hide만
-      const view=document.getElementById('pts-bracket-view');
-      view.innerHTML='';
-      results.forEach((g,i)=>{
-        const div=document.createElement('div');
-        div.id='bracket-panel-'+i;
-        div.style.display=i===0?'block':'none';
-        div.style.flex='1';
-        const saved=S.matches;
-        S.matches=g.matches;
-        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
-        (fns[_bracketLayout]||renderBracketA)(div);
-        S.matches=saved;
-        view.appendChild(div);
-      });
-      renderBracketTabs();
-      document.getElementById('pts-bracket-label').textContent=results[0]?.label||'';
-      return;
-    }
-    const [gname,members]=entries[idx];
-    results.push({
-      label:gname,
-      matches:generateBracket([...members]),
-      slots:members.map((p,i)=>({num:i+1,player:p}))
-    });
-    processNext(idx+1);
-  }
-  processNext(0);
+  S.activeGroup=0; _assignMode=false; _linkSel=null;
+  show('pts-step3');
+  renderBracketTabs();
+  renderBracketView(0);
 }
 
 // 부전승 배정 선택 팝업
