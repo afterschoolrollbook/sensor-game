@@ -1212,7 +1212,6 @@ function _checkAndHandleOddAfterLink(g, ri){
 }
 
 function renderBracketTabs(){
-function renderBracketTabs(){
   const tabs=document.getElementById('pts-bracket-tabs');
   const groups=S.groupBrackets||[];
   tabs.innerHTML='';
@@ -1292,76 +1291,7 @@ function renderBracketTabs(){
 }
 
 function renderBracketView(groupIdx){
-  const g=S.groupBrackets[groupIdx];
-  const view=document.getElementById('pts-bracket-view');
-  document.getElementById('pts-bracket-label').textContent=g.label;
-
-  // 스크롤 위치 저장 (inner 스크롤 컨테이너 — step4.js가 overflow:auto로 생성)
-  const prevScroll=view.querySelector('div[style*="overflow:auto"], div[style*="overflow: auto"]');
-  const savedScrollLeft=prevScroll?prevScroll.scrollLeft:0;
-  const savedScrollTop=prevScroll?prevScroll.scrollTop:0;
-
-  view.innerHTML='';
-  requestAnimationFrame(()=>{
-    if(_assignMode){
-      const panel=document.createElement('div');
-      panel.style.cssText='margin-bottom:16px;padding:12px 14px;background:rgba(76,201,240,.05);border:1px solid rgba(76,201,240,.2);border-radius:10px;';
-      panel.innerHTML=`<div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px;margin-bottom:10px;">✏️ 슬롯을 클릭해서 참가자를 지정하세요</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
-          ${g.slots.map(s=>`<div onclick="selectSlot(${s.num})" style="display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--card);border:1px solid ${_assignSlotNum===s.num?'var(--accent)':'var(--border)'};border-radius:7px;cursor:pointer;">
-            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);font-weight:700;width:22px;">#${s.num}</span>
-            <div style="width:5px;height:5px;border-radius:50%;background:${s.player.color||'var(--text3)'};"></div>
-            <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.player.name}</span>
-          </div>`).join('')}
-        </div>
-        ${_assignSlotNum?`<div style="margin-top:12px;padding:10px 12px;background:var(--card);border:1px solid var(--accent);border-radius:8px;">
-          <div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:700;">#${_assignSlotNum} 슬롯에 배정:</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            ${g.slots.map((s,si)=>`<button onclick="assignPlayerToSlot(${_assignSlotNum},${si})" style="padding:4px 10px;background:${s.num===_assignSlotNum?'rgba(230,57,70,.2)':'var(--card2)'};border:1px solid ${s.num===_assignSlotNum?'var(--red)':'var(--border)'};color:var(--text);border-radius:6px;font-size:11px;">#${s.num} ${s.player.name}</button>`).join('')}
-          </div></div>`:''}`;
-      view.appendChild(panel);
-    }
-    const saved=S.matches;
-    try{
-      S.matches=g.matches;
-      const isEmpty=!g.matches||!g.matches[0]||g.matches[0].length===0;
-      if(!isEmpty){
-        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,D:renderBracketD,E:renderBracketE};
-        (fns[_bracketLayout]||renderBracketA)(view);
-        const inner=view.querySelector('div:not([style*="rgba"])');
-        if(inner){
-          inner.style.flex='1';
-          inner.style.minHeight='0';
-          requestAnimationFrame(()=>{
-            inner.scrollLeft=savedScrollLeft;
-            inner.scrollTop=savedScrollTop;
-          });
-        }
-      }
-    } finally { S.matches=saved; }
-
-    // 이전 라운드 모든 경기가 연결 완료됐을 때만 해당 라운드 컬럼 레이블 아래에 버튼 삽입
-    g.matches.forEach((round, ri)=>{
-      if(ri===0) return;
-      if(round.length<2 || round.length%2===0) return;
-      if((g.matches[ri+1]||[]).some(m=>m.bye)) return;
-      // 이전 라운드 모든 경기가 현재 라운드로 연결됐는지 확인
-      const prevRound=g.matches[ri-1];
-      const allLinked=prevRound.every((m,mi)=>{
-        const key=`${ri-1}-${mi}`;
-        return round.find(nm=>nm.fromA===key||nm.fromB===key);
-      });
-      if(!allLinked) return;
-      const col=view.querySelector(`[data-col="${ri}"]`);
-      if(!col) return;
-      col.style.position='relative';
-      const btn=document.createElement('button');
-      btn.style.cssText='position:absolute;top:0;left:0;right:0;padding:4px 8px;background:rgba(255,214,10,.15);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;z-index:10;';
-      btn.textContent='🎯 부전승 배정';
-      btn.onclick=()=>triggerByeSelector();
-      col.appendChild(btn);
-    });
-  });
+  _redrawBracketView();
 }
 
 function selectSlot(num){ _assignSlotNum=(_assignSlotNum===num)?null:num; _redrawBracketView(); }
