@@ -57,6 +57,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <button onclick="togglePtsSort('weight')"   id="sort-weight"   class="pts-sort-btn">체급별</button>
       <button onclick="togglePtsSort('team')"     id="sort-team"     class="pts-sort-btn">팀별</button>
       <span style="font-size:10px;color:var(--text3);">복수 선택 가능</span>
+      <span id="pts-summary" style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-left:8px;"></span>
       <button onclick="confirmPtsGroup()" style="margin-left:auto;padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">확정 →</button>
     </div>
     <div id="pts-popup-list" class="scroll-area"></div>
@@ -310,6 +311,19 @@ function renderList(){
   const list=document.getElementById('pts-popup-list');
   document.getElementById('win-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
   list.innerHTML='';
+
+  // 요약 정보
+  const summaryEl=document.getElementById('pts-summary');
+  if(summaryEl){
+    const parts=[];
+    const genders=[...new Set(S.pts.map(p=>p.gender).filter(Boolean))];
+    const divisions=[...new Set(S.pts.map(p=>p.division).filter(Boolean))];
+    const weights=[...new Set(S.pts.map(p=>p.weight).filter(Boolean))];
+    if(genders.length) parts.push('성별 '+genders.length);
+    if(divisions.length) parts.push('부문 '+divisions.length);
+    if(weights.length) parts.push('체급 '+weights.length);
+    summaryEl.textContent=parts.join(' / ');
+  }
 
   const groups={};
   if(!_sortKeys.length){
