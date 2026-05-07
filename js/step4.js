@@ -505,7 +505,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         width:180px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
-      box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
+      const _capturedMatch=m;
+      box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi,_capturedMatch));
 
       // 헤더
       const header=document.createElement('div');
