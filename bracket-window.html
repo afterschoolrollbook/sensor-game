@@ -585,13 +585,6 @@ function _showByeForRound(g, ri){
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
-    // 홀수 라운드인데 부전승 미배정 상태면 팝업
-    const nextRound=g.matches[ri+1]||[];
-    const alreadyHasBye=nextRound.some(m=>m.bye);
-    if(g.matches[ri].length%2===1 && !alreadyHasBye && !_byeAssigned){
-      _showByeForRound(g, ri);
-      return;
-    }
     _linkSel={ri,mi}; renderBracketView(S.activeGroup); _showLinkBar(ri,mi);
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();renderBracketView(S.activeGroup);return;}
