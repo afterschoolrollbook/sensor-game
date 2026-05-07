@@ -364,13 +364,8 @@ function updateBracketPreview(){
 
   const total=(_pts||[]).length||0;
   const perCourt=n>0?Math.ceil(total/n):total;
-  const rounds=perCourt>1?Math.ceil(Math.log2(perCourt))+1:1;
-  stats.innerHTML=[
-    `<span style="font-size:11px;color:var(--text3);">참가자 <span style="color:var(--text);font-weight:700;">${total}명</span></span>`,
-    `<span style="font-size:11px;color:var(--text3);">경기장당 <span style="color:var(--accent);font-weight:700;">약 ${perCourt}명</span></span>`,
-    `<span style="font-size:11px;color:var(--text3);">예상 라운드 <span style="color:var(--yellow);font-weight:700;">${rounds}라운드</span></span>`,
-    `<span style="font-size:11px;color:var(--text3);">총 경기 수 <span style="color:var(--green);font-weight:700;">약 ${Math.max(0,total-1)}경기</span></span>`
-  ].join('');
+  const rounds=perCourt>1?Math.ceil(Math.log2(perCourt)):1;
+  stats.innerHTML=`<span style="font-size:13px;color:var(--text2);font-weight:700;">${total}명 &nbsp;/&nbsp; ${n}경기장 &nbsp;/&nbsp; 예상 ${rounds}라운드</span>`;
 
   svgWrap.innerHTML=getBracketPreviewSVG(n,ly);
 }
@@ -383,59 +378,69 @@ function getBracketPreviewSVG(courts,layout){
   const fbox=(x,y,w=52,h=18)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${F}" stroke="rgba(230,57,70,0.8)" stroke-width="1.5"/>`;
 
   if(layout==='A'){
-    // 좌→우 단방향 (1경기장 기준, 8명 토너먼트 예시)
-    return `<svg viewBox="0 0 340 135" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-      ${txt(170,10,'A형 — 좌→우 단방향','rgba(76,201,240,0.7)',10)}
-      ${txt(30,22,'1R','rgba(76,201,240,0.5)',8)}${txt(110,22,'2R','rgba(76,201,240,0.5)',8)}${txt(190,22,'3R','rgba(76,201,240,0.5)',8)}${txt(275,22,'결승','rgba(230,57,70,0.7)',8)}
-      ${box(4,26,52,18)}${box(4,52,52,18)}${box(4,78,52,18)}${box(4,104,52,18)}
-      ${box(84,39,52,18)}${box(84,91,52,18)}
-      ${box(164,65,52,18)}
-      ${fbox(254,65,72,18)}
-      ${line('M56 35 H70 V48 H84')}${line('M56 61 H70 V48 H84')}
-      ${line('M56 87 H70 V100 H84')}${line('M56 113 H70 V100 H84')}
-      ${line('M136 48 H150 V74 H164')}${line('M136 100 H150 V74 H164')}
-      ${line('M216 74 H254','0.7')}
-      ${txt(290,78,'🏆 결승','rgba(230,57,70,0.9)',9)}
+    return `<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(250,12,'A형 — 좌→우 단방향','rgba(76,201,240,0.7)',10)}
+      ${txt(30,24,'1R','rgba(76,201,240,0.4)',8)}
+      ${txt(130,24,'2R','rgba(76,201,240,0.4)',8)}
+      ${txt(220,24,'3R','rgba(76,201,240,0.4)',8)}
+      ${txt(400,24,'결승','rgba(230,57,70,0.8)',8)}
+      ${box(4,28,52,20)}${box(4,54,52,20)}${box(4,84,52,20)}${box(4,110,52,20)}
+      ${box(4,140,52,20)}${box(4,166,52,20)}${box(4,196,52,20)}${box(4,222,52,20)}
+      ${box(84,41,52,20)}${box(84,97,52,20)}${box(84,153,52,20)}${box(84,209,52,20)}
+      ${box(164,69,52,20)}${box(164,181,52,20)}
+      ${fbox(320,115,120,30)}
+      ${txt(380,134,'🏆 결승','rgba(230,57,70,0.95)',10)}
+      ${line('M56 38 H70 V51 H84')}${line('M56 64 H70 V51 H70')}
+      ${line('M56 94 H70 V107 H84')}${line('M56 120 H70 V107 H70')}
+      ${line('M56 150 H70 V163 H84')}${line('M56 176 H70 V163 H70')}
+      ${line('M56 206 H70 V219 H84')}${line('M56 232 H70 V219 H70')}
+      ${line('M136 51 H150 V79 H164')}${line('M136 107 H150 V79 H150')}
+      ${line('M136 163 H150 V191 H164')}${line('M136 219 H150 V191 H150')}
+      ${line('M216 79 H268 V130 H320','0.7')}${line('M216 191 H268 V130 H268','0.7')}
     </svg>`;
   }
   if(layout==='B'){
-    return `<svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-      ${txt(170,12,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
-      ${txt(170,30,'결승','rgba(230,57,70,0.8)',8)}
-      ${fbox(114,36,112,26)}
-      ${txt(170,53,'🏆 결승','rgba(230,57,70,0.95)',9)}
-      ${txt(85,82,'2R','rgba(76,201,240,0.5)',8)}
-      ${txt(255,82,'2R','rgba(76,201,240,0.5)',8)}
-      ${box(46,88,78,26)}
-      ${box(216,88,78,26)}
-      ${line('M85 88 L85 72 L170 72 L170 62','0.6')}
-      ${line('M255 88 L255 72 L170 72','0.6')}
-      ${txt(170,136,'1R','rgba(76,201,240,0.5)',8)}
-      ${box(8,142,68,26)}${box(94,142,68,26)}${box(178,142,68,26)}${box(264,142,68,26)}
-      ${line('M42 142 L42 120 L85 120 L85 114')}
-      ${line('M128 142 L128 120 L85 120')}
-      ${line('M212 142 L212 120 L255 120 L255 114')}
-      ${line('M298 142 L298 120 L255 120')}
+    return `<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(250,12,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
+      ${txt(30,248,'1R','rgba(76,201,240,0.4)',8)}
+      ${txt(130,248,'2R','rgba(76,201,240,0.4)',8)}
+      ${txt(220,248,'3R','rgba(76,201,240,0.4)',8)}
+      ${txt(400,248,'결승','rgba(230,57,70,0.8)',8)}
+      ${box(4,212,52,20)}${box(4,186,52,20)}${box(4,156,52,20)}${box(4,130,52,20)}
+      ${box(4,100,52,20)}${box(4,74,52,20)}${box(4,44,52,20)}${box(4,18,52,20)}
+      ${box(84,199,52,20)}${box(84,143,52,20)}${box(84,87,52,20)}${box(84,31,52,20)}
+      ${box(164,171,52,20)}${box(164,59,52,20)}
+      ${fbox(320,115,120,30)}
+      ${txt(380,134,'🏆 결승','rgba(230,57,70,0.95)',10)}
+      ${line('M56 222 H70 V209 H84')}${line('M56 196 H70 V209 H70')}
+      ${line('M56 166 H70 V153 H84')}${line('M56 140 H70 V153 H70')}
+      ${line('M56 110 H70 V97 H84')}${line('M56 84 H70 V97 H70')}
+      ${line('M56 54 H70 V41 H84')}${line('M56 28 H70 V41 H70')}
+      ${line('M136 209 H150 V181 H164')}${line('M136 153 H150 V181 H150')}
+      ${line('M136 97 H150 V69 H164')}${line('M136 41 H150 V69 H150')}
+      ${line('M216 181 H268 V130 H320','0.7')}${line('M216 69 H268 V130 H268','0.7')}
     </svg>`;
   }
   if(layout==='C'){
-    return `<svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-      ${txt(170,12,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
-      ${txt(170,30,'1R','rgba(76,201,240,0.5)',8)}
-      ${box(8,36,68,26)}${box(94,36,68,26)}${box(178,36,68,26)}${box(264,36,68,26)}
-      ${txt(85,82,'2R','rgba(76,201,240,0.5)',8)}
-      ${txt(255,82,'2R','rgba(76,201,240,0.5)',8)}
-      ${box(46,88,78,26)}
-      ${box(216,88,78,26)}
-      ${line('M42 62 L42 78 L85 78 L85 88')}
-      ${line('M128 62 L128 78 L85 78')}
-      ${line('M212 62 L212 78 L255 78 L255 88')}
-      ${line('M298 62 L298 78 L255 78')}
-      ${txt(170,138,'결승','rgba(230,57,70,0.8)',8)}
-      ${fbox(114,144,112,26)}
-      ${txt(170,161,'🏆 결승','rgba(230,57,70,0.95)',9)}
-      ${line('M85 114 L85 130 L170 130 L170 144','0.6')}
-      ${line('M255 114 L255 130 L170 130','0.6')}
+    return `<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(250,12,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
+      ${txt(250,26,'1R','rgba(76,201,240,0.4)',8)}
+      ${box(10,32,46,20)}${box(66,32,46,20)}${box(122,32,46,20)}${box(178,32,46,20)}
+      ${box(234,32,46,20)}${box(290,32,46,20)}${box(346,32,46,20)}${box(402,32,46,20)}
+      ${txt(250,72,'2R','rgba(76,201,240,0.4)',8)}
+      ${box(38,78,46,20)}${box(150,78,46,20)}${box(262,78,46,20)}${box(374,78,46,20)}
+      ${line('M33 52 H33 V88 H38')}${line('M89 52 H89 V88 H84')}
+      ${line('M145 52 H145 V88 H150')}${line('M201 52 H201 V88 H196')}
+      ${line('M257 52 H257 V88 H262')}${line('M313 52 H313 V88 H308')}
+      ${line('M369 52 H369 V88 H374')}${line('M425 52 H425 V88 H420')}
+      ${txt(250,118,'3R','rgba(76,201,240,0.4)',8)}
+      ${box(94,124,46,20)}${box(318,124,46,20)}
+      ${line('M61 98 H61 V134 H94')}${line('M173 98 H173 V134 H140')}
+      ${line('M285 98 H285 V134 H318')}${line('M397 98 H397 V134 H364')}
+      ${fbox(190,170,120,30)}
+      ${txt(250,189,'🏆 결승','rgba(230,57,70,0.95)',10)}
+      ${txt(250,164,'결승','rgba(230,57,70,0.8)',8)}
+      ${line('M117 144 H117 V164 H190','0.7')}${line('M341 144 H341 V164 H310','0.7')}
     </svg>`;
   }
   if(layout==='D'){
