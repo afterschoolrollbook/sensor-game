@@ -624,7 +624,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const [fbri,fbmi]=nm.fromB.split('-').map(Number);
           srcB=fbri===ri?fbmi:nmi*2+1;
         } else { srcB=nmi*2+1; }
-        const hasB=nm.fromB!=null?srcB<matches.length:srcB<matches.length;
+        const hasB=nm.fromB!=null && srcB<matches.length;
         const a=getBox(ri,srcA);
         const b=hasB?getBox(ri,srcB):null;
         const t=getBox(ri+1,nmi);
