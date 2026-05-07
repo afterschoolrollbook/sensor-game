@@ -639,12 +639,15 @@ function setPtsMode(mode){
   _mode=mode;
   document.querySelectorAll('.pts-mode-btn').forEach(b=>{b.style.borderColor='var(--border)';b.style.background='transparent';b.style.color='var(--text3)';});
   const btn=document.getElementById('mode-'+mode);
-  btn.style.borderColor=mode==='tournament'?'var(--red)':'var(--accent)';
-  btn.style.background=mode==='tournament'?'rgba(230,57,70,.15)':'rgba(76,201,240,.15)';
-  btn.style.color=mode==='tournament'?'var(--red)':'var(--accent)';
-  document.getElementById('league-overlay').style.display=mode==='league'?'flex':'none';
+  if(btn){
+    btn.style.borderColor=mode==='tournament'?'var(--red)':'var(--accent)';
+    btn.style.background=mode==='tournament'?'rgba(230,57,70,.15)':'rgba(76,201,240,.15)';
+    btn.style.color=mode==='tournament'?'var(--red)':'var(--accent)';
+  }
+  const overlay=document.getElementById('league-overlay');
+  if(overlay) overlay.style.display=mode==='league'?'flex':'none';
   const g=document.getElementById('btn-generate');
-  g.style.opacity=mode==='tournament'?'1':'0.4'; g.disabled=mode!=='tournament';
+  if(g){g.style.opacity=mode==='tournament'?'1':'0.4'; g.disabled=mode!=='tournament';}
 }
 
 function renderOrderArea(){
