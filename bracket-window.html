@@ -364,7 +364,7 @@ function updateBracketPreview(){
   desc.textContent=layoutDescs[ly]||'';
 
   const _ec=(ly==='D'||ly==='E')?Math.max(2,n):1;
-  const _er=Math.ceil(Math.log2(Math.ceil(16/_ec)));
+  const _er=(ly==='D'||ly==='E')?Math.ceil(Math.log2(Math.ceil(16/_ec)))+1:Math.ceil(Math.log2(Math.ceil(16/_ec)));
   stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
   svgWrap.innerHTML=getBracketPreviewSVG(n,ly);
 }
@@ -467,20 +467,20 @@ function getBracketPreviewSVG(courts,layout){
         <text transform="rotate(-90,6,80)" x="6" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
         <text transform="rotate(90,494,80)" x="494" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
         ${box(14,26,52,20)}${box(14,54,52,20)}${box(14,96,52,20)}${box(14,124,52,20)}
-        ${line('M66 36 H74 V44 H78')}${line('M66 64 H74 V44')}
-        ${line('M66 106 H74 V114 H78')}${line('M66 134 H74 V114')}
-        ${box(78,34,52,20)}${box(78,104,52,20)}
-        ${line('M130 44 H138 V80 H142')}${line('M130 114 H138 V80')}
+        ${line('M66 36 H74 V40 H78')}${line('M66 64 H74 V40')}
+        ${line('M66 106 H74 V110 H78')}${line('M66 134 H74 V110')}
+        ${box(78,30,52,20)}${box(78,100,52,20)}
+        ${line('M130 40 H138 V80 H142')}${line('M130 110 H138 V80')}
         ${box(142,70,52,20)}
         ${line('M194 80 H211','0.6')}
         ${fbox(211,70,78,20)}
         ${txt(250,83,'🏆 결승','rgba(230,57,70,0.95)',9)}
         ${line('M289 80 H306','0.6')}
         ${box(306,70,52,20)}
-        ${line('M358 44 H364 V80 H370')}${line('M358 114 H364 V80')}
-        ${box(370,34,52,20)}${box(370,104,52,20)}
-        ${line('M422 36 H428 V44 H434')}${line('M422 64 H428 V44')}
-        ${line('M422 106 H428 V114 H434')}${line('M422 134 H428 V114')}
+        ${line('M306 80 H364 V40 H370')}${line('M364 40 V110 H370')}
+        ${box(370,30,52,20)}${box(370,100,52,20)}
+        ${line('M370 40 H428 V36 H434')}${line('M428 36 V64 H434')}
+        ${line('M370 110 H428 V106 H434')}${line('M428 106 V134 H434')}
         ${box(434,26,52,20)}${box(434,54,52,20)}${box(434,96,52,20)}${box(434,124,52,20)}
         ${txt(40,205,'1R','rgba(76,201,240,0.4)',7)}
         ${txt(104,205,'2R','rgba(76,201,240,0.4)',7)}
