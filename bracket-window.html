@@ -463,7 +463,7 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
     const svgsByCount={
       2:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(200,12,'D형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
+        ${txt(200,12,'D형','rgba(76,201,240,0.7)',10)}
         ${fbox(161,66,78,28)}
         ${txt(200,83,'🏆 결승','rgba(230,57,70,0.95)',9)}
         ${box(74,66,72,28)}
@@ -476,8 +476,8 @@ function getBracketPreviewSVG(courts,layout){
         ${line('M62 112 H68 V80 H68')}
         ${line('M338 48 H332 V80 H326')}
         ${line('M338 112 H332 V80 H332')}
-        <text transform="rotate(-90,2,80)" x="2" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
-        <text transform="rotate(90,398,80)" x="398" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
+        <text transform="rotate(-90,6,80)" x="6" y="80" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
+        <text transform="rotate(90,394,80)" x="394" y="80" text-anchor="middle" fill="rgba(76,201,240,0.5)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
         ${txt(36,150,'1R','rgba(76,201,240,0.4)',7)}
         ${txt(110,150,'2R','rgba(76,201,240,0.4)',7)}
         ${txt(200,150,'결승','rgba(230,57,70,0.7)',7)}
@@ -499,7 +499,7 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
     const svgsByCount={
       2:`<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(200,14,'E형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
+        ${txt(200,14,'E형','rgba(76,201,240,0.7)',10)}
         ${txt(200,28,'경기장1','rgba(76,201,240,0.35)',7)}
         ${txt(200,44,'1R','rgba(76,201,240,0.4)',7)}
         ${box(10,50,80,24)}${box(110,50,80,24)}${box(210,50,80,24)}${box(310,50,80,24)}
@@ -516,7 +516,6 @@ function getBracketPreviewSVG(courts,layout){
         ${line('M300 128 L300 140 L200 140','0.6')}
         ${line('M100 218 L100 196 L200 196 L200 182','0.6')}
         ${line('M300 218 L300 196 L200 196','0.6')}
-        ${txt(200,214,'경기장2','rgba(76,201,240,0.35)',7)}
         ${txt(200,232,'2R','rgba(76,201,240,0.4)',7)}
         ${box(60,218,80,24)}${box(260,218,80,24)}
         ${txt(200,258,'1R','rgba(76,201,240,0.4)',7)}
@@ -525,6 +524,7 @@ function getBracketPreviewSVG(courts,layout){
         ${line('M150 264 L150 250 L100 250')}
         ${line('M250 264 L250 250 L300 250 L300 242')}
         ${line('M350 264 L350 250 L300 250')}
+        ${txt(200,308,'경기장2','rgba(76,201,240,0.35)',7)}
       </svg>`,
       4:`<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
         ${txt(200,12,'E형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
