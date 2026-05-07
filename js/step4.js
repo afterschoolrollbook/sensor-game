@@ -518,7 +518,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#444'};font-family:Share Tech Mono,monospace;flex-shrink:0;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#aaa;font-family:Share Tech Mono,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#555;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
       box.appendChild(header);
 
       if(isBye){
