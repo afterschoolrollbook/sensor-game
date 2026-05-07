@@ -476,8 +476,14 @@ function getBracketPreviewSVG(courts,layout){
     const svgsByCount={
       2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
         ${txt(250,12,'D형','rgba(76,201,240,0.7)',10)}
-        <text transform="rotate(-90,6,80)" x="6" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
-        <text transform="rotate(90,494,80)" x="494" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
+        <text x="4" y="26" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">1</text>
+        <text x="4" y="36" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경</text>
+        <text x="4" y="46" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">기</text>
+        <text x="4" y="56" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">장</text>
+        <text x="490" y="26" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace" text-anchor="middle">2</text>
+        <text x="490" y="36" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace" text-anchor="middle">경</text>
+        <text x="490" y="46" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace" text-anchor="middle">기</text>
+        <text x="490" y="56" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace" text-anchor="middle">장</text>
         ${box(14,26,52,20)}${box(14,54,52,20)}${box(14,96,52,20)}${box(14,124,52,20)}
         ${line('M66 36 H74 V50 H78')}${line('M66 64 H74 V50')}
         ${line('M66 106 H74 V120 H78')}${line('M66 134 H74 V120')}
