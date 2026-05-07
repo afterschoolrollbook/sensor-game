@@ -146,13 +146,13 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       </div>
 
       <!-- 대진표 미리보기 패널 -->
-      <div id="bracket-preview-panel" style="display:none;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div id="bracket-preview-panel" style="display:none;border:1px solid var(--border);border-radius:10px;">
         <div style="padding:8px 14px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
           <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 레이아웃 미리보기</span>
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
           <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
         </div>
-        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow:auto;min-height:300px;display:flex;align-items:center;justify-content:center;"></div>
+        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);"></div>
         <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
       </div>
 
@@ -377,7 +377,7 @@ function getBracketPreviewSVG(courts,layout){
   const fbox=(x,y,w=52,h=18)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${F}" stroke="rgba(230,57,70,0.8)" stroke-width="1.5"/>`;
 
   if(layout==='A'){
-    return `<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
       ${txt(250,12,'A형 — 좌→우 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(30,24,'1R','rgba(76,201,240,0.4)',8)}
       ${txt(130,24,'2R','rgba(76,201,240,0.4)',8)}
@@ -399,7 +399,7 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='B'){
-    return `<svg viewBox="0 0 500 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 500 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
       ${txt(250,14,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(250,30,'결승','rgba(230,57,70,0.8)',8)}
       ${fbox(175,36,150,26)}
@@ -428,7 +428,7 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='C'){
-    return `<svg viewBox="0 0 500 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 500 270" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
       ${txt(250,14,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(250,30,'1R','rgba(76,201,240,0.4)',8)}
       ${box(14,36,52,22)}${box(74,36,52,22)}${box(134,36,52,22)}${box(194,36,52,22)}
@@ -457,12 +457,12 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='D'){
-    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
       ${txt(170,30,'D형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
       ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
     </svg>`;
     const svgsByCount={
-      2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
         ${txt(250,12,'D형','rgba(76,201,240,0.7)',10)}
         <text transform="rotate(-90,6,80)" x="6" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
         <text transform="rotate(90,494,80)" x="494" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
@@ -490,7 +490,7 @@ function getBracketPreviewSVG(courts,layout){
         ${txt(396,205,'2R','rgba(76,201,240,0.4)',7)}
         ${txt(460,205,'1R','rgba(76,201,240,0.4)',7)}
       </svg>`,
-      4:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      4:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
         ${txt(200,12,'D형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
       </svg>`,
     };
@@ -499,12 +499,12 @@ function getBracketPreviewSVG(courts,layout){
     return svgsByCount[key]||svgsByCount[2];
   }
   if(layout==='E'){
-    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
       ${txt(170,30,'E형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
       ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
     </svg>`;
     const svgsByCount={
-      2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      2:`<svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
         ${txt(250,12,'E형','rgba(76,201,240,0.7)',10)}
         <text transform="rotate(-90,10,80)" x="10" y="80" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장1</text>
         <text transform="rotate(90,490,130)" x="490" y="130" text-anchor="middle" fill="rgba(76,201,240,0.4)" font-size="7" font-family="'Share Tech Mono',monospace">경기장2</text>
@@ -532,7 +532,7 @@ function getBracketPreviewSVG(courts,layout){
         ${txt(250,202,'1R','rgba(76,201,240,0.4)',7)}
         ${box(20,206,72,20)}${box(112,206,72,20)}${box(316,206,72,20)}${box(408,206,72,20)}
       </svg>`,
-      4:`<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      4:`<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
         ${txt(200,12,'E형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
       </svg>`,
     };
@@ -540,7 +540,7 @@ function getBracketPreviewSVG(courts,layout){
     const key=Math.min(even,4);
     return svgsByCount[key]||svgsByCount[2];
   }
-  return `<svg viewBox="0 0 340 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+  return `<svg viewBox="0 0 340 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
     <text x="170" y="35" text-anchor="middle" fill="rgba(144,144,176,0.6)" font-size="13" font-family="sans-serif">미리보기 준비 중...</text>
   </svg>`;
 }
