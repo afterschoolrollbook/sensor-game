@@ -98,7 +98,57 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
           <button onclick="setCourtCount(9)"  data-count="9"  class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">9</button>
           <button onclick="setCourtCount(10)" data-count="10" class="court-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">10</button>
         </div>
-        <span id="court-info" style="font-size:11px;color:var(--text3);"></span>
+      </div>
+
+      <!-- 부문 -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 부문</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="division-btns">
+          <button onclick="setCount('division',1)"  data-val="1"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">1</button>
+          <button onclick="setCount('division',2)"  data-val="2"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">2</button>
+          <button onclick="setCount('division',3)"  data-val="3"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">3</button>
+          <button onclick="setCount('division',4)"  data-val="4"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">4</button>
+          <button onclick="setCount('division',5)"  data-val="5"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">5</button>
+          <button onclick="setCount('division',6)"  data-val="6"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">6</button>
+          <button onclick="setCount('division',7)"  data-val="7"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">7</button>
+          <button onclick="setCount('division',8)"  data-val="8"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">8</button>
+          <button onclick="setCount('division',9)"  data-val="9"  class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">9</button>
+          <button onclick="setCount('division',10)" data-val="10" class="division-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">10</button>
+        </div>
+      </div>
+
+      <!-- 종목 -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 종목</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="event-btns">
+          <button onclick="setCount('event',1)"  data-val="1"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">1</button>
+          <button onclick="setCount('event',2)"  data-val="2"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">2</button>
+          <button onclick="setCount('event',3)"  data-val="3"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">3</button>
+          <button onclick="setCount('event',4)"  data-val="4"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">4</button>
+          <button onclick="setCount('event',5)"  data-val="5"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">5</button>
+          <button onclick="setCount('event',6)"  data-val="6"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">6</button>
+          <button onclick="setCount('event',7)"  data-val="7"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">7</button>
+          <button onclick="setCount('event',8)"  data-val="8"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">8</button>
+          <button onclick="setCount('event',9)"  data-val="9"  class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">9</button>
+          <button onclick="setCount('event',10)" data-val="10" class="event-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">10</button>
+        </div>
+      </div>
+
+      <!-- 체급 -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+        <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;white-space:nowrap;">// 체급</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="weight-btns">
+          <button onclick="setCount('weight',1)"  data-val="1"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">1</button>
+          <button onclick="setCount('weight',2)"  data-val="2"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">2</button>
+          <button onclick="setCount('weight',3)"  data-val="3"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">3</button>
+          <button onclick="setCount('weight',4)"  data-val="4"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">4</button>
+          <button onclick="setCount('weight',5)"  data-val="5"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">5</button>
+          <button onclick="setCount('weight',6)"  data-val="6"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">6</button>
+          <button onclick="setCount('weight',7)"  data-val="7"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">7</button>
+          <button onclick="setCount('weight',8)"  data-val="8"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">8</button>
+          <button onclick="setCount('weight',9)"  data-val="9"  class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:15px;font-weight:700;cursor:pointer;">9</button>
+          <button onclick="setCount('weight',10)" data-val="10" class="weight-btn" style="width:40px;height:36px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;">10</button>
+        </div>
       </div>
 
       <!-- 레이아웃 선택 -->
@@ -327,11 +377,21 @@ function setCourtCount(n){
     b.style.background=active?'rgba(230,57,70,.2)':'transparent';
     b.style.color=active?'var(--red)':'var(--text2)';
   });
-  const total=_pts.length;
-  const perCourt=Math.ceil(total/n/2);
-  document.getElementById('court-info').textContent=
-    `${total}명 / ${n}경기장 / 예상 ${Math.ceil(Math.log2(Math.ceil(total/n)))}라운드`;
   updateBracketPreview();
+}
+
+let _divisionCount=1, _eventCount=1, _weightCount=1;
+function setCount(type, n){
+  const classMap={division:'division-btn',event:'event-btn',weight:'weight-btn'};
+  if(type==='division') _divisionCount=n;
+  if(type==='event') _eventCount=n;
+  if(type==='weight') _weightCount=n;
+  document.querySelectorAll('.'+classMap[type]).forEach(b=>{
+    const active=Number(b.dataset.val)===n;
+    b.style.borderColor=active?'var(--red)':'var(--border)';
+    b.style.background=active?'rgba(230,57,70,.2)':'transparent';
+    b.style.color=active?'var(--red)':'var(--text2)';
+  });
 }
 
 function setLayoutAndHighlight(l){
