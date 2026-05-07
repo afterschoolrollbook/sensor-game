@@ -443,7 +443,15 @@ function renderList(){
 }
 
 function confirmPtsGroup(){
-  _groups={'전체':[...S.pts]};
+  if(!_sortKeys.length){ _groups={'전체':[...S.pts]}; }
+  else {
+    _groups={};
+    S.pts.forEach(p=>{
+      const k=_sortKeys.map(k2=>p[k2]||'미분류').join(' / ');
+      if(!_groups[k]) _groups[k]=[];
+      _groups[k].push(p);
+    });
+  }
   try {
     localStorage.setItem('sgp_groups', JSON.stringify(_groups));
     localStorage.setItem('sgp_sortKeys', JSON.stringify(_sortKeys));
@@ -1023,6 +1031,16 @@ function shuffleAllGroups(){
 }
 
 function generateAllBrackets(){
+  const entries=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+  const results=[];
+  entries.forEach(([gname,members])=>{
+    results.push({
+      label:gname,
+      matches:generateBracket([...members]),
+      slots:members.map((p,i)=>({num:i+1,player:p}))
+    });
+  });
+  S.groupBrackets=results;
   S.activeGroup=0; _assignMode=false; _linkSel=null;
   try{ localStorage.setItem('sgp_step','3'); }catch(e){}
   show('pts-step3');
@@ -1104,7 +1122,7 @@ function _checkAndHandleOddAfterLink(g, ri){
 function renderBracketTabs(){
   const tabs=document.getElementById('pts-bracket-tabs');
   const groups=S.groupBrackets||[]; tabs.innerHTML='';
-  if(groups.length<=1){tabs.style.display='none';return;}
+  if(groups.length<1){tabs.style.display='none';return;}
   tabs.style.display='flex';
   groups.forEach((g,i)=>{
     const btn=document.createElement('button');
