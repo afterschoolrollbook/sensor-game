@@ -268,6 +268,37 @@ function toast(msg, type='info'){
   setTimeout(()=>d.remove(), 2500);
 }
 
+function showByeSelector(players, title, callback){
+  const existing=document.getElementById('bye-selector-overlay');
+  if(existing) existing.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='bye-selector-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(8,8,15,.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+  const modal=document.createElement('div');
+  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:20px 24px;min-width:280px;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.6);';
+  modal.innerHTML=`
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">// 부전승 배정</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px;">${title}</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">홀수 인원 — 1라운드를 부전승으로 통과할 선수를 선택하세요</div>
+    <div id="bye-player-list" style="display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;"></div>`;
+
+  const list=modal.querySelector('#bye-player-list');
+  players.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;text-align:left;width:100%;font-size:13px;font-weight:600;';
+    btn.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>${p.name}${p.weight?`<span style="font-size:10px;color:var(--text3);margin-left:auto;">${p.weight}</span>`:''}`;
+    btn.onmouseover=()=>btn.style.borderColor='var(--accent)';
+    btn.onmouseout=()=>btn.style.borderColor='var(--border)';
+    btn.onclick=()=>{ overlay.remove(); callback(p); };
+    list.appendChild(btn);
+  });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
 window.addEventListener('message', e=>{
   if(!e.data||e.data.type!=='sgp_pts_update') return;
   _pts=e.data.pts||[]; S.pts=_pts;
@@ -767,20 +798,22 @@ async function runBracketAnalysis(){
     return {gname,n,rounds,matches,hasBye:!!hasBye};
   });
 
-  // ── 레이아웃 추천 ──
+  // ── 레이아웃 추천 (A~E형 모두 고려) ──
   let layoutRec, layoutReason;
   if(courts===1){
-    layoutRec='A형 (좌→우)';
-    layoutReason='경기장 1개는 단방향 흐름이 가장 보기 편합니다.';
+    if(totalGroups<=4 && maxInGroup<=8){
+      layoutRec='B형 (아래→위)'; layoutReason='소규모 단일 경기장은 아래→위 흐름이 시각적으로 깔끔합니다.';
+    } else if(totalGroups<=4){
+      layoutRec='C형 (위→아래)'; layoutReason='단일 경기장에서 인원이 많을 때 위→아래 흐름이 보기 편합니다.';
+    } else {
+      layoutRec='A형 (좌→우)'; layoutReason='그룹이 많은 단일 경기장은 좌→우 단방향이 진행 흐름 파악에 가장 유리합니다.';
+    }
   } else if(courts===2){
-    layoutRec='D형 (양방향→중앙)';
-    layoutReason='경기장 2개는 좌우로 나눠 진행하고 가운데서 결승하는 D형이 최적입니다.';
+    layoutRec='D형 (양방향→중앙)'; layoutReason='경기장 2개는 좌우로 나눠 진행하고 가운데서 결승하는 D형이 최적입니다.';
   } else if(courts>=3 && courts%2===0){
-    layoutRec='D형 (양방향→중앙)';
-    layoutReason=`경기장 ${courts}개(짝수)는 좌우 균등 분배 D형을 권장합니다.`;
+    layoutRec='D형 (양방향→중앙)'; layoutReason=`경기장 ${courts}개(짝수)는 좌우 균등 분배 D형을 권장합니다.`;
   } else {
-    layoutRec='E형 (상하→중앙)';
-    layoutReason=`경기장 ${courts}개(홀수)는 위아래로 나눠 가운데 결승하는 E형을 권장합니다.`;
+    layoutRec='E형 (상하→중앙)'; layoutReason=`경기장 ${courts}개(홀수)는 위아래로 나눠 가운데 결승하는 E형을 권장합니다.`;
   }
 
   // ── 경기 배정 추천: 그룹을 경기장에 나눠 배치 ──
@@ -818,6 +851,7 @@ async function runBracketAnalysis(){
   </div>`;
 
   // 레이아웃 추천
+  const layoutCode=layoutRec.charAt(0); // 'A','D','E' 등 첫 글자
   html+=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(76,201,240,0.07);border:1px solid rgba(76,201,240,0.25);border-radius:8px;">
     <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;margin-bottom:5px;">// 레이아웃 추천</div>
     <span style="font-size:13px;font-weight:700;color:var(--text);">${layoutRec}</span>
@@ -857,8 +891,32 @@ async function runBracketAnalysis(){
 
   status.textContent='분석 완료';
   status.style.color='var(--green)';
+
+  // 추천 적용 버튼 (레이아웃 저장만, 대진표 생성은 사용자가 직접)
+  html+=`<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+    <span style="font-size:11px;color:var(--text3);">추천 레이아웃 <b style="color:var(--text2);">${layoutRec}</b></span>
+    <button onclick="applyAnalysisLayout('${layoutCode}')" style="padding:6px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✔ 추천 레이아웃 적용</button>
+  </div>`;
+
   body.innerHTML=html;
   btn.disabled=false; btn.textContent='🔍 대진표 분석'; btn.style.opacity='1';
+}
+
+function applyAnalysisLayout(layoutCode){
+  setLayoutAndHighlight(layoutCode);
+  // 대진표 만들기 버튼 강조 + 스크롤
+  const btn=document.getElementById('btn-generate');
+  if(btn){
+    btn.style.transition='all .2s';
+    btn.style.boxShadow='0 0 0 3px rgba(230,57,70,.6), 0 0 20px rgba(230,57,70,.4)';
+    btn.textContent='← 레이아웃 적용 완료! 대진표 만들기 →';
+    btn.scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(()=>{
+      btn.style.boxShadow='';
+      btn.textContent='대진표 만들기 →';
+    }, 4000);
+  }
+  toast('레이아웃 적용 완료! 위 버튼을 눌러 대진표를 만드세요.', 'success');
 }
 
 
