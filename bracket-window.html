@@ -98,14 +98,66 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 
       <!-- 레이아웃 선택 -->
       <div>
-        <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:12px;">// 대진표 레이아웃</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="setLayoutAndHighlight('A')" id="setup-lay-A" title="A: 좌→우" style="padding:6px 8px;border-radius:6px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setLayoutAndHighlight('B')" id="setup-lay-B" title="B: 아래→위" style="padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setLayoutAndHighlight('C')" id="setup-lay-C" title="C: 위→아래" style="padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
-          <button onclick="setLayoutAndHighlight('D')" id="setup-lay-D" title="D: 양쪽→가운데" style="padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
-          <button onclick="setLayoutAndHighlight('E')" id="setup-lay-E" title="E: 가운데→양쪽" style="padding:6px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="14" y="4" width="8" height="4" rx="1" fill="currentColor"/><rect x="7" y="11" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="21" y="11" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="28" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M18 8v2h-7v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M18 8v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M11 15v2h-6v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M11 15v2h6" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M25 15v2h6v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M25 15v2h-6" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+        <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:16px;">// 대진표 레이아웃</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;" id="layout-btns">
+
+          <div style="position:relative;display:inline-block;">
+            <button onclick="setLayoutAndHighlight('A')" id="setup-lay-A" class="layout-btn" style="width:100px;height:96px;border-radius:10px;border:1px solid var(--red);background:rgba(230,57,70,.2);color:var(--red);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0;">
+              <svg width="72" height="56" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg>
+              <span style="font-size:11px;font-weight:700;">A형</span>
+            </button>
+            <div class="layout-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:100;line-height:1.6;">
+              단방향 (좌→우)<br>경기장 1개에 적합
+              <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1a2e;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <div style="position:relative;display:inline-block;">
+            <button onclick="setLayoutAndHighlight('B')" id="setup-lay-B" class="layout-btn" style="width:100px;height:96px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0;">
+              <svg width="72" height="56" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg>
+              <span style="font-size:11px;font-weight:700;">B형</span>
+            </button>
+            <div class="layout-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:100;line-height:1.6;">
+              단방향 (아래→위)<br>경기장 1개에 적합
+              <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1a2e;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <div style="position:relative;display:inline-block;">
+            <button onclick="setLayoutAndHighlight('C')" id="setup-lay-C" class="layout-btn" style="width:100px;height:96px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0;">
+              <svg width="72" height="56" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg>
+              <span style="font-size:11px;font-weight:700;">C형</span>
+            </button>
+            <div class="layout-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:100;line-height:1.6;">
+              단방향 (위→아래)<br>경기장 1개에 적합
+              <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1a2e;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <div style="position:relative;display:inline-block;">
+            <button onclick="setLayoutAndHighlight('D')" id="setup-lay-D" class="layout-btn" style="width:100px;height:96px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0;">
+              <svg width="72" height="56" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg>
+              <span style="font-size:11px;font-weight:700;">D형</span>
+            </button>
+            <div class="layout-tip" id="tip-D" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:100;line-height:1.6;">
+              양방향 → 가운데 결승<br><span id="tip-D-court" style="color:var(--accent);">경기장 수에 따라 시작점 배분</span>
+              <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1a2e;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
+          <div style="position:relative;display:inline-block;">
+            <button onclick="setLayoutAndHighlight('E')" id="setup-lay-E" class="layout-btn" style="width:100px;height:96px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0;">
+              <svg width="72" height="56" viewBox="0 0 36 28" fill="none"><rect x="14" y="4" width="8" height="4" rx="1" fill="currentColor"/><rect x="7" y="11" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="21" y="11" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="28" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M18 8v2h-7v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M18 8v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M11 15v2h-6v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M11 15v2h6" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M25 15v2h6v2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M25 15v2h-6" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg>
+              <span style="font-size:11px;font-weight:700;">E형</span>
+            </button>
+            <div class="layout-tip" style="display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);white-space:nowrap;z-index:100;line-height:1.6;">
+              위아래 → 가운데 결승<br>여러 경기장에 적합
+              <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1a2e;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);transform:translateX(-50%) rotate(45deg);"></div>
+            </div>
+          </div>
+
         </div>
+        <div id="layout-desc" style="margin-top:12px;font-size:12px;color:var(--text3);min-height:18px;"></div>
       </div>
 
     </div>
@@ -284,14 +336,28 @@ function setLayoutAndHighlight(l){
     btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
     btn.style.color=active?'var(--red)':'var(--text2)';
   });
+  // D형 말풍선 경기장 수 반영
+  const tipD=document.getElementById('tip-D-court');
+  if(tipD){
+    tipD.textContent=`경기장 ${_courtCount}개 → ${_courtCount}곳에서 출발해 가운데 결승`;
+  }
+}
+
+function _initLayoutTooltips(){
+  document.querySelectorAll('.layout-btn').forEach(btn=>{
+    const tip=btn.nextElementSibling;
+    if(!tip) return;
+    btn.addEventListener('mouseenter',()=>tip.style.display='block');
+    btn.addEventListener('mouseleave',()=>tip.style.display='none');
+  });
 }
 
 function goStep2(){
   show('pts-step2');
-  // 기본값 선택
   setCompType(_compType||'national');
   setCourtCount(_courtCount||1);
   setLayoutAndHighlight(_bracketLayout||'A');
+  requestAnimationFrame(_initLayoutTooltips);
 }
 
 
