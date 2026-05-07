@@ -162,7 +162,8 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <div style="padding:8px 14px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
           <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 레이아웃 미리보기</span>
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;">A형 (좌→우)</span>
-          <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;">경기장 1개 적합</span>
+          <span id="preview-desc" style="font-size:10px;color:var(--text3);">경기장 1개 적합</span>
+          <span id="preview-stats" style="font-size:11px;color:var(--text2);margin-left:auto;"></span>
         </div>
         <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);">
           <svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
@@ -447,13 +448,13 @@ function updateBracketPreview(){
 
   const layoutNames={A:'A형 (좌→우)',B:'B형 (아래→위)',C:'C형 (위→아래)',D:'D형 (양방향→중앙)',E:'E형 (상하→중앙)'};
   const layoutDescs={A:'경기장 1개 적합',B:'경기장 1개 적합',C:'경기장 1개 적합',D:`경기장 ${n}개 — 좌우 분산 후 가운데 결승`,E:`경기장 ${n}개 — 상하 분산 후 가운데 결승`};
-  label.textContent=layoutNames[ly]||ly+'형';
-  desc.textContent=layoutDescs[ly]||'';
+  if(label) label.textContent=layoutNames[ly]||ly+'형';
+  if(desc) desc.textContent=layoutDescs[ly]||'';
 
   const _ec=(ly==='D'||ly==='E')?Math.max(2,n):1;
   const _erMap={A:4,B:4,C:4,D:4,E:3};
   const _er=_erMap[ly]||4;
-  stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
+  if(stats) stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
   svgWrap.innerHTML=getBracketPreviewSVG(n,ly);
 }
 
