@@ -151,7 +151,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
           <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
         </div>
-        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow:auto;min-height:300px;"></div>
+        <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);overflow:auto;min-height:360px;"></div>
         <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
       </div>
 
@@ -419,18 +419,23 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='C'){
-    return `<svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-      ${txt(170,10,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
-      ${txt(30,22,'1R','rgba(76,201,240,0.5)',8)}${txt(110,22,'2R','rgba(76,201,240,0.5)',8)}${txt(185,22,'3R','rgba(76,201,240,0.5)',8)}${txt(265,22,'결승','rgba(230,57,70,0.7)',8)}
-      ${box(4,26,52,18)}${box(74,26,52,18)}${box(144,26,52,18)}${box(214,26,52,18)}
-      ${box(34,66,52,18)}${box(179,66,52,18)}
-      ${box(107,100,52,18)}
-      ${fbox(107,122,72,18)}
-      ${line('M30 44 V55 H60 V66')}${line('M100 44 V55 H60 V66')}
-      ${line('M170 44 V55 H205 V66')}${line('M240 44 V55 H205 V66')}
-      ${line('M60 84 V93 H133 V100')}${line('M205 84 V93 H133 V100')}
-      ${line('M133 118 V122','0.7')}
-      ${txt(143,134,'🏆 결승','rgba(230,57,70,0.9)',9)}
+    return `<svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(170,12,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
+      ${txt(170,30,'1R','rgba(76,201,240,0.5)',8)}
+      ${box(8,36,68,26)}${box(94,36,68,26)}${box(178,36,68,26)}${box(264,36,68,26)}
+      ${txt(85,82,'2R','rgba(76,201,240,0.5)',8)}
+      ${txt(255,82,'2R','rgba(76,201,240,0.5)',8)}
+      ${box(46,88,78,26)}
+      ${box(216,88,78,26)}
+      ${line('M42 62 L42 78 L85 78 L85 88')}
+      ${line('M128 62 L128 78 L85 78')}
+      ${line('M212 62 L212 78 L255 78 L255 88')}
+      ${line('M298 62 L298 78 L255 78')}
+      ${txt(170,138,'결승','rgba(230,57,70,0.8)',8)}
+      ${fbox(114,144,112,26)}
+      ${txt(170,161,'🏆 결승','rgba(230,57,70,0.95)',9)}
+      ${line('M85 114 L85 130 L170 130 L170 144','0.6')}
+      ${line('M255 114 L255 130 L170 130','0.6')}
     </svg>`;
   }
   if(layout==='D'){
