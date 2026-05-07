@@ -449,7 +449,7 @@ function confirmPtsGroup(){
     localStorage.setItem('sgp_sortKeys', JSON.stringify(_sortKeys));
     localStorage.setItem('sgp_pts', JSON.stringify(S.pts));
   } catch(e){}
-  toast('그룹 저장 완료!', 'success');
+  toast('저장 완료!', 'success');
   show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
   setCompType(_compType||'national');
   setCourtCount(_courtCount||1);
@@ -1024,6 +1024,7 @@ function shuffleAllGroups(){
 
 function generateAllBrackets(){
   S.activeGroup=0; _assignMode=false; _linkSel=null;
+  try{ localStorage.setItem('sgp_step','3'); }catch(e){}
   show('pts-step3');
   renderBracketTabs();
   renderBracketView(0);
@@ -1110,12 +1111,7 @@ function renderBracketTabs(){
     const active=i===S.activeGroup;
     btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
     btn.textContent=g.label+' ('+g.slots.length+'명)';
-    btn.onclick=()=>{
-      S.activeGroup=i;
-      document.querySelectorAll('[id^="bracket-panel-"]').forEach((p,pi)=>p.style.display=pi===i?'block':'none');
-      document.getElementById('pts-bracket-label').textContent=g.label;
-      renderBracketTabs();
-    };
+    btn.style.cursor='default';
     tabs.appendChild(btn);
   });
 }
@@ -1339,17 +1335,28 @@ function _hideLinkBar(){ const bar=document.getElementById('link-action-bar'); i
 
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') window.close(); });
 
-// localStorage 복원 — 저장된 게 있으면 즉시 STEP 2로
+// localStorage 복원 — 저장된 단계로 이동
 (function restoreFromStorage(){
   try {
     const savedGroups = localStorage.getItem('sgp_groups');
     const savedKeys   = localStorage.getItem('sgp_sortKeys');
     const savedPts    = localStorage.getItem('sgp_pts');
+    const savedStep   = localStorage.getItem('sgp_step');
     if(savedGroups){
       _groups   = JSON.parse(savedGroups);
       _sortKeys = JSON.parse(savedKeys||'[]');
       if(savedPts){ _pts=JSON.parse(savedPts); S.pts=_pts; }
-      setTimeout(()=>{ goStep2(); toast('이전 설정 불러왔어요','info'); }, 0);
+      setTimeout(()=>{
+        if(savedStep==='3'){
+          show('pts-step3');
+          renderBracketTabs();
+          renderBracketView(0);
+          toast('이전 설정 불러왔어요','info');
+        } else {
+          goStep2();
+          toast('이전 설정 불러왔어요','info');
+        }
+      }, 0);
     }
   } catch(e){}
 })();
