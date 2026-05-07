@@ -439,6 +439,10 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='D'){
+    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(170,30,'D형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
+      ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
+    </svg>`;
     const svgsByCount={
       2:`<svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
         ${txt(200,12,'D형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
@@ -466,114 +470,42 @@ function getBracketPreviewSVG(courts,layout){
         ${txt(200,12,'D형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
       </svg>`,
     };
-    const key=Math.min(courts,4);
-    const even=key%2===0?key:key+1;
-    return svgsByCount[even]||svgsByCount[2];
+    const even=courts%2===0?courts:courts+1;
+    const key=Math.min(even,4);
+    return svgsByCount[key]||svgsByCount[2];
   }
   if(layout==='E'){
+    if(courts<2) return `<svg viewBox="0 0 340 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+      ${txt(170,30,'E형은 경기장 2개부터 선택해주세요','rgba(230,57,70,0.8)',11)}
+      ${txt(170,52,'경기장 수에서 2 이상을 선택하세요','rgba(144,144,176,0.7)',9)}
+    </svg>`;
     const svgsByCount={
-      1:`<svg viewBox="0 0 340 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(170,10,'E형 — 경기장 1개','rgba(76,201,240,0.7)',10)}
-        ${box(54,18,52,18)}${box(184,18,52,18)}
-        ${box(114,46,52,18)}
-        ${box(174,74,52,18)}
-        ${box(114,102,52,18)}
-        ${box(54,88,52,18)}${box(184,88,52,18)}
-        ${line('M80 36 V41 H140 V46')}${line('M210 36 V41 H140 V46')}
-        ${line('M140 64 V69 H200 V74')}
-        ${txt(200,88,'🏆','rgba(230,57,70,0.9)',11)}
-        ${line('M200 92 V97 H140 V102')}
-        ${line('M80 88 V83 H140 V102')}${line('M210 88 V83 H140')}
+      2:`<svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+        ${txt(170,12,'E형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
+        ${txt(85,25,'경기장1','rgba(76,201,240,0.35)',7)}
+        ${txt(255,25,'경기장2','rgba(76,201,240,0.35)',7)}
+        ${box(20,30,130,24)}${box(190,30,130,24)}
+        ${box(55,72,100,24)}${box(185,72,100,24)}
+        ${line('M85 54 H85 V84 H55','0.4')}
+        ${line('M255 54 H255 V84 H285','0.4')}
+        ${fbox(119,114,102,28)}
+        ${txt(170,131,'🏆 결승','rgba(230,57,70,0.95)',9)}
+        ${line('M105 96 H105 V128 H119','0.6')}
+        ${line('M285 96 H285 V128 H221','0.6')}
+        ${txt(170,108,'결승','rgba(230,57,70,0.7)',7)}
+        ${txt(85,165,'1R','rgba(76,201,240,0.4)',7)}
+        ${txt(105,165,'2R','rgba(76,201,240,0.4)',7)}
+        ${txt(170,165,'결승','rgba(230,57,70,0.7)',7)}
+        ${txt(235,165,'2R','rgba(76,201,240,0.4)',7)}
+        ${txt(255,165,'1R','rgba(76,201,240,0.4)',7)}
       </svg>`,
-      2:`<svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(170,10,'E형 — 경기장 2개','rgba(76,201,240,0.7)',10)}
-        ${txt(65,20,'경기장1','rgba(76,201,240,0.5)',8)}${txt(275,20,'경기장2','rgba(76,201,240,0.5)',8)}
-        ${box(14,24,44,16)}${box(64,24,44,16)}${box(114,24,44,16)}${box(164,24,44,16)}
-        ${box(39,52,44,16)}${box(149,52,44,16)}
-        ${box(94,78,44,16)}
-        ${fbox(121,100,48,16)}
-        ${box(94,122,44,16)}
-        ${box(39,100,44,16)}${box(149,100,44,16)}
-        ${box(214,24,44,16)}${box(264,24,44,16)}${box(194,52,44,16)}
-        ${box(234,78,44,16)}
-        ${box(214,100,44,16)}${box(264,100,44,16)}
-        ${box(214,124,44,16)}${box(264,124,44,16)}
-        ${line('M36 40 V46 H61 V52')}${line('M86 40 V46 H61 V52')}
-        ${line('M176 40 V46 H171 V52')}${line('M136 40 V46 H171 V52')}
-        ${line('M61 68 V74 H116 V78')}${line('M171 68 V74 H116 V78')}
-        ${line('M116 94 V100','0.7')}${txt(145,113,'🏆','rgba(230,57,70,0.9)',11)}
-        ${line('M116 116 V122')}
-        ${line('M61 116 V122 H116')}${line('M171 116 V122 H116')}
-        ${line('M236 40 V46 H216 V52')}${line('M286 40 V46 H216 V52')}
-        ${line('M216 68 V78 H256 V78')}
-        ${line('M236 94 V100 H256')}${line('M286 94 V100 H256')}
-        ${line('M236 116 V124 H256')}${line('M286 116 V124 H256')}
-      </svg>`,
-      3:`<svg viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(170,10,'E형 — 경기장 3개','rgba(76,201,240,0.7)',10)}
-        ${txt(65,20,'경기장1','rgba(76,201,240,0.5)',8)}${txt(170,20,'경기장3','rgba(76,201,240,0.5)',8)}${txt(275,20,'경기장2','rgba(76,201,240,0.5)',8)}
-        ${box(10,24,40,14)}${box(56,24,40,14)}${box(102,24,40,14)}${box(148,24,40,14)}
-        ${box(33,46,40,14)}${box(125,46,40,14)}
-        ${box(79,66,40,14)}
-        ${fbox(145,88,50,14)}
-        ${box(79,110,40,14)}
-        ${box(33,130,40,14)}${box(125,130,40,14)}
-        ${box(10,144,40,14)}${box(56,144,40,14)}${box(102,144,40,14)}${box(148,144,40,14)}
-        ${box(192,24,40,14)}${box(238,24,40,14)}${box(215,46,40,14)}${box(215,66,40,14)}
-        ${box(192,88,40,14)}${box(238,88,40,14)}${box(215,110,40,14)}
-        ${box(192,144,40,14)}${box(238,144,40,14)}
-        ${box(284,24,40,14)}${box(284,144,40,14)}
-        ${line('M30 38 V42 H53 V46')}${line('M76 38 V42 H53 V46')}
-        ${line('M122 38 V42 H145 V46')}${line('M168 38 V42 H145 V46')}
-        ${line('M53 60 V63 H99 V66')}${line('M145 60 V63 H99 V66')}
-        ${line('M99 80 V88','0.7')}${txt(170,99,'🏆','rgba(230,57,70,0.9)',11)}
-        ${line('M99 102 V110')}
-        ${line('M53 110 V117 H99')}${line('M145 110 V117 H99')}
-        ${line('M30 130 V126 H53')}${line('M76 130 V126 H53')}
-        ${line('M122 130 V126 H145')}${line('M168 130 V126 H145')}
-        ${line('M212 38 V46 H235')}${line('M258 38 V46 H235')}
-        ${line('M235 60 V66 H235')}
-        ${line('M212 80 V88 H235')}${line('M258 80 V88 H235')}
-        ${line('M235 102 V110')}
-        ${line('M212 140 V144')}${line('M258 140 V144')}
-        ${line('M304 38 V30 H170')}${line('M304 140 V148')}
-      </svg>`,
-      4:`<svg viewBox="0 0 340 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
-        ${txt(170,10,'E형 — 경기장 4개','rgba(76,201,240,0.7)',10)}
-        ${txt(65,20,'경기장1','rgba(76,201,240,0.5)',8)}${txt(275,20,'경기장2','rgba(76,201,240,0.5)',8)}
-        ${txt(65,100,'경기장3','rgba(76,201,240,0.5)',8)}${txt(275,100,'경기장4','rgba(76,201,240,0.5)',8)}
-        ${box(4,24,38,14)}${box(46,24,38,14)}${box(88,24,38,14)}${box(130,24,38,14)}
-        ${box(25,44,38,14)}${box(109,44,38,14)}
-        ${box(67,62,38,14)}
-        ${box(4,104,38,14)}${box(46,104,38,14)}${box(88,104,38,14)}${box(130,104,38,14)}
-        ${box(25,124,38,14)}${box(109,124,38,14)}
-        ${box(67,142,38,14)}
-        ${fbox(149,80,42,16)}
-        ${box(198,62,38,14)}${box(240,44,38,14)}${box(282,24,38,14)}${box(240,24,38,14)}
-        ${box(198,24,38,14)}${box(240,62,38,14)}${box(282,44,38,14)}
-        ${box(198,104,38,14)}${box(240,104,38,14)}${box(282,104,38,14)}
-        ${box(198,124,38,14)}${box(240,124,38,14)}${box(282,124,38,14)}
-        ${box(198,142,38,14)}${box(240,142,38,14)}${box(282,142,38,14)}
-        ${line('M23 38 V41 H44 V44')}${line('M65 38 V41 H44 V44')}
-        ${line('M107 38 V41 H128 V44')}${line('M149 38 V41 H128 V44')}
-        ${line('M44 58 V62 H86 V62')}${line('M128 58 V62 H86')}
-        ${line('M86 76 V80 H149','0.65')}
-        ${txt(170,92,'🏆','rgba(230,57,70,0.9)',12)}
-        ${line('M191 88 H191')}
-        ${line('M23 118 V121 H44 V124')}${line('M65 118 V121 H44')}
-        ${line('M107 118 V121 H128 V124')}${line('M149 118 V121 H128')}
-        ${line('M44 138 V142 H86')}${line('M128 138 V142 H86')}
-        ${line('M86 156 V162 H170 V96')}
-        ${line('M217 38 V41 H238 V44')}${line('M259 38 V41 H238')}
-        ${line('M303 38 V41 H280 V44')}${line('M238 58 V62')}
-        ${line('M280 58 V62 H256 V76')}${line('M217 76 V88 H191')}
-        ${line('M217 118 V121 H238 V124')}${line('M259 118 V121 H238')}
-        ${line('M303 118 V121 H280 V124')}${line('M238 138 V142')}
-        ${line('M280 138 V142 H256 V96 H191')}
+      4:`<svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
+        ${txt(170,12,'E형 — 경기장 4개 (준비중)','rgba(76,201,240,0.7)',10)}
       </svg>`,
     };
-    const key=Math.min(courts,4);
-    return svgsByCount[key]||svgsByCount[4];
+    const even=courts%2===0?courts:courts+1;
+    const key=Math.min(even,4);
+    return svgsByCount[key]||svgsByCount[2];
   }
   return `<svg viewBox="0 0 340 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:0 auto;">
     <text x="170" y="35" text-anchor="middle" fill="rgba(144,144,176,0.6)" font-size="13" font-family="sans-serif">미리보기 준비 중...</text>
