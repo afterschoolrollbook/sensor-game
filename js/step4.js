@@ -48,6 +48,7 @@ function buildParticipantGroups(wrap){
   const hasWeight=S.pts.some(p=>p.weight);
   const hasDiv=S.pts.some(p=>p.division);
   const hasTeam=S.pts.some(p=>p.team);
+  const hasGender=S.pts.some(p=>p.gender);
 
   // 헤더
   const hdr=document.createElement('div');
@@ -62,7 +63,11 @@ function buildParticipantGroups(wrap){
   const groups={};
   S.pts.forEach(p=>{
     let key='';
-    if(hasDiv&&hasWeight) key=(p.division||'미분류')+' / '+(p.weight||'미분류');
+    if(hasGender&&hasDiv&&hasWeight) key=(p.gender||'미분류')+' / '+(p.division||'미분류')+' / '+(p.weight||'미분류');
+    else if(hasGender&&hasDiv) key=(p.gender||'미분류')+' / '+(p.division||'미분류');
+    else if(hasGender&&hasWeight) key=(p.gender||'미분류')+' / '+(p.weight||'미분류');
+    else if(hasDiv&&hasWeight) key=(p.division||'미분류')+' / '+(p.weight||'미분류');
+    else if(hasGender) key=p.gender||'미분류';
     else if(hasDiv) key=p.division||'미분류';
     else if(hasWeight) key=p.weight||'미분류';
     else if(hasTeam) key=p.team||'개인';
@@ -88,6 +93,7 @@ function buildParticipantGroups(wrap){
           <div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;">
             <span style="color:var(--text3);font-size:10px;width:16px;">${i+1}</span>
             <div style="width:5px;height:5px;border-radius:50%;background:${p.color||'var(--text3)'};flex-shrink:0;"></div>
+            ${p.gender?`<span style="font-size:9px;padding:0 4px;border-radius:3px;background:${p.gender==='남'?'rgba(76,201,240,0.2)':'rgba(255,100,150,0.2)'};color:${p.gender==='남'?'#4cc9f0':'#ff6496'}">${p.gender}</span>`:''}
             <span>${p.name}</span>
           </div>`).join('')}
       </div>`;
