@@ -433,16 +433,21 @@ function updateBracketPreview(){
   stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
   svgWrap.innerHTML=getBracketPreviewSVG(n,ly);
 
-  // SVG 콘텐츠 실제 크기 측정 후 viewBox 동적 조정
-  requestAnimationFrame(()=>{
+  // SVG 콘텐츠 실제 크기 측정 후 viewBox 동적 조정 — 보일 때까지 재시도
+  function tryFitViewBox(attempts){
     const svg=svgWrap.querySelector('svg');
     if(!svg) return;
     try {
       const bbox=svg.getBBox();
-      const pad=12;
-      svg.setAttribute('viewBox',`${bbox.x-pad} ${bbox.y-pad} ${bbox.width+pad*2} ${bbox.height+pad*2}`);
+      if(bbox.width>0 && bbox.height>0){
+        const pad=12;
+        svg.setAttribute('viewBox',`${bbox.x-pad} ${bbox.y-pad} ${bbox.width+pad*2} ${bbox.height+pad*2}`);
+        return;
+      }
     } catch(e){}
-  });
+    if(attempts>0) setTimeout(()=>tryFitViewBox(attempts-1), 30);
+  }
+  setTimeout(()=>tryFitViewBox(10), 30);
 }
 
 function getBracketPreviewSVG(courts,layout){
@@ -641,7 +646,10 @@ function goStep2(){
   _bracketLayout='A';
   setLayoutAndHighlight('A');
   requestAnimationFrame(_initLayoutTooltips);
-  requestAnimationFrame(updateBracketPreview);
+  // 패널을 먼저 열고 SVG 렌더링
+  const panel=document.getElementById('bracket-preview-panel');
+  if(panel) panel.style.display='block';
+  setTimeout(updateBracketPreview, 50);
 }
 
 
