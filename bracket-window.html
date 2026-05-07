@@ -1032,15 +1032,11 @@ function shuffleAllGroups(){
 
 function generateAllBrackets(){
   const entries=Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
-  const results=[];
-  entries.forEach(([gname,members])=>{
-    results.push({
-      label:gname,
-      matches:generateBracket([...members]),
-      slots:members.map((p,i)=>({num:i+1,player:p}))
-    });
-  });
-  S.groupBrackets=results;
+  S.groupBrackets=entries.map(([gname,members])=>({
+    label:gname,
+    matches:[[]],
+    slots:members.map((p,i)=>({num:i+1,player:p}))
+  }));
   S.activeGroup=0; _assignMode=false; _linkSel=null;
   try{ localStorage.setItem('sgp_step','3'); }catch(e){}
   show('pts-step3');
