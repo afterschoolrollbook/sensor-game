@@ -663,16 +663,20 @@ function renderPtsOverview(){
   const body=document.getElementById('pts-overview-body');
   if(!panel||!body) return;
 
-  const hasGender=S.pts.some(p=>p.gender&&p.gender.trim());
-  const hasDiv=S.pts.some(p=>p.division&&p.division.trim());
-  const hasWeight=S.pts.some(p=>p.weight&&p.weight.trim());
+  // _groups에서 전체 참가자 수집
+  const allPts=Object.values(_groups).flat();
+  if(!allPts.length){panel.style.display='none';return;}
+
+  const hasGender=allPts.some(p=>p.gender&&p.gender.trim());
+  const hasDiv=allPts.some(p=>p.division&&p.division.trim());
+  const hasWeight=allPts.some(p=>p.weight&&p.weight.trim());
   if(!hasGender&&!hasDiv&&!hasWeight){panel.style.display='none';return;}
   panel.style.display='block';
   body.innerHTML='';
 
   // 성별 기준으로 최상위 그룹
   const topGroups={};
-  S.pts.forEach(p=>{
+  allPts.forEach(p=>{
     const gk=hasGender?(p.gender||'미분류'):'전체';
     if(!topGroups[gk]) topGroups[gk]=[];
     topGroups[gk].push(p);
@@ -686,28 +690,20 @@ function renderPtsOverview(){
     const box=document.createElement('div');
     box.style.cssText=`background:${genderColor};border:1px solid ${genderBorder};border-radius:10px;padding:10px 12px;min-width:160px;`;
 
-    // 성별 헤더
     let html=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid ${genderBorder};">
       <span style="font-size:13px;font-weight:700;color:${genderText};">${gname}</span>
       <span style="font-size:10px;color:var(--text3);">${gpts.length}명</span>
     </div>`;
 
     if(hasDiv){
-      // 부문별 그룹
       const divGroups={};
-      gpts.forEach(p=>{
-        const dk=p.division||'미분류';
-        if(!divGroups[dk]) divGroups[dk]=[];
-        divGroups[dk].push(p);
-      });
-
+      gpts.forEach(p=>{const dk=p.division||'미분류';if(!divGroups[dk])divGroups[dk]=[];divGroups[dk].push(p);});
       Object.entries(divGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([dname,dpts])=>{
         html+=`<div style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;padding:7px 10px;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
             <span style="font-size:11px;font-weight:700;color:var(--text2);">${dname}</span>
             <span style="font-size:10px;color:var(--text3);">${dpts.length}명</span>
           </div>`;
-
         if(hasWeight){
           const wtGroups={};
           dpts.forEach(p=>{const wk=p.weight||'미분류';if(!wtGroups[wk])wtGroups[wk]=[];wtGroups[wk].push(p);});
