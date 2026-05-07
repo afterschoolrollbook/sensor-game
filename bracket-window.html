@@ -106,7 +106,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <!-- 참가 현황 요약 -->
       <div id="pts-overview" style="margin-bottom:16px;display:none;">
         <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 참가 현황</span>
-        <div id="pts-overview-body" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+        <div id="pts-overview-body" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-start;"></div>
       </div>
 
       <!-- 레이아웃 선택 -->
@@ -162,8 +162,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <div style="padding:8px 14px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
           <span style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 레이아웃 미리보기</span>
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;">A형 (좌→우)</span>
-          <span id="preview-desc" style="font-size:10px;color:var(--text3);">경기장 1개 적합</span>
-          <span id="preview-stats" style="font-size:11px;color:var(--text2);margin-left:auto;"></span>
+          <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;">경기장 1개 적합</span>
         </div>
         <div id="bracket-preview-svg" style="padding:20px 16px;background:var(--bg);">
           <svg viewBox="0 0 500 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
@@ -448,13 +447,13 @@ function updateBracketPreview(){
 
   const layoutNames={A:'A형 (좌→우)',B:'B형 (아래→위)',C:'C형 (위→아래)',D:'D형 (양방향→중앙)',E:'E형 (상하→중앙)'};
   const layoutDescs={A:'경기장 1개 적합',B:'경기장 1개 적합',C:'경기장 1개 적합',D:`경기장 ${n}개 — 좌우 분산 후 가운데 결승`,E:`경기장 ${n}개 — 상하 분산 후 가운데 결승`};
-  if(label) label.textContent=layoutNames[ly]||ly+'형';
-  if(desc) desc.textContent=layoutDescs[ly]||'';
+  label.textContent=layoutNames[ly]||ly+'형';
+  desc.textContent=layoutDescs[ly]||'';
 
   const _ec=(ly==='D'||ly==='E')?Math.max(2,n):1;
   const _erMap={A:4,B:4,C:4,D:4,E:3};
   const _er=_erMap[ly]||4;
-  if(stats) stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
+  stats.innerHTML=`<span style="font-size:11px;color:var(--text3);">예시)</span> <span style="font-size:13px;color:var(--text2);font-weight:700;">16명 &nbsp;/&nbsp; ${_ec}경기장 &nbsp;/&nbsp; ${_er}라운드</span>`;
   svgWrap.innerHTML=getBracketPreviewSVG(n,ly);
 }
 
@@ -689,45 +688,42 @@ function renderPtsOverview(){
     const genderText=gname==='남'?'#4cc9f0':gname==='여'?'#ff6496':'var(--text2)';
 
     const box=document.createElement('div');
-    box.style.cssText=`background:${genderColor};border:1px solid ${genderBorder};border-radius:10px;padding:10px 12px;min-width:160px;`;
+    box.style.cssText=`background:${genderColor};border:1px solid ${genderBorder};border-radius:10px;padding:10px 14px;flex:1;min-width:0;`;
 
-    let html=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid ${genderBorder};">
+    let html=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid ${genderBorder};">
       <span style="font-size:13px;font-weight:700;color:${genderText};">${gname}</span>
       <span style="font-size:10px;color:var(--text3);">${gpts.length}명</span>
-    </div>`;
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
 
     if(hasDiv){
       const divGroups={};
       gpts.forEach(p=>{const dk=p.division||'미분류';if(!divGroups[dk])divGroups[dk]=[];divGroups[dk].push(p);});
       Object.entries(divGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([dname,dpts])=>{
-        html+=`<div style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;padding:7px 10px;margin-bottom:6px;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+        html+=`<div style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;padding:6px 10px;">
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
             <span style="font-size:11px;font-weight:700;color:var(--text2);">${dname}</span>
             <span style="font-size:10px;color:var(--text3);">${dpts.length}명</span>
-          </div>`;
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">`;
         if(hasWeight){
           const wtGroups={};
           dpts.forEach(p=>{const wk=p.weight||'미분류';if(!wtGroups[wk])wtGroups[wk]=[];wtGroups[wk].push(p);});
           Object.entries(wtGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([wname,wpts])=>{
-            html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;border-top:1px solid rgba(255,255,255,0.05);">
-              <span style="font-size:10px;color:var(--text3);">${wname}</span>
-              <span style="font-size:10px;font-weight:700;color:var(--text2);">${wpts.length}명</span>
-            </div>`;
+            html+=`<span style="font-size:10px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:var(--text3);">${wname} <b style="color:var(--text2);font-weight:700;">${wpts.length}</b></span>`;
           });
         }
-        html+='</div>';
+        html+=`</div></div>`;
       });
     } else if(hasWeight){
       const wtGroups={};
       gpts.forEach(p=>{const wk=p.weight||'미분류';if(!wtGroups[wk])wtGroups[wk]=[];wtGroups[wk].push(p);});
       Object.entries(wtGroups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([wname,wpts])=>{
-        html+=`<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid rgba(255,255,255,0.05);">
-          <span style="font-size:10px;color:var(--text3);">${wname}</span>
-          <span style="font-size:10px;font-weight:700;color:var(--text2);">${wpts.length}명</span>
-        </div>`;
+        html+=`<span style="font-size:10px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:var(--text3);">${wname} <b style="color:var(--text2);font-weight:700;">${wpts.length}</b></span>`;
       });
     }
 
+    html+=`</div>`;
     box.innerHTML=html;
     body.appendChild(box);
   });
@@ -750,9 +746,7 @@ function setPtsMode(mode){
 }
 
 function renderOrderArea(){
-  const area=document.getElementById('pts-order-area');
-  if(!area) return;
-  area.innerHTML='';
+  const area=document.getElementById('pts-order-area'); if(!area) return; area.innerHTML='';
   Object.entries(_groups).sort((a,b)=>a[0].localeCompare(b[0],'ko')).forEach(([gname,members])=>{
     const sec=document.createElement('div'); sec.style.marginBottom='20px';
     sec.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">
