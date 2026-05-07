@@ -333,104 +333,6 @@ function generateAllBrackets(){
 }
 
 // 부전승 배정 선택 팝업
-function showByeSelector(players, groupLabel, onSelect){
-  const existing=document.getElementById('bye-selector-overlay');
-  if(existing) existing.remove();
-
-  const overlay=document.createElement('div');
-  overlay.id='bye-selector-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
-
-  const box=document.createElement('div');
-  box.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:20px;min-width:340px;max-width:500px;max-height:80vh;display:flex;flex-direction:column;gap:14px;position:relative;';
-
-  box.innerHTML=`
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-      <div>
-        <div style="font-size:10px;color:var(--red);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:6px;">// 부전승 배정</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">${groupLabel}</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.6;">
-          경기 수가 홀수입니다.<br>한 경기 승자가 부전승(자동 진출)을 받아야 합니다.<br>아래에서 선택하거나 랜덤 추첨하세요.
-        </div>
-      </div>
-      <button id="bye-close-btn" style="flex-shrink:0;width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text3);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-    </div>
-    <button id="bye-random-btn" style="padding:10px;background:rgba(76,201,240,.12);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🎲 랜덤 추첨</button>
-    <div style="font-size:10px;color:var(--text3);text-align:center;letter-spacing:1px;">또는 직접 선택</div>
-    <div id="bye-player-list" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:300px;"></div>
-  `;
-
-  const list=box.querySelector('#bye-player-list');
-  const btns=[];
-  players.forEach((p,idx)=>{
-    const btn=document.createElement('button');
-    btn.dataset.idx=idx;
-    btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:13px;font-weight:600;text-align:left;width:100%;transition:all .1s;';
-    btn.onmouseover=()=>{if(!btn.dataset.spinning)btn.style.borderColor='var(--red)';};
-    btn.onmouseout=()=>{if(!btn.dataset.spinning)btn.style.borderColor='var(--border)';};
-    btn.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${p.color||'var(--accent)'};flex-shrink:0;"></div><span>${p.name}</span>`;
-    btn.onclick=()=>{
-      if(btn.dataset.spinning) return;
-      overlay.remove();
-      onSelect(p);
-    };
-    list.appendChild(btn);
-    btns.push(btn);
-  });
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-
-  box.querySelector('#bye-close-btn').addEventListener('click',()=>overlay.remove());
-
-  box.querySelector('#bye-random-btn').addEventListener('click',()=>{
-    // 추첨 버튼 비활성화
-    box.querySelector('#bye-random-btn').disabled=true;
-    box.querySelector('#bye-random-btn').textContent='🎲 추첨 중...';
-    btns.forEach(b=>{ b.dataset.spinning='1'; b.style.cursor='default'; });
-
-    const pickIdx=Math.floor(Math.random()*players.length);
-    let cur=0;
-    const totalSteps=30+pickIdx+(players.length*3);
-    let step=0;
-    let delay=60;
-
-    function highlight(i){
-      btns.forEach((b,bi)=>{
-        b.style.borderColor=bi===i?'var(--accent)':'var(--border)';
-        b.style.background=bi===i?'rgba(76,201,240,.15)':'var(--card)';
-        b.style.color=bi===i?'var(--accent)':'var(--text)';
-      });
-    }
-
-    function spin(){
-      highlight(cur%players.length);
-      cur++;
-      step++;
-      if(step>totalSteps*0.6) delay=Math.min(delay+18, 400);
-      if(step>=totalSteps){
-        const finalIdx=pickIdx;
-        highlight(finalIdx);
-        btns.forEach(b=>delete b.dataset.spinning);
-        // 추첨 버튼을 확인 버튼으로 변경
-        const randomBtn=box.querySelector('#bye-random-btn');
-        randomBtn.disabled=false;
-        randomBtn.style.background='rgba(230,57,70,.15)';
-        randomBtn.style.borderColor='var(--red)';
-        randomBtn.style.color='var(--red)';
-        randomBtn.textContent=`✅ ${players[finalIdx].name} 부전승 확정`;
-        randomBtn.onclick=()=>{
-          overlay.remove();
-          onSelect(players[finalIdx]);
-        };
-        return;
-      }
-      setTimeout(spin, delay);
-    }
-    spin();
-  });
-}
-
 // 특정 라운드에서 아직 연결되지 않은 경기 목록 반환
 function _getUnlinkedMatches(g, ri){
   const curRound=g.matches[ri];
@@ -578,12 +480,12 @@ function renderBracketView(groupIdx){
       if(!allLinked) return;
       const col=view.querySelector(`[data-col="${ri}"]`);
       if(!col) return;
-      const lbl=col.firstChild;
+      col.style.position='relative';
       const btn=document.createElement('button');
-      btn.style.cssText='width:100%;padding:5px 8px;background:rgba(255,214,10,.15);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:4px;flex-shrink:0;box-sizing:border-box;';
+      btn.style.cssText='position:absolute;top:0;left:0;right:0;padding:4px 8px;background:rgba(255,214,10,.15);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;z-index:10;';
       btn.textContent='🎯 부전승 배정';
       btn.onclick=()=>triggerByeSelector();
-      col.insertBefore(btn, lbl.nextSibling);
+      col.appendChild(btn);
     });
   });
 }
