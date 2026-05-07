@@ -143,6 +143,7 @@ window.addEventListener('load', ()=>{
 
 let _sortKeys=[], _groups={}, _mode='tournament';
 let _assignMode=false, _assignSlotNum=null, _linkSel=null;
+let _byeAssigned=null; // {ri, mi} 부전승 배정된 경기
 // _bracketLayout은 step4.js에서 선언됨 — 중복 선언 금지
 
 
@@ -673,6 +674,7 @@ function _showByeForRound(g, ri){
     candidates,
     `${round.length}경기 중 부전승 배정`,
     (sel)=>{
+      _byeAssigned={ri:sel._ri, mi:sel._mi};
       toast(sel.name+' 부전승!','success');
     }
   );
@@ -681,10 +683,10 @@ function _showByeForRound(g, ri){
 function onMatchClick(ri,mi){
   const g=S.groupBrackets[S.activeGroup];
   if(!_linkSel){
-    // 홀수 라운드면 linkSel 세팅 전에 부전승 팝업 먼저
+    // 홀수 라운드인데 부전승 미배정 상태면 팝업
     const nextRound=g.matches[ri+1]||[];
     const alreadyHasBye=nextRound.some(m=>m.bye);
-    if(g.matches[ri].length%2===1 && !alreadyHasBye){
+    if(g.matches[ri].length%2===1 && !alreadyHasBye && !_byeAssigned){
       _showByeForRound(g, ri);
       return;
     }
