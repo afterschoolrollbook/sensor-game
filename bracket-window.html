@@ -151,7 +151,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
           <span id="preview-label" style="font-size:11px;color:var(--text2);font-weight:600;"></span>
           <span id="preview-desc" style="font-size:10px;color:var(--text3);margin-left:auto;"></span>
         </div>
-        <div id="bracket-preview-svg" style="padding:28px 20px;background:var(--bg);overflow-x:auto;min-height:280px;"></div>
+        <div id="bracket-preview-svg" style="padding:24px 12px;background:var(--bg);overflow-x:auto;min-height:320px;"></div>
         <div id="preview-stats" style="padding:8px 14px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;"></div>
       </div>
 
@@ -377,7 +377,7 @@ function getBracketPreviewSVG(courts,layout){
 
   if(layout==='A'){
     // 좌→우 단방향 (1경기장 기준, 8명 토너먼트 예시)
-    return `<svg viewBox="0 0 340 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 340 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
       ${txt(170,10,'A형 — 좌→우 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(30,22,'1R','rgba(76,201,240,0.5)',8)}${txt(110,22,'2R','rgba(76,201,240,0.5)',8)}${txt(190,22,'3R','rgba(76,201,240,0.5)',8)}${txt(275,22,'결승','rgba(230,57,70,0.7)',8)}
       ${box(4,26,52,18)}${box(4,52,52,18)}${box(4,78,52,18)}${box(4,104,52,18)}
@@ -393,7 +393,7 @@ function getBracketPreviewSVG(courts,layout){
   }
   if(layout==='B'){
     // B형: 1R 맨 아래 가로, 위로 합쳐져 결승 맨 위
-    return `<svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
       ${txt(170,12,'B형 — 아래→위 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(170,28,'결승','rgba(230,57,70,0.7)',8)}
       ${fbox(119,32,102,18)}
@@ -413,7 +413,7 @@ function getBracketPreviewSVG(courts,layout){
     </svg>`;
   }
   if(layout==='C'){
-    return `<svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:400px;display:block;margin:0 auto;">
+    return `<svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
       ${txt(170,10,'C형 — 위→아래 단방향','rgba(76,201,240,0.7)',10)}
       ${txt(30,22,'1R','rgba(76,201,240,0.5)',8)}${txt(110,22,'2R','rgba(76,201,240,0.5)',8)}${txt(185,22,'3R','rgba(76,201,240,0.5)',8)}${txt(265,22,'결승','rgba(230,57,70,0.7)',8)}
       ${box(4,26,52,18)}${box(74,26,52,18)}${box(144,26,52,18)}${box(214,26,52,18)}
