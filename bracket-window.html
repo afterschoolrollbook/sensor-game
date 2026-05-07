@@ -244,7 +244,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       </div>
     </div>
     <!-- step4.js가 getElementById('pts-bracket-tabs'), getElementById('pts-bracket-view') 로 접근 -->
-    <div id="pts-bracket-tabs" style="display:none;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;gap:6px;background:var(--bg2);"></div>
+    <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
   </div>
 </div>
@@ -1136,6 +1136,8 @@ function _redrawBracketView(){
     renderBracketA(view);
   }
   S.matches=saved;
+  // 탭 체크 상태 갱신
+  renderBracketTabs();
 }
 
 // 부전승 배정 선택 팝업
@@ -1210,19 +1212,83 @@ function _checkAndHandleOddAfterLink(g, ri){
 }
 
 function renderBracketTabs(){
+function renderBracketTabs(){
   const tabs=document.getElementById('pts-bracket-tabs');
-  const groups=S.groupBrackets||[]; tabs.innerHTML='';
+  const groups=S.groupBrackets||[];
+  tabs.innerHTML='';
   if(groups.length<1){tabs.style.display='none';return;}
-  tabs.style.display='flex';
+  tabs.style.display='block';
+
+  // 경기장별로 그룹 분류
+  const courts={};
   groups.forEach((g,i)=>{
-    const btn=document.createElement('button');
-    const active=i===S.activeGroup;
-    btn.style.cssText=`padding:4px 12px;border-radius:20px;border:1px solid ${active?'var(--red)':'var(--border)'};background:${active?'rgba(230,57,70,.15)':'transparent'};color:${active?'var(--red)':'var(--text3)'};font-size:11px;cursor:pointer;font-weight:${active?'700':'400'};`;
-    btn.textContent=g.label+' ('+g.slots.length+'명)'+(g.court?` · 경기장${g.court}`:'');
-    btn.style.cursor='pointer';
-    btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
-    tabs.appendChild(btn);
+    const c=g.court||1;
+    if(!courts[c]) courts[c]=[];
+    courts[c].push({g,i});
   });
+
+  const courtNums=Object.keys(courts).map(Number).sort((a,b)=>a-b);
+
+  // 좌우 분리 컨테이너
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:0;width:100%;';
+
+  courtNums.forEach((courtNum, ci)=>{
+    const col=document.createElement('div');
+    col.style.cssText=`flex:1;padding:8px 14px;${ci>0?'border-left:1px solid var(--border)':''}`;
+
+    // 경기장 헤더
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-size:9px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;';
+    hdr.textContent=`// 경기장 ${courtNum}`;
+    col.appendChild(hdr);
+
+    // 그룹 목록
+    const list=document.createElement('div');
+    list.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+
+    courts[courtNum].forEach(({g,i})=>{
+      // 필요 경기 수: 1라운드 non-bye 경기 수
+      const r0=g.matches[0]||[];
+      const totalNeeded=r0.filter(m=>!m.bye).length;
+      // 완료된 연결 수: matches[1] 이상에 존재하는 경기 수 합산
+      const linkedCount=(g.matches[1]||[]).filter(m=>!m.bye).length;
+      const done=linkedCount>=Math.ceil(totalNeeded/2);
+
+      const btn=document.createElement('button');
+      const active=i===S.activeGroup;
+
+      // 체크 표시: 전체 라운드 연결 완료 여부
+      const checkIcon=done?'✓ ':'';
+      const matchInfo=`${linkedCount}/${Math.ceil(totalNeeded/2)}경기`;
+
+      btn.style.cssText=`
+        display:inline-flex;align-items:center;gap:5px;
+        padding:3px 8px;border-radius:5px;
+        border:1px solid ${done?'var(--green)':active?'var(--red)':'var(--border)'};
+        background:${done?'rgba(6,214,160,.1)':active?'rgba(230,57,70,.15)':'transparent'};
+        color:${done?'var(--green)':active?'var(--red)':'var(--text3)'};
+        font-size:10px;cursor:pointer;font-weight:${active?'700':'400'};
+        white-space:nowrap;
+      `;
+
+      // 체급명만 추출 (마지막 / 뒤)
+      const labelParts=g.label.split('/');
+      const shortLabel=labelParts[labelParts.length-1].trim();
+
+      btn.innerHTML=`
+        <span style="font-size:10px;">${checkIcon}${shortLabel}</span>
+        <span style="font-size:9px;opacity:.6;font-family:'Share Tech Mono',monospace;">${matchInfo}</span>
+      `;
+      btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
+      list.appendChild(btn);
+    });
+
+    col.appendChild(list);
+    row.appendChild(col);
+  });
+
+  tabs.appendChild(row);
 }
 
 function renderBracketView(groupIdx){
