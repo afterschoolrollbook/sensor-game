@@ -1086,10 +1086,10 @@ function _redrawBracketView(){
     outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='flex:1;padding:12px;min-width:0;overflow:auto;';
+    lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:1;padding:12px;min-width:0;overflow:auto;';
+    rDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
     const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
@@ -1110,7 +1110,7 @@ function _redrawBracketView(){
 
         // 그룹 대진표 래퍼
         const groupWrap=document.createElement('div');
-        groupWrap.style.cssText='margin-bottom:16px;';
+        groupWrap.style.cssText='margin-bottom:16px;position:relative;';
 
         // 1라운드 match에 태깅 (_groupObj, _origMi)
         const taggedMatches=g.matches.map((round,ri)=>
@@ -1427,7 +1427,6 @@ function onMatchClick(ri,mi,matchObj){
       toast('이미 연결된 경기입니다','error');_redrawBracketView();return;
     }
     nextRound.push({p1:{name:`1-${a.origMi+1} 승자`,tbd:true},p2:{name:`1-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
-    console.log('[연결]', grp.label, 'fromA:', aKey, 'fromB:', bKey, 'matches:', JSON.stringify(grp.matches));
     _redrawBracketView();
     toast(`${grp.label} ${a.origMi+1}번 vs ${b.origMi+1}번 연결됨!`,'success');
   }
