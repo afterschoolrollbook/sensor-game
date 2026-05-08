@@ -1496,7 +1496,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
     b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
     b.onmouseout=()=>b.style.background='transparent';
     b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
-    b.onclick=(e)=>{ e.stopPropagation(); _hideMatchModal(); fn(); };
+    b.addEventListener('click',(e)=>{ e.stopPropagation(); _hideMatchModal(); fn(); });
     return b;
   };
 
@@ -1517,7 +1517,6 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   } else {
     modal.appendChild(mkBtn('🔗','다른 경기와 연결','var(--accent)',()=>{
       _linkSel={ri,mi,grpObj,origMi,origRi,matchObj};
-      // 선택 박스 강조
       if(matchObj&&matchObj._domId){
         const el=document.querySelector(`[data-match-id="${matchObj._domId}"]`);
         if(el){ el.style.borderColor='#4cc9f0'; el.style.boxShadow='0 0 8px rgba(76,201,240,.5)'; }
@@ -1527,7 +1526,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
     modal.appendChild(mkBtn('▶','부전승 직행','var(--green)',()=>{
       _doAdvance(origRi, origMi, grpObj);
     }));
-    modal.appendChild(mkBtn('🗑','이 라운드 삭제','var(--red)',()=>{
+    modal.appendChild(mkBtn('🗑','이 라운드 연결 삭제','var(--red)',()=>{
       _doRemoveRound(origRi, grpObj);
     }));
   }
@@ -1538,15 +1537,16 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   const rect = anchorEl.getBoundingClientRect();
   let top = rect.bottom + 6;
   let left = rect.left;
-  if(top + 200 > window.innerHeight) top = rect.top - 210;
+  if(top + 220 > window.innerHeight) top = rect.top - 220;
   if(left + 200 > window.innerWidth) left = window.innerWidth - 210;
   modal.style.top = top + 'px';
   modal.style.left = left + 'px';
 
-  // 외부 클릭 시 닫기
-  setTimeout(()=>{
-    document.addEventListener('click', _hideMatchModal, {once:true});
-  }, 0);
+  // 외부 클릭 시 닫기 — 모달 자신 클릭은 제외
+  const onOutside = (e)=>{
+    if(!modal.contains(e.target)){ _hideMatchModal(); document.removeEventListener('click', onOutside); }
+  };
+  setTimeout(()=>{ document.addEventListener('click', onOutside); }, 0);
 }
 
 function _doLink(ri, mi, grpObj, origMi, origRi){
@@ -1592,11 +1592,11 @@ function _doAdvance(origRi, origMi, grpObj){
 function _doRemoveRound(origRi, grpObj){
   const g = grpObj || S.groupBrackets[S.activeGroup];
   if(!g){ toast('그룹을 찾을 수 없어요','error'); return; }
-  if(origRi === 0 && g.matches.length <= 1){ toast('1라운드는 삭제할 수 없어요','info'); return; }
-  // origRi 이후 라운드(연결 정보 포함) 삭제
+  if(g.matches.length <= origRi + 1){ toast('삭제할 연결이 없어요','info'); return; }
+  // origRi 다음 라운드부터 모두 제거 (연결 정보 삭제)
   g.matches.splice(origRi + 1);
   _redrawBracketView();
-  toast(`${origRi+1}라운드 이후 연결 삭제됨`,'success');
+  toast(`${origRi+1}라운드 이후 연결이 삭제됐어요`,'success');
 }
 
 function onMatchClick(ri, mi, matchObj, event){
