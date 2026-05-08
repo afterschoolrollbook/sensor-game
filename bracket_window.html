@@ -904,16 +904,15 @@ function _redrawBracketView(){
   if(_bracketLayout==='D' && courts>=2){
     view.style.overflow='auto';
     view.style.padding='12px';
-    // 스크롤 가능한 전체 래퍼 — lDiv + rDiv 둘 다 인라인으로 담음
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:inline-flex;flex-direction:row;min-width:100%;box-sizing:border-box;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;width:100%;min-width:max-content;';
     const lDiv=document.createElement('div');
     lDiv.style.cssText='padding-right:24px;flex-shrink:0;';
-    // spacer: 두 div 사이 빈 공간을 flex로 채움
     const spacer=document.createElement('div');
     spacer.style.cssText='flex:1;min-width:40px;';
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;';
+    // position:sticky + right:0 → 스크롤 컨테이너 오른쪽 끝에 항상 붙음
+    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;position:sticky;right:0;';
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
