@@ -904,11 +904,11 @@ function _redrawBracketView(){
     view.style.overflow='auto';
     view.style.padding='12px';
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;width:max-content;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;min-width:100%;';
     const lDiv=document.createElement('div');
     lDiv.style.cssText='padding-right:24px;';
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex:1;';
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
