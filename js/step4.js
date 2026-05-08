@@ -453,8 +453,9 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     if(m&&m.fromB){
       const [fbri,fbmi]=m.fromB.split('-').map(Number);
       srcB=fbri===ri-1?fbmi:mi*2+1;
-    } else { srcB=mi*2+1; }
+    } else { srcB=null; } // 직행(bye): fromB 없으면 null
     const cyA=calcCy(ri-1,srcA);
+    if(srcB===null) return cyA; // 직행은 srcA와 같은 높이
     const cyB=srcB<rounds[ri-1].length?calcCy(ri-1,srcB):cyA;
     return(cyA+cyB)/2;
   };
@@ -600,8 +601,10 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       if(m&&m.fromB){
         const [fbri,fbmi]=m.fromB.split('-').map(Number);
         srcB=fbri===ri-1?fbmi:mi*2+1;
-      } else { srcB=mi*2+1; }
+      } else { srcB=null; } // 직행(bye): fromB 없으면 null 표시
       const cyA=getBoxCy(ri-1,srcA);
+      // fromB가 없는 직행이면 cyA만 사용 (srcA와 같은 높이에 배치)
+      if(srcB===null) return cyA;
       const cyB=srcB<rounds[ri-1].length?getBoxCy(ri-1,srcB):cyA;
       return(cyA+cyB)/2;
     };
@@ -654,13 +657,19 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
+            const midY=(ay+by)/2;
             // ㄷ자: a ←── midX, b ←── midX, 세로선, midY → t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${ty} H${tx}`);
+            PATH(`M${midX},${midY} H${tx}`);
           } else {
-            PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+            // 직행(bye): ay와 ty가 같으면 직선, 다르면 꺾인선
+            if(Math.abs(ay-ty)<1){
+              PATH(`M${ax},${ay} H${tx}`);
+            } else {
+              PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+            }
           }
         } else {
           // 선이 박스 오른쪽에서 나감
@@ -670,13 +679,19 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
           const midX=(ax+tx)/2;
           if(b){
             const by=b.cy;
+            const midY=(ay+by)/2;
             // ㄷ자: a ──→ midX, b ──→ midX, 세로선, midY → t.cy
             PATH(`M${ax},${ay} H${midX}`);
             PATH(`M${bx},${by} H${midX}`);
             PATH(`M${midX},${ay} V${by}`);
-            PATH(`M${midX},${ty} H${tx}`);
+            PATH(`M${midX},${midY} H${tx}`);
           } else {
-            PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+            // 직행(bye): ay와 ty가 같으면 직선, 다르면 꺾인선
+            if(Math.abs(ay-ty)<1){
+              PATH(`M${ax},${ay} H${tx}`);
+            } else {
+              PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`);
+            }
           }
         }
       });
