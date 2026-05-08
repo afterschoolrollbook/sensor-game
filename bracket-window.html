@@ -1082,48 +1082,54 @@ function _redrawBracketView(){
   const saved=S.matches;
 
   if(_bracketLayout==='D' && courts>=2){
-    const taggedMatches=(courtNum)=>{
-      const matched=[];
-      (S.groupBrackets||[]).filter(g=>g.court===courtNum).forEach(g=>{
-        const first=noByeMatches(g.matches[0]);
-        first.forEach((m,mi)=>{
-          const labelParts=g.label.split('/').map(s=>s.trim());
-          const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-          matched.push({...m, _groupLabel:shortLabel, _matchIdx:mi+1, _groupObj:g, _origMi:mi, _court:courtNum});
-        });
-      });
-      return matched;
-    };
-    const court1Matches=taggedMatches(1);
-    const court2Matches=taggedMatches(2);
-    // 클릭 시점에 참조할 수 있도록 전역 보존
-    window._currentCourt1=court1Matches;
-    window._currentCourt2=court2Matches;
-
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
+    lDiv.style.cssText='flex:1;padding:12px;min-width:0;overflow:auto;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='flex:1;padding:12px;min-width:0;overflow:auto;';
 
     const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    if(court1Matches.length){ S.matches=[court1Matches]; window._lastMatchesCourt=1; renderBracketA(lDiv); }
-    if(court2Matches.length){
-      const rContent=document.createElement('div');
-      rContent.style.cssText='display:flex;flex-direction:column;align-items:flex-end;width:100%;';
-      S.matches=[court2Matches]; window._lastMatchesCourt=2; renderBracketA(rContent);
-      // 내부 컨텐츠 오른쪽 정렬
-      rContent.querySelectorAll('[style*="position:relative"],[style*="overflow:auto"]').forEach(el=>{
-        el.style.marginLeft='auto';
+    // 각 그룹을 개별 렌더링 - 연결선이 그룹 내에서만 올바르게 그려짐
+    const renderCourtGroups=(courtNum, container)=>{
+      const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
+      groups.forEach(g=>{
+        const labelParts=g.label.split('/').map(s=>s.trim());
+        const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+
+        // 그룹 헤더
+        const hdr=document.createElement('div');
+        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+        hdr.textContent=shortLabel;
+        container.appendChild(hdr);
+
+        // 그룹 대진표 래퍼
+        const groupWrap=document.createElement('div');
+        groupWrap.style.cssText='margin-bottom:16px;';
+
+        // 1라운드 match에 태깅 (_groupObj, _origMi)
+        const taggedMatches=g.matches.map((round,ri)=>
+          round.map((m,mi)=>({...m,
+            _groupObj:g,
+            _origMi:mi,
+            _origRi:ri,
+            _groupLabel:shortLabel
+          }))
+        );
+
+        S.matches=taggedMatches;
+        renderBracketA(groupWrap);
+        container.appendChild(groupWrap);
       });
-      rDiv.appendChild(rContent);
-    }
+    };
+
+    renderCourtGroups(1, lDiv);
+    renderCourtGroups(2, rDiv);
 
     _stripInnerScroll(lDiv);
     _stripInnerScroll(rDiv);
@@ -1247,33 +1253,33 @@ function renderBracketTabs(){
     list.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
 
     courts[courtNum].forEach(({g,i})=>{
-      // 필요 경기 수: 1라운드 non-bye 경기 수
-      // 총 필요 경기 수 = 참가자 수 - 1 (토너먼트 공식)
-      const totalNeeded=g.slots.length-1;
-      // 완료된 경기 수: 전체 라운드에서 연결된 non-bye 경기 합산
-      const linkedCount=g.matches.reduce((acc,round)=>acc+round.filter(m=>!m.bye).length, 0);
-      const done=linkedCount>=totalNeeded;
+      // 현재 그려진 non-bye 경기 박스 수
+      // 총 목표 박스 수 계산 (BYE 포함, 참가자 수 기준)
+      const calcTotalBoxes=(n)=>{ let t=0,c=n; while(c>1){t+=Math.ceil(c/2);c=Math.ceil(c/2);} return t; };
+      const totalBoxes=calcTotalBoxes(g.slots.length);
+      // 현재 그려진 박스 수 (BYE 포함)
+      const drawnBoxes=g.matches.reduce((acc,round)=>acc+round.length, 0);
+      const allDone=drawnBoxes>=totalBoxes;
+
+      const checkboxes=Array.from({length:totalBoxes},(_,ci)=>
+        `<span style="font-size:11px;color:${ci<drawnBoxes?'var(--green)':'var(--border2)'};">${ci<drawnBoxes?'☑':'☐'}</span>`
+      ).join('');
 
       const btn=document.createElement('button');
       const active=i===S.activeGroup;
 
-      // 레이블 축약: "남 / 고등부 / 60kg" → "남·고등·60kg"
       const labelParts=g.label.split('/').map(s=>s.trim());
       const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
 
       btn.style.cssText=`
         display:inline-flex;align-items:center;gap:5px;
         padding:3px 8px;border-radius:5px;
-        border:1px solid ${done?'var(--green)':active?'var(--red)':'var(--border)'};
-        background:${done?'rgba(6,214,160,.1)':active?'rgba(230,57,70,.15)':'transparent'};
-        color:${done?'var(--green)':active?'var(--red)':'var(--text3)'};
+        border:1px solid ${allDone?'var(--green)':active?'var(--red)':'var(--border)'};
+        background:${allDone?'rgba(6,214,160,.1)':active?'rgba(230,57,70,.15)':'transparent'};
+        color:${allDone?'var(--green)':active?'var(--red)':'var(--text3)'};
         font-size:10px;cursor:pointer;font-weight:${active?'700':'400'};
         white-space:nowrap;
       `;
-
-      const checkboxes=Array.from({length:totalNeeded},(_,ci)=>
-        `<span style="font-size:11px;color:${ci<linkedCount?'var(--green)':'var(--border2)'};">${ci<linkedCount?'☑':'☐'}</span>`
-      ).join('');
 
       btn.innerHTML=`
         <span style="font-size:10px;">${shortLabel}</span>
@@ -1421,6 +1427,7 @@ function onMatchClick(ri,mi,matchObj){
       toast('이미 연결된 경기입니다','error');_redrawBracketView();return;
     }
     nextRound.push({p1:{name:`1-${a.origMi+1} 승자`,tbd:true},p2:{name:`1-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+    console.log('[연결]', grp.label, 'fromA:', aKey, 'fromB:', bKey, 'matches:', JSON.stringify(grp.matches));
     _redrawBracketView();
     toast(`${grp.label} ${a.origMi+1}번 vs ${b.origMi+1}번 연결됨!`,'success');
   }
