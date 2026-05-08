@@ -1703,30 +1703,18 @@ function _openRandomRosterModal(overlay){
     checked.forEach(gi=>{
       const g=S.groupBrackets[gi];
       if(!g||!g.matches[0]) return;
-      // 슬롯 객체 수집
-      const slotObjs=[];
-      g.matches[0].forEach(m=>{
-        if(m.p1) slotObjs.push(m.p1);
-        if(m.p2&&!m.bye) slotObjs.push(m.p2);
-      });
-      // 참가자 이름 수집 (slots 우선, 없으면 현재 슬롯 이름)
-      let names=[];
-      if(g.slots&&g.slots.length){
-        names=g.slots.map(s=>s.player?.name||s.player?.id||'').filter(Boolean);
-      } else {
-        names=slotObjs.map(p=>{ const m=p.name.match(/\((.+)\)/); return m?m[1]:''; }).filter(Boolean);
-      }
+      // 해당 그룹 참가자 이름 목록
+      const names=g.slots.map(s=>s.player?.name||'').filter(Boolean);
       // Fisher-Yates 셔플
       for(let i=names.length-1;i>0;i--){
         const j=Math.floor(Math.random()*(i+1));
         [names[i],names[j]]=[names[j],names[i]];
       }
-      // 슬롯에 배정
-      slotObjs.forEach((pObj,idx)=>{
-        const sm=pObj.name.match(/^(\d+번)/);
-        const slotNum=sm?sm[1]:pObj.name;
-        const n=names[idx]||'';
-        pObj.name=n?`${slotNum} (${n})`:slotNum;
+      // matches[0] 슬롯에 순서대로 배정
+      let idx=0;
+      g.matches[0].forEach(m=>{
+        if(m.p1){ const sm=m.p1.name.match(/^(\d+번)/); const sn=sm?sm[1]:m.p1.name; const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
+        if(m.p2&&!m.bye){ const sm=m.p2.name.match(/^(\d+번)/); const sn=sm?sm[1]:m.p2.name; const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
       });
     });
     document.getElementById('roster-modal').remove();
