@@ -927,7 +927,7 @@ function _redrawBracketView(){
         hdr.textContent=shortLabel;
         container.appendChild(hdr);
         const groupWrap=document.createElement('div');
-        groupWrap.style.cssText='margin-bottom:16px;';
+        groupWrap.style.cssText = reversed ? 'margin-bottom:16px;margin-left:auto;' : 'margin-bottom:16px;';
         const taggedMatches=g.matches.map((round,ri)=>
           round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
         );
