@@ -250,6 +250,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">④ PDF 출력</span>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
         <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
+        <button onclick="toggleHideNames()" id="btn-hide-names" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">👁 이름 가리기</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
         <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
         <button onclick="printWithRoster()" style="padding:5px 16px;background:rgba(6,214,160,.15);border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;font-weight:700;">📋 명단+대진표 PDF</button>
@@ -273,6 +274,44 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
+
+// ── 이름 가리기 토글 ──
+let _hideNames=false;
+function toggleHideNames(){
+  _hideNames=!_hideNames;
+  const btn=document.getElementById('btn-hide-names');
+  if(btn){
+    btn.textContent=_hideNames?'👁 이름 보이기':'👁 이름 가리기';
+    btn.style.borderColor=_hideNames?'var(--accent)':'var(--border2)';
+    btn.style.background=_hideNames?'rgba(76,201,240,.12)':'transparent';
+    btn.style.color=_hideNames?'var(--accent)':'var(--text3)';
+  }
+  // step4 미리보기 갱신
+  _renderPdfPreview(_getSelectedGroups());
+}
+
+// ── 이름 보존 브라켓 생성 (slots의 player.name을 번호+이름으로 표시) ──
+function _generateBracketKeepNames(players){
+  const n=players.length;
+  if(!n)return[[]];
+  const round1=[];
+  const isOdd=n%2===1;
+  let slotNum=1;
+  if(isOdd){
+    const p=players[0];
+    round1.push({p1:{name:`${slotNum++}번${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
+  }
+  const rest=isOdd?players.slice(1):players;
+  for(let i=0;i<rest.length;i+=2){
+    const pa=rest[i], pb=rest[i+1];
+    round1.push({
+      p1:{name:`${slotNum++}번${pa?` (${pa.name})`:''}`,id:slotNum-1},
+      p2:{name:`${slotNum++}번${pb?` (${pb.name})`:''}`,id:slotNum-1},
+      bye:false
+    });
+  }
+  return[round1];
+}
 
 // renderBracketD/E 오버라이드 — 내부 overflow 제거, 외부 하나만 스크롤
 function _stripInnerScroll(div){
@@ -1443,8 +1482,19 @@ function assignPlayerToSlot(targetNum,fromIdx){
 
 function shuffleGroupBracket(){
   const g=S.groupBrackets[S.activeGroup];
+  // 이름 배정 여부 확인 (괄호 있으면 명단 설정된 상태)
+  const hasNames=g.matches[0]&&g.matches[0].some(m=>{
+    const n1=(m.p1&&m.p1.name)||''; const n2=(m.p2&&m.p2.name)||'';
+    return /\(.+\)/.test(n1)||/\(.+\)/.test(n2);
+  });
+  // 슬롯 순서 섞기
   g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
-  g.matches=generateBracket(g.slots.map(s=>s.player));
+  if(hasNames){
+    // 이름이 있으면 이름도 함께 섞어서 재배정
+    g.matches=_generateBracketKeepNames(g.slots.map(s=>s.player));
+  } else {
+    g.matches=generateBracket(g.slots.map(s=>s.player));
+  }
   _redrawBracketView(); toast(g.label+' 무작위로 섞었어요','success');
 }
 
@@ -1844,12 +1894,10 @@ function _openManualRosterModal(overlay){
 }
 
 function _applyRoster(){
-  document.getElementById('roster-modal').remove();
-  // 대진표 다시 그리기
-  show('pts-step3');
-  renderBracketTabs();
-  _redrawBracketView();
-  setTimeout(()=>{ goStep4(); toast('명단이 적용됐어요!','success'); }, 100);
+  const modal=document.getElementById('roster-modal');
+  if(modal) modal.remove();
+  _renderPdfPreview(_getSelectedGroups());
+  toast('명단이 적용됐어요!','success');
 }
 
 
