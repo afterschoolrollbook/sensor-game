@@ -1111,6 +1111,7 @@ function _redrawBracketView(){
     // 각 그룹을 개별 렌더링 - 연결선이 그룹 내에서만 올바르게 그려짐
     const renderCourtGroups=(courtNum, container)=>{
       const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
+      const reversed=(courtNum===2);
       groups.forEach(g=>{
         const labelParts=g.label.split('/').map(s=>s.trim());
         const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
@@ -1136,7 +1137,7 @@ function _redrawBracketView(){
         );
 
         S.matches=taggedMatches;
-        renderBracketA(groupWrap);
+        _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
         container.appendChild(groupWrap);
       });
     };
