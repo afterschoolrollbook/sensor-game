@@ -1486,36 +1486,49 @@ function _renderPdfCheckboxes(){
   if(!wrap) return;
   wrap.innerHTML='';
 
-  // 전체 선택
-  const allBtn=document.createElement('button');
-  allBtn.id='pdf-check-all';
-  allBtn.onclick=()=>{
-    wrap.querySelectorAll('.pdf-chk').forEach(b=>b.dataset.checked='1');
-    _syncCheckStyles();
-    _renderPdfPreview(S.groupBrackets);
-  };
-  allBtn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text2);font-size:10px;cursor:pointer;';
-  allBtn.textContent='전체 선택';
-  wrap.appendChild(allBtn);
+  const groups=S.groupBrackets||[];
 
-  // 전체 해제
-  const noneBtn=document.createElement('button');
-  noneBtn.onclick=()=>{
-    wrap.querySelectorAll('.pdf-chk').forEach(b=>b.dataset.checked='0');
-    _syncCheckStyles();
-    _renderPdfPreview([]);
-  };
-  noneBtn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;';
-  noneBtn.textContent='전체 해제';
-  wrap.appendChild(noneBtn);
+  // 성별/부문 추출
+  const genders=[...new Set(groups.map(g=>g.label.split('/')[0]?.trim()).filter(Boolean))];
+  const divisions=[...new Set(groups.map(g=>g.label.split('/')[1]?.trim()).filter(Boolean))];
 
-  (S.groupBrackets||[]).forEach((g,i)=>{
+  const sep=()=>{ const s=document.createElement('span'); s.style.cssText='width:1px;height:16px;background:var(--border);display:inline-block;margin:0 4px;vertical-align:middle;'; wrap.appendChild(s); };
+
+  const mkFilterBtn=(label, matchFn)=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text2);font-size:10px;cursor:pointer;';
+    btn.textContent=label;
+    btn.onclick=()=>{
+      wrap.querySelectorAll('.pdf-chk').forEach(b=>{
+        b.dataset.checked=matchFn(groups[parseInt(b.dataset.idx)])?'1':'0';
+      });
+      _syncCheckStyles();
+      _renderPdfPreview(_getSelectedGroups());
+    };
+    wrap.appendChild(btn);
+  };
+
+  // 전체 선택/해제
+  mkFilterBtn('전체 선택', ()=>true);
+  mkFilterBtn('전체 해제', ()=>false);
+  sep();
+
+  // 성별 버튼
+  genders.forEach(g=>mkFilterBtn(g, grp=>grp.label.split('/')[0]?.trim()===g));
+  if(divisions.length){ sep(); }
+
+  // 부문별 버튼
+  divisions.forEach(d=>mkFilterBtn(d, grp=>grp.label.split('/')[1]?.trim()===d));
+  sep();
+
+  // 개별 체급 버튼
+  groups.forEach((g,i)=>{
     const labelParts=g.label.split('/').map(s=>s.trim());
     const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
     const btn=document.createElement('button');
     btn.className='pdf-chk';
     btn.dataset.idx=i;
-    btn.dataset.checked='0'; // 초기 해제 상태
+    btn.dataset.checked='0';
     btn.onclick=()=>{
       btn.dataset.checked=btn.dataset.checked==='1'?'0':'1';
       _syncCheckStyles();
@@ -1553,13 +1566,37 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
-  // step3의 대진표를 그대로 복사
-  const bracketView=document.getElementById('pts-bracket-view');
-  if(bracketView){
-    const clone=bracketView.cloneNode(true);
-    clone.style.cssText='display:block;overflow:visible;';
-    preview.appendChild(clone);
+  // 전체 선택이면 step3 대진표 뷰 그대로 복사
+  if(groups.length===S.groupBrackets.length){
+    const bracketView=document.getElementById('pts-bracket-view');
+    if(bracketView){
+      const clone=bracketView.cloneNode(true);
+      clone.style.cssText='display:block;overflow:auto;min-height:200px;';
+      preview.appendChild(clone);
+    }
+    return;
   }
+  // 일부 선택이면 선택한 그룹만 렌더
+  groups.forEach((g,gi)=>{
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
+    const section=document.createElement('div');
+    section.style.cssText=`margin-bottom:24px;padding-bottom:24px;${gi<groups.length-1?'border-bottom:1px solid var(--border);':''}`;
+    const title=document.createElement('div');
+    title.style.cssText='font-size:10px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:6px;';
+    title.textContent=shortLabel;
+    section.appendChild(title);
+    const bracketWrap=document.createElement('div');
+    bracketWrap.style.cssText='overflow:auto;';
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    S.matches=taggedMatches;
+    _renderBracketHTML(bracketWrap, taggedMatches, 'top', false);
+    _stripInnerScroll(bracketWrap);
+    section.appendChild(bracketWrap);
+    preview.appendChild(section);
+  });
 }
 
 // ── 전체 PDF ──
