@@ -1251,7 +1251,7 @@ function renderBracketTabs(){
       // 총 필요 경기 수 = 참가자 수 - 1 (토너먼트 공식)
       const totalNeeded=g.slots.length-1;
       // 완료된 경기 수: 전체 라운드에서 연결된 non-bye 경기 합산
-      const linkedCount=g.matches.reduce((acc,round)=>acc+round.filter(m=>!m.bye&&m.winner).length, 0);
+      const linkedCount=g.matches.reduce((acc,round)=>acc+round.filter(m=>!m.bye).length, 0);
       const done=linkedCount>=totalNeeded;
 
       const btn=document.createElement('button');
@@ -1392,14 +1392,22 @@ function onMatchClick(ri,mi,matchObj){
   const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
 
   if(!_linkSel){
-    _linkSel={ri,mi,grpObj,origMi}; _redrawBracketView(); _showLinkBar(ri,mi);
+    // 첫 번째 클릭 - matchObj 전체 보존, rerender 하지 않음 (DOM 재생성 시 캡처 데이터 손실)
+    _linkSel={ri,mi,grpObj,origMi,matchObj};
+    _showLinkBar(ri,mi);
+    // 선택된 박스만 테두리 강조
+    document.querySelectorAll('[data-ri][data-mi]').forEach(el=>{
+      if(Number(el.dataset.ri)===ri&&Number(el.dataset.mi)===mi){
+        el.style.borderColor='#4cc9f0';
+        el.style.boxShadow='0 0 8px rgba(76,201,240,.5)';
+      }
+    });
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();_redrawBracketView();return;}
 
     const a=_linkSel, b={ri,mi,grpObj,origMi};
     _linkSel=null; _hideLinkBar();
 
-    // 그룹 결정: 통합뷰면 _groupObj, 단일뷰면 activeGroup
     const grpA = a.grpObj || S.groupBrackets[S.activeGroup];
     const grpB = b.grpObj || S.groupBrackets[S.activeGroup];
 
