@@ -1633,7 +1633,7 @@ function _doRemoveRound(origRi, origMi, grpObj){
   if(g.matches[origRi].length === 0) g.matches.splice(origRi);
 
   _redrawBracketView();
-  toast(`${origRi+1}라운드 ${origMi+1}번 경기 삭제됐어요`,'success');
+  toast(`${g.label} ${origRi+1}-${origMi+1} 경기를 삭제했어요`,'success');
 }
 
 function onMatchClick(ri, mi, matchObj, event){
