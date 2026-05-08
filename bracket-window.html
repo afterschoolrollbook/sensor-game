@@ -1137,8 +1137,7 @@ function _redrawBracketView(){
         );
 
         S.matches=taggedMatches;
-        const displayRounds = reversed ? [...taggedMatches].reverse() : taggedMatches;
-        _renderBracketHTML(groupWrap, displayRounds, 'top', reversed);
+        _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
         container.appendChild(groupWrap);
       });
     };
@@ -1466,12 +1465,11 @@ function onMatchClick(ri,mi,matchObj){
   if(!_linkSel){
     _linkSel={ri,mi,grpObj,origMi,origRi,matchObj};
     _showLinkBar(ri,mi);
-    document.querySelectorAll('[data-ri][data-mi]').forEach(el=>{
-      if(Number(el.dataset.ri)===ri&&Number(el.dataset.mi)===mi){
-        el.style.borderColor='#4cc9f0';
-        el.style.boxShadow='0 0 8px rgba(76,201,240,.5)';
-      }
-    });
+    // 클릭된 정확한 박스만 강조 (_domId로 식별)
+    if(matchObj&&matchObj._domId){
+      const el=document.querySelector(`[data-match-id="${matchObj._domId}"]`);
+      if(el){ el.style.borderColor='#4cc9f0'; el.style.boxShadow='0 0 8px rgba(76,201,240,.5)'; }
+    }
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();_redrawBracketView();return;}
 
