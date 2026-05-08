@@ -1070,11 +1070,15 @@ function generateAllBrackets(){
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(S.groupBrackets));
   }catch(e){}
-  // 중간저장 데이터가 있으면 자동 복원
+  // 중간저장 데이터가 있으면 matches만 복원
   try{
     const saved=JSON.parse(localStorage.getItem('sgp_bracket_temp'));
     if(saved&&saved.groupBrackets){
-      S.groupBrackets=saved.groupBrackets;
+      // label 기준으로 매칭해서 matches만 복원
+      saved.groupBrackets.forEach(savedG=>{
+        const target=S.groupBrackets.find(g=>g.label===savedG.label);
+        if(target&&savedG.matches) target.matches=savedG.matches;
+      });
       toast(`중간저장 불러옴 (${saved.savedAt})`,'success');
     }
   } catch(e){}
