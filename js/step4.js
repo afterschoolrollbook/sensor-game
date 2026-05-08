@@ -531,10 +531,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
         if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
         const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;';
-        if(p1){
-          const hide=typeof _hideNames!=='undefined'&&_hideNames;
-          nm.textContent=hide?p1.name.replace(/\s*\(.+\)/,''):p1.name;
-        } else { nm.textContent='?'; }
+        const _hn=typeof _hideNames!=='undefined'&&_hideNames;
+        nm.textContent=p1?((_hn?p1.name.replace(/\s*\(.+\)/,''):p1.name)):'?';
         row.appendChild(nm);
         box.appendChild(row);
       } else {
@@ -545,14 +543,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         const mkName=(p,isWin,isLose)=>{
           const span=document.createElement('span');
           span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
-          if(p){
-            // _hideNames 플래그: 괄호 안 이름 숨기고 번호만 표시
-            const hide=typeof _hideNames!=='undefined'&&_hideNames;
-            const displayName=hide?p.name.replace(/\s*\(.+\)/,''):p.name;
-            span.textContent=displayName;
-          } else {
-            span.textContent='?';
-          }
+          const _hn=typeof _hideNames!=='undefined'&&_hideNames;
+          span.textContent=p?(_hn?p.name.replace(/\s*\(.+\)/,''):p.name):'?';
           return span;
         };
 
