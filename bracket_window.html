@@ -240,7 +240,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       </div>
     </div>
     <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
-    <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
+    <div id="pts-bracket-view" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;"></div>
   </div>
 </div>
 <div id="tc"></div>
@@ -902,15 +902,21 @@ function _redrawBracketView(){
   view.style.display='flex';
   view.style.flexDirection='column';
   if(_bracketLayout==='D' && courts>=2){
+    // view = 스크롤 컨테이너
     view.style.overflow='auto';
-    view.style.padding='0';
-    view.style.position='relative';
+    view.style.display='block';
+    view.style.position='static';
+
+    // posWrap = position:relative 기준점 (view 전체를 채움)
+    const posWrap=document.createElement('div');
+    posWrap.style.cssText='position:relative;min-width:100%;min-height:100%;display:inline-block;';
 
     const lDiv=document.createElement('div');
     lDiv.style.cssText='display:inline-block;vertical-align:top;padding:12px 24px 12px 12px;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='display:inline-block;vertical-align:top;padding:12px 12px 12px 24px;position:absolute;right:0;top:0;';
+    // posWrap 기준 오른쪽 끝 고정
+    rDiv.style.cssText='position:absolute;right:0;top:0;padding:12px 12px 12px 24px;';
 
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
@@ -943,8 +949,18 @@ function _redrawBracketView(){
     };
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
-    view.appendChild(lDiv);
-    view.appendChild(rDiv);
+
+    posWrap.appendChild(lDiv);
+    posWrap.appendChild(rDiv);
+    view.appendChild(posWrap);
+
+    // posWrap 너비 = lDiv너비 + rDiv너비 + 여백 확보 (absolute라 자동계산 안됨)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const lW = lDiv.offsetWidth;
+      const rW = rDiv.offsetWidth;
+      const viewW = view.clientWidth;
+      posWrap.style.minWidth = Math.max(viewW, lW + rW + 40) + 'px';
+    }));
   } else {
     view.style.overflow='auto';
     const outerWrap=document.createElement('div');
