@@ -896,19 +896,22 @@ function _redrawBracketView(){
   const savedScrollTop=prevScrollEl?prevScrollEl.scrollTop:0;
   const savedScrollLeft=prevScrollEl?prevScrollEl.scrollLeft:0;
   view.innerHTML='';
+  if(view._resizeHandler){ window.removeEventListener('resize', view._resizeHandler); delete view._resizeHandler; }
   view.style.overflow='';
   view.style.padding='';
   view.style.display='flex';
   view.style.flexDirection='column';
   if(_bracketLayout==='D' && courts>=2){
     view.style.overflow='auto';
-    view.style.padding='12px';
-    const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;width:max-content;';
+    view.style.padding='0';
+    view.style.position='relative';
+
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;';
+    lDiv.style.cssText='display:inline-block;vertical-align:top;padding:12px 24px 12px 12px;';
+
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='display:inline-block;vertical-align:top;padding:12px 12px 12px 24px;position:absolute;right:0;top:0;';
+
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
@@ -916,6 +919,7 @@ function _redrawBracketView(){
     };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
+
     const renderCourtGroups=(courtNum, container)=>{
       const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
       const reversed=(courtNum===2);
@@ -939,9 +943,8 @@ function _redrawBracketView(){
     };
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
-    outerWrap.appendChild(lDiv);
-    outerWrap.appendChild(rDiv);
-    view.appendChild(outerWrap);
+    view.appendChild(lDiv);
+    view.appendChild(rDiv);
   } else {
     view.style.overflow='auto';
     const outerWrap=document.createElement('div');
