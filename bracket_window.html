@@ -896,7 +896,6 @@ function _redrawBracketView(){
   const savedScrollTop=prevScrollEl?prevScrollEl.scrollTop:0;
   const savedScrollLeft=prevScrollEl?prevScrollEl.scrollLeft:0;
   view.innerHTML='';
-  if(view._resizeHandler){ window.removeEventListener('resize', view._resizeHandler); delete view._resizeHandler; }
   view.style.overflow='';
   view.style.padding='';
   view.style.display='flex';
@@ -905,14 +904,11 @@ function _redrawBracketView(){
     view.style.overflow='auto';
     view.style.padding='12px';
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;width:100%;min-width:max-content;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;width:max-content;';
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;flex-shrink:0;';
-    const spacer=document.createElement('div');
-    spacer.style.cssText='flex:1;min-width:40px;';
+    lDiv.style.cssText='padding-right:24px;';
     const rDiv=document.createElement('div');
-    // position:sticky + right:0 → 스크롤 컨테이너 오른쪽 끝에 항상 붙음
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;position:sticky;right:0;';
+    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;';
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
@@ -944,7 +940,6 @@ function _redrawBracketView(){
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
     outerWrap.appendChild(lDiv);
-    outerWrap.appendChild(spacer);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
   } else {
