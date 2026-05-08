@@ -278,9 +278,9 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 function isCurrentMatchIdx(){ return false; }
 
 // ── 이름 가리기 토글 ──
-let _hideNames=false;
+window._hideNames=false;
 function toggleHideNames(){
-  _hideNames=!_hideNames;
+  _hideNames=window._hideNames=!window._hideNames;
   const btn=document.getElementById('btn-hide-names');
   if(btn){
     btn.textContent=_hideNames?'👁 이름 보이기':'👁 이름 가리기';
@@ -2234,6 +2234,8 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
+  // step3 뷰 먼저 갱신 (이름 가리기/삭제/섞기 반영)
+  _redrawBracketView();
   // 전체 선택이면 step3 대진표 뷰 그대로 복사
   if(groups.length===S.groupBrackets.length){
     const bracketView=document.getElementById('pts-bracket-view');
