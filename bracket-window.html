@@ -1078,7 +1078,7 @@ function generateBracketWithNames(pts){
   return[round1];
 }
 
-
+function generateAllBrackets(){
   // 경기장 수에 따라 레이아웃 자동 설정
   const courts=_courtCount||1;
   _bracketLayout = courts >= 2 ? 'D' : 'A';
