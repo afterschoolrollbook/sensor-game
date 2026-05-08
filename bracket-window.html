@@ -251,6 +251,8 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
         <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
         <button onclick="toggleHideNames()" id="btn-hide-names" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">👁 이름 가리기</button>
+        <button onclick="openDeleteNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🗑 이름 삭제</button>
+        <button onclick="openShuffleNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔀 랜덤 섞기</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
         <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
         <button onclick="printWithRoster()" style="padding:5px 16px;background:rgba(6,214,160,.15);border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;font-weight:700;">📋 명단+대진표 PDF</button>
@@ -286,7 +288,6 @@ function toggleHideNames(){
     btn.style.background=_hideNames?'rgba(76,201,240,.12)':'transparent';
     btn.style.color=_hideNames?'var(--accent)':'var(--text3)';
   }
-  // step4 미리보기 갱신
   _renderPdfPreview(_getSelectedGroups());
 }
 
@@ -1900,6 +1901,140 @@ function _applyRoster(){
   toast('명단이 적용됐어요!','success');
 }
 
+// ── 공통 그룹 선택 모달 (이름삭제 / 랜덤섞기 공용) ──
+function _openGroupSelectModal(title, actionLabel, onExec){
+  const overlay=document.createElement('div');
+  overlay.id='group-action-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9000;';
+
+  const modal=document.createElement('div');
+  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:400px;max-width:95vw;padding:24px 24px 20px;display:flex;flex-direction:column;gap:14px;';
+
+  // 헤더
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:14px;font-weight:700;';
+  hdr.textContent=title;
+  modal.appendChild(hdr);
+
+  // 전체 / 그룹별 선택 버튼
+  let mode='all'; // 'all' | 'group'
+  const modeRow=document.createElement('div');
+  modeRow.style.cssText='display:flex;gap:8px;';
+
+  const mkModeBtn=(label, val)=>{
+    const btn=document.createElement('button');
+    btn.textContent=label;
+    btn.style.cssText=`flex:1;padding:10px 0;border-radius:8px;border:1px solid ${val==='all'?'var(--accent)':'var(--border2)'};background:${val==='all'?'rgba(76,201,240,.12)':'transparent'};color:${val==='all'?'var(--accent)':'var(--text3)'};font-size:12px;font-weight:700;cursor:pointer;`;
+    btn.onclick=()=>{
+      mode=val;
+      modeRow.querySelectorAll('button').forEach(b=>{b.style.borderColor='var(--border2)';b.style.background='transparent';b.style.color='var(--text3)';});
+      btn.style.borderColor='var(--accent)';btn.style.background='rgba(76,201,240,.12)';btn.style.color='var(--accent)';
+      groupList.style.display=val==='group'?'flex':'none';
+    };
+    return btn;
+  };
+  const btnAll=mkModeBtn('전체',   'all');
+  const btnGrp=mkModeBtn('그룹별 선택','group');
+  btnAll.style.borderColor='var(--accent)';btnAll.style.background='rgba(76,201,240,.12)';btnAll.style.color='var(--accent)';
+  modeRow.appendChild(btnAll);
+  modeRow.appendChild(btnGrp);
+  modal.appendChild(modeRow);
+
+  // 그룹 체크박스 목록 (기본 숨김)
+  const groupList=document.createElement('div');
+  groupList.style.cssText='display:none;flex-direction:column;gap:5px;max-height:240px;overflow-y:auto;';
+  S.groupBrackets.forEach((g,i)=>{
+    const lbl=document.createElement('label');
+    lbl.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card);cursor:pointer;';
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.dataset.idx=i; chk.checked=true;
+    chk.style.cssText='accent-color:var(--accent);width:14px;height:14px;';
+    const span=document.createElement('span');
+    span.style.cssText='font-size:12px;';
+    span.textContent=g.label.split('/').map(s=>s.trim()).join(' · ');
+    const cnt=document.createElement('span');
+    cnt.style.cssText='font-size:10px;color:var(--text3);margin-left:auto;';
+    cnt.textContent=g.slots.length+'명';
+    lbl.appendChild(chk); lbl.appendChild(span); lbl.appendChild(cnt);
+    groupList.appendChild(lbl);
+  });
+  modal.appendChild(groupList);
+
+  // 하단 버튼
+  const footer=document.createElement('div');
+  footer.style.cssText='display:flex;gap:8px;justify-content:flex-end;';
+  const cancelBtn=document.createElement('button');
+  cancelBtn.textContent='취소';
+  cancelBtn.style.cssText='padding:6px 16px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:12px;cursor:pointer;';
+  cancelBtn.onclick=()=>overlay.remove();
+  const execBtn=document.createElement('button');
+  execBtn.textContent=actionLabel;
+  execBtn.style.cssText='padding:6px 20px;background:var(--red);border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;';
+  execBtn.onclick=()=>{
+    let idxs;
+    if(mode==='all'){
+      idxs=S.groupBrackets.map((_,i)=>i);
+    } else {
+      idxs=[...groupList.querySelectorAll('input[type=checkbox]')].filter(c=>c.checked).map(c=>parseInt(c.dataset.idx));
+      if(!idxs.length){ toast('그룹을 하나 이상 선택해주세요','error'); return; }
+    }
+    overlay.remove();
+    onExec(idxs);
+  };
+  footer.appendChild(cancelBtn);
+  footer.appendChild(execBtn);
+  modal.appendChild(footer);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+// ── 이름 삭제 ──
+function openDeleteNamesModal(){
+  _openGroupSelectModal('🗑 이름 삭제', '삭제 실행', (idxs)=>{
+    idxs.forEach(gi=>{
+      const g=S.groupBrackets[gi];
+      if(!g) return;
+      g.matches.forEach(round=>round.forEach(m=>{
+        if(m.p1) m.p1.name=m.p1.name.replace(/\s*\(.+\)/,'');
+        if(m.p2) m.p2.name=m.p2.name.replace(/\s*\(.+\)/,'');
+      }));
+    });
+    _renderPdfPreview(_getSelectedGroups());
+    toast('이름을 삭제했어요','success');
+  });
+}
+
+// ── 랜덤 섞기 ──
+function openShuffleNamesModal(){
+  _openGroupSelectModal('🔀 랜덤 섞기', '섞기 실행', (idxs)=>{
+    idxs.forEach(gi=>{
+      const g=S.groupBrackets[gi];
+      if(!g||!g.matches[0]) return;
+      // 현재 배정된 이름 추출
+      const names=[];
+      g.matches[0].forEach(m=>{
+        if(m.p1){ const nm=m.p1.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
+        if(m.p2&&!m.bye){ const nm=m.p2.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
+      });
+      if(!names.length){ toast(g.label+': 배정된 이름이 없어요','info'); return; }
+      // 셔플
+      for(let i=names.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [names[i],names[j]]=[names[j],names[i]];
+      }
+      // 다시 배정
+      let idx=0;
+      g.matches[0].forEach(m=>{
+        if(m.p1){ const sn=m.p1.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
+        if(m.p2&&!m.bye){ const sn=m.p2.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
+      });
+    });
+    _renderPdfPreview(_getSelectedGroups());
+    toast('랜덤으로 섞었어요','success');
+  });
+}
+
 
 function _renderPdfPreview(groups){
   const preview=document.getElementById('pdf-preview');
@@ -1909,22 +2044,7 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
-  // 전체 선택이면 step3 대진표 뷰 그대로 복사
-  if(groups.length===S.groupBrackets.length){
-    const bracketView=document.getElementById('pts-bracket-view');
-    if(bracketView){
-      const clone=bracketView.cloneNode(true);
-      clone.style.cssText='display:block;overflow:visible;min-height:200px;';
-      clone.querySelectorAll('*').forEach(el=>{
-        if(el.style.overflow&&el.style.overflow!=='visible') el.style.overflow='visible';
-        if(el.style.overflowX&&el.style.overflowX!=='visible') el.style.overflowX='visible';
-        if(el.style.overflowY&&el.style.overflowY!=='visible') el.style.overflowY='visible';
-      });
-      preview.appendChild(clone);
-    }
-    return;
-  }
-  // 일부 선택이면 선택한 그룹만 렌더
+  // 전체/일부 모두 동일하게 직접 렌더 (clone 방식 제거 → 라인 정상, _hideNames 반영)
   groups.forEach((g,gi)=>{
     const labelParts=g.label.split('/').map(s=>s.trim());
     const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
