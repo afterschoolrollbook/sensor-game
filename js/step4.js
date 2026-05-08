@@ -439,7 +439,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const container=document.createElement('div');
   // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이
   const totalH=r0len*SLOT_H+32;
-  container.style.cssText=`display:flex;flex-direction:row;gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
+  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
 
   // 재귀 cy 계산: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCy=(ri,mi)=>{
@@ -506,6 +506,9 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
       const _capturedMatch=m;
+      const _matchId=`${ri}-${mi}-${Math.random().toString(36).slice(2,7)}`;
+      box.dataset.matchId=_matchId;
+      _capturedMatch._domId=_matchId;
       box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi,_capturedMatch));
 
       // 헤더
