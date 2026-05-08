@@ -240,6 +240,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="toggleAssignMode()" id="btn-assign" style="padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;">✏️ 지정</button>
         <button onclick="addRound()" style="padding:4px 10px;background:rgba(76,201,240,.08);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➕ 라운드 추가</button>
         <button onclick="removeLastRound()" style="padding:4px 10px;background:rgba(230,57,70,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➖ 라운드 삭제</button>
+        <button onclick="saveBracketTemp()" style="padding:4px 10px;background:rgba(255,214,10,.08);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;">💾 중간저장</button>
         <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
       </div>
     </div>
@@ -1092,7 +1093,7 @@ function _redrawBracketView(){
     lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:1;padding:12px;min-width:0;';
+    rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
 
     const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
@@ -1300,6 +1301,23 @@ function renderBracketTabs(){
   tabs.appendChild(row);
 }
 
+function saveBracketTemp(){
+  try{
+    localStorage.setItem('sgp_bracket_temp', JSON.stringify({
+      groupBrackets: S.groupBrackets,
+      savedAt: new Date().toLocaleTimeString()
+    }));
+    toast('중간저장 완료!','success');
+  } catch(e){ toast('저장 실패','error'); }
+}
+
+function loadBracketTemp(){
+  try{
+    const d=JSON.parse(localStorage.getItem('sgp_bracket_temp'));
+    if(d&&d.groupBrackets){ S.groupBrackets=d.groupBrackets; _redrawBracketView(); renderBracketTabs(); toast(`불러오기 완료 (${d.savedAt})`,'success'); }
+  } catch(e){ toast('불러오기 실패','error'); }
+}
+
 function renderBracketView(groupIdx){
   _redrawBracketView();
 }
@@ -1399,12 +1417,11 @@ function _showByeForRound(g, ri){
 function onMatchClick(ri,mi,matchObj){
   const grpObj = matchObj&&matchObj._groupObj ? matchObj._groupObj : null;
   const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
+  const origRi = (matchObj&&matchObj._origRi!=null) ? matchObj._origRi : ri;
 
   if(!_linkSel){
-    // 첫 번째 클릭 - matchObj 전체 보존, rerender 하지 않음 (DOM 재생성 시 캡처 데이터 손실)
-    _linkSel={ri,mi,grpObj,origMi,matchObj};
+    _linkSel={ri,mi,grpObj,origMi,origRi,matchObj};
     _showLinkBar(ri,mi);
-    // 선택된 박스만 테두리 강조
     document.querySelectorAll('[data-ri][data-mi]').forEach(el=>{
       if(Number(el.dataset.ri)===ri&&Number(el.dataset.mi)===mi){
         el.style.borderColor='#4cc9f0';
@@ -1414,24 +1431,39 @@ function onMatchClick(ri,mi,matchObj){
   } else {
     if(_linkSel.ri===ri&&_linkSel.mi===mi){_linkSel=null;_hideLinkBar();_redrawBracketView();return;}
 
-    const a=_linkSel, b={ri,mi,grpObj,origMi};
+    const a=_linkSel, b={ri,mi,grpObj,origMi,origRi};
     _linkSel=null; _hideLinkBar();
 
     const grpA = a.grpObj || S.groupBrackets[S.activeGroup];
     const grpB = b.grpObj || S.groupBrackets[S.activeGroup];
 
     if(grpA !== grpB){toast('같은 체급 경기끼리만 연결할 수 있어요','error');_redrawBracketView();return;}
+    if(a.origRi !== b.origRi){toast('라운드가 맞지 않습니다','error');_redrawBracketView();return;}
 
     const grp = grpA;
-    if(!grp.matches[1]) grp.matches.push([]);
-    const nextRound = grp.matches[1];
-    const aKey=`0-${a.origMi}`, bKey=`0-${b.origMi}`;
-    if(nextRound.find(m=>m.fromA===aKey||m.fromA===bKey||m.fromB===aKey||m.fromB===bKey)){
+
+    // 두 경기 중 더 높은 라운드+1에 저장
+    const targetRi = Math.max(a.origRi, b.origRi) + 1;
+    while(grp.matches.length <= targetRi) grp.matches.push([]);
+    const nextRound = grp.matches[targetRi];
+
+    const aKey=`${a.origRi}-${a.origMi}`, bKey=`${b.origRi}-${b.origMi}`;
+    const alreadyLinked=nextRound.find(m=>
+      (m.fromA===aKey||m.fromB===aKey) &&
+      (m.fromA===bKey||m.fromB===bKey)
+    );
+    if(alreadyLinked){
       toast('이미 연결된 경기입니다','error');_redrawBracketView();return;
     }
-    nextRound.push({p1:{name:`1-${a.origMi+1} 승자`,tbd:true},p2:{name:`1-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+    // 각각 개별로 이미 연결된 경우
+    const aLinked=nextRound.find(m=>m.fromA===aKey||m.fromB===aKey);
+    const bLinked=nextRound.find(m=>m.fromA===bKey||m.fromB===bKey);
+    if(aLinked||bLinked){
+      toast('이미 연결된 경기입니다','error');_redrawBracketView();return;
+    }
+    nextRound.push({p1:{name:`${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
     _redrawBracketView();
-    toast(`${grp.label} ${a.origMi+1}번 vs ${b.origMi+1}번 연결됨!`,'success');
+    toast(`${grp.label} ${a.origRi+1}-${a.origMi+1} vs ${b.origRi+1}-${b.origMi+1} 연결됨!`,'success');
   }
 }
 
