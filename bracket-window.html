@@ -1108,13 +1108,16 @@ function _redrawBracketView(){
     view.style.padding='12px';
 
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;width:max-content;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;min-width:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;';
+    lDiv.style.cssText='padding-right:24px;flex-shrink:0;';
+
+    const spacer=document.createElement('div');
+    spacer.style.cssText='flex:1;min-width:40px;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
 
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
@@ -1155,6 +1158,7 @@ function _redrawBracketView(){
     renderCourtGroups(2, rDiv);
 
     outerWrap.appendChild(lDiv);
+    outerWrap.appendChild(spacer);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
   } else {
