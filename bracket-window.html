@@ -1111,10 +1111,10 @@ function _redrawBracketView(){
     outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;width:max-content;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;border-right:1px solid var(--border);';
+    lDiv.style.cssText='padding-right:24px;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;';
+    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;';
 
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
