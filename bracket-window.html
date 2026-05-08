@@ -1563,7 +1563,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
       _doAdvance(origRi, origMi, grpObj);
     }));
     modal.appendChild(mkBtn('🗑','이 라운드 삭제','var(--red)',()=>{
-      _doRemoveRound(origRi, grpObj);
+      _doRemoveRound(origRi, origMi, grpObj);
     }));
   }
 
@@ -1634,31 +1634,30 @@ function _doAdvance(origRi, origMi, grpObj){
   toast(`${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
 }
 
-function _doRemoveRound(origRi, grpObj){
-  const g = grpObj || S.groupBrackets[S.activeGroup];
-  if(!g){ toast('그룹을 찾을 수 없어요','error'); return; }
+function _doRemoveRound(origRi, origMi, grpObj){
+  // grpObj가 null이면 origRi, origMi로 해당 매치를 가진 그룹을 전체에서 찾음
+  let g = grpObj;
+  if(!g){
+    g = S.groupBrackets.find(gb =>
+      gb.matches[origRi] && gb.matches[origRi][origMi]
+    );
+  }
+  if(!g){ toast('삭제할 연결이 없어요','info'); return; }
+  if(!g.matches[origRi]){ toast('삭제할 연결이 없어요','info'); return; }
 
-  const nextRi = origRi + 1;
-  if(!g.matches[nextRi] || g.matches[nextRi].length === 0){
-    toast('삭제할 연결이 없어요','info'); return;
+  const match = g.matches[origRi][origMi];
+  if(!match){ toast('삭제할 연결이 없어요','info'); return; }
+
+  // 1라운드 자동 생성 경기(fromA/fromB 없음)는 삭제 불가
+  if(origRi === 0 && !match.fromA && !match.fromB){
+    toast('1라운드 경기는 삭제할 수 없어요','info'); return;
   }
 
-  // origRi 라운드의 모든 경기 key
-  const keysInRound = g.matches[origRi].map((_,mi)=>`${origRi}-${mi}`);
+  g.matches[origRi].splice(origMi, 1);
+  if(g.matches[origRi].length === 0) g.matches.splice(origRi);
 
-  const before = g.matches[nextRi].length;
-  g.matches[nextRi] = g.matches[nextRi].filter(m=>{
-    const fa = m.fromA||'';
-    const fb = m.fromB||'';
-    return !keysInRound.some(k => fa===k || fb===k);
-  });
-  const removed = before - g.matches[nextRi].length;
-
-  if(g.matches[nextRi].length === 0) g.matches.splice(nextRi);
-
-  if(removed === 0){ toast('삭제할 연결이 없어요','info'); return; }
   _redrawBracketView();
-  toast(`${origRi+1}라운드 연결 ${removed}개 삭제됐어요`,'success');
+  toast(`${origRi+1}라운드 ${origMi+1}번 경기 삭제됐어요`,'success');
 }
 
 function onMatchClick(ri, mi, matchObj, event){
