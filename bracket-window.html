@@ -1510,13 +1510,17 @@ function onMatchClick(ri,mi,matchObj){
 }
 
 function advanceMatch(ri,mi){
-  const g=S.groupBrackets[S.activeGroup]; _linkSel=null; _hideLinkBar();
-  if(!g.matches[ri+1]) g.matches.push([]);
-  const nextRound=g.matches[ri+1];
-  const aKey=`${ri}-${mi}`;
+  const grpObj=_linkSel&&_linkSel.grpObj;
+  const origRi=_linkSel&&_linkSel.origRi!=null?_linkSel.origRi:ri;
+  const origMi=_linkSel&&_linkSel.origMi!=null?_linkSel.origMi:mi;
+  const g=grpObj||S.groupBrackets[S.activeGroup];
+  _linkSel=null; _hideLinkBar();
+  while(g.matches.length<=origRi+1) g.matches.push([]);
+  const nextRound=g.matches[origRi+1];
+  const aKey=`${origRi}-${origMi}`;
   if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){toast('이미 연결된 경기입니다','error');_redrawBracketView();return;}
-  nextRound.push({p1:{name:`${ri+1}-${mi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
-  _redrawBracketView(); toast(`${ri+1}-${mi+1} 승자 다음 라운드 직행!`,'success');
+  nextRound.push({p1:{name:`${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  _redrawBracketView(); toast(`${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
 }
 
 function _showLinkBar(ri,mi){
