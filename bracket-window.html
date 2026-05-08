@@ -250,6 +250,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <button onclick="show('pts-step3')" class="btn-back">← 뒤로</button>
       <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">④ PDF 출력</span>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+        <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
         <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
         <button onclick="printWithRoster()" style="padding:5px 16px;background:rgba(6,214,160,.15);border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;font-weight:700;">📋 명단+대진표 PDF</button>
@@ -1615,7 +1616,144 @@ function _getSelectedGroups(){
   return sel;
 }
 
-// ── PDF 미리보기 렌더 ──
+// ── 명단 설정 모달 ──
+function openRosterModal(){
+  const existing=document.getElementById('roster-modal');
+  if(existing) existing.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='roster-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+  const modal=document.createElement('div');
+  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:700px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;';
+
+  // 헤더
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;';
+  hdr.innerHTML=`
+    <span style="font-size:13px;font-weight:700;">📋 명단 설정 — 1라운드 슬롯 배정</span>
+    <button onclick="document.getElementById('roster-modal').remove()" style="background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;">✕</button>
+  `;
+  modal.appendChild(hdr);
+
+  // 체급 탭
+  const tabRow=document.createElement('div');
+  tabRow.style.cssText='display:flex;flex-wrap:wrap;gap:4px;padding:10px 18px;border-bottom:1px solid var(--border);flex-shrink:0;';
+  const body=document.createElement('div');
+  body.style.cssText='flex:1;overflow:auto;padding:16px 18px;';
+
+  const renderRosterBody=(gIdx)=>{
+    body.innerHTML='';
+    const g=S.groupBrackets[gIdx];
+    if(!g||!g.matches[0]) return;
+
+    g.matches[0].forEach((m,mi)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);';
+
+      const label=document.createElement('div');
+      label.style.cssText='font-size:12px;color:var(--text3);font-family:"Share Tech Mono",monospace;width:60px;flex-shrink:0;';
+      label.textContent=`${mi+1}경기`;
+      row.appendChild(label);
+
+      [0,1].forEach(pi=>{
+        if(pi===1&&m.bye) return;
+        const pObj=pi===0?m.p1:m.p2;
+        if(!pObj) return;
+
+        // 슬롯번호 추출 (예: "1번 (홍길동)" → "1번")
+        const slotMatch=pObj.name.match(/^(\d+번)/);
+        const slotNum=slotMatch?slotMatch[1]:pObj.name;
+
+        const cell=document.createElement('div');
+        cell.style.cssText='display:flex;align-items:center;gap:6px;flex:1;';
+
+        const numLabel=document.createElement('span');
+        numLabel.style.cssText='font-size:12px;font-weight:700;color:var(--accent);min-width:36px;';
+        numLabel.textContent=slotNum;
+        cell.appendChild(numLabel);
+
+        // 현재 이름에서 괄호 안 이름 추출
+        const nameMatch=pObj.name.match(/\((.+)\)/);
+        const curName=nameMatch?nameMatch[1]:'';
+
+        const inp=document.createElement('input');
+        inp.type='text';
+        inp.value=curName;
+        inp.placeholder='이름 입력';
+        inp.style.cssText='flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px;font-family:"Noto Sans KR",sans-serif;';
+        inp.oninput=()=>{
+          const newName=inp.value.trim();
+          const slotNumOnly=slotNum; // "N번"
+          pObj.name=newName?`${slotNumOnly} (${newName})`:slotNumOnly;
+        };
+        cell.appendChild(inp);
+
+        if(pi===0&&!m.bye){
+          const vs=document.createElement('span');
+          vs.style.cssText='font-size:11px;color:var(--red);font-family:"Bebas Neue",cursive;padding:0 4px;';
+          vs.textContent='VS';
+          row.appendChild(cell);
+          row.appendChild(vs);
+        } else {
+          row.appendChild(cell);
+        }
+      });
+
+      if(m.bye){
+        const byeBadge=document.createElement('span');
+        byeBadge.style.cssText='font-size:10px;color:var(--accent);';
+        byeBadge.textContent='BYE';
+        row.appendChild(byeBadge);
+      }
+      body.appendChild(row);
+    });
+  };
+
+  // 탭 버튼 생성
+  let activeGIdx=0;
+  S.groupBrackets.forEach((g,i)=>{
+    const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+    const tab=document.createElement('button');
+    tab.style.cssText=`padding:3px 10px;border-radius:5px;border:1px solid ${i===0?'var(--accent)':'var(--border2)'};background:${i===0?'rgba(76,201,240,.15)':'transparent'};color:${i===0?'var(--accent)':'var(--text3)'};font-size:10px;cursor:pointer;`;
+    tab.textContent=shortLabel;
+    tab.onclick=()=>{
+      tabRow.querySelectorAll('button').forEach(b=>{ b.style.borderColor='var(--border2)'; b.style.background='transparent'; b.style.color='var(--text3)'; });
+      tab.style.borderColor='var(--accent)'; tab.style.background='rgba(76,201,240,.15)'; tab.style.color='var(--accent)';
+      activeGIdx=i;
+      renderRosterBody(i);
+    };
+    tabRow.appendChild(tab);
+  });
+
+  modal.appendChild(tabRow);
+  modal.appendChild(body);
+
+  // 하단 버튼
+  const footer=document.createElement('div');
+  footer.style.cssText='padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;';
+  footer.innerHTML=`
+    <button onclick="document.getElementById('roster-modal').remove()" style="padding:6px 16px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:12px;cursor:pointer;">취소</button>
+    <button onclick="_applyRoster()" style="padding:6px 18px;background:var(--red);border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">✅ 적용</button>
+  `;
+  modal.appendChild(footer);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  renderRosterBody(0);
+}
+
+function _applyRoster(){
+  document.getElementById('roster-modal').remove();
+  // 대진표 다시 그리기
+  show('pts-step3');
+  renderBracketTabs();
+  _redrawBracketView();
+  setTimeout(()=>{ goStep4(); toast('명단이 적용됐어요!','success'); }, 100);
+}
+
+
 function _renderPdfPreview(groups){
   const preview=document.getElementById('pdf-preview');
   if(!preview) return;
