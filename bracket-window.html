@@ -1137,7 +1137,8 @@ function _redrawBracketView(){
         );
 
         S.matches=taggedMatches;
-        _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
+        const displayRounds = reversed ? [...taggedMatches].reverse() : taggedMatches;
+        _renderBracketHTML(groupWrap, displayRounds, 'top', reversed);
         container.appendChild(groupWrap);
       });
     };
@@ -1339,12 +1340,19 @@ function renderBracketTabs(){
 
 function saveBracketTemp(){
   try{
+    // _groupObj는 순환참조라 저장 전 제거
+    const clean=S.groupBrackets.map(g=>({
+      ...g,
+      matches:g.matches.map(round=>round.map(m=>{
+        const {_groupObj,...rest}=m; return rest;
+      }))
+    }));
     localStorage.setItem('sgp_bracket_temp', JSON.stringify({
-      groupBrackets: S.groupBrackets,
+      groupBrackets: clean,
       savedAt: new Date().toLocaleTimeString()
     }));
     toast('중간저장 완료!','success');
-  } catch(e){ toast('저장 실패','error'); }
+  } catch(e){ console.error(e); toast('저장 실패: '+e.message,'error'); }
 }
 
 function loadBracketTemp(){
