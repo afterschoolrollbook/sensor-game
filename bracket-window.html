@@ -260,7 +260,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
     </div>
     <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px;">
       <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:12px;">// 미리보기</div>
-      <div id="pdf-preview" style="background:#1a1a2a;border:1px solid var(--border);border-radius:8px;padding:20px;min-height:300px;"></div>
+      <div id="pdf-preview"></div>
     </div>
   </div>
 </div>
@@ -1553,36 +1553,13 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
-  (groups||[]).forEach((g,gi)=>{
-    const section=document.createElement('div');
-    section.style.cssText=`margin-bottom:32px;padding-bottom:24px;${gi<groups.length-1?'border-bottom:2px dashed #ccc;':''}`;
-
-    const labelParts=g.label.split('/').map(s=>s.trim());
-    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
-
-    // 체급 제목
-    const title=document.createElement('div');
-    title.style.cssText='font-size:14px;font-weight:700;color:var(--accent);font-family:"Share Tech Mono",monospace;margin-bottom:8px;letter-spacing:1px;';
-    title.textContent='// '+shortLabel+` (${g.slots.length}명)`;
-    section.appendChild(title);
-
-    // 대진표
-    const bracketWrap=document.createElement('div');
-    bracketWrap.style.cssText='overflow:visible;';
-    const taggedMatches=g.matches.map((round,ri)=>
-      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-    );
-    S.matches=taggedMatches;
-    _renderBracketHTML(bracketWrap, taggedMatches, 'top', false);
-    // 렌더 후 모든 하위 overflow 강제 제거
-    bracketWrap.querySelectorAll('*').forEach(el=>{
-      el.style.overflow='visible';
-      el.style.overflowX='visible';
-      el.style.overflowY='visible';
-    });
-    section.appendChild(bracketWrap);
-    preview.appendChild(section);
-  });
+  // step3의 대진표를 그대로 복사
+  const bracketView=document.getElementById('pts-bracket-view');
+  if(bracketView){
+    const clone=bracketView.cloneNode(true);
+    clone.style.cssText='display:block;overflow:visible;';
+    preview.appendChild(clone);
+  }
 }
 
 // ── 전체 PDF ──
