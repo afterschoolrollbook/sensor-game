@@ -946,8 +946,15 @@ function _redrawBracketView(){
 
     // rDiv를 오른쪽 끝으로 JS로 계산해서 밀기
     const _positionRDiv = () => {
-      const gap = view.clientWidth - lDiv.scrollWidth - rDiv.scrollWidth;
-      rDiv.style.marginLeft = (gap > 0 ? gap : 0) + 'px';
+      // rDiv의 marginLeft를 초기화한 뒤 실제 콘텐츠 너비로 gap 계산
+      rDiv.style.marginLeft = '0px';
+      requestAnimationFrame(()=>{
+        const viewW = view.clientWidth;
+        const lW = lDiv.getBoundingClientRect().width;
+        const rW = rDiv.getBoundingClientRect().width;
+        const gap = viewW - lW - rW - 48; // 48 = lDiv padding-right(24) + rDiv padding-left(24)
+        rDiv.style.marginLeft = (gap > 0 ? gap : 0) + 'px';
+      });
     };
     requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(_positionRDiv)));
 
