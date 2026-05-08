@@ -1148,26 +1148,16 @@ function _redrawBracketView(){
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
 
-    // 각 경기장이 자기 영역(50%)을 넘지 않도록 scale 조정
-    const scaleToFit=(div)=>{
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        const available=outerWrap.offsetWidth/2 - 24;
-        const actual=div.scrollWidth;
-        if(actual>available){
-          const scale=available/actual;
-          div.style.transformOrigin='top left';
-          div.style.transform=`scale(${scale})`;
-          div.style.height=(div.scrollHeight*scale)+'px';
-        }
-      }));
-    };
-    scaleToFit(lDiv);
-    // rDiv는 오른쪽 끝 정렬이라 transform-origin 다르게
+    // 양쪽에 동일한 scale 적용 — 더 많이 축소가 필요한 쪽 기준
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const available=outerWrap.offsetWidth/2 - 24;
-      const actual=rDiv.scrollWidth;
-      if(actual>available){
-        const scale=available/actual;
+      const scaleL=lDiv.scrollWidth>available ? available/lDiv.scrollWidth : 1;
+      const scaleR=rDiv.scrollWidth>available ? available/rDiv.scrollWidth : 1;
+      const scale=Math.min(scaleL, scaleR); // 더 작은 값(더 많이 축소) 기준 통일
+      if(scale<1){
+        lDiv.style.transformOrigin='top left';
+        lDiv.style.transform=`scale(${scale})`;
+        lDiv.style.height=(lDiv.scrollHeight*scale)+'px';
         rDiv.style.transformOrigin='top right';
         rDiv.style.transform=`scale(${scale})`;
         rDiv.style.height=(rDiv.scrollHeight*scale)+'px';
