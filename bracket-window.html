@@ -235,13 +235,15 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="setBracketLayout('C')" id="popup-lay-C" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
         <button onclick="setBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="setBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+        <button onclick="addRound()" style="padding:4px 10px;background:rgba(76,201,240,.08);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➕ 라운드 추가</button>
+        <button onclick="removeLastRound()" style="padding:4px 10px;background:rgba(230,57,70,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;font-size:11px;">➖ 라운드 삭제</button>
         <button onclick="saveBracketTemp()" style="padding:4px 10px;background:rgba(255,214,10,.08);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;">💾 중간저장</button>
         <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
       </div>
     </div>
     <!-- step4.js가 getElementById('pts-bracket-tabs'), getElementById('pts-bracket-view') 로 접근 -->
     <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
-    <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:auto;display:flex;flex-direction:column;"></div>
+    <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
   </div>
 </div>
 <div id="tc"></div>
@@ -1098,39 +1100,47 @@ function _redrawBracketView(){
   const saved=S.matches;
 
   if(_bracketLayout==='D' && courts>=2){
-    // pts-bracket-view 자체를 스크롤 컨테이너로 활용
-    view.style.overflow='auto';
-    view.style.padding='0';
-
     const outerWrap=document.createElement('div');
-    // 최소 너비는 applyScale에서 동적 설정 — 일단 충분히 넓게
-    outerWrap.style.cssText='display:flex;flex-direction:row;min-height:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='flex:0 0 50%;width:50%;padding:12px;box-sizing:border-box;';
+    lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:0 0 50%;width:50%;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
 
     const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
+    // 각 그룹을 개별 렌더링 - 연결선이 그룹 내에서만 올바르게 그려짐
     const renderCourtGroups=(courtNum, container)=>{
       const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
       const reversed=(courtNum===2);
       groups.forEach(g=>{
         const labelParts=g.label.split('/').map(s=>s.trim());
         const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+
+        // 그룹 헤더
         const hdr=document.createElement('div');
         hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
         hdr.textContent=shortLabel;
         container.appendChild(hdr);
+
+        // 그룹 대진표 래퍼
         const groupWrap=document.createElement('div');
         groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+
+        // 1라운드 match에 태깅 (_groupObj, _origMi)
         const taggedMatches=g.matches.map((round,ri)=>
-          round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+          round.map((m,mi)=>({...m,
+            _groupObj:g,
+            _origMi:mi,
+            _origRi:ri,
+            _groupLabel:shortLabel
+          }))
         );
+
         S.matches=taggedMatches;
         _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
         container.appendChild(groupWrap);
@@ -1140,58 +1150,68 @@ function _redrawBracketView(){
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
 
+    // 각 경기장이 자기 영역(50%)을 넘지 않도록 scale 조정
+    const scaleToFit=(div)=>{
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const available=outerWrap.offsetWidth/2 - 24;
+        const actual=div.scrollWidth;
+        if(actual>available){
+          const scale=available/actual;
+          div.style.transformOrigin='top left';
+          div.style.transform=`scale(${scale})`;
+          div.style.height=(div.scrollHeight*scale)+'px';
+        }
+      }));
+    };
+    scaleToFit(lDiv);
+    // rDiv는 오른쪽 끝 정렬이라 transform-origin 다르게
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const available=outerWrap.offsetWidth/2 - 24;
+      const actual=rDiv.scrollWidth;
+      if(actual>available){
+        const scale=available/actual;
+        rDiv.style.transformOrigin='top right';
+        rDiv.style.transform=`scale(${scale})`;
+        rDiv.style.height=(rDiv.scrollHeight*scale)+'px';
+      }
+    }));
+
     _stripInnerScroll(lDiv);
     _stripInnerScroll(rDiv);
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
-
-    // scale: 양쪽 콘텐츠 중 큰 쪽 기준, 동일 비율 적용
-    // 최소 scale 도달 시 outerWrap에 minWidth 고정 → view 스크롤
-    const MIN_SCALE = 0.45;
-    const applyScale=()=>{
-      // transform 초기화해서 자연 크기 측정
-      lDiv.style.transform=''; lDiv.style.height=''; lDiv.style.width='50%';
-      rDiv.style.transform=''; rDiv.style.height=''; rDiv.style.width='50%';
-      outerWrap.style.minWidth='';
-
-      const viewW = view.clientWidth;
-      const half  = viewW / 2 - 24;
-      const natL  = lDiv.scrollWidth;
-      const natR  = rDiv.scrollWidth;
-      const natMax= Math.max(natL, natR);
-
-      if(natMax <= half){
-        // 여유 있음 — scale 불필요
-        return;
-      }
-
-      const scale = Math.max(MIN_SCALE, half / natMax);
-
-      lDiv.style.transformOrigin='top left';
-      lDiv.style.transform=`scale(${scale})`;
-      lDiv.style.height=(lDiv.scrollHeight * scale)+'px';
-
-      rDiv.style.transformOrigin='top right';
-      rDiv.style.transform=`scale(${scale})`;
-      rDiv.style.height=(rDiv.scrollHeight * scale)+'px';
-
-      if(scale <= MIN_SCALE){
-        // 더 이상 줄어들면 안 됨 — outerWrap 최소 너비 고정 → 가로 스크롤
-        const minW = natMax * MIN_SCALE * 2 + 96;
-        outerWrap.style.minWidth = minW + 'px';
-      }
-    };
-
-    requestAnimationFrame(()=>requestAnimationFrame(applyScale));
-
-    if(window._bracketResizeObs) window._bracketResizeObs.disconnect();
-    window._bracketResizeObs = new ResizeObserver(()=>requestAnimationFrame(applyScale));
-    window._bracketResizeObs.observe(view);
   } else {
-    const allMatches=(S.groupBrackets||[]).flatMap(g=>noByeMatches(g.matches[0]));
-    S.matches=allMatches.length?[allMatches]:[[]];
-    renderBracketA(view);
+    // A/B/C/E형 — 그룹별로 태깅해서 렌더링 (D형과 동일하게 _groupObj/_origRi/_origMi 보존)
+    view.style.overflow='auto';
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='padding:8px;min-width:max-content;';
+
+    S.groupBrackets.forEach(g=>{
+      const labelParts=g.label.split('/').map(s=>s.trim());
+      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+      hdr.textContent=shortLabel;
+      outerWrap.appendChild(hdr);
+
+      const groupWrap=document.createElement('div');
+      groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+
+      const taggedMatches=g.matches.map((round,ri)=>
+        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+      );
+
+      S.matches=taggedMatches;
+      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+      const fn=fns[_bracketLayout]||renderBracketA;
+      fn(groupWrap);
+      _stripInnerScroll(groupWrap);
+      outerWrap.appendChild(groupWrap);
+    });
+
+    view.appendChild(outerWrap);
   }
   S.matches=saved;
   // 탭 체크 상태 갱신
@@ -1478,8 +1498,14 @@ function _showByeForRound(g, ri){
   );
 }
 
-// ── 모달 드롭다운 ─────────────────────────────────────────────
-function _hideMatchModal(){ const m=document.getElementById('match-action-modal'); if(m) m.remove(); }
+function _hideMatchModal(){
+  const m=document.getElementById('match-action-modal');
+  if(m) m.remove();
+  if(window._modalOutsideListener){
+    document.removeEventListener('click', window._modalOutsideListener, true);
+    window._modalOutsideListener=null;
+  }
+}
 
 function _showMatchModal(anchorEl, ri, mi, matchObj){
   _hideMatchModal();
@@ -1505,7 +1531,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
     b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
     b.onmouseout=()=>b.style.background='transparent';
     b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
-    b.addEventListener('click',(e)=>{ e.stopPropagation(); _hideMatchModal(); fn(); });
+    b.onclick=(e)=>{ e.stopPropagation(); _hideMatchModal(); fn(); };
     return b;
   };
 
@@ -1526,6 +1552,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   } else {
     modal.appendChild(mkBtn('🔗','다른 경기와 연결','var(--accent)',()=>{
       _linkSel={ri,mi,grpObj,origMi,origRi,matchObj};
+      // 선택 박스 강조
       if(matchObj&&matchObj._domId){
         const el=document.querySelector(`[data-match-id="${matchObj._domId}"]`);
         if(el){ el.style.borderColor='#4cc9f0'; el.style.boxShadow='0 0 8px rgba(76,201,240,.5)'; }
@@ -1535,7 +1562,7 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
     modal.appendChild(mkBtn('▶','부전승 직행','var(--green)',()=>{
       _doAdvance(origRi, origMi, grpObj);
     }));
-    modal.appendChild(mkBtn('🗑','이 라운드 연결 삭제','var(--red)',()=>{
+    modal.appendChild(mkBtn('🗑','이 라운드 삭제','var(--red)',()=>{
       _doRemoveRound(origRi, grpObj);
     }));
   }
@@ -1551,11 +1578,20 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   modal.style.top = top + 'px';
   modal.style.left = left + 'px';
 
-  // 외부 클릭 시 닫기 — 모달 자신 클릭은 제외
-  const onOutside = (e)=>{
-    if(!modal.contains(e.target)){ _hideMatchModal(); document.removeEventListener('click', onOutside); }
+  // 외부 클릭 시 닫기 — 전역 변수로 관리해서 누수 방지
+  if(window._modalOutsideListener){
+    document.removeEventListener('click', window._modalOutsideListener, true);
+  }
+  window._modalOutsideListener = (e)=>{
+    const m = document.getElementById('match-action-modal');
+    if(!m){ document.removeEventListener('click', window._modalOutsideListener, true); window._modalOutsideListener=null; return; }
+    if(!m.contains(e.target)){
+      document.removeEventListener('click', window._modalOutsideListener, true);
+      window._modalOutsideListener=null;
+      _hideMatchModal();
+    }
   };
-  setTimeout(()=>{ document.addEventListener('click', onOutside); }, 0);
+  setTimeout(()=>{ document.addEventListener('click', window._modalOutsideListener, true); }, 200);
 }
 
 function _doLink(ri, mi, grpObj, origMi, origRi){
@@ -1607,15 +1643,17 @@ function _doRemoveRound(origRi, grpObj){
     toast('삭제할 연결이 없어요','info'); return;
   }
 
-  // 이 라운드(origRi)의 모든 경기에서 연결된 nextRound 매치만 제거
+  // origRi 라운드의 모든 경기 key
   const keysInRound = g.matches[origRi].map((_,mi)=>`${origRi}-${mi}`);
+
   const before = g.matches[nextRi].length;
-  g.matches[nextRi] = g.matches[nextRi].filter(m=>
-    !keysInRound.includes(m.fromA) && !keysInRound.includes(m.fromB)
-  );
+  g.matches[nextRi] = g.matches[nextRi].filter(m=>{
+    const fa = m.fromA||'';
+    const fb = m.fromB||'';
+    return !keysInRound.some(k => fa===k || fb===k);
+  });
   const removed = before - g.matches[nextRi].length;
 
-  // nextRound가 비면 배열에서도 제거
   if(g.matches[nextRi].length === 0) g.matches.splice(nextRi);
 
   if(removed === 0){ toast('삭제할 연결이 없어요','info'); return; }
