@@ -2007,32 +2007,222 @@ function openDeleteNamesModal(){
 
 // ── 랜덤 섞기 ──
 function openShuffleNamesModal(){
-  _openGroupSelectModal('🔀 랜덤 섞기', '섞기 실행', (idxs)=>{
-    idxs.forEach(gi=>{
-      const g=S.groupBrackets[gi];
-      if(!g||!g.matches[0]) return;
-      // 현재 배정된 이름 추출
-      const names=[];
-      g.matches[0].forEach(m=>{
-        if(m.p1){ const nm=m.p1.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
-        if(m.p2&&!m.bye){ const nm=m.p2.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
+  // 1단계: 애니메이션 스타일 선택
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:9000;';
+
+  const modal=document.createElement('div');
+  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:420px;max-width:95vw;padding:28px 24px;display:flex;flex-direction:column;gap:18px;';
+
+  modal.innerHTML=`
+    <div style="font-size:15px;font-weight:700;text-align:center;">🔀 랜덤 섞기</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;">애니메이션 스타일을 선택해주세요</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button id="anim-lotto" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 24px;border-radius:12px;border:1px solid var(--border2);background:var(--card);color:var(--text);cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(76,201,240,.08)'"
+        onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--card)'">
+        <span style="font-size:36px;">🎱</span>
+        <span style="font-size:12px;font-weight:700;">로또 기계</span>
+        <span style="font-size:10px;color:var(--text3);">공이 섞이는 모습</span>
+      </button>
+      <button id="anim-dart" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 24px;border-radius:12px;border:1px solid var(--border2);background:var(--card);color:var(--text);cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif;"
+        onmouseover="this.style.borderColor='var(--yellow)';this.style.background='rgba(255,214,10,.08)'"
+        onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--card)'">
+        <span style="font-size:36px;">🎯</span>
+        <span style="font-size:12px;font-weight:700;">다트판</span>
+        <span style="font-size:10px;color:var(--text3);">룰렛이 돌아가는 모습</span>
+      </button>
+    </div>
+    <button onclick="this.closest('div').parentElement.remove()" style="align-self:center;padding:5px 18px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:7px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">취소</button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const goNext=(animType)=>{
+    overlay.remove();
+    // 2단계: 그룹 선택
+    _openGroupSelectModal('🔀 랜덤 섞기 — 범위 선택', '섞기 실행', (idxs)=>{
+      // 3단계: 이름 추출 & 셔플
+      const allNames=[];
+      idxs.forEach(gi=>{
+        const g=S.groupBrackets[gi];
+        if(!g||!g.matches[0]) return;
+        g.matches[0].forEach(m=>{
+          if(m.p1){ const nm=m.p1.name.match(/\((.+)\)/); if(nm) allNames.push(nm[1]); }
+          if(m.p2&&!m.bye){ const nm=m.p2.name.match(/\((.+)\)/); if(nm) allNames.push(nm[1]); }
+        });
       });
-      if(!names.length){ toast(g.label+': 배정된 이름이 없어요','info'); return; }
-      // 셔플
-      for(let i=names.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [names[i],names[j]]=[names[j],names[i]];
-      }
-      // 다시 배정
-      let idx=0;
-      g.matches[0].forEach(m=>{
-        if(m.p1){ const sn=m.p1.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
-        if(m.p2&&!m.bye){ const sn=m.p2.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
+      if(!allNames.length){ toast('배정된 이름이 없어요','info'); return; }
+
+      // 4단계: 애니메이션 → 완료 후 실제 섞기 적용
+      _showShuffleAnimation(animType, allNames, ()=>{
+        idxs.forEach(gi=>{
+          const g=S.groupBrackets[gi];
+          if(!g||!g.matches[0]) return;
+          const names=[];
+          g.matches[0].forEach(m=>{
+            if(m.p1){ const nm=m.p1.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
+            if(m.p2&&!m.bye){ const nm=m.p2.name.match(/\((.+)\)/); if(nm) names.push(nm[1]); }
+          });
+          for(let i=names.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [names[i],names[j]]=[names[j],names[i]]; }
+          let idx=0;
+          g.matches[0].forEach(m=>{
+            if(m.p1){ const sn=m.p1.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
+            if(m.p2&&!m.bye){ const sn=m.p2.name.replace(/\s*\(.+\)/,''); const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
+          });
+        });
+        _renderPdfPreview(_getSelectedGroups());
+        toast('랜덤으로 섞었어요 🎉','success');
       });
     });
-    _renderPdfPreview(_getSelectedGroups());
-    toast('랜덤으로 섞었어요','success');
-  });
+  };
+
+  document.getElementById('anim-lotto').onclick=()=>goNext('lotto');
+  document.getElementById('anim-dart').onclick=()=>goNext('dart');
+}
+
+// ── 셔플 애니메이션 ──
+function _showShuffleAnimation(type, names, onDone){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9500;flex-direction:column;gap:0;';
+  document.body.appendChild(ov);
+
+  if(type==='lotto'){
+    // 로또 기계 — 캔버스에서 공들이 튀어다니다가 멈춤
+    ov.innerHTML=`
+      <div style="font-size:13px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:16px;">// SHUFFLING...</div>
+      <div style="position:relative;width:320px;height:280px;border-radius:50% 50% 40% 40%;border:3px solid var(--accent);background:radial-gradient(ellipse at 50% 30%,#0d1a2a,#050a10);overflow:hidden;box-shadow:0 0 40px rgba(76,201,240,.3),inset 0 0 60px rgba(0,0,0,.8);">
+        <canvas id="lotto-canvas" width="320" height="280" style="position:absolute;inset:0;"></canvas>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,#050a10,transparent);"></div>
+      </div>
+      <div id="shuffle-done-msg" style="margin-top:20px;font-size:0px;color:var(--green);font-weight:700;font-family:'Bebas Neue',cursive;letter-spacing:4px;transition:font-size .4s ease;"></div>
+    `;
+    document.body.appendChild(ov);
+
+    const canvas=document.getElementById('lotto-canvas');
+    const ctx=canvas.getContext('2d');
+    const W=320, H=280;
+    const colors=['#e63946','#4cc9f0','#ffd60a','#06d6a0','#ff6b6b','#a855f7','#f97316','#22d3ee'];
+    const balls=names.slice(0,Math.min(names.length,12)).map((name,i)=>({
+      x:60+Math.random()*200, y:60+Math.random()*160,
+      vx:(Math.random()-0.5)*6, vy:(Math.random()-0.5)*6,
+      r:22, color:colors[i%colors.length], name:name.slice(0,4),
+    }));
+
+    let frame=0; let animId;
+    const animate=()=>{
+      ctx.clearRect(0,0,W,H);
+      balls.forEach(b=>{
+        b.x+=b.vx; b.y+=b.vy;
+        // 타원형 경계 반사
+        const cx=W/2, cy=H/2, rx=W/2-b.r-4, ry=H/2-b.r-8;
+        const dx=(b.x-cx)/rx, dy=(b.y-cy)/ry;
+        if(dx*dx+dy*dy>1){
+          b.vx*=-0.95; b.vy*=-0.95;
+          b.x=cx+Math.cos(Math.atan2(b.y-cy,b.x-cx))*rx;
+          b.y=cy+Math.sin(Math.atan2(b.y-cy,b.x-cx))*ry;
+        }
+        // 공끼리 충돌
+        balls.forEach(b2=>{
+          if(b===b2) return;
+          const ddx=b.x-b2.x, ddy=b.y-b2.y, dist=Math.sqrt(ddx*ddx+ddy*ddy);
+          if(dist<b.r+b2.r&&dist>0){
+            const nx=ddx/dist, ny=ddy/dist;
+            b.vx+=nx*0.5; b.vy+=ny*0.5; b2.vx-=nx*0.5; b2.vy-=ny*0.5;
+          }
+        });
+        // 속도 제한
+        const spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
+        if(spd>7){b.vx=b.vx/spd*7;b.vy=b.vy/spd*7;}
+        // 그리기
+        const grad=ctx.createRadialGradient(b.x-6,b.y-6,2,b.x,b.y,b.r);
+        grad.addColorStop(0,'rgba(255,255,255,.35)');
+        grad.addColorStop(1,b.color);
+        ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+        ctx.fillStyle=grad; ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.font='bold 9px "Noto Sans KR"';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(b.name,b.x,b.y);
+      });
+      frame++;
+      if(frame<150) animId=requestAnimationFrame(animate);
+      else{
+        // 멈추고 완료 표시
+        const msg=document.getElementById('shuffle-done-msg');
+        if(msg){ msg.textContent='완료!'; msg.style.fontSize='48px'; }
+        setTimeout(()=>{ ov.remove(); onDone(); }, 900);
+      }
+    };
+    animate();
+
+  } else {
+    // 다트판 룰렛
+    ov.innerHTML=`
+      <div style="font-size:13px;color:var(--yellow);font-family:'Share Tech Mono',monospace;letter-spacing:2px;margin-bottom:16px;">// SPINNING...</div>
+      <div style="position:relative;width:300px;height:300px;">
+        <canvas id="dart-canvas" width="300" height="300"></canvas>
+        <div id="dart-arrow" style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:28px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));">▼</div>
+      </div>
+      <div id="shuffle-done-msg" style="margin-top:20px;font-size:0px;color:var(--green);font-weight:700;font-family:'Bebas Neue',cursive;letter-spacing:4px;transition:font-size .5s ease;"></div>
+    `;
+    document.body.appendChild(ov);
+
+    const canvas=document.getElementById('dart-canvas');
+    const ctx=canvas.getContext('2d');
+    const cx=150, cy=150, r=138;
+    const slices=Math.min(names.length,16);
+    const colors2=['#e63946','#4cc9f0','#ffd60a','#06d6a0','#ff6b6b','#a855f7','#f97316','#22d3ee',
+                   '#e63946','#4cc9f0','#ffd60a','#06d6a0','#ff6b6b','#a855f7','#f97316','#22d3ee'];
+    const sliceAngle=(Math.PI*2)/slices;
+
+    let angle=0;
+    // 빠르게 시작해서 점점 느려지는 속도
+    let speed=0.35;
+    const totalRot=Math.PI*2*6+Math.random()*Math.PI*2; // 6바퀴+랜덤
+    let rotated=0; let animId2;
+
+    const drawWheel=(ang)=>{
+      ctx.clearRect(0,0,300,300);
+      for(let i=0;i<slices;i++){
+        const start=ang+i*sliceAngle, end=start+sliceAngle;
+        ctx.beginPath(); ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,r,start,end);
+        ctx.fillStyle=colors2[i%colors2.length]; ctx.fill();
+        ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.5; ctx.stroke();
+        // 이름
+        ctx.save();
+        ctx.translate(cx,cy);
+        ctx.rotate(ang+i*sliceAngle+sliceAngle/2);
+        ctx.textAlign='right'; ctx.fillStyle='#fff';
+        ctx.font='bold 11px "Noto Sans KR"';
+        ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=3;
+        ctx.fillText(names[i%names.length].slice(0,5), r-8, 4);
+        ctx.restore();
+      }
+      // 중앙 원
+      ctx.beginPath(); ctx.arc(cx,cy,18,0,Math.PI*2);
+      ctx.fillStyle='#0d0d1a'; ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=2; ctx.stroke();
+    };
+
+    const spin=()=>{
+      const decel=rotated/totalRot;
+      speed=Math.max(0.008, 0.35*(1-decel*decel));
+      angle+=speed; rotated+=speed;
+      drawWheel(angle);
+      if(rotated<totalRot) animId2=requestAnimationFrame(spin);
+      else{
+        drawWheel(angle);
+        const msg=document.getElementById('shuffle-done-msg');
+        if(msg){ msg.textContent='완료!'; msg.style.fontSize='48px'; }
+        setTimeout(()=>{ ov.remove(); onDone(); }, 900);
+      }
+    };
+    drawWheel(0);
+    spin();
+  }
 }
 
 
@@ -2044,7 +2234,22 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
-  // 전체/일부 모두 동일하게 직접 렌더 (clone 방식 제거 → 라인 정상, _hideNames 반영)
+  // 전체 선택이면 step3 대진표 뷰 그대로 복사
+  if(groups.length===S.groupBrackets.length){
+    const bracketView=document.getElementById('pts-bracket-view');
+    if(bracketView){
+      const clone=bracketView.cloneNode(true);
+      clone.style.cssText='display:block;overflow:visible;min-height:200px;';
+      clone.querySelectorAll('*').forEach(el=>{
+        if(el.style.overflow&&el.style.overflow!=='visible') el.style.overflow='visible';
+        if(el.style.overflowX&&el.style.overflowX!=='visible') el.style.overflowX='visible';
+        if(el.style.overflowY&&el.style.overflowY!=='visible') el.style.overflowY='visible';
+      });
+      preview.appendChild(clone);
+    }
+    return;
+  }
+  // 일부 선택이면 선택한 그룹만 렌더
   groups.forEach((g,gi)=>{
     const labelParts=g.label.split('/').map(s=>s.trim());
     const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
