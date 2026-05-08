@@ -528,9 +528,9 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       if(isBye){
         const row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0a0a14;';
+        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
         if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
-        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;';nm.textContent=p1?p1.name:'?';row.appendChild(nm);
+        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;';nm.textContent=p1?p1.name:'?';row.appendChild(nm);
         box.appendChild(row);
       } else {
         // 가로 한 줄: [dot] 이름1  VS  이름2 [dot]
