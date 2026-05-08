@@ -1070,6 +1070,15 @@ function generateAllBrackets(){
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(S.groupBrackets));
   }catch(e){}
+  // 중간저장 데이터가 있으면 자동 복원
+  try{
+    const saved=JSON.parse(localStorage.getItem('sgp_bracket_temp'));
+    if(saved&&saved.groupBrackets){
+      S.groupBrackets=saved.groupBrackets;
+      toast(`중간저장 불러옴 (${saved.savedAt})`,'success');
+    }
+  } catch(e){}
+
   show('pts-step3');
   renderBracketTabs();
   _redrawBracketView();
@@ -1134,6 +1143,32 @@ function _redrawBracketView(){
 
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
+
+    // 각 경기장이 자기 영역(50%)을 넘지 않도록 scale 조정
+    const scaleToFit=(div)=>{
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const available=outerWrap.offsetWidth/2 - 24;
+        const actual=div.scrollWidth;
+        if(actual>available){
+          const scale=available/actual;
+          div.style.transformOrigin='top left';
+          div.style.transform=`scale(${scale})`;
+          div.style.height=(div.scrollHeight*scale)+'px';
+        }
+      }));
+    };
+    scaleToFit(lDiv);
+    // rDiv는 오른쪽 끝 정렬이라 transform-origin 다르게
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const available=outerWrap.offsetWidth/2 - 24;
+      const actual=rDiv.scrollWidth;
+      if(actual>available){
+        const scale=available/actual;
+        rDiv.style.transformOrigin='top right';
+        rDiv.style.transform=`scale(${scale})`;
+        rDiv.style.height=(rDiv.scrollHeight*scale)+'px';
+      }
+    }));
 
     _stripInnerScroll(lDiv);
     _stripInnerScroll(rDiv);
