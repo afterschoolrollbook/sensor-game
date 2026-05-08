@@ -1463,8 +1463,14 @@ function applyBracket(){
       groupBrackets:S.groupBrackets, activeGroup:S.activeGroup
     },'*');
   }
+  // localStorage에 step4 저장 — 새로고침해도 이어서 진행
+  try{
+    localStorage.setItem('sgp_step','4');
+    localStorage.setItem('sgp_groupBrackets', JSON.stringify(S.groupBrackets));
+    localStorage.setItem('sgp_courtCount', String(_courtCount||1));
+    localStorage.setItem('sgp_layout', _bracketLayout||'A');
+  }catch(e){}
   toast(g.label+' 대진표 적용 완료!','success');
-  // 창 닫지 않고 PDF 출력 단계로 이동
   setTimeout(()=>goStep4(), 400);
 }
 
@@ -1906,7 +1912,15 @@ document.addEventListener('keydown', e=>{
       if(savedCourtCount) _courtCount=parseInt(savedCourtCount);
       if(savedLayout) _bracketLayout=savedLayout;
       setTimeout(()=>{
-        if(savedStep==='3'){
+        if(savedStep==='4'){
+          const savedGB=localStorage.getItem('sgp_groupBrackets');
+          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
+          show('pts-step3');
+          renderBracketTabs();
+          _redrawBracketView();
+          setTimeout(()=>goStep4(), 100);
+          toast('이전 설정 불러왔어요','info');
+        } else if(savedStep==='3'){
           const savedGB=localStorage.getItem('sgp_groupBrackets');
           if(savedGB) S.groupBrackets=JSON.parse(savedGB);
           show('pts-step3');
