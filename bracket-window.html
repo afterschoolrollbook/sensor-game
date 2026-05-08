@@ -1488,15 +1488,28 @@ function _renderPdfCheckboxes(){
 
   const groups=S.groupBrackets||[];
 
-  // 성별/부문 추출
-  const genders=[...new Set(groups.map(g=>g.label.split('/')[0]?.trim()).filter(Boolean))];
-  const divisions=[...new Set(groups.map(g=>g.label.split('/')[1]?.trim()).filter(Boolean))];
+  // sortKeys 기반으로 각 파트 추출
+  const allLabels=groups.map(g=>g.label);
+  const parts0=[...new Set(allLabels.map(l=>l.split('/')[0]?.trim()).filter(Boolean))]; // 성별
+  const parts1=[...new Set(allLabels.map(l=>l.split('/')[1]?.trim()).filter(Boolean))]; // 부문
+  const parts2=[...new Set(allLabels.map(l=>l.split('/')[2]?.trim()).filter(Boolean))]; // 체급
 
-  const sep=()=>{ const s=document.createElement('span'); s.style.cssText='width:1px;height:16px;background:var(--border);display:inline-block;margin:0 4px;vertical-align:middle;'; wrap.appendChild(s); };
+  const sep=()=>{
+    const s=document.createElement('span');
+    s.style.cssText='width:1px;height:16px;background:var(--border);display:inline-block;margin:0 6px;vertical-align:middle;';
+    wrap.appendChild(s);
+  };
+
+  const mkLabel=(txt)=>{
+    const l=document.createElement('span');
+    l.style.cssText='font-size:9px;color:var(--text3);letter-spacing:1px;margin-right:2px;vertical-align:middle;';
+    l.textContent=txt;
+    wrap.appendChild(l);
+  };
 
   const mkFilterBtn=(label, matchFn)=>{
     const btn=document.createElement('button');
-    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text2);font-size:10px;cursor:pointer;';
+    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text2);font-size:10px;cursor:pointer;margin-right:2px;';
     btn.textContent=label;
     btn.onclick=()=>{
       wrap.querySelectorAll('.pdf-chk').forEach(b=>{
@@ -1511,20 +1524,24 @@ function _renderPdfCheckboxes(){
   // 전체 선택/해제
   mkFilterBtn('전체 선택', ()=>true);
   mkFilterBtn('전체 해제', ()=>false);
-  sep();
 
-  // 성별 버튼
-  genders.forEach(g=>mkFilterBtn(g, grp=>grp.label.split('/')[0]?.trim()===g));
-  if(divisions.length){ sep(); }
+  // 성별 (파트0)
+  if(parts0.length>1){ sep(); mkLabel('성별:'); parts0.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[0]?.trim()===v)); }
 
-  // 부문별 버튼
-  divisions.forEach(d=>mkFilterBtn(d, grp=>grp.label.split('/')[1]?.trim()===d));
-  sep();
+  // 부문 (파트1)
+  if(parts1.length>0){ sep(); mkLabel('부문:'); parts1.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[1]?.trim()===v)); }
+
+  // 체급 (파트2)
+  if(parts2.length>0){ sep(); mkLabel('체급:'); parts2.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[2]?.trim()===v)); }
+
+  // 구분선
+  const br=document.createElement('div');
+  br.style.cssText='width:100%;height:1px;background:var(--border);margin:8px 0;';
+  wrap.appendChild(br);
 
   // 개별 체급 버튼
   groups.forEach((g,i)=>{
-    const labelParts=g.label.split('/').map(s=>s.trim());
-    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
     const btn=document.createElement('button');
     btn.className='pdf-chk';
     btn.dataset.idx=i;
@@ -1534,14 +1551,16 @@ function _renderPdfCheckboxes(){
       _syncCheckStyles();
       _renderPdfPreview(_getSelectedGroups());
     };
-    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;';
+    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;margin-right:2px;margin-bottom:2px;';
     btn.textContent=shortLabel+` (${g.slots.length}명)`;
     wrap.appendChild(btn);
   });
 }
 
 function _syncCheckStyles(){
-  document.querySelectorAll('.pdf-chk').forEach(b=>{
+  const wrap=document.getElementById('pdf-group-checkboxes');
+  if(!wrap) return;
+  wrap.querySelectorAll('.pdf-chk').forEach(b=>{
     const on=b.dataset.checked==='1';
     b.style.borderColor=on?'var(--green)':'var(--border2)';
     b.style.background=on?'rgba(6,214,160,.1)':'transparent';
