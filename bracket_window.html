@@ -905,11 +905,11 @@ function _redrawBracketView(){
     view.style.overflow='auto';
     view.style.padding='12px';
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;min-width:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;justify-content:space-between;min-width:100%;';
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;';
+    lDiv.style.cssText='padding-right:24px;flex-shrink:0;';
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex:1;';
+    rDiv.style.cssText='padding-left:24px;display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;margin-left:auto;';
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
@@ -943,25 +943,6 @@ function _redrawBracketView(){
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
-
-    // rDiv를 오른쪽 끝으로 JS로 계산해서 밀기
-    const _positionRDiv = () => {
-      // rDiv의 marginLeft를 초기화한 뒤 실제 콘텐츠 너비로 gap 계산
-      rDiv.style.marginLeft = '0px';
-      requestAnimationFrame(()=>{
-        const viewW = view.clientWidth;
-        const lW = lDiv.getBoundingClientRect().width;
-        const rW = rDiv.getBoundingClientRect().width;
-        const gap = viewW - lW - rW - 48; // 48 = lDiv padding-right(24) + rDiv padding-left(24)
-        rDiv.style.marginLeft = (gap > 0 ? gap : 0) + 'px';
-      });
-    };
-    requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(_positionRDiv)));
-
-    // 창 크기 바뀔 때도 재계산
-    if(view._resizeHandler) window.removeEventListener('resize', view._resizeHandler);
-    view._resizeHandler = _positionRDiv;
-    window.addEventListener('resize', _positionRDiv);
   } else {
     view.style.overflow='auto';
     const outerWrap=document.createElement('div');
