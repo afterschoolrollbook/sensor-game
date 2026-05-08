@@ -1532,7 +1532,12 @@ function _renderPdfCheckboxes(){
   if(parts1.length>0){ sep(); mkLabel('부문:'); parts1.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[1]?.trim()===v)); }
 
   // 체급 (파트2)
-  if(parts2.length>0){ sep(); mkLabel('체급:'); parts2.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[2]?.trim()===v)); }
+  if(parts2.length>0){
+    const br2=document.createElement('div');
+    br2.style.cssText='width:100%;height:0;margin:2px 0;';
+    wrap.appendChild(br2);
+    mkLabel('체급:'); parts2.forEach(v=>mkFilterBtn(v, g=>g.label.split('/')[2]?.trim()===v));
+  }
 
   // 구분선
   const br=document.createElement('div');
