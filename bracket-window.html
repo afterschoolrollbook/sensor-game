@@ -1099,21 +1099,32 @@ function _redrawBracketView(){
   const noByeMatches=matches=>(matches||[]).filter(m=>!m.bye);
   const saved=S.matches;
 
+  // view 스타일 초기화
+  view.style.overflow='';
+  view.style.padding='';
+  view.style.display='flex';
+  view.style.flexDirection='column';
+
   if(_bracketLayout==='D' && courts>=2){
+    view.style.overflow='auto';
+    view.style.padding='0';
+    view.style.display='flex';
+    view.style.flexDirection='column';
+
+    // 전체를 하나의 스크롤 컨테이너 안에 — 좌우 50% 고정
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;overflow:auto;flex:1;height:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:row;min-width:max-content;min-height:100%;';
 
     const lDiv=document.createElement('div');
-    lDiv.style.cssText='flex:1;padding:12px;min-width:0;';
+    lDiv.style.cssText='width:50vw;min-width:400px;padding:12px;box-sizing:border-box;border-right:1px solid var(--border);flex-shrink:0;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='flex:1;padding:12px;min-width:0;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='width:50vw;min-width:400px;padding:12px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
 
     const mkLabel=(txt,align='left')=>{ const d=document.createElement('div'); d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;width:100%;text-align:${align};`; d.textContent=txt; return d; };
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    // 각 그룹을 개별 렌더링 - 연결선이 그룹 내에서만 올바르게 그려짐
     const renderCourtGroups=(courtNum, container)=>{
       const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
       const reversed=(courtNum===2);
@@ -1121,24 +1132,16 @@ function _redrawBracketView(){
         const labelParts=g.label.split('/').map(s=>s.trim());
         const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
 
-        // 그룹 헤더
         const hdr=document.createElement('div');
         hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
         hdr.textContent=shortLabel;
         container.appendChild(hdr);
 
-        // 그룹 대진표 래퍼
         const groupWrap=document.createElement('div');
         groupWrap.style.cssText='margin-bottom:16px;position:relative;';
 
-        // 1라운드 match에 태깅 (_groupObj, _origMi)
         const taggedMatches=g.matches.map((round,ri)=>
-          round.map((m,mi)=>({...m,
-            _groupObj:g,
-            _origMi:mi,
-            _origRi:ri,
-            _groupLabel:shortLabel
-          }))
+          round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
         );
 
         S.matches=taggedMatches;
@@ -1150,34 +1153,6 @@ function _redrawBracketView(){
     renderCourtGroups(1, lDiv);
     renderCourtGroups(2, rDiv);
 
-    // 각 경기장이 자기 영역(50%)을 넘지 않도록 scale 조정
-    const scaleToFit=(div)=>{
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        const available=outerWrap.offsetWidth/2 - 24;
-        const actual=div.scrollWidth;
-        if(actual>available){
-          const scale=available/actual;
-          div.style.transformOrigin='top left';
-          div.style.transform=`scale(${scale})`;
-          div.style.height=(div.scrollHeight*scale)+'px';
-        }
-      }));
-    };
-    scaleToFit(lDiv);
-    // rDiv는 오른쪽 끝 정렬이라 transform-origin 다르게
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const available=outerWrap.offsetWidth/2 - 24;
-      const actual=rDiv.scrollWidth;
-      if(actual>available){
-        const scale=available/actual;
-        rDiv.style.transformOrigin='top right';
-        rDiv.style.transform=`scale(${scale})`;
-        rDiv.style.height=(rDiv.scrollHeight*scale)+'px';
-      }
-    }));
-
-    _stripInnerScroll(lDiv);
-    _stripInnerScroll(rDiv);
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
