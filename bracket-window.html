@@ -236,12 +236,32 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="setBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="setBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="saveBracketTemp()" style="padding:4px 10px;background:rgba(255,214,10,.08);border:1px solid #ffd60a;color:#ffd60a;border-radius:6px;font-size:11px;">💾 중간저장</button>
-        <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용</button>
+        <button onclick="applyBracket()" style="padding:5px 14px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">✅ 확정 &amp; 적용 →</button>
       </div>
     </div>
-    <!-- step4.js가 getElementById('pts-bracket-tabs'), getElementById('pts-bracket-view') 로 접근 -->
     <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
+  </div>
+
+  <!-- STEP 4: PDF 출력 -->
+  <div id="pts-step4" class="step">
+    <div class="subhdr">
+      <button onclick="show('pts-step3')" class="btn-back">← 뒤로</button>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">④ PDF 출력</span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+        <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
+        <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
+        <button onclick="printWithRoster()" style="padding:5px 16px;background:rgba(6,214,160,.15);border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;font-weight:700;">📋 명단+대진표 PDF</button>
+      </div>
+    </div>
+    <div style="padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);">
+      <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:8px;">// 출력할 체급 선택 <span style="color:var(--text3);">(선택 PDF용)</span></div>
+      <div id="pdf-group-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px;">
+      <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:12px;">// 미리보기</div>
+      <div id="pdf-preview" style="background:#1a1a2a;border:1px solid var(--border);border-radius:8px;padding:20px;min-height:300px;"></div>
+    </div>
   </div>
 </div>
 <div id="tc"></div>
@@ -1434,6 +1454,7 @@ function removeLastRound(){
 }
 function applyBracket(){
   const g=S.groupBrackets[S.activeGroup];
+  // 부모창에 postMessage 전송 (기존 동작 유지)
   if(window.opener){
     window.opener.postMessage({
       type:'sgp_apply_bracket',
@@ -1443,7 +1464,202 @@ function applyBracket(){
     },'*');
   }
   toast(g.label+' 대진표 적용 완료!','success');
-  setTimeout(()=>window.close(), 700);
+  // 창 닫지 않고 PDF 출력 단계로 이동
+  setTimeout(()=>goStep4(), 400);
+}
+
+function goStep4(){
+  show('pts-step4');
+  _renderPdfCheckboxes();
+  _renderPdfPreview(S.groupBrackets);
+}
+
+// ── 체급 선택 체크박스 렌더 ──
+function _renderPdfCheckboxes(){
+  const wrap=document.getElementById('pdf-group-checkboxes');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  // 전체 선택
+  const allBtn=document.createElement('button');
+  allBtn.id='pdf-check-all';
+  allBtn.onclick=()=>{ wrap.querySelectorAll('.pdf-chk').forEach(b=>b.dataset.checked='1'); _syncCheckStyles(); _renderPdfPreview(S.groupBrackets); };
+  allBtn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text2);font-size:10px;cursor:pointer;';
+  allBtn.textContent='전체 선택';
+  wrap.appendChild(allBtn);
+
+  (S.groupBrackets||[]).forEach((g,i)=>{
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    const btn=document.createElement('button');
+    btn.className='pdf-chk';
+    btn.dataset.idx=i;
+    btn.dataset.checked='1';
+    btn.onclick=()=>{
+      btn.dataset.checked=btn.dataset.checked==='1'?'0':'1';
+      _syncCheckStyles();
+      const sel=_getSelectedGroups();
+      _renderPdfPreview(sel);
+    };
+    btn.style.cssText='padding:3px 10px;border-radius:5px;border:1px solid var(--green);background:rgba(6,214,160,.1);color:var(--green);font-size:10px;cursor:pointer;';
+    btn.textContent=shortLabel+` (${g.slots.length}명)`;
+    wrap.appendChild(btn);
+  });
+}
+
+function _syncCheckStyles(){
+  document.querySelectorAll('.pdf-chk').forEach(b=>{
+    const on=b.dataset.checked==='1';
+    b.style.borderColor=on?'var(--green)':'var(--border2)';
+    b.style.background=on?'rgba(6,214,160,.1)':'transparent';
+    b.style.color=on?'var(--green)':'var(--text3)';
+  });
+}
+
+function _getSelectedGroups(){
+  const sel=[];
+  document.querySelectorAll('.pdf-chk').forEach(b=>{
+    if(b.dataset.checked==='1') sel.push(S.groupBrackets[parseInt(b.dataset.idx)]);
+  });
+  return sel;
+}
+
+// ── PDF 미리보기 렌더 ──
+function _renderPdfPreview(groups){
+  const preview=document.getElementById('pdf-preview');
+  if(!preview) return;
+  preview.innerHTML='';
+  (groups||[]).forEach((g,gi)=>{
+    const section=document.createElement('div');
+    section.style.cssText=`margin-bottom:32px;padding-bottom:24px;${gi<groups.length-1?'border-bottom:2px dashed #ccc;':''}`;
+
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
+
+    // 체급 제목
+    const title=document.createElement('div');
+    title.style.cssText='font-size:14px;font-weight:700;color:var(--accent);font-family:"Share Tech Mono",monospace;margin-bottom:8px;letter-spacing:1px;';
+    title.textContent='// '+shortLabel+` (${g.slots.length}명)`;
+    section.appendChild(title);
+
+    // 대진표
+    const bracketWrap=document.createElement('div');
+    bracketWrap.style.cssText='overflow:auto;';
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    S.matches=taggedMatches;
+    _renderBracketHTML(bracketWrap, taggedMatches, 'top', false);
+    _stripInnerScroll(bracketWrap);
+    section.appendChild(bracketWrap);
+    preview.appendChild(section);
+  });
+}
+
+// ── 전체 PDF ──
+function printAll(){
+  _doPrint(S.groupBrackets, false);
+}
+
+// ── 선택 PDF ──
+function printSelected(){
+  const sel=_getSelectedGroups();
+  if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
+  _doPrint(sel, false);
+}
+
+// ── 명단+대진표 PDF ──
+function printWithRoster(){
+  const sel=_getSelectedGroups();
+  if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
+  _doPrint(sel, true);
+}
+
+function _doPrint(groups, withRoster){
+  const win=window.open('','_blank','width=1100,height=800');
+  if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
+
+  let html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<title>대진표 PDF</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#fff;color:#111;font-family:'Noto Sans KR',sans-serif;padding:20px;}
+:root{
+  --bg:#fff;--card:#f5f5f5;--border:#ccc;--border2:#aaa;
+  --red:#e63946;--accent:#1a7abf;--green:#06a07a;--text:#111;--text2:#333;--text3:#666;
+}
+.section{margin-bottom:36px;padding-bottom:28px;border-bottom:2px dashed #ccc;page-break-inside:avoid;}
+.section:last-child{border-bottom:none;}
+.group-title{font-size:15px;font-weight:700;color:#1a7abf;font-family:'Share Tech Mono',monospace;margin-bottom:10px;letter-spacing:1px;border-left:4px solid #e63946;padding-left:10px;}
+.roster-wrap{margin-bottom:14px;}
+.roster-title{font-size:11px;font-weight:700;color:#555;letter-spacing:1px;margin-bottom:6px;}
+.roster-grid{display:flex;flex-wrap:wrap;gap:4px;}
+.roster-item{font-size:11px;padding:3px 8px;border:1px solid #ccc;border-radius:4px;background:#f9f9f9;}
+.roster-item .slot-num{color:#e63946;font-weight:700;margin-right:4px;font-family:'Share Tech Mono',monospace;}
+/* 대진표 박스 스타일 오버라이드 */
+[style*="background:#0d0d1a"],[style*="background:#0a0a14"],[style*="background:#080810"]{background:#f5f5f5 !important;}
+[style*="color:#d0d0d0"],[style*="color:#e0e0e0"]{color:#111 !important;}
+[style*="color:#2a2a3e"]{color:#999 !important;}
+[style*="color:#333"],[style*="color:#1e1e30"],[style*="stroke:#1e1e30"]{color:#555 !important;}
+[style*="stroke:#2a2a50"]{stroke:#aaa !important;}
+[style*="fill:#444"]{fill:#666 !important;}
+[style*="color:#555"]{color:#888 !important;}
+rect[fill="#0d0d1a"],rect[fill="#0a0a14"],rect[fill="#080810"]{fill:#f5f5f5 !important;}
+rect[stroke="#1e1e30"],rect[stroke="#1a1a28"]{stroke:#ccc !important;}
+@media print{
+  body{padding:10px;}
+  .section{page-break-after:always;}
+  .section:last-child{page-break-after:auto;}
+  .no-print{display:none !important;}
+}
+</style></head><body>`;
+
+  html+=`<div class="no-print" style="padding:10px 0 16px;display:flex;gap:8px;">
+    <button onclick="window.print()" style="padding:8px 20px;background:#e63946;border:none;color:#fff;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ 인쇄 / PDF 저장</button>
+    <button onclick="window.close()" style="padding:8px 16px;background:#eee;border:1px solid #ccc;color:#333;border-radius:6px;font-size:13px;cursor:pointer;">✕ 닫기</button>
+  </div>`;
+
+  groups.forEach((g,gi)=>{
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
+    html+=`<div class="section">`;
+    html+=`<div class="group-title">${shortLabel} (${g.slots.length}명)</div>`;
+
+    if(withRoster){
+      html+=`<div class="roster-wrap"><div class="roster-title">▶ 1라운드 참가 명단</div><div class="roster-grid">`;
+      g.slots.forEach((s,i)=>{
+        const p=s.player;
+        const name=p?p.name:`${i+1}번`;
+        html+=`<div class="roster-item"><span class="slot-num">${i+1}</span>${name}</div>`;
+      });
+      // 1라운드 경기 배정
+      if(g.matches&&g.matches[0]){
+        html+=`</div><div class="roster-title" style="margin-top:10px;">▶ 1라운드 대진</div><div class="roster-grid">`;
+        g.matches[0].forEach((m,mi)=>{
+          const p1=m.p1?m.p1.name:'?';
+          const p2=m.p2?m.p2.name:'BYE';
+          const isBye=!m.p2;
+          html+=`<div class="roster-item"><span class="slot-num">${mi+1}경기</span>${p1} ${isBye?'(부전승)':'vs '+p2}</div>`;
+        });
+      }
+      html+=`</div></div>`;
+    }
+
+    // 대진표 SVG (임시 DOM에서 추출)
+    const tmpWrap=document.createElement('div');
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    S.matches=taggedMatches;
+    _renderBracketHTML(tmpWrap, taggedMatches, 'top', false);
+    _stripInnerScroll(tmpWrap);
+    html+=`<div style="overflow:auto;">${tmpWrap.innerHTML}</div>`;
+    html+=`</div>`;
+  });
+
+  html+=`</body></html>`;
+  win.document.write(html);
+  win.document.close();
 }
 
 // 특정 라운드가 홀수일 때 부전승 팝업
