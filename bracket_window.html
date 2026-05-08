@@ -896,6 +896,7 @@ function _redrawBracketView(){
   const savedScrollTop=prevScrollEl?prevScrollEl.scrollTop:0;
   const savedScrollLeft=prevScrollEl?prevScrollEl.scrollLeft:0;
   view.innerHTML='';
+  if(view._resizeHandler){ window.removeEventListener('resize', view._resizeHandler); delete view._resizeHandler; }
   view.style.overflow='';
   view.style.padding='';
   view.style.display='flex';
@@ -942,6 +943,18 @@ function _redrawBracketView(){
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(rDiv);
     view.appendChild(outerWrap);
+
+    // rDiv를 오른쪽 끝으로 JS로 계산해서 밀기
+    const _positionRDiv = () => {
+      const gap = view.clientWidth - lDiv.scrollWidth - rDiv.scrollWidth;
+      rDiv.style.marginLeft = (gap > 0 ? gap : 0) + 'px';
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(_positionRDiv)));
+
+    // 창 크기 바뀔 때도 재계산
+    if(view._resizeHandler) window.removeEventListener('resize', view._resizeHandler);
+    view._resizeHandler = _positionRDiv;
+    window.addEventListener('resize', _positionRDiv);
   } else {
     view.style.overflow='auto';
     const outerWrap=document.createElement('div');
