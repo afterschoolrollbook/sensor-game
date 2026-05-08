@@ -1587,13 +1587,17 @@ function _renderPdfPreview(groups){
     title.textContent=shortLabel;
     section.appendChild(title);
     const bracketWrap=document.createElement('div');
-    bracketWrap.style.cssText='overflow:auto;';
+    bracketWrap.style.cssText='overflow:visible;';
     const taggedMatches=g.matches.map((round,ri)=>
       round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
     );
     S.matches=taggedMatches;
     _renderBracketHTML(bracketWrap, taggedMatches, 'top', false);
-    _stripInnerScroll(bracketWrap);
+    bracketWrap.querySelectorAll('*').forEach(el=>{
+      el.style.overflow='visible';
+      el.style.overflowX='visible';
+      el.style.overflowY='visible';
+    });
     section.appendChild(bracketWrap);
     preview.appendChild(section);
   });
