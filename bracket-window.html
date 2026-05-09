@@ -2408,6 +2408,23 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #chk-show-names{accent-color:#06d6a0;}
 #chk-white-mode{accent-color:#4cc9f0;}
 #chk-page-guide{accent-color:#4cc9f0;}
+.pg-btn{width:22px;height:22px;border-radius:4px;border:1px solid #3a3a55;background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.pg-btn:hover{border-color:#4cc9f0;color:#4cc9f0;background:rgba(76,201,240,.1);}
+body.white-mode .page-guide-h,body.white-mode .page-guide-v{border-color:rgba(0,100,220,0.55) !important;}
+body.white-mode #scale-badge{background:rgba(245,245,250,.97) !important;border-color:#b0c8f0 !important;}
+body.white-mode #disp-scale{color:#555 !important;}
+/* 격자 가로선 라벨 */
+.pg-line-h[data-label]::after{
+  content:attr(data-label);
+  position:absolute;right:6px;top:-15px;
+  font-size:8px;font-family:"Share Tech Mono",monospace;
+  color:rgba(76,201,240,0.7);
+  background:rgba(8,8,15,.8);
+  padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;
+}
+body.white-mode .pg-line-h[data-label]::after{
+  color:rgba(0,80,200,0.7);background:rgba(240,240,255,.9);
+}
 
 /* ── 미리보기 ── */
 .preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
@@ -2470,15 +2487,35 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   </div>
   <label class="toggle-wrap">
     <input type="checkbox" id="chk-page-guide" onchange="togglePageGuide(this.checked)">
-    <span>📐 페이지 나누기</span>
+    <span>📐 A4 용지 배치</span>
   </label>
-  <!-- 페이지 수 조절 (페이지 나누기 체크 시 활성화) -->
-  <div id="page-ctrl" class="toggle-wrap" style="gap:6px;padding:5px 10px;opacity:0.3;pointer-events:none;transition:opacity .2s;">
-    <span style="font-size:11px;color:var(--text3);">출력:</span>
-    <button onclick="changePages(-1)" style="width:24px;height:24px;border-radius:5px;border:1px solid #3a3a55;background:rgba(255,255,255,.06);color:#9090b0;font-size:16px;font-weight:700;cursor:pointer;line-height:1;">−</button>
-    <span id="page-count-display" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:28px;text-align:center;">-</span>
-    <button onclick="changePages(1)" style="width:24px;height:24px;border-radius:5px;border:1px solid #3a3a55;background:rgba(255,255,255,.06);color:#9090b0;font-size:16px;font-weight:700;cursor:pointer;line-height:1;">+</button>
+  <!-- 용지 방향 + 장수 (체크 시 활성화) -->
+  <div id="page-ctrl" class="toggle-wrap" style="gap:7px;padding:5px 12px;opacity:0.3;pointer-events:none;transition:opacity .2s;align-items:center;">
+    <!-- 용지 방향 -->
+    <span style="font-size:10px;color:var(--text3);white-space:nowrap;">용지:</span>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;">
+      <input type="radio" name="paper-orient" value="portrait" checked onchange="setOrient('portrait')" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
+      <span style="font-size:11px;color:var(--text2);">세로</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;">
+      <input type="radio" name="paper-orient" value="landscape" onchange="setOrient('landscape')" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
+      <span style="font-size:11px;color:var(--text2);">가로</span>
+    </label>
+    <span style="width:1px;height:16px;background:var(--border2);margin:0 2px;display:inline-block;"></span>
+    <!-- 가로 장수 -->
+    <span style="font-size:10px;color:var(--text3);white-space:nowrap;">가로</span>
+    <button onclick="changeCols(-1)" class="pg-btn">−</button>
+    <span id="disp-cols" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:16px;text-align:center;">1</span>
+    <button onclick="changeCols(1)" class="pg-btn">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
+    <span style="font-size:12px;color:var(--text3);margin:0 1px;">×</span>
+    <!-- 세로 장수 -->
+    <span style="font-size:10px;color:var(--text3);white-space:nowrap;">세로</span>
+    <button onclick="changeRows(-1)" class="pg-btn">−</button>
+    <span id="disp-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:16px;text-align:center;">1</span>
+    <button onclick="changeRows(1)" class="pg-btn">+</button>
+    <span style="font-size:11px;color:var(--text3);">장</span>
+    <span id="disp-scale" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
   </div>
 </div>
 <div class="preview-wrap" id="preview-wrap">
@@ -2543,120 +2580,242 @@ function toggleWhite(on){
   document.body.classList.toggle('white-mode',on);
 }
 
-/* ── A4 페이지 나누기 가이드 + 비율 조절 ── */
-// A4 인쇄 가능 높이: 297mm - 여백20mm = 277mm / 1mm = 96/25.4 px
-const _PX_PER_MM=96/25.4;
-const _A4_H_PX=277*_PX_PER_MM;  // ≈ 1047px
+/* ══ A4 용지 배치 격자 ══
+   용지 방향: portrait(세로) 190×277mm  /  landscape(가로) 277×190mm
+   가로N장 × 세로N장 격자 → 대진표를 그 안에 비율 유지하며 피팅
+   넘치면 장수 자동 제안 (알림)
+*/
+const _PX_MM = 96 / 25.4;
+// 인쇄 가능 영역 (여백 제외)
+const _PAPER = {
+  portrait:  { w: 190 * _PX_MM, h: 277 * _PX_MM },  // 세로
+  landscape: { w: 277 * _PX_MM, h: 190 * _PX_MM },  // 가로
+};
 
-var _guideOn=false;
-var _rawH=0;   // 스케일 1 기준 원본 높이
-var _rawW=0;   // 스케일 1 기준 원본 너비
-var _targetPages=1;
-var _currentScale=1;
+var _guideOn  = false;
+var _orient   = 'portrait';   // 'portrait' | 'landscape'
+var _cols     = 1;
+var _rows     = 1;
+var _rawW     = 0;
+var _rawH     = 0;
+var _curScale = 1;
 
+/* ── 체크박스 ── */
 function togglePageGuide(on){
-  _guideOn=on;
-  const ctrl=document.getElementById('page-ctrl');
-  // 비율 조절 UI 활성/비활성
-  ctrl.style.opacity=on?'1':'0.3';
-  ctrl.style.pointerEvents=on?'auto':'none';
-  if(on){
-    // 처음 켤 때 원본 크기 측정 & 초기 페이지 수 계산
-    if(_rawH===0) _measureRaw();
-    refreshGuides();
-  } else {
-    // 꺼지면 스케일 1로 원복, 가이드 제거
-    _resetScale();
-    document.querySelectorAll('.page-guide-line').forEach(e=>e.remove());
-    _hideBadge();
-  }
+  _guideOn = on;
+  const ctrl = document.getElementById('page-ctrl');
+  ctrl.style.opacity       = on ? '1'    : '0.3';
+  ctrl.style.pointerEvents = on ? 'auto' : 'none';
+  if(on){ _measureRaw(); refreshGrid(); }
+  else  { _clearGrid(); }
 }
 
+/* ── 용지 방향 ── */
+function setOrient(v){
+  _orient = v;
+  if(_guideOn) refreshGrid();
+}
+
+/* ── 원본 크기 측정 ── */
 function _measureRaw(){
-  // scale wrap을 scale(1)로 초기화해서 원본 크기 측정
-  const sw=document.getElementById('bracket-scale-wrap');
-  sw.style.transform='scale(1)';
-  const display=document.getElementById('bracket-display');
-  _rawH=display.scrollHeight;
-  _rawW=display.scrollWidth;
-  // 자연 페이지 수로 초기화
-  _targetPages=Math.max(1,Math.ceil(_rawH/_A4_H_PX));
-  const disp=document.getElementById('page-count-display');
-  if(disp) disp.textContent=_targetPages;
+  const sw = document.getElementById('bracket-scale-wrap');
+  sw.style.transform = 'scale(1)';
+  const d = document.getElementById('bracket-display');
+  _rawW = d.scrollWidth  || d.offsetWidth  || 800;
+  _rawH = d.scrollHeight || d.offsetHeight || 600;
+
+  // 현재 용지 기준 자동 장수 계산 (비율 유지 → 한 장에 맞추는 스케일 먼저 구함)
+  const pw = _PAPER[_orient].w;
+  const ph = _PAPER[_orient].h;
+  const sX = pw / _rawW;
+  const sY = ph / _rawH;
+  const s1 = Math.min(sX, sY);   // 1×1에 맞추는 스케일
+  if(s1 >= 1){
+    // 1장에 들어감
+    _cols = 1; _rows = 1;
+  } else {
+    // 비율 유지하며 cols×rows 자동 산정
+    _cols = Math.ceil(_rawW * s1 / pw);   // 항상 1
+    _rows = Math.ceil(_rawH * s1 / ph);
+    // 더 정확히: 실제로 몇 장 필요한지
+    _cols = 1;
+    _rows = Math.max(1, Math.ceil(_rawH / ph));
+  }
+  _syncDisplay();
 }
 
-function _resetScale(){
-  const sw=document.getElementById('bracket-scale-wrap');
-  sw.style.transform='scale(1)';
-  const wrap=document.getElementById('preview-wrap');
-  wrap.style.minHeight='';
-  _currentScale=1;
-}
-
-function refreshGuides(){
+/* ── +/- 버튼 ── */
+function changeCols(d){
   if(!_guideOn) return;
-  if(_rawH===0){ _measureRaw(); }
+  _cols = Math.max(1, Math.min(20, _cols + d));
+  _syncDisplay(); refreshGrid();
+}
+function changeRows(d){
+  if(!_guideOn) return;
+  _rows = Math.max(1, Math.min(50, _rows + d));
+  _syncDisplay(); refreshGrid();
+}
+function _syncDisplay(){
+  document.getElementById('disp-cols').textContent = _cols;
+  document.getElementById('disp-rows').textContent = _rows;
+}
 
-  // 타겟 페이지 수에 맞는 스케일 계산
-  const wrap=document.getElementById('preview-wrap');
-  const sw=document.getElementById('bracket-scale-wrap');
-  const viewW=wrap.clientWidth-48;
-  const scaleH=(_targetPages*_A4_H_PX)/_rawH;
-  const scaleW=_rawW>0?viewW/_rawW:1;
-  _currentScale=Math.min(scaleH, scaleW);
-  _currentScale=Math.max(0.05, Math.min(_currentScale, 3));
+/* ── 격자 그리기 ── */
+function refreshGrid(){
+  if(!_guideOn || !_rawW || !_rawH) return;
 
-  sw.style.transform='scale('+_currentScale+')';
-  // 스케일 후 실제 점유 높이를 wrap에 반영 (스크롤 공간 확보)
-  wrap.style.minHeight=(64 + _rawH*_currentScale + 60)+'px';
+  const wrap = document.getElementById('preview-wrap');
+  const sw   = document.getElementById('bracket-scale-wrap');
+  const PAD  = 64;  // preview-wrap padding-top
+  const pw   = _PAPER[_orient].w;
+  const ph   = _PAPER[_orient].h;
 
-  // 가이드 라인 재생성
-  wrap.querySelectorAll('.page-guide-line').forEach(e=>e.remove());
-  const pageHScaled=_A4_H_PX*_currentScale;
-  for(let i=1;i<_targetPages;i++){
-    const guide=document.createElement('div');
-    guide.className='page-guide-line visible';
-    guide.style.top=(64+i*pageHScaled)+'px';
-    guide.dataset.label='P'+i+' / P'+(i+1);
-    wrap.appendChild(guide);
+  /* 지정 격자 전체 크기 */
+  const totalW = _cols * pw;
+  const totalH = _rows * ph;
+
+  /* 비율 유지 스케일: 대진표가 격자 안에 딱 맞게 */
+  const scaleX = totalW / _rawW;
+  const scaleY = totalH / _rawH;
+  _curScale = Math.min(scaleX, scaleY);
+  _curScale = Math.max(0.02, Math.min(_curScale, 8));
+
+  /* 실제 렌더 크기 */
+  const scaledW = _rawW * _curScale;
+  const scaledH = _rawH * _curScale;
+
+  /* 넘침 감지 → 자동 장수 보정 제안 */
+  const needCols = Math.ceil(_rawW * _curScale / pw);
+  const needRows = Math.ceil(_rawH * _curScale / ph);
+  const overflow = needCols > _cols || needRows > _rows;
+
+  sw.style.transform  = 'scale(' + _curScale + ')';
+  sw.style.position   = 'relative';
+  sw.style.zIndex     = '2';
+  wrap.style.minHeight = (PAD + scaledH + 80) + 'px';
+
+  /* 기존 격자 제거 */
+  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v').forEach(e => e.remove());
+
+  /* A4 셀 (용지 한 장 = 한 칸) */
+  const isWhite = document.body.classList.contains('white-mode');
+  for(let r = 0; r < _rows; r++){
+    for(let c = 0; c < _cols; c++){
+      const cell = document.createElement('div');
+      cell.className = 'pg-cell';
+      const left = c * pw;
+      const top  = PAD + r * ph;
+      cell.style.cssText =
+        'position:absolute;pointer-events:none;z-index:1;' +
+        'left:'  + left + 'px;' +
+        'top:'   + top  + 'px;' +
+        'width:' + pw   + 'px;' +
+        'height:'+ ph   + 'px;' +
+        (isWhite
+          ? 'background:#fff;border:1.5px solid rgba(0,100,220,0.18);box-shadow:0 2px 8px rgba(0,0,0,.08);'
+          : 'background:rgba(255,255,255,0.02);border:1.5px solid rgba(76,201,240,0.2);');
+      wrap.appendChild(cell);
+    }
   }
 
-  // 배지 업데이트
-  _showBadge();
-}
+  /* 가로 구분선 (세로 장수 경계) */
+  for(let r = 0; r <= _rows; r++){
+    const hl = document.createElement('div');
+    hl.className = 'pg-line-h';
+    const top = PAD + r * ph;
+    hl.style.cssText =
+      'position:absolute;left:0;pointer-events:none;z-index:52;height:0;' +
+      'width:' + (_cols * pw) + 'px;' +
+      'top:' + top + 'px;' +
+      (r === 0 || r === _rows
+        ? 'border-top:2px solid rgba(76,201,240,0.5);'
+        : 'border-top:2px dashed rgba(76,201,240,0.6);');
+    if(r > 0 && r < _rows){
+      hl.dataset.label = r + '↓ / ' + (r+1) + '↑';
+    }
+    wrap.appendChild(hl);
+  }
 
-function changePages(delta){
-  if(!_guideOn) return;
-  const next=_targetPages+delta;
-  if(next<1||next>99) return;
-  _targetPages=next;
-  const disp=document.getElementById('page-count-display');
-  if(disp) disp.textContent=_targetPages;
-  refreshGuides();
-}
+  /* 세로 구분선 (가로 장수 경계) */
+  for(let c = 0; c <= _cols; c++){
+    const vl = document.createElement('div');
+    vl.className = 'pg-line-v';
+    const left = c * pw;
+    vl.style.cssText =
+      'position:absolute;top:' + PAD + 'px;pointer-events:none;z-index:52;width:0;' +
+      'height:' + (_rows * ph) + 'px;' +
+      'left:' + left + 'px;' +
+      (c === 0 || c === _cols
+        ? 'border-left:2px solid rgba(76,201,240,0.5);'
+        : 'border-left:2px dashed rgba(76,201,240,0.6);');
+    wrap.appendChild(vl);
+  }
 
-function _showBadge(){
-  let badge=document.getElementById('scale-badge');
+  /* 페이지 번호 레이블 */
+  let pageNum = 1;
+  for(let r = 0; r < _rows; r++){
+    for(let c = 0; c < _cols; c++){
+      const lbl = document.createElement('div');
+      lbl.className = 'pg-cell';  // 제거 대상 포함
+      lbl.style.cssText =
+        'position:absolute;pointer-events:none;z-index:55;' +
+        'left:' + (c * pw + 4) + 'px;' +
+        'top:' + (PAD + r * ph + 4) + 'px;' +
+        'font-size:9px;font-family:"Share Tech Mono",monospace;' +
+        (isWhite ? 'color:rgba(0,100,220,0.4);' : 'color:rgba(76,201,240,0.4);') +
+        'letter-spacing:1px;';
+      lbl.textContent = 'P' + pageNum++;
+      wrap.appendChild(lbl);
+    }
+  }
+
+  /* 넘침 경고 배지 */
+  const pct  = Math.round(_curScale * 100);
+  const disp = document.getElementById('disp-scale');
+  if(disp) disp.textContent = '(' + pct + '%)';
+
+  let badge = document.getElementById('scale-badge');
   if(!badge){
-    badge=document.createElement('div');
-    badge.id='scale-badge';
-    badge.style.cssText='position:fixed;bottom:10px;right:14px;font-size:11px;color:#4cc9f0;font-family:"Share Tech Mono",monospace;background:rgba(8,8,15,.88);padding:4px 10px;border-radius:5px;z-index:9999;border:1px solid #2a2a50;';
+    badge = document.createElement('div');
+    badge.id = 'scale-badge';
+    badge.style.cssText =
+      'position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.6;' +
+      'font-family:"Share Tech Mono",monospace;' +
+      'background:rgba(8,8,15,.92);padding:6px 13px;border-radius:7px;' +
+      'z-index:9999;border:1px solid #2a2a50;';
     document.body.appendChild(badge);
   }
-  const pct=Math.round(_currentScale*100);
-  badge.textContent=_targetPages+'장 출력  |  '+pct+'%';
-  badge.style.display='';
-}
-function _hideBadge(){
-  const b=document.getElementById('scale-badge');
-  if(b) b.style.display='none';
+  const orientLabel = _orient === 'portrait' ? '세로' : '가로';
+  badge.innerHTML =
+    '<span style="color:#4cc9f0;">' + _cols + '×' + _rows + '장</span>' +
+    '<span style="color:#555;margin:0 6px;">|</span>' +
+    '<span style="color:#9090b0;">용지 ' + orientLabel + '</span>' +
+    '<span style="color:#555;margin:0 6px;">|</span>' +
+    '<span style="color:' + (pct < 30 ? '#ffd60a' : '#06d6a0') + ';">' + pct + '%</span>' +
+    (overflow ? '<br><span style="color:#e63946;font-size:10px;">⚠ 장수 부족 — + 로 늘려보세요</span>' : '');
+  badge.style.display = '';
 }
 
-window.addEventListener('load',function(){
+/* ── 격자 초기화 ── */
+function _clearGrid(){
+  const sw   = document.getElementById('bracket-scale-wrap');
+  const wrap = document.getElementById('preview-wrap');
+  sw.style.transform  = 'scale(1)';
+  sw.style.position   = '';
+  sw.style.zIndex     = '';
+  wrap.style.minHeight = '';
+  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v').forEach(e => e.remove());
+  const b = document.getElementById('scale-badge');
+  if(b) b.style.display = 'none';
+  const disp = document.getElementById('disp-scale');
+  if(disp) disp.textContent = '';
+  _curScale = 1;
+}
+
+window.addEventListener('load', function(){
   wrapNames();
-  // 클릭 제거
   document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
-    el.removeAttribute('onclick');el.style.cursor='default';el.style.pointerEvents='none';
+    el.removeAttribute('onclick'); el.style.cursor='default'; el.style.pointerEvents='none';
   });
 });
 <\/script>
