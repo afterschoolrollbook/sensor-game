@@ -2482,10 +2482,11 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 /* ── 툴바 ── */
 .toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;display:flex;flex-direction:column;}
 .toolbar-row1{display:flex;align-items:center;gap:8px;padding:8px 18px;flex-wrap:wrap;}
-.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 7px;flex-wrap:wrap;border-top:1px solid var(--border);}
-.info-chip{display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid var(--border2);background:transparent;color:var(--text3);transition:all .15s;user-select:none;}
-.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.13);color:#f0f0f8;}
-.info-chip input{accent-color:#e63946;width:11px;height:11px;cursor:pointer;}
+.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 5px;flex-wrap:wrap;border-top:1px solid var(--border);}
+.toolbar-row3{display:flex;align-items:center;gap:7px;padding:4px 18px 7px;flex-wrap:wrap;}
+.info-chip{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--card);color:var(--text2);transition:all .15s;user-select:none;white-space:nowrap;}
+.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.15);color:#f0f0f8;}
+.info-chip input{accent-color:#e63946;width:12px;height:12px;cursor:pointer;flex-shrink:0;}
 .toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:rgba(255,255,255,.08);border:1px solid #3a3a55;color:#9090b0;}
@@ -2499,7 +2500,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 
 /* ── 미리보기 ── */
-.preview-wrap{padding:100px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+.preview-wrap{padding:128px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
 
 /* 연결선 포함 overflow 강제 */
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
@@ -2554,11 +2555,8 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
       </label>
     </div>
   </div><!-- /toolbar-row1 -->
-  <!-- 2행: 정보표시 체크박스 + A4설정 + 줌 -->
+  <!-- 2행: A4 용지 배치 + 줌 -->
   <div class="toolbar-row2">
-    <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;white-space:nowrap;font-family:'Share Tech Mono',monospace;">📋 정보표시:</span>
-    <div id="info-hdr-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;flex-shrink:0;"></span>
     <label class="toggle-wrap">
       <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
       <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
@@ -2608,6 +2606,11 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <button onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
   </div>
   </div><!-- /toolbar-row2 -->
+  <!-- 3행: 정보표시 체크박스 -->
+  <div class="toolbar-row3">
+    <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;white-space:nowrap;font-family:'Share Tech Mono',monospace;">📋 정보표시:</span>
+    <div id="info-hdr-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  </div><!-- /toolbar-row3 -->
   <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
     <b style="color:#4cc9f0;">용지 방향</b> — 세로/가로 선택<br>
@@ -2895,10 +2898,11 @@ function _writeSelectPreviewWin(win, pagesHTML, hideNamesInitial){
 html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
 .toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;display:flex;flex-direction:column;}
 .toolbar-row1{display:flex;align-items:center;gap:8px;padding:8px 18px;flex-wrap:wrap;}
-.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 7px;flex-wrap:wrap;border-top:1px solid var(--border);}
-.info-chip{display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid var(--border2);background:transparent;color:var(--text3);transition:all .15s;user-select:none;}
-.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.13);color:#f0f0f8;}
-.info-chip input{accent-color:#e63946;width:11px;height:11px;cursor:pointer;}
+.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 5px;flex-wrap:wrap;border-top:1px solid var(--border);}
+.toolbar-row3{display:flex;align-items:center;gap:7px;padding:4px 18px 7px;flex-wrap:wrap;}
+.info-chip{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--border2);background:var(--card);color:var(--text2);transition:all .15s;user-select:none;white-space:nowrap;}
+.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.15);color:#f0f0f8;}
+.info-chip input{accent-color:#e63946;width:12px;height:12px;cursor:pointer;flex-shrink:0;}
 .toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
