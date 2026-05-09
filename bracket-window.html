@@ -2480,7 +2480,12 @@ body.white-mode #bracket-display [style*="color: #e63946"]{color:#e63946 !import
 body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 
 /* ── 툴바 ── */
-.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
+.toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;display:flex;flex-direction:column;}
+.toolbar-row1{display:flex;align-items:center;gap:8px;padding:8px 18px;flex-wrap:wrap;}
+.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 7px;flex-wrap:wrap;border-top:1px solid var(--border);}
+.info-chip{display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid var(--border2);background:transparent;color:var(--text3);transition:all .15s;user-select:none;}
+.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.13);color:#f0f0f8;}
+.info-chip input{accent-color:#e63946;width:11px;height:11px;cursor:pointer;}
 .toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:rgba(255,255,255,.08);border:1px solid #3a3a55;color:#9090b0;}
@@ -2494,7 +2499,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 
 /* ── 미리보기 ── */
-.preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+.preview-wrap{padding:100px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
 
 /* 연결선 포함 overflow 강제 */
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
@@ -2531,30 +2536,34 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 </head>
 <body class="white-mode">
 <div class="toolbar">
-  <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
-  <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
-  <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
-    <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
-    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-      <input type="radio" name="theme-mode" value="white" checked onchange="toggleWhite(true)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
-      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬜ 화이트</span>
+  <!-- 1행 -->
+  <div class="toolbar-row1">
+    <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
+    <button class="btn-close" onclick="window.close()">✕ 닫기</button>
+    <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
+    <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
+      <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+        <input type="radio" name="theme-mode" value="white" checked onchange="toggleWhite(true)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);">⬜ 화이트</span>
+      </label>
+      <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;display:inline-block;"></span>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+        <input type="radio" name="theme-mode" value="dark" onchange="toggleWhite(false)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);">⬛ 다크</span>
+      </label>
+    </div>
+  </div><!-- /toolbar-row1 -->
+  <!-- 2행: 정보표시 체크박스 + A4설정 + 줌 -->
+  <div class="toolbar-row2">
+    <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;white-space:nowrap;font-family:'Share Tech Mono',monospace;">📋 정보표시:</span>
+    <div id="info-hdr-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;flex-shrink:0;"></span>
+    <label class="toggle-wrap">
+      <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
     </label>
-    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;display:inline-block;"></span>
-    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
-      <input type="radio" name="theme-mode" value="dark" onchange="toggleWhite(false)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
-      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬛ 다크</span>
-    </label>
-  </div>
-  <!-- 기본정보 헤더 체크박스 -->
-  <div id="info-hdr-wrap" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;flex-wrap:wrap;">
-    <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;margin-right:2px;">📋 정보표시:</span>
-    <span id="info-hdr-chips" style="display:flex;gap:5px;flex-wrap:wrap;"></span>
-  </div>
-  <label class="toggle-wrap">
-    <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
-    <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
-  </label>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;flex-shrink:0;"></span>
   <div id="a4-ctrl" style="display:none;align-items:center;gap:6px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;flex-wrap:wrap;">
     <span style="font-size:10px;color:var(--text3);">용지:</span>
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);">
@@ -2598,6 +2607,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <button class="zoom-btn" data-zoom="2"    onclick="_zoomSet(2)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">200%</button>
     <button onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
   </div>
+  </div><!-- /toolbar-row2 -->
   <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
     <b style="color:#4cc9f0;">용지 방향</b> — 세로/가로 선택<br>
@@ -2883,7 +2893,12 @@ function _writeSelectPreviewWin(win, pagesHTML, hideNamesInitial){
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
 html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
-.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
+.toolbar{position:fixed;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;display:flex;flex-direction:column;}
+.toolbar-row1{display:flex;align-items:center;gap:8px;padding:8px 18px;flex-wrap:wrap;}
+.toolbar-row2{display:flex;align-items:center;gap:7px;padding:5px 18px 7px;flex-wrap:wrap;border-top:1px solid var(--border);}
+.info-chip{display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid var(--border2);background:transparent;color:var(--text3);transition:all .15s;user-select:none;}
+.info-chip.on{border-color:#e63946;background:rgba(230,57,70,.13);color:#f0f0f8;}
+.info-chip input{accent-color:#e63946;width:11px;height:11px;cursor:pointer;}
 .toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
@@ -3318,17 +3333,12 @@ function _initInfoChips(){
   _INFO_ITEMS.forEach(function(item){
     const on=!!di[item.k];
     const chip=document.createElement('label');
-    chip.style.cssText='display:flex;align-items:center;gap:3px;padding:3px 9px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid;transition:all .15s;user-select:none;';
-    chip.style.borderColor=on?'#e63946':'var(--border2)';
-    chip.style.background=on?'rgba(230,57,70,.13)':'transparent';
-    chip.style.color=on?'#f0f0f8':'var(--text3)';
+    chip.className='info-chip'+(on?' on':'');
     const chk=document.createElement('input');
     chk.type='checkbox'; chk.checked=on;
     chk.style.cssText='accent-color:#e63946;width:11px;height:11px;cursor:pointer;';
     chk.addEventListener('change',function(){
-      chip.style.borderColor=this.checked?'#e63946':'var(--border2)';
-      chip.style.background=this.checked?'rgba(230,57,70,.13)':'transparent';
-      chip.style.color=this.checked?'#f0f0f8':'var(--text3)';
+      chip.classList.toggle('on', this.checked);
       _renderInfoHeader();
     });
     chip.appendChild(chk);
