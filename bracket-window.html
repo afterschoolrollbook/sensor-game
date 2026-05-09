@@ -2622,8 +2622,9 @@ function _a4Toggle(on){
 
 function _a4Measure(){
   const d=document.getElementById('bracket-display');
-  _a4W=d.scrollWidth||d.offsetWidth||800;
-  _a4H=d.scrollHeight||d.offsetHeight||600;
+  const rect=d.getBoundingClientRect();
+  _a4W=Math.max(d.scrollWidth, rect.width) || 800;
+  _a4H=Math.max(d.scrollHeight, rect.height) || 600;
 }
 
 function _a4AutoFit(){
@@ -2673,29 +2674,30 @@ function _a4Draw(){
   const sc=isW?'rgba(0,100,220,0.4)':'rgba(76,201,240,0.45)';
   const bc=isW?'rgba(0,80,200,0.28)':'rgba(76,201,240,0.28)';
   const PAD=64;
+  const PADL=24; // preview-wrap padding-left
 
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');el.className='a4g';
-      el.style.cssText='position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;left:'+(c*pw)+'px;top:'+(PAD+r*ph)+'px;width:'+pw+'px;height:'+ph+'px;background:transparent;';
+      el.style.cssText='position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;left:'+(PADL+c*pw)+'px;top:'+(PAD+r*ph)+'px;width:'+pw+'px;height:'+ph+'px;background:transparent;';
       stage.appendChild(el);
     }
   }
   for(let r=0;r<=_a4R;r++){
     const el=document.createElement('div');el.className='a4g';
-    el.style.cssText='position:absolute;pointer-events:none;z-index:52;height:0;left:0;width:'+gridW+'px;top:'+(PAD+r*ph)+'px;border-top:'+(r===0||r===_a4R?'2px solid '+sc:'2px dashed '+lc)+';';
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;height:0;left:'+PADL+'px;width:'+gridW+'px;top:'+(PAD+r*ph)+'px;border-top:'+(r===0||r===_a4R?'2px solid '+sc:'2px dashed '+lc)+';';
     stage.appendChild(el);
   }
   for(let c=0;c<=_a4C;c++){
     const el=document.createElement('div');el.className='a4g';
-    el.style.cssText='position:absolute;pointer-events:none;z-index:52;width:0;top:'+PAD+'px;left:'+(c*pw)+'px;height:'+gridH+'px;border-left:'+(c===0||c===_a4C?'2px solid '+sc:'2px dashed '+lc)+';';
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;width:0;top:'+PAD+'px;left:'+(PADL+c*pw)+'px;height:'+gridH+'px;border-left:'+(c===0||c===_a4C?'2px solid '+sc:'2px dashed '+lc)+';';
     stage.appendChild(el);
   }
   let pn=1;
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');el.className='a4g';
-      el.style.cssText='position:absolute;pointer-events:none;z-index:60;font-size:9px;font-family:"Share Tech Mono",monospace;letter-spacing:1px;color:'+bc+';left:'+(c*pw+5)+'px;top:'+(PAD+r*ph+5)+'px;';
+      el.style.cssText='position:absolute;pointer-events:none;z-index:60;font-size:9px;font-family:"Share Tech Mono",monospace;letter-spacing:1px;color:'+bc+';left:'+(PADL+c*pw+5)+'px;top:'+(PAD+r*ph+5)+'px;';
       el.textContent='P'+(pn++);
       stage.appendChild(el);
     }
