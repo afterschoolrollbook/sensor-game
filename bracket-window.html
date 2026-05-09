@@ -3378,43 +3378,46 @@ function _renderInfoHeader(){
   const checked=_getInfoChecked();
   const existing=document.getElementById('pdf-info-header');
   if(existing) existing.remove();
-  const active=_INFO_ITEMS.filter(function(item){ return checked[item.k]&&valMap[item.k]; });
-  if(!active.length) return;
+  /* 체크된 항목이 하나라도 있으면 헤더를 표시 (값이 비어있어도) */
+  const anyChecked=_INFO_ITEMS.some(function(item){ return checked[item.k]; });
+  if(!anyChecked) return;
   const isW=document.body.classList.contains('white-mode');
   const hdrBg=isW?'#ffffff':'#0f0f1a';
   const titleColor=isW?'#111111':'#f0f0f8';
   const metaColor=isW?'#333333':'#9090b0';
+  const emptyColor=isW?'#bbbbbb':'#3a3a55'; /* 빈 값 표시용 색상 */
   const sloganColor=isW?'#666666':'#5a5a7a';
   const ls='font-size:9px;font-weight:700;letter-spacing:1px;color:#e63946;font-family:"Share Tech Mono",monospace;margin-right:3px;';
-  const en=checked.eventname?valMap.eventname:'';
-  const sub=checked.subtitle?valMap.subtitle:'';
-  const gl=checked.gamename?valMap.gamename:'';
-  const dt=checked.date?valMap.date:'';
-  const pl=checked.place?valMap.place:'';
-  const sp=checked.sponsor?valMap.sponsor:'';
-  const s1=checked.slogan1?valMap.slogan1:'';
-  const s2=checked.slogan2?valMap.slogan2:'';
+  /* 체크됐으면 값 사용, 값이 없으면 '—' 표시 */
+  const en =checked.eventname ? (valMap.eventname||null)  : null;
+  const sub=checked.subtitle  ? (valMap.subtitle ||null)  : null;
+  const gl =checked.gamename  ? (valMap.gamename ||'—')   : null;
+  const dt =checked.date      ? (valMap.date     ||'—')   : null;
+  const pl =checked.place     ? (valMap.place    ||'—')   : null;
+  const sp =checked.sponsor   ? (valMap.sponsor  ||'—')   : null;
+  const s1 =checked.slogan1   ? (valMap.slogan1  ||'—')   : null;
+  const s2 =checked.slogan2   ? (valMap.slogan2  ||'—')   : null;
   const hdr=document.createElement('div');
   hdr.id='pdf-info-header';
   hdr.style.cssText='width:100%;padding:16px 24px 13px;margin-bottom:2px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:'+hdrBg+';box-sizing:border-box;';
   let inner='';
-  if(en)  inner+='<div style="font-size:20px;font-weight:700;color:'+titleColor+';letter-spacing:.3px;margin-bottom:3px;">'+en+'</div>';
-  if(sub) inner+='<div style="font-size:12px;color:'+metaColor+';margin-bottom:5px;">'+sub+'</div>';
+  if(en!==null)  inner+='<div style="font-size:20px;font-weight:700;color:'+(en?titleColor:emptyColor)+';letter-spacing:.3px;margin-bottom:3px;">'+(en||'—')+'</div>';
+  if(sub!==null) inner+='<div style="font-size:12px;color:'+(sub?metaColor:emptyColor)+';margin-bottom:5px;">'+(sub||'—')+'</div>';
   const meta=[];
-  if(gl) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">종목</span><span style="font-size:12px;color:'+metaColor+';">'+gl+'</span></span>');
-  if(dt) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">일시</span><span style="font-size:12px;color:'+metaColor+';">'+dt+'</span></span>');
-  if(pl) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">장소</span><span style="font-size:12px;color:'+metaColor+';">'+pl+'</span></span>');
-  if(sp) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">후원</span><span style="font-size:12px;color:'+metaColor+';">'+sp+'</span></span>');
-  if(meta.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:'+(s1||s2?'5':'0')+'px;">'+meta.join('')+'</div>';
+  if(gl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">종목</span><span style="font-size:12px;color:'+(gl!=='—'?metaColor:emptyColor)+';">'+gl+'</span></span>');
+  if(dt!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">일시</span><span style="font-size:12px;color:'+(dt!=='—'?metaColor:emptyColor)+';">'+dt+'</span></span>');
+  if(pl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">장소</span><span style="font-size:12px;color:'+(pl!=='—'?metaColor:emptyColor)+';">'+pl+'</span></span>');
+  if(sp!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">후원</span><span style="font-size:12px;color:'+(sp!=='—'?metaColor:emptyColor)+';">'+sp+'</span></span>');
+  if(meta.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:'+((s1!==null||s2!==null)?'5':'0')+'px;">'+meta.join('')+'</div>';
   const slogans=[];
-  if(s1) slogans.push(s1);
-  if(s2) slogans.push(s2);
-  if(slogans.length) inner+='<div style="font-size:11px;color:'+sloganColor+';font-style:italic;">'+slogans.join('  ·  ')+'</div>';
+  if(s1!==null) slogans.push('<span style="color:'+(s1!=='—'?sloganColor:emptyColor)+';">'+s1+'</span>');
+  if(s2!==null) slogans.push('<span style="color:'+(s2!=='—'?sloganColor:emptyColor)+';">'+s2+'</span>');
+  if(slogans.length) inner+='<div style="font-size:11px;font-style:italic;">'+slogans.join('  ·  ')+'</div>';
   hdr.innerHTML=inner;
   const bd=document.getElementById('bracket-display');
   if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
 }
-_initInfoChips();
+window.addEventListener('load',function(){ _initInfoChips(); });
 
 </script>
 </body>
