@@ -2269,23 +2269,39 @@ function _renderPdfPreview(groups){
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
     const renderCourtBlock=(courtNum, container, reversed)=>{
-      groups.filter(g=>g.court===courtNum).forEach(g=>{
+      return groups.filter(g=>g.court===courtNum).map(g=>{
         const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
         const hdr=document.createElement('div');
         hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
         hdr.textContent=shortLabel;
-        container.appendChild(hdr);
         const gWrap=document.createElement('div');
-        gWrap.style.cssText='margin-bottom:16px;overflow:visible;';
+        gWrap.style.cssText='overflow:visible;';
         const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
         S.matches=taggedMatches;
         _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
         _applyOverflow(gWrap);
-        container.appendChild(gWrap);
+        const block=document.createElement('div');
+        block.style.cssText='overflow:visible;margin-bottom:0;';
+        block.appendChild(hdr);
+        block.appendChild(gWrap);
+        container.appendChild(block);
+        return block;
       });
     };
-    renderCourtBlock(1, lDiv, false);
-    renderCourtBlock(2, rDiv, true);
+    const lBlocks=renderCourtBlock(1, lDiv, false);
+    const rBlocks=renderCourtBlock(2, rDiv, true);
+
+    // 체급 쌍별 높이 맞추기 (가로 시작선 정렬)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const len=Math.max(lBlocks.length, rBlocks.length);
+      for(let i=0;i<len;i++){
+        const lh=lBlocks[i]?lBlocks[i].offsetHeight:0;
+        const rh=rBlocks[i]?rBlocks[i].offsetHeight:0;
+        const maxH=Math.max(lh,rh);
+        if(lBlocks[i]) lBlocks[i].style.minHeight=maxH+'px';
+        if(rBlocks[i]) rBlocks[i].style.minHeight=maxH+'px';
+      }
+    }));
 
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(spacer);
