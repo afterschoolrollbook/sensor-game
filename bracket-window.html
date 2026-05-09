@@ -2705,6 +2705,8 @@ window.addEventListener('load',function(){
   buildPageGuides();
   // A4 버튼 등록
   _a4Init();
+  // 정보표시 칩 초기화
+  _initInfoChips();
 });
 
 /* ── A4 용지 배치 격자 ── */
@@ -2831,6 +2833,108 @@ function _a4Clear(){
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
   document.getElementById('a4-pct').textContent='';
   const b=document.getElementById('a4-badge');if(b) b.style.display='none';
+}
+
+/* ── 정보표시 헤더 ── */
+const _INFO_ITEMS=[
+  {k:'eventname',l:'행사명'},
+  {k:'subtitle', l:'부제목'},
+  {k:'gamename', l:'종목명'},
+  {k:'date',     l:'일시'},
+  {k:'place',    l:'장소'},
+  {k:'sponsor',  l:'후원'},
+  {k:'slogan1',  l:'슬로건1'},
+  {k:'slogan2',  l:'슬로건2'},
+];
+function _loadDispCfg(){
+  try{ return JSON.parse(localStorage.getItem('sgp_display_config')||'{}'); }catch(e){ return {}; }
+}
+function _initInfoChips(){
+  const cfg=_loadDispCfg();
+  const di=cfg.displayItems||{eventname:true};
+  const wrap=document.getElementById('info-hdr-chips');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  _INFO_ITEMS.forEach(function(item){
+    const on=!!di[item.k];
+    const chip=document.createElement('label');
+    chip.className='info-chip'+(on?' on':'');
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.checked=on;
+    chk.style.cssText='accent-color:#e63946;width:11px;height:11px;cursor:pointer;';
+    chk.addEventListener('change',function(){
+      chip.classList.toggle('on', this.checked);
+      _renderInfoHeader();
+    });
+    chip.appendChild(chk);
+    chip.appendChild(document.createTextNode(item.l));
+    wrap.appendChild(chip);
+  });
+  _renderInfoHeader();
+}
+function _getInfoChecked(){
+  const wrap=document.getElementById('info-hdr-chips');
+  if(!wrap) return {};
+  const result={};
+  wrap.querySelectorAll('label').forEach(function(chip,i){
+    result[_INFO_ITEMS[i].k]=chip.querySelector('input').checked;
+  });
+  return result;
+}
+function _renderInfoHeader(){
+  const cfg=_loadDispCfg();
+  try{
+    const bt=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');
+    if(bt.settings){
+      if(!cfg.date&&bt.settings.dt) cfg.date=bt.settings.dt;
+      if(!cfg.place&&bt.settings.pl) cfg.place=bt.settings.pl;
+    }
+  }catch(e){}
+  const valMap={
+    eventname:cfg.eventName||'', subtitle:cfg.subtitle||'',
+    gamename:cfg.gameLabel||'',  date:cfg.date||'',
+    place:cfg.place||'',         sponsor:cfg.sponsor||'',
+    slogan1:cfg.slogan1||'',     slogan2:cfg.slogan2||'',
+  };
+  const checked=_getInfoChecked();
+  const existing=document.getElementById('pdf-info-header');
+  if(existing) existing.remove();
+  const anyChecked=_INFO_ITEMS.some(function(item){ return checked[item.k]; });
+  if(!anyChecked) return;
+  const isW=document.body.classList.contains('white-mode');
+  const hdrBg=isW?'#ffffff':'#0f0f1a';
+  const titleColor=isW?'#111111':'#f0f0f8';
+  const metaColor=isW?'#333333':'#9090b0';
+  const emptyColor=isW?'#bbbbbb':'#3a3a55';
+  const sloganColor=isW?'#666666':'#5a5a7a';
+  const ls='font-size:9px;font-weight:700;letter-spacing:1px;color:#e63946;font-family:"Share Tech Mono",monospace;margin-right:3px;';
+  const en =checked.eventname ? (valMap.eventname||null)  : null;
+  const sub=checked.subtitle  ? (valMap.subtitle ||null)  : null;
+  const gl =checked.gamename  ? (valMap.gamename ||'—')   : null;
+  const dt =checked.date      ? (valMap.date     ||'—')   : null;
+  const pl =checked.place     ? (valMap.place    ||'—')   : null;
+  const sp =checked.sponsor   ? (valMap.sponsor  ||'—')   : null;
+  const s1 =checked.slogan1   ? (valMap.slogan1  ||'—')   : null;
+  const s2 =checked.slogan2   ? (valMap.slogan2  ||'—')   : null;
+  const hdr=document.createElement('div');
+  hdr.id='pdf-info-header';
+  hdr.style.cssText='width:100%;padding:16px 24px 13px;margin-bottom:2px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:'+hdrBg+';box-sizing:border-box;';
+  let inner='';
+  if(en!==null)  inner+='<div style="font-size:20px;font-weight:700;color:'+(en?titleColor:emptyColor)+';letter-spacing:.3px;margin-bottom:3px;">'+(en||'—')+'</div>';
+  if(sub!==null) inner+='<div style="font-size:12px;color:'+(sub?metaColor:emptyColor)+';margin-bottom:5px;">'+(sub||'—')+'</div>';
+  const meta=[];
+  if(gl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">종목</span><span style="font-size:12px;color:'+(gl!=='—'?metaColor:emptyColor)+';">'+gl+'</span></span>');
+  if(dt!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">일시</span><span style="font-size:12px;color:'+(dt!=='—'?metaColor:emptyColor)+';">'+dt+'</span></span>');
+  if(pl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">장소</span><span style="font-size:12px;color:'+(pl!=='—'?metaColor:emptyColor)+';">'+pl+'</span></span>');
+  if(sp!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">후원</span><span style="font-size:12px;color:'+(sp!=='—'?metaColor:emptyColor)+';">'+sp+'</span></span>');
+  if(meta.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:'+((s1!==null||s2!==null)?'5':'0')+'px;">'+meta.join('')+'</div>';
+  const slogans=[];
+  if(s1!==null) slogans.push('<span style="color:'+(s1!=='—'?sloganColor:emptyColor)+';">'+s1+'</span>');
+  if(s2!==null) slogans.push('<span style="color:'+(s2!=='—'?sloganColor:emptyColor)+';">'+s2+'</span>');
+  if(slogans.length) inner+='<div style="font-size:11px;font-style:italic;">'+slogans.join('  ·  ')+'</div>';
+  hdr.innerHTML=inner;
+  const bd=document.getElementById('bracket-display');
+  if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
 }
 <\/script>
 </body></html>`;
@@ -2960,9 +3064,108 @@ body:not(.white-mode) div[style*="border:2px solid #4"]{border-color:#ffffff !im
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
   <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:${hideNamesInitial?'rgba(76,201,240,.12)':'transparent'};border:1px solid ${hideNamesInitial?'var(--accent)':'var(--border2)'};color:${hideNamesInitial?'var(--accent)':'var(--text3)'};border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${hideNamesInitial?'👁 이름 보이기':'👁 이름 가리기'}</button>
+  <div class="toolbar-row3" style="width:100%;border-top:1px solid var(--border);margin-top:0;">
+    <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;white-space:nowrap;font-family:'Share Tech Mono',monospace;">📋 정보표시:</span>
+    <div id="info-hdr-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  </div>
 </div>
 <div class="pages">${pagesHTML}</div>
 <script>
+const _INFO_ITEMS=[
+  {k:'eventname',l:'행사명'},
+  {k:'subtitle', l:'부제목'},
+  {k:'gamename', l:'종목명'},
+  {k:'date',     l:'일시'},
+  {k:'place',    l:'장소'},
+  {k:'sponsor',  l:'후원'},
+  {k:'slogan1',  l:'슬로건1'},
+  {k:'slogan2',  l:'슬로건2'},
+];
+function _loadDispCfg(){
+  try{ return JSON.parse(localStorage.getItem('sgp_display_config')||'{}'); }catch(e){ return {}; }
+}
+function _initInfoChips(){
+  const cfg=_loadDispCfg();
+  const di=cfg.displayItems||{eventname:true};
+  const wrap=document.getElementById('info-hdr-chips');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  _INFO_ITEMS.forEach(function(item){
+    const on=!!di[item.k];
+    const chip=document.createElement('label');
+    chip.className='info-chip'+(on?' on':'');
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.checked=on;
+    chk.style.cssText='accent-color:#e63946;width:11px;height:11px;cursor:pointer;';
+    chk.addEventListener('change',function(){
+      chip.classList.toggle('on', this.checked);
+      _renderInfoHeader();
+    });
+    chip.appendChild(chk);
+    chip.appendChild(document.createTextNode(item.l));
+    wrap.appendChild(chip);
+  });
+  _renderInfoHeader();
+}
+function _getInfoChecked(){
+  const wrap=document.getElementById('info-hdr-chips');
+  if(!wrap) return {};
+  const result={};
+  wrap.querySelectorAll('label').forEach(function(chip,i){
+    result[_INFO_ITEMS[i].k]=chip.querySelector('input').checked;
+  });
+  return result;
+}
+function _renderInfoHeader(){
+  const cfg=_loadDispCfg();
+  try{
+    const bt=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');
+    if(bt.settings){
+      if(!cfg.date&&bt.settings.dt) cfg.date=bt.settings.dt;
+      if(!cfg.place&&bt.settings.pl) cfg.place=bt.settings.pl;
+    }
+  }catch(e){}
+  const valMap={
+    eventname:cfg.eventName||'', subtitle:cfg.subtitle||'',
+    gamename:cfg.gameLabel||'',  date:cfg.date||'',
+    place:cfg.place||'',         sponsor:cfg.sponsor||'',
+    slogan1:cfg.slogan1||'',     slogan2:cfg.slogan2||'',
+  };
+  const checked=_getInfoChecked();
+  const existing=document.getElementById('pdf-info-header');
+  if(existing) existing.remove();
+  const anyChecked=_INFO_ITEMS.some(function(item){ return checked[item.k]; });
+  if(!anyChecked) return;
+  const emptyColor='#bbbbbb';
+  const ls='font-size:9px;font-weight:700;letter-spacing:1px;color:#e63946;font-family:"Share Tech Mono",monospace;margin-right:3px;';
+  const en =checked.eventname ? (valMap.eventname||null)  : null;
+  const sub=checked.subtitle  ? (valMap.subtitle ||null)  : null;
+  const gl =checked.gamename  ? (valMap.gamename ||'—')   : null;
+  const dt =checked.date      ? (valMap.date     ||'—')   : null;
+  const pl =checked.place     ? (valMap.place    ||'—')   : null;
+  const sp =checked.sponsor   ? (valMap.sponsor  ||'—')   : null;
+  const s1 =checked.slogan1   ? (valMap.slogan1  ||'—')   : null;
+  const s2 =checked.slogan2   ? (valMap.slogan2  ||'—')   : null;
+  const hdr=document.createElement('div');
+  hdr.id='pdf-info-header';
+  hdr.style.cssText='width:100%;padding:12px 20px 10px;margin-bottom:8px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:#fff;box-sizing:border-box;';
+  let inner='';
+  if(en!==null)  inner+='<div style="font-size:18px;font-weight:700;color:'+(en?'#111':emptyColor)+';margin-bottom:2px;">'+(en||'—')+'</div>';
+  if(sub!==null) inner+='<div style="font-size:11px;color:'+(sub?'#444':emptyColor)+';margin-bottom:4px;">'+(sub||'—')+'</div>';
+  const meta=[];
+  if(gl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:12px;"><span style="'+ls+'">종목</span><span style="font-size:11px;color:'+(gl!=='—'?'#333':emptyColor)+';">'+gl+'</span></span>');
+  if(dt!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:12px;"><span style="'+ls+'">일시</span><span style="font-size:11px;color:'+(dt!=='—'?'#333':emptyColor)+';">'+dt+'</span></span>');
+  if(pl!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:12px;"><span style="'+ls+'">장소</span><span style="font-size:11px;color:'+(pl!=='—'?'#333':emptyColor)+';">'+pl+'</span></span>');
+  if(sp!==null) meta.push('<span style="display:inline-flex;align-items:center;margin-right:12px;"><span style="'+ls+'">후원</span><span style="font-size:11px;color:'+(sp!=='—'?'#333':emptyColor)+';">'+sp+'</span></span>');
+  if(meta.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:3px;">'+meta.join('')+'</div>';
+  const slogans=[];
+  if(s1!==null) slogans.push(s1==='—'?'<span style="color:'+emptyColor+';">—</span>':s1);
+  if(s2!==null) slogans.push(s2==='—'?'<span style="color:'+emptyColor+';">—</span>':s2);
+  if(slogans.length) inner+='<div style="font-size:10px;color:#666;font-style:italic;">'+slogans.join('  ·  ')+'</div>';
+  hdr.innerHTML=inner;
+  const pages=document.querySelector('.pages');
+  if(pages) pages.insertBefore(hdr, pages.firstChild);
+}
 function wrapNames(){
   const walker=document.createTreeWalker(document.querySelector('.pages'),NodeFilter.SHOW_TEXT);
   const nodes=[];let node;
@@ -2986,6 +3189,7 @@ function toggleNames(){
 }
 window.addEventListener('load',function(){
   wrapNames();
+  _initInfoChips();
   // SVG 색상 라이트 테마 적용 (연결선 포함)
   document.querySelectorAll('rect').forEach(el=>{el.setAttribute('fill','#fff');el.setAttribute('stroke','#999');});
   document.querySelectorAll('path,line').forEach(el=>{
