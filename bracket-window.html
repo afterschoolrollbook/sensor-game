@@ -2269,39 +2269,23 @@ function _renderPdfPreview(groups){
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
     const renderCourtBlock=(courtNum, container, reversed)=>{
-      return groups.filter(g=>g.court===courtNum).map(g=>{
+      groups.filter(g=>g.court===courtNum).forEach(g=>{
         const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
         const hdr=document.createElement('div');
         hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
         hdr.textContent=shortLabel;
+        container.appendChild(hdr);
         const gWrap=document.createElement('div');
-        gWrap.style.cssText='overflow:visible;';
+        gWrap.style.cssText='margin-bottom:16px;overflow:visible;';
         const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
         S.matches=taggedMatches;
         _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
         _applyOverflow(gWrap);
-        const block=document.createElement('div');
-        block.style.cssText='overflow:visible !important;margin-bottom:16px;';
-        block.appendChild(hdr);
-        block.appendChild(gWrap);
-        container.appendChild(block);
-        return block;
+        container.appendChild(gWrap);
       });
     };
-    const lBlocks=renderCourtBlock(1, lDiv, false);
-    const rBlocks=renderCourtBlock(2, rDiv, true);
-
-    // 체급 쌍별 높이 맞추기 - DOM 렌더 후 rAF 2회 대기
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const len=Math.max(lBlocks.length, rBlocks.length);
-      for(let i=0;i<len;i++){
-        const lh=lBlocks[i]?lBlocks[i].offsetHeight:0;
-        const rh=rBlocks[i]?rBlocks[i].offsetHeight:0;
-        const maxH=Math.max(lh,rh);
-        if(lBlocks[i]) lBlocks[i].style.minHeight=maxH+'px';
-        if(rBlocks[i]) rBlocks[i].style.minHeight=maxH+'px';
-      }
-    }));
+    renderCourtBlock(1, lDiv, false);
+    renderCourtBlock(2, rDiv, true);
 
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(spacer);
