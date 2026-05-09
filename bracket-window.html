@@ -2582,8 +2582,21 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="비율 유지하면서 설정한 세로 용지 수 높이에 맞게 대진표 크기를 조정합니다">
       <input type="checkbox" id="a4-fit-h" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 위아래맞추기
     </label>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="A4 용지 테두리 기준으로 대진표를 좌우 가운데 정렬합니다">
+      <input type="checkbox" id="a4-fit-cx" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 가운데정렬
+    </label>
     <span id="a4-pct" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
     <button id="a4-help" title="A4 용지 배치 도움말" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:11px;font-weight:700;cursor:pointer;line-height:1;padding:0;">?</button>
+  </div>
+  <!-- 줌 컨트롤 -->
+  <div id="zoom-ctrl" style="display:flex;align-items:center;gap:4px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;">
+    <span style="font-size:10px;color:var(--text3);margin-right:2px;">🔍 보기:</span>
+    <button class="zoom-btn" data-zoom="0.5"  onclick="_zoomSet(0.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">50%</button>
+    <button class="zoom-btn" data-zoom="0.75" onclick="_zoomSet(0.75)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">75%</button>
+    <button class="zoom-btn" data-zoom="1"    onclick="_zoomSet(1)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:rgba(76,201,240,.15);color:#4cc9f0;font-size:11px;font-weight:700;cursor:pointer;border-color:#4cc9f0;">100%</button>
+    <button class="zoom-btn" data-zoom="1.5"  onclick="_zoomSet(1.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">150%</button>
+    <button class="zoom-btn" data-zoom="2"    onclick="_zoomSet(2)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">200%</button>
+    <button onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
   </div>
   <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
@@ -2591,6 +2604,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <b style="color:#4cc9f0;">가로 N장 × 세로 N장</b> — 출력할 용지 수 설정<br>
     <b style="color:#4cc9f0;">좌우맞추기</b> — 비율 유지하면서 설정한 가로 용지 총 너비에 맞게 대진표를 축소/확대. 남거나 넘치는 세로를 보고 세로 장 수를 조절하세요.<br>
     <b style="color:#4cc9f0;">위아래맞추기</b> — 비율 유지하면서 설정한 세로 용지 총 높이에 맞게 축소/확대. 남거나 넘치는 가로를 보고 가로 장 수를 조절하세요.<br>
+    <b style="color:#4cc9f0;">가운데정렬</b> — 축소/확대 후 남은 공간 기준으로 A4 용지 너비 안에서 좌우 가운데 배치합니다.<br>
     <b style="color:#4cc9f0;">둘 다 체크</b> — 가로/세로 모두 딱 맞게 (비율 변경될 수 있음)<br>
     <div style="margin-top:12px;text-align:right;"><button onclick="document.getElementById('a4-help-box').style.display='none'" style="padding:4px 14px;border-radius:6px;border:1px solid #3a3a55;background:rgba(255,255,255,.08);color:#9090b0;cursor:pointer;font-size:12px;">닫기</button></div>
   </div>
@@ -2629,7 +2643,6 @@ function toggleNames(){
 function toggleWhite(on){
   // 라디오 버튼이므로 별도 라벨 업데이트 불필요
   document.body.classList.toggle('white-mode',on);
-  // 테마 변경 시 정보 헤더 색상 갱신
   if(typeof _renderInfoHeader==='function') _renderInfoHeader();
 }
 
@@ -2683,6 +2696,7 @@ window.addEventListener('load',function(){
 
 /* ── A4 용지 배치 격자 ── */
 var _a4On=false,_a4Orient='portrait',_a4C=1,_a4R=1,_a4Scale=1,_a4W=0,_a4H=0;
+var _zoomLevel=1;
 const _A4={portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))},landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))}};
 
 function _a4Init(){
@@ -2695,6 +2709,7 @@ function _a4Init(){
   document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-fit-w').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-fit-h').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
+  document.getElementById('a4-fit-cx').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-help').addEventListener('click',function(){
     const box=document.getElementById('a4-help-box');
     box.style.display=box.style.display==='none'?'block':'none';
@@ -2731,28 +2746,25 @@ function _a4Draw(){
   const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
   const fitW=document.getElementById('a4-fit-w').checked;
   const fitH=document.getElementById('a4-fit-h').checked;
+  const fitCX=document.getElementById('a4-fit-cx').checked;
   const sx=(_a4C*pw)/_a4W;
   const sy=(_a4R*ph)/_a4H;
-
-  if(fitW&&fitH){
-    _a4Scale=Math.min(sx,sy);
-  } else if(fitW){
-    _a4Scale=sx;
-  } else if(fitH){
-    _a4Scale=sy;
-  } else {
-    _a4Scale=1;
-  }
+  if(fitW&&fitH){ _a4Scale=Math.min(sx,sy); }
+  else if(fitW){ _a4Scale=sx; }
+  else if(fitH){ _a4Scale=sy; }
+  else { _a4Scale=1; }
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
 
+  const gridW=_a4C*pw, gridH=_a4R*ph;
+  const scaledW=_a4W*_a4Scale;
   const sw=document.getElementById('a4-scale-wrap');
   if(fitW||fitH){
-    if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; }
+    const offsetX=(fitCX&&scaledW<gridW)?Math.max(0,(gridW-scaledW)/2):0;
+    if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; sw.style.marginLeft=offsetX+'px'; }
   } else {
-    if(sw){ sw.style.transform=''; }
+    if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   }
 
-  const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
   stage.style.minHeight=(gridH+80)+'px';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
@@ -2761,9 +2773,7 @@ function _a4Draw(){
   const lc=isW?'rgba(0,100,220,0.55)':'rgba(76,201,240,0.65)';
   const sc=isW?'rgba(0,100,220,0.4)':'rgba(76,201,240,0.45)';
   const bc=isW?'rgba(0,80,200,0.28)':'rgba(76,201,240,0.28)';
-  const PAD=64;
-  const PADL=24; // preview-wrap padding-left
-
+  const PAD=64, PADL=24;
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');el.className='a4g';
@@ -2790,7 +2800,6 @@ function _a4Draw(){
       stage.appendChild(el);
     }
   }
-
   const pct=Math.round(_a4Scale*100);
   document.getElementById('a4-pct').textContent='('+pct+'%)';
   let badge=document.getElementById('a4-badge');
@@ -2801,10 +2810,9 @@ function _a4Draw(){
   badge.innerHTML='<span style="color:'+(isW?'#0050c0':'#4cc9f0')+';">'+_a4C+'×'+_a4R+'장 '+ol+'</span><br>출력비율: <b style="color:'+(pct>=80?(isW?'#006600':'#06d6a0'):pct>=40?(isW?'#885500':'#ffd60a'):'#e63946')+';">'+pct+'%</b>';
   badge.style.display='';
 }
-
 function _a4Clear(){
   const sw=document.getElementById('a4-scale-wrap');
-  if(sw){ sw.style.transform=''; }
+  if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   const stage=document.getElementById('a4-stage');
   stage.style.minHeight='';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
@@ -3262,32 +3270,52 @@ function clearSavedAndRestart(){
 
 autoDetectSortKeys();
 renderList();
+/* ── 줌(비율 보기) ── */
+function _zoomSet(ratio){
+  const stage=document.getElementById('a4-stage');
+  if(!stage) return;
+  if(ratio===null){
+    const pw=document.getElementById('preview-wrap');
+    const wrapW=pw?pw.clientWidth-48:window.innerWidth-48;
+    const sw=document.getElementById('a4-scale-wrap');
+    const contentW=sw?sw.scrollWidth:(_a4W||800);
+    ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
+  }
+  _zoomLevel=ratio;
+  stage.style.transformOrigin='top left';
+  stage.style.transform='scale('+ratio+')';
+  const oh=stage.offsetHeight||600;
+  if(stage.parentElement) stage.parentElement.style.minHeight=(oh*ratio+80)+'px';
+  document.querySelectorAll('.zoom-btn').forEach(function(btn){
+    const bz=parseFloat(btn.dataset.zoom);
+    const active=Math.abs(bz-ratio)<0.01;
+    btn.style.background=active?'rgba(76,201,240,.15)':'transparent';
+    btn.style.color=active?'#4cc9f0':'var(--text3)';
+    btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
+  });
+}
 
-/* ── 기본정보 헤더 체크박스 (미리보기 툴바) ── */
+/* ── 기본정보 헤더 체크박스 ── */
 const _INFO_ITEMS=[
-  {k:'eventname', l:'행사명'},
-  {k:'subtitle',  l:'부제목'},
-  {k:'gamename',  l:'종목명'},
-  {k:'date',      l:'일시'},
-  {k:'place',     l:'장소'},
-  {k:'sponsor',   l:'후원'},
-  {k:'slogan1',   l:'슬로건1'},
-  {k:'slogan2',   l:'슬로건2'},
+  {k:'eventname',l:'행사명'},
+  {k:'subtitle', l:'부제목'},
+  {k:'gamename', l:'종목명'},
+  {k:'date',     l:'일시'},
+  {k:'place',    l:'장소'},
+  {k:'sponsor',  l:'후원'},
+  {k:'slogan1',  l:'슬로건1'},
+  {k:'slogan2',  l:'슬로건2'},
 ];
-
-// localStorage에서 setup.html이 저장한 display config 읽기
 function _loadDispCfg(){
   try{ return JSON.parse(localStorage.getItem('sgp_display_config')||'{}'); }catch(e){ return {}; }
 }
-
-// 툴바 체크박스 칩 초기화
 function _initInfoChips(){
   const cfg=_loadDispCfg();
   const di=cfg.displayItems||{eventname:true};
   const wrap=document.getElementById('info-hdr-chips');
   if(!wrap) return;
   wrap.innerHTML='';
-  _INFO_ITEMS.forEach(item=>{
+  _INFO_ITEMS.forEach(function(item){
     const on=!!di[item.k];
     const chip=document.createElement('label');
     chip.style.cssText='display:flex;align-items:center;gap:3px;padding:3px 9px;border-radius:14px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid;transition:all .15s;user-select:none;';
@@ -3295,8 +3323,7 @@ function _initInfoChips(){
     chip.style.background=on?'rgba(230,57,70,.13)':'transparent';
     chip.style.color=on?'#f0f0f8':'var(--text3)';
     const chk=document.createElement('input');
-    chk.type='checkbox';
-    chk.checked=on;
+    chk.type='checkbox'; chk.checked=on;
     chk.style.cssText='accent-color:#e63946;width:11px;height:11px;cursor:pointer;';
     chk.addEventListener('change',function(){
       chip.style.borderColor=this.checked?'#e63946':'var(--border2)';
@@ -3310,96 +3337,70 @@ function _initInfoChips(){
   });
   _renderInfoHeader();
 }
-
-// 체크 상태 읽기
 function _getInfoChecked(){
   const wrap=document.getElementById('info-hdr-chips');
   if(!wrap) return {};
   const result={};
-  const chips=wrap.querySelectorAll('label');
-  chips.forEach((chip,i)=>{
+  wrap.querySelectorAll('label').forEach(function(chip,i){
     result[_INFO_ITEMS[i].k]=chip.querySelector('input').checked;
   });
   return result;
 }
-
-// 대진표 위 헤더 렌더
 function _renderInfoHeader(){
   const cfg=_loadDispCfg();
-  // date/place는 sgp_bracket_temp에서 보완
   try{
     const bt=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');
-    if(bt.settings){ if(!cfg.date&&bt.settings.dt)cfg.date=bt.settings.dt; if(!cfg.place&&bt.settings.pl)cfg.place=bt.settings.pl; }
+    if(bt.settings){
+      if(!cfg.date&&bt.settings.dt) cfg.date=bt.settings.dt;
+      if(!cfg.place&&bt.settings.pl) cfg.place=bt.settings.pl;
+    }
   }catch(e){}
-
   const valMap={
-    eventname: cfg.eventName||'',
-    subtitle:  cfg.subtitle||'',
-    gamename:  cfg.gameLabel||'',
-    date:      cfg.date||'',
-    place:     cfg.place||'',
-    sponsor:   cfg.sponsor||'',
-    slogan1:   cfg.slogan1||'',
-    slogan2:   cfg.slogan2||'',
+    eventname:cfg.eventName||'', subtitle:cfg.subtitle||'',
+    gamename:cfg.gameLabel||'',  date:cfg.date||'',
+    place:cfg.place||'',         sponsor:cfg.sponsor||'',
+    slogan1:cfg.slogan1||'',     slogan2:cfg.slogan2||'',
   };
   const checked=_getInfoChecked();
-
-  // 기존 헤더 제거
   const existing=document.getElementById('pdf-info-header');
   if(existing) existing.remove();
-
-  // 표시할 항목 수집
-  const active=_INFO_ITEMS.filter(item=>checked[item.k]&&valMap[item.k]);
+  const active=_INFO_ITEMS.filter(function(item){ return checked[item.k]&&valMap[item.k]; });
   if(!active.length) return;
-
   const isW=document.body.classList.contains('white-mode');
   const hdrBg=isW?'#ffffff':'#0f0f1a';
-  const hdrBorder=isW?'#e0e0e0':'#2a2a40';
   const titleColor=isW?'#111111':'#f0f0f8';
   const metaColor=isW?'#333333':'#9090b0';
   const sloganColor=isW?'#666666':'#5a5a7a';
-  const labelColor='#e63946';
-
-  const en  =checked.eventname?valMap.eventname:'';
-  const sub =checked.subtitle ?valMap.subtitle :'';
-  const gl  =checked.gamename ?valMap.gamename :'';
-  const dt  =checked.date     ?valMap.date     :'';
-  const pl  =checked.place    ?valMap.place    :'';
-  const sp  =checked.sponsor  ?valMap.sponsor  :'';
-  const s1  =checked.slogan1  ?valMap.slogan1  :'';
-  const s2  =checked.slogan2  ?valMap.slogan2  :'';
-
+  const ls='font-size:9px;font-weight:700;letter-spacing:1px;color:#e63946;font-family:"Share Tech Mono",monospace;margin-right:3px;';
+  const en=checked.eventname?valMap.eventname:'';
+  const sub=checked.subtitle?valMap.subtitle:'';
+  const gl=checked.gamename?valMap.gamename:'';
+  const dt=checked.date?valMap.date:'';
+  const pl=checked.place?valMap.place:'';
+  const sp=checked.sponsor?valMap.sponsor:'';
+  const s1=checked.slogan1?valMap.slogan1:'';
+  const s2=checked.slogan2?valMap.slogan2:'';
   const hdr=document.createElement('div');
   hdr.id='pdf-info-header';
   hdr.style.cssText='width:100%;padding:16px 24px 13px;margin-bottom:2px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:'+hdrBg+';box-sizing:border-box;';
-
   let inner='';
   if(en)  inner+='<div style="font-size:20px;font-weight:700;color:'+titleColor+';letter-spacing:.3px;margin-bottom:3px;">'+en+'</div>';
   if(sub) inner+='<div style="font-size:12px;color:'+metaColor+';margin-bottom:5px;">'+sub+'</div>';
-
-  const metaParts=[];
-  const ls='font-size:9px;font-weight:700;letter-spacing:1px;color:'+labelColor+';font-family:"Share Tech Mono",monospace;margin-right:3px;';
-  if(gl) metaParts.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">종목</span><span style="font-size:12px;color:'+metaColor+';">'+gl+'</span></span>');
-  if(dt) metaParts.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">일시</span><span style="font-size:12px;color:'+metaColor+';">'+dt+'</span></span>');
-  if(pl) metaParts.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">장소</span><span style="font-size:12px;color:'+metaColor+';">'+pl+'</span></span>');
-  if(sp) metaParts.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">후원</span><span style="font-size:12px;color:'+metaColor+';">'+sp+'</span></span>');
-  if(metaParts.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:'+(s1||s2?'5':'0')+'px;">'+metaParts.join('')+'</div>';
-
+  const meta=[];
+  if(gl) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">종목</span><span style="font-size:12px;color:'+metaColor+';">'+gl+'</span></span>');
+  if(dt) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">일시</span><span style="font-size:12px;color:'+metaColor+';">'+dt+'</span></span>');
+  if(pl) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">장소</span><span style="font-size:12px;color:'+metaColor+';">'+pl+'</span></span>');
+  if(sp) meta.push('<span style="display:inline-flex;align-items:center;margin-right:14px;"><span style="'+ls+'">후원</span><span style="font-size:12px;color:'+metaColor+';">'+sp+'</span></span>');
+  if(meta.length) inner+='<div style="display:flex;flex-wrap:wrap;margin-bottom:'+(s1||s2?'5':'0')+'px;">'+meta.join('')+'</div>';
   const slogans=[];
   if(s1) slogans.push(s1);
   if(s2) slogans.push(s2);
   if(slogans.length) inner+='<div style="font-size:11px;color:'+sloganColor+';font-style:italic;">'+slogans.join('  ·  ')+'</div>';
-
   hdr.innerHTML=inner;
-
-  // bracket-display 바로 앞에 삽입
   const bd=document.getElementById('bracket-display');
   if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
 }
-
-window.addEventListener('load',function(){
-  _initInfoChips();
-});
+window.addEventListener('load',function(){ _initInfoChips(); });
 
 </script>
 </body>
