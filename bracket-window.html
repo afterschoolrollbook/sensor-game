@@ -251,6 +251,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
         <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
         <button onclick="toggleHideNames()" id="btn-hide-names" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">👁 이름 가리기</button>
+        <button onclick="_refreshSvgLines()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔁 선 새로고침</button>
         <button onclick="openDeleteNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🗑 이름 삭제</button>
         <button onclick="openShuffleNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔀 랜덤 섞기</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
@@ -275,6 +276,11 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
+
+// ── 선 새로고침 ──
+function _refreshSvgLines(){
+  _renderPdfPreview(_getSelectedGroups());
+}
 
 // ── 이름 가리기 토글 ──
 window._hideNames=false;
@@ -2382,18 +2388,18 @@ function _writeFullPreviewWin(win, rawHTML){
 html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
 
 /* ── 다크모드 대진표 선명도 강화 ── */
-body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#aaaacc !important;border-width:1.5px !important;}
-body:not(.white-mode) div[style*="border:1px solid #2"]{border-color:#aaaacc !important;border-width:1.5px !important;}
-body:not(.white-mode) div[style*="border:1.5px solid #"]{border-color:#aaaacc !important;border-width:2px !important;}
-body:not(.white-mode) rect[stroke="#1a1a28"],body:not(.white-mode) rect[stroke="#1e1e30"],body:not(.white-mode) rect[stroke="#2a2a50"]{stroke:#aaaacc !important;stroke-width:1.5 !important;}
-body:not(.white-mode) path[stroke="#2a2a50"],body:not(.white-mode) path[stroke="#1e1e30"]{stroke:#aaaacc !important;stroke-width:2 !important;}
-body:not(.white-mode) line[stroke="#1e1e30"],body:not(.white-mode) line[stroke="#2a2a50"]{stroke:#aaaacc !important;stroke-width:2 !important;}
-body:not(.white-mode) [style*="color:#555"]{color:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) [style*="color:#444"]{color:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) [style*="color:#333"]{color:#ccccee !important;}
-body:not(.white-mode) text[fill="#444"]{fill:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) text[fill="#555"]{fill:#ccccee !important;}
-body:not(.white-mode) text[fill="#2a2a3e"]{fill:#ccccee !important;}
+body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#ffffff !important;border-width:1.5px !important;}
+body:not(.white-mode) div[style*="border:1px solid #2"]{border-color:#ffffff !important;border-width:1.5px !important;}
+body:not(.white-mode) div[style*="border:1.5px solid #"]{border-color:#ffffff !important;border-width:2px !important;}
+body:not(.white-mode) rect[stroke="#1a1a28"],body:not(.white-mode) rect[stroke="#1e1e30"],body:not(.white-mode) rect[stroke="#2a2a50"]{stroke:#ffffff !important;stroke-width:1.5 !important;}
+body:not(.white-mode) path[stroke="#2a2a50"],body:not(.white-mode) path[stroke="#1e1e30"]{stroke:#ffffff !important;stroke-width:2 !important;}
+body:not(.white-mode) line[stroke="#1e1e30"],body:not(.white-mode) line[stroke="#2a2a50"]{stroke:#ffffff !important;stroke-width:2 !important;}
+body:not(.white-mode) [style*="color:#555"]{color:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) [style*="color:#444"]{color:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) [style*="color:#333"]{color:#ffffff !important;}
+body:not(.white-mode) text[fill="#444"]{fill:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) text[fill="#555"]{fill:#ffffff !important;}
+body:not(.white-mode) text[fill="#2a2a3e"]{fill:#ffffff !important;}
 
 /* ── 화이트 모드 ── */
 body.white-mode{background:#f4f4f4 !important;color:#111 !important;}
@@ -2833,17 +2839,17 @@ html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
 /* 이름 숨김 */
 body.hide-names .player-name-part{opacity:0;width:0;overflow:hidden;display:inline-block;pointer-events:none;}
 /* 다크모드 선명도 */
-body:not(.white-mode) rect[stroke="#1a1a28"],body:not(.white-mode) rect[stroke="#1e1e30"],body:not(.white-mode) rect[stroke="#2a2a50"]{stroke:#aaaacc !important;stroke-width:1.5 !important;}
-body:not(.white-mode) path[stroke="#2a2a50"],body:not(.white-mode) path[stroke="#1e1e30"]{stroke:#aaaacc !important;stroke-width:2 !important;}
-body:not(.white-mode) line[stroke="#1e1e30"],body:not(.white-mode) line[stroke="#2a2a50"]{stroke:#aaaacc !important;stroke-width:2 !important;}
-body:not(.white-mode) [style*="color:#555"]{color:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) [style*="color:#444"]{color:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) [style*="color:#333"]{color:#ccccee !important;}
-body:not(.white-mode) text[fill="#444"]{fill:#ccccee !important;font-size:10px !important;}
-body:not(.white-mode) text[fill="#555"]{fill:#ccccee !important;}
-body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#aaaacc !important;border-width:1.5px !important;}
-body:not(.white-mode) div[style*="border:1px solid #2"]{border-color:#aaaacc !important;border-width:1.5px !important;}
-body:not(.white-mode) div[style*="border:1.5px solid #"]{border-color:#aaaacc !important;border-width:2px !important;}
+body:not(.white-mode) rect[stroke="#1a1a28"],body:not(.white-mode) rect[stroke="#1e1e30"],body:not(.white-mode) rect[stroke="#2a2a50"]{stroke:#ffffff !important;stroke-width:1.5 !important;}
+body:not(.white-mode) path[stroke="#2a2a50"],body:not(.white-mode) path[stroke="#1e1e30"]{stroke:#ffffff !important;stroke-width:2 !important;}
+body:not(.white-mode) line[stroke="#1e1e30"],body:not(.white-mode) line[stroke="#2a2a50"]{stroke:#ffffff !important;stroke-width:2 !important;}
+body:not(.white-mode) [style*="color:#555"]{color:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) [style*="color:#444"]{color:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) [style*="color:#333"]{color:#ffffff !important;}
+body:not(.white-mode) text[fill="#444"]{fill:#ffffff !important;font-size:10px !important;}
+body:not(.white-mode) text[fill="#555"]{fill:#ffffff !important;}
+body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#ffffff !important;border-width:1.5px !important;}
+body:not(.white-mode) div[style*="border:1px solid #2"]{border-color:#ffffff !important;border-width:1.5px !important;}
+body:not(.white-mode) div[style*="border:1.5px solid #"]{border-color:#ffffff !important;border-width:2px !important;}
 @media print{
   html,body{background:#fff;}
   .toolbar{display:none !important;}
