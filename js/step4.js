@@ -205,7 +205,7 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',mw);r.setAttribute('height',mh);
   r.setAttribute('rx','4');r.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
-  r.setAttribute('stroke',isSel?'#4cc9f0':isBye?'#aaaacc':'#aaaacc');
+  r.setAttribute('stroke',isSel?'#4cc9f0':isBye?'#1a1a28':'#1e1e30');
   r.setAttribute('stroke-width',isSel?'2':'1');
   r.style.cursor='pointer';
   r.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
@@ -231,7 +231,7 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
     const mx=x+mw/2;
     const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
     vl.setAttribute('x1',mx);vl.setAttribute('y1',y);vl.setAttribute('x2',mx);vl.setAttribute('y2',y+mh);
-    vl.setAttribute('stroke','#aaaacc');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
+    vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1');svg.appendChild(vl);
     const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
     vs.setAttribute('x',mx);vs.setAttribute('y',cy+fs*0.35);vs.setAttribute('text-anchor','middle');
     vs.setAttribute('fill','#e63946');vs.setAttribute('font-size',fs);vs.setAttribute('font-family','Bebas Neue,cursive');
@@ -271,7 +271,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
     const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',x1);r.setAttribute('y',y1);r.setAttribute('width',bw);r.setAttribute('height',bh);
     r.setAttribute('rx','4');r.setAttribute('fill','#0a0a14');
-    r.setAttribute('stroke','#aaaacc');r.setAttribute('stroke-width','1');
+    r.setAttribute('stroke','#1a1a28');r.setAttribute('stroke-width','1');
     svg.appendChild(r);
     n1.split('').forEach((ch,i)=>{
       const t=document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -295,7 +295,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const r1=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r1.setAttribute('x',x1);r1.setAttribute('y',y1);r1.setAttribute('width',bw);r1.setAttribute('height',bh);
   r1.setAttribute('rx','4');r1.setAttribute('fill','#0d0d1a');
-  r1.setAttribute('stroke','#aaaacc');r1.setAttribute('stroke-width','1');
+  r1.setAttribute('stroke','#1e1e30');r1.setAttribute('stroke-width','1');
   svg.appendChild(r1);
   n1.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -315,7 +315,7 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const r2=document.createElementNS('http://www.w3.org/2000/svg','rect');
   r2.setAttribute('x',x2);r2.setAttribute('y',y2);r2.setAttribute('width',bw);r2.setAttribute('height',bh);
   r2.setAttribute('rx','4');r2.setAttribute('fill','#0d0d1a');
-  r2.setAttribute('stroke','#aaaacc');r2.setAttribute('stroke-width','1');
+  r2.setAttribute('stroke','#1e1e30');r2.setAttribute('stroke-width','1');
   svg.appendChild(r2);
   n2.split('').forEach((ch,i)=>{
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -337,7 +337,7 @@ function _drawLinks(svg,rounds,xFn,cyFn,dir,sz){
   const LN=(x1,y1,x2,y2)=>{
     const l=document.createElementNS('http://www.w3.org/2000/svg','line');
     l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-    l.setAttribute('stroke','#aaaacc');l.setAttribute('stroke-width','2');svg.appendChild(l);
+    l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');svg.appendChild(l);
   };
   rounds.forEach((matches,ri)=>{
     if(ri>=rounds.length-1)return;
@@ -398,7 +398,7 @@ function _drawLinksBC(svg,rounds,xFn,cyFn){
     const l=document.createElementNS('http://www.w3.org/2000/svg','line');
     l.setAttribute('x1',x1);l.setAttribute('y1',y1);
     l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-    l.setAttribute('stroke','#aaaacc');l.setAttribute('stroke-width','2');
+    l.setAttribute('stroke','#1e1e30');l.setAttribute('stroke-width','2');
     svg.appendChild(l);
   };
   rounds.forEach((matches,ri)=>{
@@ -496,13 +496,13 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
-      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#0d2a1a':isBye?'#aaaacc':'#aaaacc';
+      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#0d2a1a':isBye?'#1a1a28':'#1e1e30';
       box.style.cssText=`
         position:absolute;left:0;right:0;
         transform:translateY(-50%);
         top:${slotCenterY}px;
         border-radius:6px;overflow:hidden;cursor:pointer;
-        border:${isSel||isCur?'2px':'1.5px'} solid ${borderColor};
+        border:${isSel||isCur?'1.5px':'1px'} solid ${borderColor};
         width:180px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
@@ -523,7 +523,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaacc'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#aaaacc;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:'`}`;      box.appendChild(header);
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#555;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
+      box.appendChild(header);
 
       if(isBye){
         const row=document.createElement('div');
@@ -624,8 +625,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     const PATH=(d)=>{
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
       p.setAttribute('d',d);
-      p.setAttribute('stroke','#ffffff');
-      p.setAttribute('stroke-width','2');
+      p.setAttribute('stroke','#2a2a50');
+      p.setAttribute('stroke-width','1.5');
       p.setAttribute('fill','none');
       p.setAttribute('stroke-linecap','square');
       p.setAttribute('stroke-linejoin','miter');
@@ -755,7 +756,7 @@ function _renderBracketHoriz(wrap, rounds, direction){
   const PATH=(d)=>{
     const p=document.createElementNS('http://www.w3.org/2000/svg','path');
     p.setAttribute('d',d);
-    p.setAttribute('stroke','#ffffff');
+    p.setAttribute('stroke','#2a2a50');
     p.setAttribute('stroke-width','1.5');
     p.setAttribute('fill','none');
     svg.appendChild(p);
@@ -788,7 +789,7 @@ function _renderBracketHoriz(wrap, rounds, direction){
       rect.setAttribute('width',BOX_W);rect.setAttribute('height',BOX_H);
       rect.setAttribute('rx','5');
       rect.setAttribute('fill',isBye?'#0a0a14':'#0d0d1a');
-      rect.setAttribute('stroke',isCur?'#e63946':isBye?'#aaaacc':'#aaaacc');
+      rect.setAttribute('stroke',isCur?'#e63946':isBye?'#1a1a28':'#1e1e30');
       rect.setAttribute('stroke-width',isCur?'1.5':'1');
       svg.appendChild(rect);
 
@@ -811,7 +812,7 @@ function _renderBracketHoriz(wrap, rounds, direction){
         const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
         vl.setAttribute('x1',cx);vl.setAttribute('y1',y);
         vl.setAttribute('x2',cx);vl.setAttribute('y2',y+BOX_H);
-        vl.setAttribute('stroke','#aaaacc');vl.setAttribute('stroke-width','1'); svg.appendChild(vl);
+        vl.setAttribute('stroke','#1e1e30');vl.setAttribute('stroke-width','1'); svg.appendChild(vl);
         const vs=document.createElementNS('http://www.w3.org/2000/svg','text');
         vs.setAttribute('x',cx);vs.setAttribute('y',cy+5);
         vs.setAttribute('text-anchor','middle');vs.setAttribute('fill','#e63946');
