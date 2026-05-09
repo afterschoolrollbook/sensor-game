@@ -2416,7 +2416,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 .preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
 
 /* 연결선 포함 overflow 강제 */
-#bracket-display{overflow:visible !important;min-height:200px;position:relative;}
+#bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
 
@@ -2469,7 +2469,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
     <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
   </label>
-  <div id="a4-ctrl" style="display:none;align-items:center;gap:6px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;">
+  <div id="a4-ctrl" style="display:none;align-items:center;gap:6px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;flex-wrap:wrap;">
     <span style="font-size:10px;color:var(--text3);">용지:</span>
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);">
       <input type="radio" id="a4-portrait" name="a4-orient" checked style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 세로
@@ -2489,7 +2489,24 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <span id="a4-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
     <button id="a4-rp" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;"></span>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="비율 유지하면서 설정한 가로 용지 수 너비에 맞게 대진표 크기를 조정합니다">
+      <input type="checkbox" id="a4-fit-w" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 좌우맞추기
+    </label>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="비율 유지하면서 설정한 세로 용지 수 높이에 맞게 대진표 크기를 조정합니다">
+      <input type="checkbox" id="a4-fit-h" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 위아래맞추기
+    </label>
     <span id="a4-pct" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
+    <button id="a4-help" title="A4 용지 배치 도움말" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:11px;font-weight:700;cursor:pointer;line-height:1;padding:0;">?</button>
+  </div>
+  <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
+    <b style="color:#4cc9f0;">용지 방향</b> — 세로/가로 선택<br>
+    <b style="color:#4cc9f0;">가로 N장 × 세로 N장</b> — 출력할 용지 수 설정<br>
+    <b style="color:#4cc9f0;">좌우맞추기</b> — 비율 유지하면서 설정한 가로 용지 총 너비에 맞게 대진표를 축소/확대. 남거나 넘치는 세로를 보고 세로 장 수를 조절하세요.<br>
+    <b style="color:#4cc9f0;">위아래맞추기</b> — 비율 유지하면서 설정한 세로 용지 총 높이에 맞게 축소/확대. 남거나 넘치는 가로를 보고 가로 장 수를 조절하세요.<br>
+    <b style="color:#4cc9f0;">둘 다 체크</b> — 가로/세로 모두 딱 맞게 (비율 변경될 수 있음)<br>
+    <div style="margin-top:12px;text-align:right;"><button onclick="document.getElementById('a4-help-box').style.display='none'" style="padding:4px 14px;border-radius:6px;border:1px solid #3a3a55;background:rgba(255,255,255,.08);color:#9090b0;cursor:pointer;font-size:12px;">닫기</button></div>
   </div>
 </div>
 <div style="position:relative;" id="a4-stage">
@@ -2588,6 +2605,12 @@ function _a4Init(){
   document.getElementById('a4-rp').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.min(50,_a4R+1); _a4SyncD(); _a4Draw(); });
   document.getElementById('a4-portrait').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='portrait';_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_a4AutoFit();_a4Draw();} });
+  document.getElementById('a4-fit-w').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
+  document.getElementById('a4-fit-h').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
+  document.getElementById('a4-help').addEventListener('click',function(){
+    const box=document.getElementById('a4-help-box');
+    box.style.display=box.style.display==='none'?'block':'none';
+  });
 }
 
 function _a4Toggle(on){
@@ -2617,9 +2640,26 @@ function _a4SyncD(){
 function _a4Draw(){
   const stage=document.getElementById('a4-stage');
   const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
-  const sx=(_a4C*pw)/_a4W, sy=(_a4R*ph)/_a4H;
-  _a4Scale=Math.min(sx,sy);
+  const fitW=document.getElementById('a4-fit-w').checked;
+  const fitH=document.getElementById('a4-fit-h').checked;
+  const sx=(_a4C*pw)/_a4W;
+  const sy=(_a4R*ph)/_a4H;
+
+  if(fitW&&fitH){
+    // 둘 다: 각각 독립 적용 (비율 무시, 가로세로 따로 맞춤) → 비율 유지로 작은 쪽 기준
+    _a4Scale=Math.min(sx,sy);
+  } else if(fitW){
+    // 좌우맞추기: 가로 총 너비 기준으로만 스케일, 비율 유지
+    _a4Scale=sx;
+  } else if(fitH){
+    // 위아래맞추기: 세로 총 높이 기준으로만 스케일, 비율 유지
+    _a4Scale=sy;
+  } else {
+    // 맞추기 없음: 스케일 1 (원본 크기)
+    _a4Scale=1;
+  }
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
+
   const scaledW=_a4W*_a4Scale, scaledH=_a4H*_a4Scale;
   const nc=Math.ceil(scaledW/pw), nr=Math.ceil(scaledH/ph);
   if(nc>_a4C||nr>_a4R){ _a4C=Math.max(_a4C,nc); _a4R=Math.max(_a4R,nr); _a4SyncD(); _a4Draw(); return; }
