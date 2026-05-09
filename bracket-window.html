@@ -2500,7 +2500,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 
 /* ── 미리보기 ── */
-.preview-wrap{padding:128px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+.preview-wrap{padding:165px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
 
 /* 연결선 포함 overflow 강제 */
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
@@ -2682,8 +2682,8 @@ function buildPageGuides(){
   for(let i=1;i<pages;i++){
     const guide=document.createElement('div');
     guide.className='page-guide-line'+((_guideOn)?' visible':'');
-    // preview-wrap의 padding-top(64px) 포함
-    guide.style.top=(64+i*A4_H_PX)+'px';
+    // preview-wrap의 padding-top(165px) 포함
+    guide.style.top=(165+i*A4_H_PX)+'px';
     guide.dataset.label='P'+i+' ↓  P'+(i+1)+' ↑';
     wrap.appendChild(guide);
   }
@@ -2948,6 +2948,35 @@ function _renderInfoHeader(){
   hdr.innerHTML=inner;
   const bd=document.getElementById('bracket-display');
   if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
+}
+
+/* ── 줌 버튼 ── */
+function _zoomSet(ratio){
+  const sw=document.getElementById('a4-scale-wrap');
+  if(!sw) return;
+  if(ratio===null){
+    const pw=document.getElementById('preview-wrap');
+    const wrapW=pw ? pw.clientWidth-48 : window.innerWidth-48;
+    const contentW=sw.scrollWidth || 800;
+    ratio=Math.max(0.1, Math.min(wrapW/contentW, 4));
+  }
+  _zoomLevel=ratio;
+  if(!_a4On){
+    sw.style.transformOrigin='top left';
+    sw.style.transform='scale('+ratio+')';
+    const stage=document.getElementById('a4-stage');
+    if(stage){
+      const contentH=sw.scrollHeight||600;
+      stage.style.minHeight=(contentH*ratio+80)+'px';
+    }
+  }
+  document.querySelectorAll('.zoom-btn').forEach(function(btn){
+    const bz=parseFloat(btn.dataset.zoom);
+    const active=!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
+    btn.style.background=active?'rgba(76,201,240,.15)':'transparent';
+    btn.style.color=active?'#4cc9f0':'var(--text3)';
+    btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
+  });
 }
 <\/script>
 </body></html>`;
