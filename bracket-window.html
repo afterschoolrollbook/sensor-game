@@ -263,7 +263,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
     </div>
     <div style="flex:1;min-height:0;overflow:auto;padding:16px 18px;">
       <div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:12px;">// 미리보기</div>
-      <div id="pdf-preview"></div>
+      <div id="pdf-preview" style="overflow:visible;"></div>
     </div>
   </div>
 </div>
@@ -2233,266 +2233,262 @@ function _renderPdfPreview(groups){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
   }
-  // step3 뷰 먼저 갱신 (이름 가리기/삭제/섞기 반영)
-  _redrawBracketView();
-  // 전체 선택이면 step3 대진표 뷰 그대로 복사
-  if(groups.length===S.groupBrackets.length){
-    const bracketView=document.getElementById('pts-bracket-view');
-    if(bracketView){
-      const clone=bracketView.cloneNode(true);
-      clone.style.cssText='display:block;overflow:visible;min-height:200px;';
-      clone.querySelectorAll('*').forEach(el=>{
-        if(el.style.overflow&&el.style.overflow!=='visible') el.style.overflow='visible';
-        if(el.style.overflowX&&el.style.overflowX!=='visible') el.style.overflowX='visible';
-        if(el.style.overflowY&&el.style.overflowY!=='visible') el.style.overflowY='visible';
-      });
-      preview.appendChild(clone);
-    }
-    return;
-  }
-  // 일부 선택이면 선택한 그룹만 렌더
-  groups.forEach((g,gi)=>{
-    const labelParts=g.label.split('/').map(s=>s.trim());
-    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join(' · ');
-    const section=document.createElement('div');
-    section.style.cssText=`margin-bottom:24px;padding-bottom:24px;${gi<groups.length-1?'border-bottom:1px solid var(--border);':''}`;
-    const title=document.createElement('div');
-    title.style.cssText='font-size:10px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:6px;';
-    title.textContent=shortLabel;
-    section.appendChild(title);
-    const bracketWrap=document.createElement('div');
-    bracketWrap.style.cssText='overflow:visible;';
-    const taggedMatches=g.matches.map((round,ri)=>
-      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-    );
-    S.matches=taggedMatches;
-    _renderBracketHTML(bracketWrap, taggedMatches, 'top', false);
-    bracketWrap.querySelectorAll('*').forEach(el=>{
-      el.style.overflow='visible';
-      el.style.overflowX='visible';
-      el.style.overflowY='visible';
+
+  const saved=S.matches;
+  const _applyOverflow=(el)=>{
+    el.querySelectorAll('*').forEach(child=>{
+      child.style.overflow='visible';
+      child.style.overflowX='visible';
+      child.style.overflowY='visible';
     });
-    section.appendChild(bracketWrap);
-    preview.appendChild(section);
-  });
+    el.querySelectorAll('svg').forEach(s=>{
+      s.setAttribute('overflow','visible');
+      s.style.overflow='visible';
+    });
+  };
+
+  if(_bracketLayout==='D' && (_courtCount||1)>=2){
+    // D형: 경기장 1/2 좌우 배치로 렌더
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;overflow:visible;';
+
+    const lDiv=document.createElement('div');
+    lDiv.style.cssText='padding-right:24px;flex-shrink:0;overflow:visible;';
+    const spacer=document.createElement('div');
+    spacer.style.cssText='flex:1;min-width:24px;';
+    const rDiv=document.createElement('div');
+    rDiv.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
+
+    const mkLabel=(txt,align)=>{
+      const d=document.createElement('div');
+      d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
+      d.textContent=txt; return d;
+    };
+    lDiv.appendChild(mkLabel('// 경기장 1','left'));
+    rDiv.appendChild(mkLabel('// 경기장 2','right'));
+
+    const renderCourtBlock=(courtNum, container, reversed)=>{
+      groups.filter(g=>g.court===courtNum).forEach(g=>{
+        const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+        const hdr=document.createElement('div');
+        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+        hdr.textContent=shortLabel;
+        container.appendChild(hdr);
+        const gWrap=document.createElement('div');
+        gWrap.style.cssText='margin-bottom:16px;overflow:visible;';
+        const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+        S.matches=taggedMatches;
+        _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
+        _applyOverflow(gWrap);
+        container.appendChild(gWrap);
+      });
+    };
+    renderCourtBlock(1, lDiv, false);
+    renderCourtBlock(2, rDiv, true);
+
+    outerWrap.appendChild(lDiv);
+    outerWrap.appendChild(spacer);
+    outerWrap.appendChild(rDiv);
+    preview.appendChild(outerWrap);
+  } else {
+    // A/B/C/E형: 그룹별 세로 배치
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='overflow:visible;';
+    groups.forEach((g,gi)=>{
+      const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+      const section=document.createElement('div');
+      section.style.cssText=`margin-bottom:24px;padding-bottom:24px;overflow:visible;${gi<groups.length-1?'border-bottom:1px solid var(--border);':''}`;
+      const title=document.createElement('div');
+      title.style.cssText='font-size:10px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:6px;';
+      title.textContent=shortLabel;
+      section.appendChild(title);
+      const bracketWrap=document.createElement('div');
+      bracketWrap.style.cssText='overflow:visible;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+      (fns[_bracketLayout]||renderBracketA)(bracketWrap);
+      _applyOverflow(bracketWrap);
+      section.appendChild(bracketWrap);
+      outerWrap.appendChild(section);
+    });
+    preview.appendChild(outerWrap);
+  }
+  S.matches=saved;
 }
 
-// ── 전체 PDF: 이름 포함/제외 팝업 → 전체 대진표 타일 출력 ──
+// ── 전체 PDF: 미리보기 창 직접 열기 (step3 화면과 동일) ──
 function printAll(){
-  _showPrintOptionsModal('all');
+  _openFullPreviewWindow();
 }
 
 // ── 선택 PDF ──
 function printSelected(){
   const sel=_getSelectedGroups();
   if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
-  _showPrintOptionsModal('selected', sel);
+  _doPrint(sel, false);
 }
 
-// ── 인쇄 옵션 팝업 (이름 포함/제외 + 전체 PDF는 페이지 나누기 미리보기) ──
-function _showPrintOptionsModal(mode, groups){
-  const existing=document.getElementById('print-options-modal');
-  if(existing) existing.remove();
-
-  const overlay=document.createElement('div');
-  overlay.id='print-options-modal';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:9999;';
-
-  const modal=document.createElement('div');
-  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:460px;max-width:95vw;padding:28px 28px 24px;display:flex;flex-direction:column;gap:18px;';
-
-  const isAll=(mode==='all');
-  const targetGroups=isAll?S.groupBrackets:(groups||[]);
-
-  modal.innerHTML=`
-    <div style="font-size:15px;font-weight:700;">${isAll?'🖨️ 전체 PDF 출력':'📄 선택 PDF 출력'}</div>
-    ${isAll?`<div style="font-size:11px;color:var(--text3);line-height:1.7;">전체 대진표를 A4 여러 장에 걸쳐 출력합니다.<br>페이지 나누기 미리보기를 먼저 확인할 수 있습니다.</div>`:`<div style="font-size:11px;color:var(--text3);">선택된 ${targetGroups.length}개 체급을 출력합니다.</div>`}
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:2px;">// 이름 출력 옵션</div>
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;border-radius:7px;border:1px solid var(--border);transition:all .15s;" id="opt-with-lbl">
-        <input type="radio" name="name-opt" value="with" checked style="accent-color:var(--green);width:15px;height:15px;">
-        <div>
-          <div style="font-size:13px;font-weight:700;">✅ 이름 포함</div>
-          <div style="font-size:10px;color:var(--text3);">선수 이름이 대진표에 그대로 출력됩니다</div>
-        </div>
-      </label>
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;border-radius:7px;border:1px solid var(--border);transition:all .15s;" id="opt-without-lbl">
-        <input type="radio" name="name-opt" value="without" style="accent-color:var(--accent);width:15px;height:15px;">
-        <div>
-          <div style="font-size:13px;font-weight:700;">🔲 이름 제외 (슬롯 번호만)</div>
-          <div style="font-size:10px;color:var(--text3);">이름 없이 "1번", "2번"으로만 출력됩니다</div>
-        </div>
-      </label>
-    </div>
-    ${isAll?`
-    <div style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.25);border-radius:8px;padding:10px 14px;">
-      <div style="font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:5px;">// 페이지 나누기 미리보기</div>
-      <div style="font-size:11px;color:var(--text2);line-height:1.7;">"미리보기 열기"를 누르면 A4 경계선(점선)이 표시된 전체 대진표를 확인할 수 있습니다.<br>확인 후 그 창에서 바로 인쇄하거나 PDF로 저장하세요.</div>
-    </div>
-    `:''}
-    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-      <button id="btn-cancel-print" style="padding:7px 16px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:12px;cursor:pointer;">취소</button>
-      ${isAll?`<button id="btn-preview-pages" style="padding:7px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🔍 페이지 나누기 미리보기</button>`:''}
-      <button id="btn-do-print" style="padding:7px 20px;background:var(--red);border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ 바로 출력</button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  const getNameOpt=()=>modal.querySelector('input[name="name-opt"]:checked')?.value==='without';
-
-  document.getElementById('btn-cancel-print').onclick=()=>overlay.remove();
-
-  document.getElementById('btn-do-print').onclick=()=>{
-    const hideNames=getNameOpt();
-    overlay.remove();
-    if(isAll){
-      _doPrintAll(targetGroups, hideNames, false);
-    } else {
-      _doPrint(targetGroups, hideNames, false);
-    }
-  };
-
-  if(isAll){
-    document.getElementById('btn-preview-pages').onclick=()=>{
-      const hideNames=getNameOpt();
-      overlay.remove();
-      _doPrintAll(targetGroups, hideNames, true); // true = 페이지 나누기 미리보기 모드
-    };
+// ── 전체 PDF 미리보기 창 ──
+// step4 전체보기(pdf-preview, 모든 그룹)와 동일하게 보여줌
+function _openFullPreviewWindow(){
+  if(!S.groupBrackets?.length){
+    toast('대진표를 먼저 만들어주세요','error'); return;
   }
-}
 
-// ── 전체 PDF 출력 (타일링 방식) ──
-function _doPrintAll(groups, hideNames, previewMode){
-  const win=window.open('','_blank','width=1000,height=800');
+  // 이름 포함 상태로 전체 렌더
+  const savedHide=window._hideNames;
+  window._hideNames=false;
+  _renderPdfPreview(S.groupBrackets);
+  window._hideNames=savedHide;
+
+  // pdf-preview 복사 + overflow 강제(연결선 표시용)
+  // requestAnimationFrame 2회 대기 → 연결선 SVG 렌더 완료 후 복사
+  const win=window.open('','_blank','width=1200,height=900');
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
-  // 전체 대진표 DOM을 현재 화면 그대로 복사 (라이트 테마 변환)
-  const allBracketHTML=_buildAllBracketHTML(groups, hideNames);
+  // 연결선 SVG는 rAF 2회 후 생성되므로 대기
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const previewEl=document.getElementById('pdf-preview');
+    if(!previewEl){ toast('미리보기 생성 실패','error'); win.close(); return; }
+    const clone=previewEl.cloneNode(true);
+    clone.querySelectorAll('*').forEach(el=>{
+      el.style.overflow='visible';
+      el.style.overflowX='visible';
+      el.style.overflowY='visible';
+    });
+    clone.querySelectorAll('svg').forEach(s=>{
+      s.setAttribute('overflow','visible');
+      s.style.overflow='visible';
+    });
+    const rawHTML=clone.innerHTML;
+    _writeFullPreviewWin(win, rawHTML);
+  }));
+}
 
+function _writeFullPreviewWin(win, rawHTML){
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<title>전체 대진표</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<title>전체 대진표 미리보기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{background:#e8e8e8;font-family:'Noto Sans KR',sans-serif;}
-.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 20px;background:#1a1a2a;display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
-.toolbar button{padding:7px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+:root{
+  --bg:#08080f;--bg2:#0f0f1a;--card:#13131f;--card2:#1a1a2a;
+  --border:#2a2a40;--border2:#3a3a55;
+  --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
+  --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
+}
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans KR',sans-serif;
+  min-height:100vh;
+}
+/* ── 툴바 ── */
+.toolbar{
+  position:fixed;top:0;left:0;right:0;
+  padding:10px 18px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;
+  z-index:999;flex-wrap:wrap;
+}
+.toolbar button{
+  padding:7px 16px;border:none;border-radius:6px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;
+}
 .btn-print{background:#e63946;color:#fff;}
-.btn-close{background:#555;color:#fff;}
-.btn-toggle{background:rgba(76,201,240,.2);border:1px solid #4cc9f0 !important;color:#4cc9f0;border:none;}
-.pages-wrap{padding:70px 20px 20px;min-height:100vh;}
-/* A4 타일링 컨테이너 */
-.bracket-full-wrap{
-  background:#fff;
-  width:210mm;
-  margin:0 auto;
-  padding:12mm;
-  box-shadow:0 4px 24px rgba(0,0,0,.25);
-  position:relative;
-  overflow:visible;
+.btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
+/* 이름 토글 체크박스 */
+.name-toggle-wrap{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  cursor:pointer;
+  user-select:none;
 }
-/* 페이지 나누기 가이드라인 */
-.page-guide{
-  position:absolute;
-  left:0; right:0;
-  border-top:2px dashed rgba(230,57,70,0.55);
+.name-toggle-wrap input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
+.name-toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
+/* ── 미리보기 영역 ── */
+.preview-wrap{
+  padding:70px 24px 40px;
+  overflow:auto;
+  min-height:100vh;
+}
+/* 대진표 뷰 그대로 표시 + 연결선(SVG) 표시용 overflow visible 강제 */
+#bracket-display{overflow:visible !important;min-height:200px;}
+#bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
+#bracket-display svg{overflow:visible !important;}
+
+/* 이름 숨김 모드 */
+body.hide-names .player-name-part{
+  opacity:0;
   pointer-events:none;
-  z-index:10;
-  display:${previewMode?'block':'none'};
+  width:0;overflow:hidden !important;display:inline-block;
 }
-.page-guide::before{
-  content:attr(data-label);
-  position:absolute;
-  right:8px;
-  top:-16px;
-  font-size:9px;
-  color:#e63946;
-  background:#fff;
-  padding:1px 5px;
-  border-radius:3px;
-  font-family:'Share Tech Mono',monospace;
-  opacity:0.8;
-}
-.page-guide-end{
-  position:absolute;
-  left:0; right:0;
-  border-top:1px dashed rgba(100,100,100,0.3);
-  pointer-events:none;
-  z-index:9;
-  display:${previewMode?'block':'none'};
-}
-/* 대진표 내부 */
-.bracket-inner{
-  overflow:visible !important;
-  transform-origin:top left;
-}
-.bracket-inner *{overflow:visible !important;}
-.bracket-inner div[style*="background"]{background:#fff !important;}
-.bracket-inner [style*="background:#08080f"],[style*="background:#0f0f1a"],[style*="background:#13131f"],[style*="background:#1a1a2a"]{background:#fff !important;}
-.bracket-inner span{color:#111 !important;}
-.group-header{
-  font-size:11px;font-weight:700;color:#333;
-  font-family:'Share Tech Mono',monospace;
-  letter-spacing:1px;
-  border-left:3px solid #e63946;
-  padding-left:8px;
-  margin:14px 0 6px;
-}
-.group-header:first-child{margin-top:0;}
+
+/* 인쇄 */
 @media print{
-  html,body{background:#fff;}
+  html,body{background:var(--bg);}
   .toolbar{display:none !important;}
-  .pages-wrap{padding:0;}
-  .bracket-full-wrap{margin:0;box-shadow:none;width:100%;padding:10mm;}
-  .page-guide,.page-guide-end{display:block !important;}
+  .preview-wrap{padding:0;}
+  #bracket-display,#bracket-display *{overflow:visible !important;}
 }
-</style></head><body>
+</style>
+</head>
+<body>
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <button class="btn-toggle" id="btn-toggle-guide" onclick="toggleGuide()" style="border:1px solid #4cc9f0 !important;">${previewMode?'📐 페이지 경계 숨기기':'📐 페이지 경계 보기'}</button>
-  <span style="color:#888;font-size:11px;margin-left:4px;">※ 인쇄 설정에서 "배경 그래픽 포함" 체크 권장</span>
+  <label class="name-toggle-wrap" title="이름 포함/제외 토글">
+    <input type="checkbox" id="chk-show-names" checked onchange="toggleNames(this.checked)">
+    <span id="name-toggle-label">✅ 이름 포함</span>
+  </label>
+  <span style="color:var(--text3);font-size:11px;margin-left:4px;">전체 대진표 — 현재 화면과 동일</span>
 </div>
-<div class="pages-wrap">
-  <div class="bracket-full-wrap" id="bracket-full-wrap">
-    <div class="bracket-inner" id="bracket-inner-content">
-      ${allBracketHTML}
-    </div>
-  </div>
+<div class="preview-wrap">
+  <div id="bracket-display">${rawHTML}</div>
 </div>
 <script>
-var _guideVisible=${previewMode?'true':'false'};
-function toggleGuide(){
-  _guideVisible=!_guideVisible;
-  document.querySelectorAll('.page-guide,.page-guide-end').forEach(el=>{
-    el.style.display=_guideVisible?'block':'none';
+// 이름 부분 span 래핑 (괄호 안 이름 식별)
+function wrapNames(){
+  const walker=document.createTreeWalker(
+    document.getElementById('bracket-display'),
+    NodeFilter.SHOW_TEXT
+  );
+  const nodes=[];
+  let node;
+  while(node=walker.nextNode()) nodes.push(node);
+
+  nodes.forEach(n=>{
+    const t=n.textContent;
+    // "N번 (이름)" 패턴에서 "(이름)" 부분 래핑
+    if(/\s*\([^)]+\)/.test(t)){
+      const span=document.createElement('span');
+      span.innerHTML=t.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      n.parentNode.replaceChild(span,n);
+    }
   });
-  document.getElementById('btn-toggle-guide').textContent=_guideVisible?'📐 페이지 경계 숨기기':'📐 페이지 경계 보기';
 }
-// A4 내용 높이(mm) 기준 페이지 나누기 가이드 동적 생성
-window.addEventListener('load', function(){
-  const wrap=document.getElementById('bracket-full-wrap');
-  const inner=document.getElementById('bracket-inner-content');
-  if(!wrap||!inner) return;
-  // padding 제외 실제 콘텐츠 영역 (px 단위)
-  const style=getComputedStyle(wrap);
-  const paddingTop=parseFloat(style.paddingTop);
-  // A4 인쇄 가능 높이: 297mm - 24mm(상하패딩) = 273mm → px 변환 (96dpi 기준 → print 75dpi 고려 → CSS mm 사용)
-  // CSS 1mm = 3.7795px
-  const pageHeightMM=273;
-  const pageHeightPx=pageHeightMM*3.7795;
-  const totalH=inner.scrollHeight;
-  const totalPages=Math.ceil(totalH/pageHeightPx);
-  for(let i=1;i<totalPages;i++){
-    const guide=document.createElement('div');
-    guide.className='page-guide';
-    guide.style.top=(paddingTop+i*pageHeightPx)+'px';
-    guide.dataset.label='페이지 '+i+' 끝 / '+(i+1)+' 시작';
-    guide.style.display=_guideVisible?'block':'none';
-    wrap.appendChild(guide);
-  }
+
+function toggleNames(show){
+  document.getElementById('name-toggle-label').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
+  document.body.classList.toggle('hide-names',!show);
+}
+
+// 클릭 이벤트 제거 (미리보기 전용이므로 경기박스 클릭 비활성화)
+window.addEventListener('load',function(){
+  wrapNames();
+  document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
+    el.removeAttribute('onclick');
+    el.style.cursor='default';
+    el.style.pointerEvents='none';
+  });
+  // 모달/오버레이 제거
+  document.querySelectorAll('[id*="modal"],[id*="overlay"]').forEach(el=>el.remove());
 });
 <\/script>
 </body></html>`;
@@ -2501,166 +2497,146 @@ window.addEventListener('load', function(){
   win.document.close();
 }
 
-// ── 전체 대진표 HTML 빌드 (라이트 테마) ──
-function _buildAllBracketHTML(groups, hideNames){
-  const saved=S.matches;
-  let result='';
-
-  if(_bracketLayout==='D'){
-    // D형: 좌/우 분리 렌더
-    const lDiv=document.createElement('div');
-    const rDiv=document.createElement('div');
-    lDiv.style.cssText='display:inline-block;vertical-align:top;';
-    rDiv.style.cssText='display:inline-block;vertical-align:top;';
-
-    const court1Groups=groups.filter(g=>g.court===1||!g.court);
-    const court2Groups=groups.filter(g=>g.court===2);
-
-    court1Groups.forEach(g=>{
-      const lbl=_makeGroupHeader(g);
-      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri})));
-      S.matches=taggedMatches;
-      const w=document.createElement('div');
-      _renderBracketHTML(w, taggedMatches, 'top', false);
-      lDiv.innerHTML+=lbl+_lightTheme(w, hideNames);
-    });
-    court2Groups.forEach(g=>{
-      const lbl=_makeGroupHeader(g);
-      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri})));
-      S.matches=taggedMatches;
-      const w=document.createElement('div');
-      _renderBracketHTML(w, taggedMatches, 'top', true);
-      rDiv.innerHTML+=lbl+_lightTheme(w, hideNames);
-    });
-
-    const outerDiv=document.createElement('div');
-    outerDiv.style.cssText='display:flex;gap:24px;';
-    outerDiv.appendChild(lDiv);
-    outerDiv.appendChild(rDiv);
-    result=outerDiv.outerHTML;
-  } else {
-    // A/B/C/E형
-    const outerDiv=document.createElement('div');
-    groups.forEach(g=>{
-      const lbl=_makeGroupHeader(g);
-      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri})));
-      S.matches=taggedMatches;
-      const w=document.createElement('div');
-      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
-      (fns[_bracketLayout]||renderBracketA)(w);
-      outerDiv.innerHTML+=lbl+_lightTheme(w, hideNames);
-    });
-    result=outerDiv.innerHTML;
-  }
-
-  S.matches=saved;
-  return result;
-}
-
-function _makeGroupHeader(g){
-  const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-  return `<div class="group-header">${shortLabel} (${g.slots.length}명)</div>`;
-}
-
-function _lightTheme(wrap, hideNames){
-  // overflow 제거
-  wrap.querySelectorAll('*').forEach(el=>{
-    el.style.overflow='visible';
-    el.style.overflowX='visible';
-    el.style.overflowY='visible';
-    if(el.style.background&&el.style.background!=='') el.style.background='#fff';
-    if(el.style.backgroundColor&&el.style.backgroundColor!=='') el.style.backgroundColor='#fff';
-    if(el.style.color&&el.style.color!=='rgb(230, 57, 70)'&&el.style.color!=='#e63946') el.style.color='#111';
-    if(el.style.borderColor) el.style.borderColor='#555';
-  });
-  // SVG 변환
-  wrap.querySelectorAll('rect').forEach(el=>{ el.setAttribute('fill','#fff'); el.setAttribute('stroke','#555'); });
-  wrap.querySelectorAll('path,line').forEach(el=>el.setAttribute('stroke','#555'));
-  wrap.querySelectorAll('text').forEach(el=>{
-    const f=el.getAttribute('fill');
-    if(f&&f!=='#e63946') el.setAttribute('fill','#111');
-  });
-  // 이름 제외 옵션
-  if(hideNames){
-    wrap.querySelectorAll('span,div').forEach(el=>{
-      if(el.children.length===0){
-        const t=el.textContent||'';
-        // "(이름)" 부분 제거
-        if(/\(.+\)/.test(t)) el.textContent=t.replace(/\s*\(.+\)/g,'');
-      }
-    });
-  }
-  return `<div style="overflow:visible;margin-bottom:12px;">${wrap.innerHTML}</div>`;
-}
-
-// ── 선택 PDF 출력 ──
-function _doPrint(groups, hideNames, withRoster){
-  const win=window.open('','_blank','width=900,height=800');
+// ── 선택 PDF 출력: 미리보기 창에서 이름 체크박스 토글 ──
+function _doPrint(groups, hideNamesInitial){
+  const win=window.open('','_blank','width=1000,height=850');
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
-  const renderBracketLight=(g)=>{
+  // 각 그룹 대진표를 숨겨진 div에 렌더 후 rAF 2회 대기(연결선 SVG 완성 후 복사)
+  const saved=S.matches;
+  const hiddenContainer=document.createElement('div');
+  hiddenContainer.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;';
+  document.body.appendChild(hiddenContainer);
+
+  const groupDivs=groups.map(g=>{
     const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-    const tmpWrap=document.createElement('div');
+    const wrapper=document.createElement('div');
+    wrapper.style.cssText='margin-bottom:32px;';
     const taggedMatches=g.matches.map((round,ri)=>
       round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
     );
     S.matches=taggedMatches;
-    _renderBracketHTML(tmpWrap, taggedMatches, 'top', false);
-    return _lightTheme(tmpWrap, hideNames);
-  };
+    _renderBracketHTML(wrapper, taggedMatches, 'top', false);
+    hiddenContainer.appendChild(wrapper);
+    return {label:shortLabel, slots:g.slots.length, wrapper};
+  });
+  S.matches=saved;
 
-  let html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<title>대진표</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+  // rAF 2회 대기 후 SVG 포함한 HTML 수집
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const pagesHTML=groupDivs.map(({label,slots,wrapper})=>{
+      wrapper.querySelectorAll('*').forEach(el=>{
+        el.style.overflow='visible'; el.style.overflowX='visible'; el.style.overflowY='visible';
+      });
+      wrapper.querySelectorAll('svg').forEach(s=>{
+        s.setAttribute('overflow','visible'); s.style.overflow='visible';
+      });
+      return `<div class="page">
+        <div class="group-title">${label} (${slots}명)</div>
+        <div class="bracket-wrap">${wrapper.innerHTML}</div>
+      </div>`;
+    }).join('');
+    hiddenContainer.remove();
+    _writeSelectPreviewWin(win, pagesHTML, hideNamesInitial);
+  }));
+}
+
+function _writeSelectPreviewWin(win, pagesHTML, hideNamesInitial){
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+<title>선택 대진표</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:#f0f0f0;font-family:'Noto Sans KR',sans-serif;}
-.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 20px;background:#222;display:flex;gap:8px;align-items:center;z-index:999;}
-.toolbar button{padding:7px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
+:root{
+  --bg:#08080f;--bg2:#0f0f1a;--card:#13131f;--card2:#1a1a2a;
+  --border:#2a2a40;--border2:#3a3a55;
+  --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
+  --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
+}
+html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
+.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
+.toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
-.btn-close{background:#555;color:#fff;}
-.pages{padding:60px 20px 20px;}
+.btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
+.name-toggle-wrap{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--card);border:1px solid var(--border2);border-radius:8px;cursor:pointer;user-select:none;}
+.name-toggle-wrap input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
+.name-toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
+.pages{padding:70px 20px 20px;}
 .page{
   width:210mm;min-height:297mm;
   background:#fff;color:#111;
   margin:0 auto 20px;
-  padding:15mm 15mm 15mm 15mm;
-  box-shadow:0 2px 12px rgba(0,0,0,.2);
+  padding:15mm;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
   page-break-after:always;
   overflow:visible;
 }
 .page:last-child{page-break-after:auto;}
-.group-title{
-  font-size:14px;font-weight:700;color:#111;
-  font-family:'Share Tech Mono',monospace;
-  margin-bottom:10px;letter-spacing:1px;
-  border-left:4px solid #e63946;padding-left:10px;
-}
+.group-title{font-size:14px;font-weight:700;color:#111;font-family:'Share Tech Mono',monospace;margin-bottom:10px;letter-spacing:1px;border-left:4px solid #e63946;padding-left:10px;}
 .bracket-wrap{overflow:visible;}
 .bracket-wrap *{overflow:visible !important;}
+/* 라이트 테마 강제 */
+.bracket-wrap div{background:#fff !important;color:#111 !important;}
+.bracket-wrap span{color:#111 !important;}
+.bracket-wrap [style*="border"]{border-color:#555 !important;}
+.bracket-wrap rect{fill:#fff !important;stroke:#555 !important;}
+.bracket-wrap path,.bracket-wrap line{stroke:#555 !important;}
+/* 이름 숨김 */
+body.hide-names .player-name-part{opacity:0;width:0;overflow:hidden;display:inline-block;pointer-events:none;}
 @media print{
-  body{background:#fff;}
+  html,body{background:#fff;}
   .toolbar{display:none !important;}
   .pages{padding:0;}
   .page{margin:0;box-shadow:none;width:100%;}
 }
-</style></head><body>
+</style>
+</head>
+<body class="${hideNamesInitial?'hide-names':''}">
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <span style="color:#aaa;font-size:12px;margin-left:8px;">※ PDF 저장 시 "대상: PDF로 저장" 선택</span>
+  <label class="name-toggle-wrap">
+    <input type="checkbox" id="chk-names" ${hideNamesInitial?'':'checked'} onchange="toggleNames(this.checked)">
+    <span id="name-lbl">${hideNamesInitial?'🔲 이름 제외':'✅ 이름 포함'}</span>
+  </label>
 </div>
-<div class="pages">`;
-
-  groups.forEach((g)=>{
-    const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-    html+=`<div class="page">`;
-    html+=`<div class="group-title">${shortLabel} (${g.slots.length}명)</div>`;
-    html+=`<div class="bracket-wrap">${renderBracketLight(g)}</div>`;
-    html+=`</div>`;
+<div class="pages">${pagesHTML}</div>
+<script>
+function wrapNames(){
+  const walker=document.createTreeWalker(document.querySelector('.pages'),NodeFilter.SHOW_TEXT);
+  const nodes=[];let node;
+  while(node=walker.nextNode()) nodes.push(node);
+  nodes.forEach(n=>{
+    if(/\s*\([^)]+\)/.test(n.textContent)){
+      const sp=document.createElement('span');
+      sp.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      n.parentNode.replaceChild(sp,n);
+    }
   });
+}
+function toggleNames(show){
+  document.getElementById('name-lbl').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
+  document.body.classList.toggle('hide-names',!show);
+}
+window.addEventListener('load',function(){
+  wrapNames();
+  // SVG 색상 라이트 테마 적용 (연결선 포함)
+  document.querySelectorAll('rect').forEach(el=>{el.setAttribute('fill','#fff');el.setAttribute('stroke','#999');});
+  document.querySelectorAll('path,line').forEach(el=>{
+    // 연결선은 진하게, 경기박스 내부 분리선은 연하게
+    const sw=el.getAttribute('stroke-width');
+    el.setAttribute('stroke', sw&&parseFloat(sw)>=1.5 ? '#555' : '#ccc');
+  });
+  document.querySelectorAll('text').forEach(el=>{
+    const f=el.getAttribute('fill');
+    if(f&&f!=='#e63946') el.setAttribute('fill','#111');
+  });
+  // SVG overflow visible 강제
+  document.querySelectorAll('svg').forEach(s=>s.setAttribute('overflow','visible'));
+});
+<\/script>
+</body></html>`;
 
-  html+=`</div></body></html>`;
   win.document.write(html);
   win.document.close();
 }
