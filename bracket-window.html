@@ -280,7 +280,8 @@ function isCurrentMatchIdx(){ return false; }
 
 // ── 선 새로고침 ──
 function _refreshSvgLines(){
-  if(document.getElementById('pts-step3').classList.contains('active')){
+  if(document.getElementById('pts-step3').classList.contains('on')){
+    renderBracketTabs();
     _redrawBracketView();
   } else {
     _renderPdfPreview(_getSelectedGroups());
