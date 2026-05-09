@@ -2408,6 +2408,8 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #chk-show-names{accent-color:#06d6a0;}
 #chk-white-mode{accent-color:#4cc9f0;}
 #chk-page-guide{accent-color:#4cc9f0;}
+#btn-hide-names{background:transparent !important;border:1px solid var(--border2) !important;color:var(--text3) !important;}
+#btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 
 /* ── 미리보기 ── */
 .preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
@@ -2416,9 +2418,6 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
-
-/* ── 이름 숨김 (괄호 이름만 투명 - 박스/번호 유지) ── */
-body.hide-names .player-name-part{visibility:hidden;font-size:0 !important;width:0 !important;display:inline-block;overflow:hidden !important;}
 
 /* ── A4 페이지 나누기 가이드 ── */
 .page-guide-line{
@@ -2452,10 +2451,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="toggle-wrap">
-    <input type="checkbox" id="chk-show-names" checked onchange="toggleNames(this.checked)">
-    <span id="lbl-names">✅ 이름 포함</span>
-  </label>
+  <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
   <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
     <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
     <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
@@ -2507,26 +2503,27 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   </div>
 </div>
 <script>
-function wrapNames(){ /* 재렌더 방식 사용 — 별도 래핑 불필요 */ }
-
-function toggleNames(show){
-  document.getElementById('lbl-names').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
-  // 부모창의 _hideNames 세팅 후 재렌더 → 결과를 이 팝업에 복사
-  try{
-    const p=window.opener;
-    p.window._hideNames=!show;
+function toggleNames(){
+  const btn=document.getElementById('btn-hide-names');
+  const hiding=btn.textContent.indexOf('가리기')!==-1;
+  btn.textContent=hiding?'👁 이름 보이기':'👁 이름 가리기';
+  btn.classList.toggle('active',hiding);
+  const p=window.opener;
+  const savedHide=p.window._hideNames;
+  p.window._hideNames=hiding;
+  p._renderPdfPreview(p.S.groupBrackets);
+  p.requestAnimationFrame(()=>p.requestAnimationFrame(()=>{
+    const src=p.document.getElementById('pdf-preview');
+    const dst=document.getElementById('bracket-display');
+    if(src&&dst){
+      const clone=src.cloneNode(true);
+      clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
+      clone.querySelectorAll('svg').forEach(s=>{s.setAttribute('overflow','visible');s.style.overflow='visible';});
+      dst.innerHTML=clone.innerHTML;
+    }
+    p.window._hideNames=savedHide;
     p._renderPdfPreview(p.S.groupBrackets);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const src=p.document.getElementById('pdf-preview');
-      const dst=document.getElementById('bracket-display');
-      if(src&&dst){
-        const clone=src.cloneNode(true);
-        clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
-        clone.querySelectorAll('svg').forEach(s=>{s.setAttribute('overflow','visible');s.style.overflow='visible';});
-        dst.innerHTML=clone.innerHTML;
-      }
-    }));
-  }catch(e){}
+  }));
 }
 
 function toggleWhite(on){
@@ -2571,7 +2568,6 @@ function buildPageGuides(){
 }
 
 window.addEventListener('load',function(){
-  wrapNames();
   // 클릭 제거 (대진표 내부만 — 툴바 버튼 제외)
   const _bd=document.getElementById('bracket-display');
   if(_bd) _bd.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
@@ -2762,6 +2758,8 @@ html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
 .toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
+#btn-hide-names{background:transparent !important;border:1px solid var(--border2) !important;color:var(--text3) !important;}
+#btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 .name-toggle-wrap{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--card);border:1px solid var(--border2);border-radius:8px;cursor:pointer;user-select:none;}
 .name-toggle-wrap input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
 .name-toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
@@ -2799,10 +2797,7 @@ body.hide-names .player-name-part{opacity:0;width:0;overflow:hidden;display:inli
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="name-toggle-wrap">
-    <input type="checkbox" id="chk-names" ${hideNamesInitial?'':'checked'} onchange="toggleNames(this.checked)">
-    <span id="name-lbl">${hideNamesInitial?'🔲 이름 제외':'✅ 이름 포함'}</span>
-  </label>
+  <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:${hideNamesInitial?'rgba(76,201,240,.12)':'transparent'};border:1px solid ${hideNamesInitial?'var(--accent)':'var(--border2)'};color:${hideNamesInitial?'var(--accent)':'var(--text3)'};border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${hideNamesInitial?'👁 이름 보이기':'👁 이름 가리기'}</button>
 </div>
 <div class="pages">${pagesHTML}</div>
 <script>
@@ -2811,16 +2806,21 @@ function wrapNames(){
   const nodes=[];let node;
   while(node=walker.nextNode()) nodes.push(node);
   nodes.forEach(n=>{
-    if(/\s*\([^)]+\)/.test(n.textContent)){
-      const sp=document.createElement('span');
-      sp.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
-      n.parentNode.replaceChild(sp,n);
+    if(/\([^)]+\)/.test(n.textContent) && n.parentNode){
+      const parent=n.parentNode;
+      // 텍스트 노드가 부모의 유일한 자식인 경우에만 처리
+      if(parent.childNodes.length===1){
+        parent.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      }
     }
   });
 }
-function toggleNames(show){
-  document.getElementById('name-lbl').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
-  document.body.classList.toggle('hide-names',!show);
+function toggleNames(){
+  const btn=document.getElementById('btn-hide-names');
+  const hiding=btn.textContent.indexOf('가리기')!==-1;
+  btn.textContent=hiding?'👁 이름 보이기':'👁 이름 가리기';
+  btn.classList.toggle('active',hiding);
+  document.body.classList.toggle('hide-names',hiding);
 }
 window.addEventListener('load',function(){
   wrapNames();
