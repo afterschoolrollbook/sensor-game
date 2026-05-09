@@ -2491,31 +2491,28 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   </label>
   <!-- 용지 방향 + 장수 (체크 시 활성화) -->
   <div id="page-ctrl" class="toggle-wrap" style="gap:7px;padding:5px 12px;opacity:0.3;pointer-events:none;transition:opacity .2s;align-items:center;">
-    <!-- 용지 방향 -->
     <span style="font-size:10px;color:var(--text3);white-space:nowrap;">용지:</span>
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;">
-      <input type="radio" name="paper-orient" value="portrait" checked onchange="setOrient('portrait')" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
+      <input type="radio" id="orient-portrait" name="paper-orient" value="portrait" checked style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
       <span style="font-size:11px;color:var(--text2);">세로</span>
     </label>
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;">
-      <input type="radio" name="paper-orient" value="landscape" onchange="setOrient('landscape')" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
+      <input type="radio" id="orient-landscape" name="paper-orient" value="landscape" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
       <span style="font-size:11px;color:var(--text2);">가로</span>
     </label>
     <span style="width:1px;height:16px;background:var(--border2);margin:0 2px;display:inline-block;"></span>
-    <!-- 가로 장수 -->
     <span style="font-size:10px;color:var(--text3);white-space:nowrap;">가로</span>
-    <button onclick="changeCols(-1)" class="pg-btn">−</button>
-    <span id="disp-cols" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:16px;text-align:center;">1</span>
-    <button onclick="changeCols(1)" class="pg-btn">+</button>
+    <button id="btn-col-minus" class="pg-btn">−</button>
+    <span id="disp-cols" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
+    <button id="btn-col-plus" class="pg-btn">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
-    <span style="font-size:12px;color:var(--text3);margin:0 1px;">×</span>
-    <!-- 세로 장수 -->
+    <span style="font-size:12px;color:var(--text3);margin:0 2px;">×</span>
     <span style="font-size:10px;color:var(--text3);white-space:nowrap;">세로</span>
-    <button onclick="changeRows(-1)" class="pg-btn">−</button>
-    <span id="disp-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:16px;text-align:center;">1</span>
-    <button onclick="changeRows(1)" class="pg-btn">+</button>
+    <button id="btn-row-minus" class="pg-btn">−</button>
+    <span id="disp-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
+    <button id="btn-row-plus" class="pg-btn">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
-    <span id="disp-scale" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
+    <span id="disp-scale" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:6px;"></span>
   </div>
 </div>
 <div class="preview-wrap" id="preview-wrap">
@@ -2581,19 +2578,19 @@ function toggleWhite(on){
 }
 
 /* ══ A4 용지 배치 격자 ══
-   용지 방향: portrait(세로) 190×277mm  /  landscape(가로) 277×190mm
-   가로N장 × 세로N장 격자 → 대진표를 그 안에 비율 유지하며 피팅
-   넘치면 장수 자동 제안 (알림)
+  - 셀 크기 = 실제 A4 인쇄 가능 영역 px (창 크기와 무관, 고정)
+  - 대진표를 cols×rows 격자에 비율 유지하며 스케일
+  - 넘치는 경우 자동으로 장수 늘려서 표시
+  - 창 리사이즈는 격자에 영향 없음
 */
 const _PX_MM = 96 / 25.4;
-// 인쇄 가능 영역 (여백 제외)
 const _PAPER = {
-  portrait:  { w: 190 * _PX_MM, h: 277 * _PX_MM },  // 세로
-  landscape: { w: 277 * _PX_MM, h: 190 * _PX_MM },  // 가로
+  portrait:  { w: Math.round(190 * _PX_MM), h: Math.round(277 * _PX_MM) },
+  landscape: { w: Math.round(277 * _PX_MM), h: Math.round(190 * _PX_MM) },
 };
 
 var _guideOn  = false;
-var _orient   = 'portrait';   // 'portrait' | 'landscape'
+var _orient   = 'portrait';
 var _cols     = 1;
 var _rows     = 1;
 var _rawW     = 0;
@@ -2606,170 +2603,208 @@ function togglePageGuide(on){
   const ctrl = document.getElementById('page-ctrl');
   ctrl.style.opacity       = on ? '1'    : '0.3';
   ctrl.style.pointerEvents = on ? 'auto' : 'none';
-  if(on){ _measureRaw(); refreshGrid(); }
+  if(on){ _measureRaw(); _autoFit(); refreshGrid(); }
   else  { _clearGrid(); }
 }
 
-/* ── 용지 방향 ── */
-function setOrient(v){
-  _orient = v;
-  if(_guideOn) refreshGrid();
-}
-
-/* ── 원본 크기 측정 ── */
+/* ── 원본 크기 측정 (scale=1 기준, 1회만) ── */
 function _measureRaw(){
   const sw = document.getElementById('bracket-scale-wrap');
   sw.style.transform = 'scale(1)';
+  sw.style.position  = '';
+  sw.style.zIndex    = '';
   const d = document.getElementById('bracket-display');
-  _rawW = d.scrollWidth  || d.offsetWidth  || 800;
-  _rawH = d.scrollHeight || d.offsetHeight || 600;
+  // getBoundingClientRect로 실제 렌더 크기 정확히 측정
+  const rect = d.getBoundingClientRect();
+  _rawW = Math.max(rect.width,  d.scrollWidth,  100);
+  _rawH = Math.max(rect.height, d.scrollHeight, 100);
+}
 
-  // 현재 용지 기준 자동 장수 계산 (비율 유지 → 한 장에 맞추는 스케일 먼저 구함)
+/* ── 지정 용지/장수에 맞게 자동 cols/rows 산정 ── */
+function _autoFit(){
   const pw = _PAPER[_orient].w;
   const ph = _PAPER[_orient].h;
+  // 1장 가로에 들어가는 스케일
   const sX = pw / _rawW;
   const sY = ph / _rawH;
-  const s1 = Math.min(sX, sY);   // 1×1에 맞추는 스케일
+  const s1 = Math.min(sX, sY);   // 1×1 피팅 스케일
   if(s1 >= 1){
-    // 1장에 들어감
     _cols = 1; _rows = 1;
   } else {
-    // 비율 유지하며 cols×rows 자동 산정
-    _cols = Math.ceil(_rawW * s1 / pw);   // 항상 1
-    _rows = Math.ceil(_rawH * s1 / ph);
-    // 더 정확히: 실제로 몇 장 필요한지
-    _cols = 1;
+    // 비율 유지할 때 실제로 필요한 장수
+    // → scale=1 기준으로 가로/세로 각각 몇 장 필요한지
+    _cols = Math.max(1, Math.ceil(_rawW / pw));
     _rows = Math.max(1, Math.ceil(_rawH / ph));
+    // 단, 비율 유지하면 한쪽은 여백이 남으므로 최소화
+    // 가로 1장 고정이 일반적
+    _cols = 1;
+    const scaleAtCol1 = pw / _rawW;
+    _rows = Math.max(1, Math.ceil((_rawH * scaleAtCol1) / ph));
+    // 실제 이 스케일에서 세로가 rows*ph 안에 들어오는지 확인
+    const fitScale = Math.min((_cols * pw) / _rawW, (_rows * ph) / _rawH);
+    if(_rawH * fitScale > _rows * ph) _rows++;
   }
   _syncDisplay();
 }
 
-/* ── +/- 버튼 ── */
-function changeCols(d){
-  if(!_guideOn) return;
-  _cols = Math.max(1, Math.min(20, _cols + d));
-  _syncDisplay(); refreshGrid();
+/* ── 용지 방향 변경 ── */
+function setOrient(v){
+  _orient = v;
+  if(_guideOn){ _autoFit(); refreshGrid(); }
 }
-function changeRows(d){
-  if(!_guideOn) return;
-  _rows = Math.max(1, Math.min(50, _rows + d));
-  _syncDisplay(); refreshGrid();
+
+/* ── +/- 버튼 핸들러 (load 후 addEventListener로 연결) ── */
+function _initPageCtrlButtons(){
+  document.getElementById('btn-col-minus').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(!_guideOn) return;
+    _cols = Math.max(1, _cols - 1);
+    _syncDisplay(); refreshGrid();
+  });
+  document.getElementById('btn-col-plus').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(!_guideOn) return;
+    _cols = Math.min(20, _cols + 1);
+    _syncDisplay(); refreshGrid();
+  });
+  document.getElementById('btn-row-minus').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(!_guideOn) return;
+    _rows = Math.max(1, _rows - 1);
+    _syncDisplay(); refreshGrid();
+  });
+  document.getElementById('btn-row-plus').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(!_guideOn) return;
+    _rows = Math.min(50, _rows + 1);
+    _syncDisplay(); refreshGrid();
+  });
+  document.getElementById('orient-portrait').addEventListener('change', function(){
+    if(this.checked) setOrient('portrait');
+  });
+  document.getElementById('orient-landscape').addEventListener('change', function(){
+    if(this.checked) setOrient('landscape');
+  });
 }
+
 function _syncDisplay(){
   document.getElementById('disp-cols').textContent = _cols;
   document.getElementById('disp-rows').textContent = _rows;
 }
 
-/* ── 격자 그리기 ── */
+/* ── 격자 그리기 ──
+   셀 크기는 실제 A4 px (고정). 창 크기와 무관.
+   대진표는 cols*pw × rows*ph 영역에 비율 유지하며 scale.
+   대진표가 격자를 넘치면 자동으로 장수를 늘려서 표시.
+*/
 function refreshGrid(){
-  if(!_guideOn || !_rawW || !_rawH) return;
+  if(!_rawW || !_rawH) return;
 
   const wrap = document.getElementById('preview-wrap');
   const sw   = document.getElementById('bracket-scale-wrap');
-  const PAD  = 64;  // preview-wrap padding-top
+  const PAD  = 64;
   const pw   = _PAPER[_orient].w;
   const ph   = _PAPER[_orient].h;
 
-  /* 지정 격자 전체 크기 */
-  const totalW = _cols * pw;
-  const totalH = _rows * ph;
+  /* 비율 유지 스케일 계산 */
+  const scaleX = (_cols * pw) / _rawW;
+  const scaleY = (_rows * ph) / _rawH;
+  _curScale    = Math.min(scaleX, scaleY);
+  _curScale    = Math.max(0.01, Math.min(_curScale, 10));
 
-  /* 비율 유지 스케일: 대진표가 격자 안에 딱 맞게 */
-  const scaleX = totalW / _rawW;
-  const scaleY = totalH / _rawH;
-  _curScale = Math.min(scaleX, scaleY);
-  _curScale = Math.max(0.02, Math.min(_curScale, 8));
-
-  /* 실제 렌더 크기 */
+  /* 실제 스케일 후 크기 */
   const scaledW = _rawW * _curScale;
   const scaledH = _rawH * _curScale;
 
-  /* 넘침 감지 → 자동 장수 보정 제안 */
-  const needCols = Math.ceil(_rawW * _curScale / pw);
-  const needRows = Math.ceil(_rawH * _curScale / ph);
-  const overflow = needCols > _cols || needRows > _rows;
+  /* 넘침 감지: 실제 스케일 후 크기가 격자를 넘으면 자동으로 장수 증가 */
+  const needCols = Math.ceil(scaledW / pw);
+  const needRows = Math.ceil(scaledH / ph);
+  if(needCols > _cols || needRows > _rows){
+    _cols = Math.max(_cols, needCols);
+    _rows = Math.max(_rows, needRows);
+    _syncDisplay();
+    // 재귀 호출로 재계산
+    refreshGrid();
+    return;
+  }
 
-  sw.style.transform  = 'scale(' + _curScale + ')';
-  sw.style.position   = 'relative';
-  sw.style.zIndex     = '2';
-  wrap.style.minHeight = (PAD + scaledH + 80) + 'px';
+  /* 스케일 적용 */
+  sw.style.transform = 'scale(' + _curScale + ')';
+  sw.style.position  = 'relative';
+  sw.style.zIndex    = '2';
+
+  /* 격자 전체 높이로 wrap 확장 (스크롤 공간) */
+  const gridH = _rows * ph;
+  const gridW = _cols * pw;
+  wrap.style.minHeight = (PAD + gridH + 80) + 'px';
 
   /* 기존 격자 제거 */
-  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v').forEach(e => e.remove());
+  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v,.pg-lbl').forEach(e => e.remove());
 
-  /* A4 셀 (용지 한 장 = 한 칸) */
   const isWhite = document.body.classList.contains('white-mode');
+  const lineCol  = isWhite ? 'rgba(0,100,220,0.55)' : 'rgba(76,201,240,0.65)';
+  const solidCol = isWhite ? 'rgba(0,100,220,0.4)'  : 'rgba(76,201,240,0.45)';
+  const lblCol   = isWhite ? 'rgba(0,80,200,0.35)'  : 'rgba(76,201,240,0.35)';
+
+  /* A4 셀 배경 */
   for(let r = 0; r < _rows; r++){
     for(let c = 0; c < _cols; c++){
       const cell = document.createElement('div');
       cell.className = 'pg-cell';
-      const left = c * pw;
-      const top  = PAD + r * ph;
       cell.style.cssText =
-        'position:absolute;pointer-events:none;z-index:1;' +
-        'left:'  + left + 'px;' +
-        'top:'   + top  + 'px;' +
-        'width:' + pw   + 'px;' +
-        'height:'+ ph   + 'px;' +
+        'position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;' +
+        'left:' + (c * pw) + 'px;top:' + (PAD + r * ph) + 'px;' +
+        'width:' + pw + 'px;height:' + ph + 'px;' +
         (isWhite
-          ? 'background:#fff;border:1.5px solid rgba(0,100,220,0.18);box-shadow:0 2px 8px rgba(0,0,0,.08);'
-          : 'background:rgba(255,255,255,0.02);border:1.5px solid rgba(76,201,240,0.2);');
+          ? 'background:#fff;border:1px solid rgba(0,100,220,0.15);box-shadow:0 2px 10px rgba(0,0,0,.07);'
+          : 'background:rgba(255,255,255,0.015);border:1px solid rgba(76,201,240,0.15);');
       wrap.appendChild(cell);
     }
   }
 
-  /* 가로 구분선 (세로 장수 경계) */
+  /* 가로 구분선 (row 경계) */
   for(let r = 0; r <= _rows; r++){
     const hl = document.createElement('div');
     hl.className = 'pg-line-h';
-    const top = PAD + r * ph;
+    const isBorder = (r === 0 || r === _rows);
     hl.style.cssText =
-      'position:absolute;left:0;pointer-events:none;z-index:52;height:0;' +
-      'width:' + (_cols * pw) + 'px;' +
-      'top:' + top + 'px;' +
-      (r === 0 || r === _rows
-        ? 'border-top:2px solid rgba(76,201,240,0.5);'
-        : 'border-top:2px dashed rgba(76,201,240,0.6);');
-    if(r > 0 && r < _rows){
-      hl.dataset.label = r + '↓ / ' + (r+1) + '↑';
-    }
+      'position:absolute;pointer-events:none;z-index:52;height:0;left:0;' +
+      'width:' + gridW + 'px;' +
+      'top:' + (PAD + r * ph) + 'px;' +
+      'border-top:' + (isBorder ? '2px solid ' + solidCol : '2px dashed ' + lineCol) + ';';
     wrap.appendChild(hl);
   }
 
-  /* 세로 구분선 (가로 장수 경계) */
+  /* 세로 구분선 (col 경계) */
   for(let c = 0; c <= _cols; c++){
     const vl = document.createElement('div');
     vl.className = 'pg-line-v';
-    const left = c * pw;
+    const isBorder = (c === 0 || c === _cols);
     vl.style.cssText =
-      'position:absolute;top:' + PAD + 'px;pointer-events:none;z-index:52;width:0;' +
-      'height:' + (_rows * ph) + 'px;' +
-      'left:' + left + 'px;' +
-      (c === 0 || c === _cols
-        ? 'border-left:2px solid rgba(76,201,240,0.5);'
-        : 'border-left:2px dashed rgba(76,201,240,0.6);');
+      'position:absolute;pointer-events:none;z-index:52;width:0;' +
+      'left:' + (c * pw) + 'px;' +
+      'top:' + PAD + 'px;height:' + gridH + 'px;' +
+      'border-left:' + (isBorder ? '2px solid ' + solidCol : '2px dashed ' + lineCol) + ';';
     wrap.appendChild(vl);
   }
 
-  /* 페이지 번호 레이블 */
-  let pageNum = 1;
+  /* 페이지 번호 */
+  let pn = 1;
   for(let r = 0; r < _rows; r++){
     for(let c = 0; c < _cols; c++){
       const lbl = document.createElement('div');
-      lbl.className = 'pg-cell';  // 제거 대상 포함
+      lbl.className = 'pg-lbl';
       lbl.style.cssText =
-        'position:absolute;pointer-events:none;z-index:55;' +
-        'left:' + (c * pw + 4) + 'px;' +
-        'top:' + (PAD + r * ph + 4) + 'px;' +
+        'position:absolute;pointer-events:none;z-index:60;' +
+        'left:' + (c * pw + 5) + 'px;top:' + (PAD + r * ph + 5) + 'px;' +
         'font-size:9px;font-family:"Share Tech Mono",monospace;' +
-        (isWhite ? 'color:rgba(0,100,220,0.4);' : 'color:rgba(76,201,240,0.4);') +
-        'letter-spacing:1px;';
-      lbl.textContent = 'P' + pageNum++;
+        'color:' + lblCol + ';letter-spacing:1px;';
+      lbl.textContent = 'P' + (pn++);
       wrap.appendChild(lbl);
     }
   }
 
-  /* 넘침 경고 배지 */
+  /* 배지 & 툴바 비율 표시 */
   const pct  = Math.round(_curScale * 100);
   const disp = document.getElementById('disp-scale');
   if(disp) disp.textContent = '(' + pct + '%)';
@@ -2779,20 +2814,21 @@ function refreshGrid(){
     badge = document.createElement('div');
     badge.id = 'scale-badge';
     badge.style.cssText =
-      'position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.6;' +
+      'position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.7;' +
       'font-family:"Share Tech Mono",monospace;' +
-      'background:rgba(8,8,15,.92);padding:6px 13px;border-radius:7px;' +
-      'z-index:9999;border:1px solid #2a2a50;';
+      'padding:6px 14px;border-radius:7px;z-index:9999;';
     document.body.appendChild(badge);
   }
-  const orientLabel = _orient === 'portrait' ? '세로' : '가로';
+  const orientLabel = _orient === 'portrait' ? '세로용지' : '가로용지';
+  badge.style.background = isWhite ? 'rgba(240,243,255,.96)' : 'rgba(8,8,15,.92)';
+  badge.style.border      = isWhite ? '1px solid #b0c0e0' : '1px solid #2a2a50';
   badge.innerHTML =
-    '<span style="color:#4cc9f0;">' + _cols + '×' + _rows + '장</span>' +
-    '<span style="color:#555;margin:0 6px;">|</span>' +
-    '<span style="color:#9090b0;">용지 ' + orientLabel + '</span>' +
-    '<span style="color:#555;margin:0 6px;">|</span>' +
-    '<span style="color:' + (pct < 30 ? '#ffd60a' : '#06d6a0') + ';">' + pct + '%</span>' +
-    (overflow ? '<br><span style="color:#e63946;font-size:10px;">⚠ 장수 부족 — + 로 늘려보세요</span>' : '');
+    '<span style="color:' + (isWhite?'#0050c0':'#4cc9f0') + ';">' +
+      _cols + '×' + _rows + '장 &nbsp;' + orientLabel +
+    '</span><br>' +
+    '<span style="color:' + (isWhite?'#333':'#9090b0') + ';">출력비율: ' +
+    '<b style="color:' + (pct >= 80 ? (isWhite?'#006600':'#06d6a0') : pct>=40 ? (isWhite?'#885500':'#ffd60a') : '#e63946') + ';">' +
+    pct + '%</b></span>';
   badge.style.display = '';
 }
 
@@ -2804,19 +2840,22 @@ function _clearGrid(){
   sw.style.position   = '';
   sw.style.zIndex     = '';
   wrap.style.minHeight = '';
-  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v').forEach(e => e.remove());
+  wrap.querySelectorAll('.pg-cell,.pg-line-h,.pg-line-v,.pg-lbl').forEach(e => e.remove());
   const b = document.getElementById('scale-badge');
   if(b) b.style.display = 'none';
   const disp = document.getElementById('disp-scale');
   if(disp) disp.textContent = '';
-  _curScale = 1;
+  _curScale = 1; _rawW = 0; _rawH = 0;
 }
 
 window.addEventListener('load', function(){
   wrapNames();
+  // 클릭 이벤트 제거 (미리보기 전용)
   document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
     el.removeAttribute('onclick'); el.style.cursor='default'; el.style.pointerEvents='none';
   });
+  // 버튼 이벤트 등록
+  _initPageCtrlButtons();
 });
 <\/script>
 </body></html>`;
