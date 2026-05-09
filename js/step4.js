@@ -496,13 +496,13 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       const box=document.createElement('div');
       box.dataset.ri=ri;box.dataset.mi=mi;
-      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#0d2a1a':isBye?'#aaaacc':'#aaaacc';
+      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#0d2a1a':isBye?'#1a1a28':'#1e1e30';
       box.style.cssText=`
         position:absolute;left:0;right:0;
         transform:translateY(-50%);
         top:${slotCenterY}px;
         border-radius:6px;overflow:hidden;cursor:pointer;
-        border:${isSel||isCur?'2px':'1.5px'} solid ${borderColor};
+        border:${isSel||isCur?'1.5px':'1px'} solid ${borderColor};
         width:180px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
@@ -523,7 +523,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaacc'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#aaaacc;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:'`}`;      box.appendChild(header);
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#333'};font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#555;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
+      box.appendChild(header);
 
       if(isBye){
         const row=document.createElement('div');
@@ -624,8 +625,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     const PATH=(d)=>{
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
       p.setAttribute('d',d);
-      p.setAttribute('stroke','#ffffff');
-      p.setAttribute('stroke-width','2');
+      p.setAttribute('stroke','#2a2a50');
+      p.setAttribute('stroke-width','1.5');
       p.setAttribute('fill','none');
       p.setAttribute('stroke-linecap','square');
       p.setAttribute('stroke-linejoin','miter');
