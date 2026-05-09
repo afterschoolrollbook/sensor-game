@@ -2501,7 +2501,9 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 </div>
 <div style="position:relative;" id="a4-stage">
   <div class="preview-wrap" id="preview-wrap">
-    <div id="bracket-display">${rawHTML}</div>
+    <div id="a4-scale-wrap" style="transform-origin:top left;">
+      <div id="bracket-display">${rawHTML}</div>
+    </div>
   </div>
 </div>
 <script>
@@ -2663,9 +2665,8 @@ function _a4Draw(){
   const nc=Math.ceil(scaledW/pw), nr=Math.ceil(scaledH/ph);
   if(nc>_a4C||nr>_a4R){ _a4C=Math.max(_a4C,nc); _a4R=Math.max(_a4R,nr); _a4SyncD(); _a4Draw(); return; }
 
-  const disp=document.getElementById('bracket-display');
+  const disp=document.getElementById('a4-scale-wrap');
   disp.style.transform='scale('+_a4Scale+')';
-  disp.style.transformOrigin='top left';
 
   const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
@@ -2725,8 +2726,8 @@ function _a4Draw(){
 }
 
 function _a4Clear(){
-  const disp=document.getElementById('bracket-display');
-  disp.style.transform=''; disp.style.transformOrigin='';
+  const disp=document.getElementById('a4-scale-wrap');
+  disp.style.transform='';
   const stage=document.getElementById('a4-stage');
   stage.style.minHeight='';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
