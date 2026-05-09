@@ -2281,7 +2281,7 @@ function _renderPdfPreview(groups){
         _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
         _applyOverflow(gWrap);
         const block=document.createElement('div');
-        block.style.cssText='overflow:visible;margin-bottom:0;';
+        block.style.cssText='overflow:visible;margin-bottom:16px;';
         block.appendChild(hdr);
         block.appendChild(gWrap);
         container.appendChild(block);
@@ -2291,7 +2291,7 @@ function _renderPdfPreview(groups){
     const lBlocks=renderCourtBlock(1, lDiv, false);
     const rBlocks=renderCourtBlock(2, rDiv, true);
 
-    // 체급 쌍별 높이 맞추기 (가로 시작선 정렬)
+    // 체급 쌍별 높이 맞추기 (가로 시작선 정렬) → 높이 확정 후 SVG 재렌더
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const len=Math.max(lBlocks.length, rBlocks.length);
       for(let i=0;i<len;i++){
@@ -2301,6 +2301,33 @@ function _renderPdfPreview(groups){
         if(lBlocks[i]) lBlocks[i].style.minHeight=maxH+'px';
         if(rBlocks[i]) rBlocks[i].style.minHeight=maxH+'px';
       }
+      // 높이 확정 후 SVG 연결선 재렌더
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        outerWrap.querySelectorAll('svg').forEach(s=>s.remove());
+        const lGroups=groups.filter(g=>g.court===1);
+        const rGroups=groups.filter(g=>g.court===2);
+        lBlocks.forEach((block,i)=>{
+          if(!lGroups[i]) return;
+          const g=lGroups[i];
+          const gWrap=block.querySelector('div:last-child');
+          if(!gWrap) return;
+          const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri})));
+          S.matches=taggedMatches;
+          _renderBracketHTML(gWrap, taggedMatches, 'top', false);
+          _applyOverflow(gWrap);
+        });
+        rBlocks.forEach((block,i)=>{
+          if(!rGroups[i]) return;
+          const g=rGroups[i];
+          const gWrap=block.querySelector('div:last-child');
+          if(!gWrap) return;
+          const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri})));
+          S.matches=taggedMatches;
+          _renderBracketHTML(gWrap, taggedMatches, 'top', true);
+          _applyOverflow(gWrap);
+        });
+        S.matches=saved;
+      }));
     }));
 
     outerWrap.appendChild(lDiv);
@@ -2396,6 +2423,13 @@ function _writeFullPreviewWin(win, rawHTML){
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
 html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
+
+/* ── 다크모드 대진표 선명도 강화 ── */
+body:not(.white-mode) #bracket-display div[style*="border"]{border-color:#4a4a6a !important;}
+body:not(.white-mode) #bracket-display rect{stroke:#4a4a6a !important;}
+body:not(.white-mode) #bracket-display path,body:not(.white-mode) #bracket-display line{stroke:#5a5a80 !important;}
+body:not(.white-mode) #bracket-display [style*="color:#555"]{color:#8a8aaa !important;}
+body:not(.white-mode) #bracket-display [style*="color: #555"]{color:#8a8aaa !important;}
 
 /* ── 화이트 모드 ── */
 body.white-mode{background:#f4f4f4 !important;color:#111 !important;}
