@@ -2452,10 +2452,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="toggle-wrap">
-    <input type="checkbox" id="chk-show-names" checked onchange="toggleNames(this.checked)">
-    <span id="lbl-names">✅ 이름 포함</span>
-  </label>
+  <button id="btn-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
   <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
     <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
     <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
@@ -2507,25 +2504,35 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   </div>
 </div>
 <script>
-function wrapNames(){ /* 재렌더 방식 사용 — 별도 래핑 불필요 */ }
+function wrapNames(){
+  const display=document.getElementById('bracket-display');
+  if(!display) return;
+  const walker=document.createTreeWalker(display,NodeFilter.SHOW_TEXT);
+  const nodes=[];let node;
+  while(node=walker.nextNode()) nodes.push(node);
+  nodes.forEach(n=>{
+    if(/\s*\([^)]+\)/.test(n.textContent)){
+      const sp=document.createElement('span');
+      sp.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      n.parentNode.replaceChild(sp,n);
+    }
+  });
+}
 
-function toggleNames(show){
-  document.getElementById('lbl-names').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
-  // window._hideNames → step4.js _renderBracketHTML 렌더 시 이름 제거
-  window._hideNames=!show;
-  // pdf-preview(원본) → bracket-display 재렌더
-  const savedHide=window._hideNames;
-  _renderPdfPreview(S.groupBrackets);
-  window._hideNames=savedHide;
-  const src=document.getElementById('pdf-preview');
-  const dst=document.getElementById('bracket-display');
-  if(src&&dst){
-    const clone=src.cloneNode(true);
-    clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
-    clone.querySelectorAll('svg').forEach(s=>{s.setAttribute('overflow','visible');s.style.overflow='visible';});
-    dst.innerHTML=clone.innerHTML;
+function toggleNames(){
+  const hidden=document.body.classList.toggle('hide-names');
+  const btn=document.getElementById('btn-names');
+  if(btn){
+    btn.textContent=hidden?'👁 이름 보이기':'👁 이름 가리기';
+    btn.style.borderColor=hidden?'var(--accent)':'var(--border2)';
+    btn.style.background=hidden?'rgba(76,201,240,.12)':'transparent';
+    btn.style.color=hidden?'var(--accent)':'var(--text3)';
   }
 }
+
+window.addEventListener('load',function(){
+  wrapNames();
+});
 
 function toggleWhite(on){
   // 라디오 버튼이므로 별도 라벨 업데이트 불필요
@@ -2796,10 +2803,7 @@ body.hide-names .player-name-part{opacity:0;width:0;overflow:hidden;display:inli
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="name-toggle-wrap">
-    <input type="checkbox" id="chk-names" ${hideNamesInitial?'':'checked'} onchange="toggleNames(this.checked)">
-    <span id="name-lbl">${hideNamesInitial?'🔲 이름 제외':'✅ 이름 포함'}</span>
-  </label>
+  <button id="btn-names" onclick="toggleNames()" style="padding:5px 16px;background:${hideNamesInitial?'rgba(76,201,240,.12)':'transparent'};border:1px solid ${hideNamesInitial?'var(--accent)':'var(--border2)'};color:${hideNamesInitial?'var(--accent)':'var(--text3)'};border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${hideNamesInitial?'👁 이름 보이기':'👁 이름 가리기'}</button>
 </div>
 <div class="pages">${pagesHTML}</div>
 <script>
@@ -2815,9 +2819,15 @@ function wrapNames(){
     }
   });
 }
-function toggleNames(show){
-  document.getElementById('name-lbl').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
-  document.body.classList.toggle('hide-names',!show);
+function toggleNames(){
+  const hidden=document.body.classList.toggle('hide-names');
+  const btn=document.getElementById('btn-names');
+  if(btn){
+    btn.textContent=hidden?'👁 이름 보이기':'👁 이름 가리기';
+    btn.style.borderColor=hidden?'var(--accent)':'var(--border2)';
+    btn.style.background=hidden?'rgba(76,201,240,.12)':'transparent';
+    btn.style.color=hidden?'var(--accent)':'var(--text3)';
+  }
 }
 window.addEventListener('load',function(){
   wrapNames();
