@@ -214,17 +214,17 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
 
   const fs=Math.max(8,Math.floor(mh*0.38));
   if(isBye){
-    // 부전승: 이름 + BYE 표시
+    // 부전승: 이름 왼쪽 정렬 + BYE 배지 이름 오른쪽
     const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',x+mw/2);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor','middle');
+    t.setAttribute('x',x+6);t.setAttribute('y',cy+fs*0.35);t.setAttribute('text-anchor','start');
     t.setAttribute('fill','#d0d0d0');t.setAttribute('font-size',fs);
     t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
     t.style.cursor='pointer';
     t.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi));
     t.textContent=p1.name;svg.appendChild(t);
     const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
-    bye.setAttribute('x',x+mw-4);bye.setAttribute('y',y+8);bye.setAttribute('text-anchor','end');
-    bye.setAttribute('fill','#4cc9f0');bye.setAttribute('font-size','7');
+    bye.setAttribute('x',x+mw-4);bye.setAttribute('y',cy+fs*0.35);bye.setAttribute('text-anchor','end');
+    bye.setAttribute('fill','#4cc9f0');bye.setAttribute('font-size',Math.max(7,fs-2));
     bye.setAttribute('font-family','Share Tech Mono,monospace');
     bye.textContent='BYE';svg.appendChild(bye);
   } else {
@@ -249,7 +249,7 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const num=document.createElementNS('http://www.w3.org/2000/svg','text');
   num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-  num.textContent=isBye?`${ri+1}-${mi+1} BYE`:`${ri+1}-${mi+1}`;svg.appendChild(num);
+  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
 }
 
 /* 세로형 박스 (B/C/E용): 이름을 한 글자씩 세로로 */
@@ -265,8 +265,8 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const n1=p1?p1.name:'?',n2=p2?p2.name:'?';
 
   if(isBye){
-    // 부전승: 박스 하나만, 이름 세로
-    const bh=n1.length*lh+20;
+    // 부전승: 박스 하나만, 이름 세로, BYE 박스 하단
+    const bh=n1.length*lh+24;
     const x1=cx-bw/2,y1=cy-bh/2;
     const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
     r.setAttribute('x',x1);r.setAttribute('y',y1);r.setAttribute('width',bw);r.setAttribute('height',bh);
@@ -275,13 +275,14 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
     svg.appendChild(r);
     n1.split('').forEach((ch,i)=>{
       const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x',x1+bw/2);t.setAttribute('y',y1+12+i*lh+fs);
+      t.setAttribute('x',x1+bw/2);t.setAttribute('y',y1+10+i*lh+fs);
       t.setAttribute('text-anchor','middle');t.setAttribute('fill','#d0d0d0');
       t.setAttribute('font-size',fs);t.setAttribute('font-family','Noto Sans KR,sans-serif');t.setAttribute('font-weight','600');
       t.textContent=ch;svg.appendChild(t);
     });
+    // BYE 배지 — 박스 하단 중앙 (이름 아래)
     const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
-    bye.setAttribute('x',x1+bw/2);bye.setAttribute('y',y1+6);bye.setAttribute('text-anchor','middle');
+    bye.setAttribute('x',x1+bw/2);bye.setAttribute('y',y1+bh-4);bye.setAttribute('text-anchor','middle');
     bye.setAttribute('fill','#4cc9f0');bye.setAttribute('font-size','6');bye.setAttribute('font-family','Share Tech Mono,monospace');
     bye.textContent='BYE';svg.appendChild(bye);
     return;
@@ -516,25 +517,28 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       // 헤더
       const header=document.createElement('div');
       header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
-      const matchLabel=isBye?'BYE':m.winner?'WIN':'';
-      const labelColor=isBye?'#4cc9f0':m.winner?'#06d6a0':'';
 
       // 경기 레이블: 그룹명(_groupLabel)이 있으면 "체급 N경기", 없으면 "N경기"
       const grpLabel=m._groupLabel||null;
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>${matchLabel?`<span style="font-size:9px;color:${labelColor};font-family:Share Tech Mono,monospace;">${matchLabel}</span>`:''}`;
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
       box.appendChild(header);
 
       if(isBye){
         const row=document.createElement('div');
         row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
         if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
-        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;';
+        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;white-space:nowrap;';
         const _hn=window._hideNames||false;
         nm.textContent=p1?((_hn?p1.name.replace(/\s*\(.+\)/,''):p1.name)):'?';
         row.appendChild(nm);
+        // BYE 배지 — 이름 옆
+        const byeBadge=document.createElement('span');
+        byeBadge.style.cssText='font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;flex-shrink:0;';
+        byeBadge.textContent='BYE';
+        row.appendChild(byeBadge);
         box.appendChild(row);
       } else {
         // 가로 한 줄: [dot] 이름1  VS  이름2 [dot]
@@ -807,16 +811,22 @@ function _renderBracketHoriz(wrap, rounds, direction){
       num.setAttribute('x',x+5);num.setAttribute('y',y+11);
       num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
       num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-      num.textContent=isBye?`${ri+1}-${mi+1} BYE`:`${ri+1}-${mi+1}`; svg.appendChild(num);
+      num.textContent=`${ri+1}-${mi+1}`; svg.appendChild(num);
 
       const cy=y+BOX_H/2;
       if(isBye){
         const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-        t.setAttribute('x',cx);t.setAttribute('y',cy+5);
+        t.setAttribute('x',cx-14);t.setAttribute('y',cy+5);
         t.setAttribute('text-anchor','middle');t.setAttribute('fill','#d0d0d0');
         t.setAttribute('font-size','12');t.setAttribute('font-weight','600');
         t.setAttribute('font-family','Noto Sans KR,sans-serif');
         t.textContent=m.p1?m.p1.name:'?'; svg.appendChild(t);
+        // BYE 배지 — 이름 오른쪽
+        const bye=document.createElementNS('http://www.w3.org/2000/svg','text');
+        bye.setAttribute('x',x+BOX_W-5);bye.setAttribute('y',cy+5);
+        bye.setAttribute('text-anchor','end');bye.setAttribute('fill','#4cc9f0');
+        bye.setAttribute('font-size','9');bye.setAttribute('font-family','Share Tech Mono,monospace');
+        bye.textContent='BYE'; svg.appendChild(bye);
       } else {
         const vl=document.createElementNS('http://www.w3.org/2000/svg','line');
         vl.setAttribute('x1',cx);vl.setAttribute('y1',y);
