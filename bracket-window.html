@@ -2735,7 +2735,14 @@ function _a4Toggle(on){
   _a4On=on;
   document.getElementById('a4-ctrl').style.display=on?'flex':'none';
   if(on){ _a4Measure(); _a4AutoFit(); _a4Draw(); }
-  else  { _a4Clear(); }
+  else  {
+    _a4Clear();
+    /* A4 꺼지면 줌 버튼 상태를 다시 적용 */
+    if(_zoomLevel!==1){
+      const sw=document.getElementById('a4-scale-wrap');
+      if(sw){ sw.style.transform='scale('+_zoomLevel+')'; sw.style.transformOrigin='top left'; }
+    }
+  }
 }
 
 function _a4Measure(){
@@ -2771,12 +2778,18 @@ function _a4Draw(){
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
 
   const gridW=_a4C*pw, gridH=_a4R*ph;
-  const scaledW=_a4W*_a4Scale;
   const sw=document.getElementById('a4-scale-wrap');
   if(fitW||fitH){
-    const offsetX=(fitCX&&scaledW<gridW)?Math.max(0,(gridW-scaledW)/2):0;
-    if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; sw.style.marginLeft=offsetX+'px'; }
+    /* scaledW: 콘텐츠를 _a4Scale로 축소/확대한 실제 너비 */
+    const scaledW=_a4W*_a4Scale;
+    const offsetX=(fitCX && scaledW<gridW) ? Math.round((gridW-scaledW)/2) : 0;
+    if(sw){
+      sw.style.transform='scale('+_a4Scale+')';
+      sw.style.transformOrigin='top left';
+      sw.style.marginLeft=offsetX+'px';
+    }
   } else {
+    /* A4 맞추기 없을 때: 줌 버튼(_zoomSet)이 관리하므로 여기선 리셋만 */
     if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   }
 
@@ -3495,20 +3508,26 @@ autoDetectSortKeys();
 renderList();
 /* ── 줌(비율 보기) ── */
 function _zoomSet(ratio){
-  const stage=document.getElementById('a4-stage');
-  if(!stage) return;
+  const sw=document.getElementById('a4-scale-wrap');
+  if(!sw) return;
   if(ratio===null){
     const pw=document.getElementById('preview-wrap');
     const wrapW=pw?pw.clientWidth-48:window.innerWidth-48;
-    const sw=document.getElementById('a4-scale-wrap');
-    const contentW=sw?sw.scrollWidth:(_a4W||800);
+    const contentW=sw.scrollWidth||(_a4W||800);
     ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
   }
   _zoomLevel=ratio;
-  stage.style.transformOrigin='top left';
-  stage.style.transform='scale('+ratio+')';
-  const oh=stage.offsetHeight||600;
-  if(stage.parentElement) stage.parentElement.style.minHeight=(oh*ratio+80)+'px';
+  /* A4 맞추기가 켜져 있으면 _a4Draw()가 transform을 관리하므로 건드리지 않음 */
+  if(!_a4On){
+    sw.style.transformOrigin='top left';
+    sw.style.transform='scale('+ratio+')';
+    /* 스케일 후 실제 점유 높이를 부모에 반영 */
+    const stage=document.getElementById('a4-stage');
+    if(stage){
+      const contentH=sw.scrollHeight||600;
+      stage.style.minHeight=(contentH*ratio+80)+'px';
+    }
+  }
   document.querySelectorAll('.zoom-btn').forEach(function(btn){
     const bz=parseFloat(btn.dataset.zoom);
     const active=Math.abs(bz-ratio)<0.01;
