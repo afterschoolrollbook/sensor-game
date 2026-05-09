@@ -1241,12 +1241,13 @@ function _redrawBracketView(){
       const labelParts=g.label.split('/').map(s=>s.trim());
       const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
       const sec=document.createElement('div');
-      sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;';
+      sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
       const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;';
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;
       sec.appendChild(hdr);
       const groupWrap=document.createElement('div');
+      groupWrap.style.cssText='min-width:max-content;';
       const taggedMatches=g.matches.map((round,ri)=>
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
       );
@@ -1264,7 +1265,7 @@ function _redrawBracketView(){
 
       // 왼쪽 셀
       const cellL=document.createElement('div');
-      cellL.style.cssText='padding-right:24px;flex-shrink:0;';
+      cellL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;';
       if(lGroups[i]) cellL.appendChild(mkSection(lGroups[i], false));
       row.appendChild(cellL);
 
@@ -1275,7 +1276,7 @@ function _redrawBracketView(){
 
       // 오른쪽 셀
       const cellR=document.createElement('div');
-      cellR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
+      cellR.style.cssText='padding-left:24px;flex-shrink:0;min-width:max-content;display:flex;flex-direction:column;align-items:flex-end;';
       if(rGroups[i]) cellR.appendChild(mkSection(rGroups[i], true));
       row.appendChild(cellR);
 
@@ -2318,13 +2319,13 @@ function _renderPdfPreview(groups){
     const mkPdfSection=(g, reversed)=>{
       const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
       const sec=document.createElement('div');
-      sec.style.cssText='display:flex;flex-direction:column;overflow:visible;';
+      sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;overflow:visible;';
       const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;';
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;
       sec.appendChild(hdr);
       const gWrap=document.createElement('div');
-      gWrap.style.cssText='overflow:visible;';
+      gWrap.style.cssText='min-width:max-content;overflow:visible;';
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       S.matches=taggedMatches;
       _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
@@ -2338,7 +2339,7 @@ function _renderPdfPreview(groups){
       row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;overflow:visible;';
 
       const cellL=document.createElement('div');
-      cellL.style.cssText='padding-right:24px;flex-shrink:0;overflow:visible;';
+      cellL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;overflow:visible;';
       if(lGroups[i]) cellL.appendChild(mkPdfSection(lGroups[i], false));
       row.appendChild(cellL);
 
@@ -2347,7 +2348,7 @@ function _renderPdfPreview(groups){
       row.appendChild(sp);
 
       const cellR=document.createElement('div');
-      cellR.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
+      cellR.style.cssText='padding-left:24px;flex-shrink:0;min-width:max-content;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
       if(rGroups[i]) cellR.appendChild(mkPdfSection(rGroups[i], true));
       row.appendChild(cellR);
 
