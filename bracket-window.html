@@ -369,6 +369,7 @@ try { _pts = JSON.parse(localStorage.getItem('sgp_bw_pts') || '[]'); } catch(e) 
 
 // step4.js가 전역에서 참조하는 S 객체
 let S = { pts:_pts, matches:[], groupBrackets:[], activeGroup:0, laps:1 };
+window.S = S; // 팝업에서 window.opener.S로 접근 가능하게
 
 function toast(msg, type='info'){
   const c=document.getElementById('tc');
