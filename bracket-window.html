@@ -255,6 +255,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="openShuffleNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔀 랜덤 섞기</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
         <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
+        <button onclick="printWithRoster()" style="padding:5px 16px;background:rgba(6,214,160,.15);border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;font-weight:700;">📋 명단+대진표 PDF</button>
       </div>
     </div>
     <div style="padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);">
@@ -2279,171 +2280,28 @@ function _renderPdfPreview(groups){
 
 // ── 전체 PDF ──
 function printAll(){
-  _openPrintOptionsModal(S.groupBrackets, true);
+  _doPrint(S.groupBrackets, false);
 }
 
 // ── 선택 PDF ──
 function printSelected(){
   const sel=_getSelectedGroups();
   if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
-  _openPrintOptionsModal(sel, false);
+  _doPrint(sel, false);
 }
 
-// ── 출력 옵션 모달 (이름 포함/제외) ──
-function _openPrintOptionsModal(groups, isAll){
-  const overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:9000;';
-  const modal=document.createElement('div');
-  modal.style.cssText='background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:360px;max-width:95vw;padding:24px;display:flex;flex-direction:column;gap:16px;font-family:\'Noto Sans KR\',sans-serif;';
-
-  const title=document.createElement('div');
-  title.style.cssText='font-size:14px;font-weight:700;';
-  title.textContent=isAll?'🖨️ 전체 PDF 출력':'📄 선택 PDF 출력';
-  modal.appendChild(title);
-
-  const chkRow=document.createElement('label');
-  chkRow.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;';
-  const chk=document.createElement('input');
-  chk.type='checkbox'; chk.id='print-with-names'; chk.checked=true;
-  chk.style.cssText='accent-color:var(--accent);width:16px;height:16px;';
-  const chkLabel=document.createElement('span');
-  chkLabel.style.cssText='font-size:13px;';
-  chkLabel.textContent='선수 이름 포함해서 출력';
-  chkRow.appendChild(chk); chkRow.appendChild(chkLabel);
-  modal.appendChild(chkRow);
-
-  if(isAll){
-    const note=document.createElement('div');
-    note.style.cssText='font-size:11px;color:var(--text3);line-height:1.7;padding:10px 14px;background:rgba(76,201,240,.05);border:1px solid rgba(76,201,240,.15);border-radius:8px;';
-    note.innerHTML='📌 전체 대진표를 한눈에 볼 수 있게 출력합니다.<br>A4 경계는 <b style="color:var(--accent)">파란 점선</b>으로 표시됩니다.';
-    modal.appendChild(note);
-  }
-
-  const footer=document.createElement('div');
-  footer.style.cssText='display:flex;gap:8px;justify-content:flex-end;';
-  const cancelBtn=document.createElement('button');
-  cancelBtn.textContent='취소';
-  cancelBtn.style.cssText='padding:6px 16px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:12px;cursor:pointer;';
-  cancelBtn.onclick=()=>overlay.remove();
-  const printBtn=document.createElement('button');
-  printBtn.textContent='🖨️ 출력';
-  printBtn.style.cssText='padding:6px 20px;background:var(--red);border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;';
-  printBtn.onclick=()=>{
-    const withNames=document.getElementById('print-with-names').checked;
-    overlay.remove();
-    if(isAll) _doPrintAll(groups, withNames);
-    else _doPrint(groups, withNames);
-  };
-  footer.appendChild(cancelBtn); footer.appendChild(printBtn);
-  modal.appendChild(footer);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+// ── 명단+대진표 PDF ──
+function printWithRoster(){
+  const sel=_getSelectedGroups();
+  if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
+  _doPrint(sel, true);
 }
 
-// ── 전체 PDF (페이지 나누기 미리보기) ──
-function _doPrintAll(groups, withNames){
-  const win=window.open('','_blank','width=1100,height=900');
-  if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
-
-  const bracketView=document.getElementById('pts-bracket-view');
-  if(!bracketView){ toast('대진표가 없어요','error'); return; }
-  const clone=bracketView.cloneNode(true);
-  clone.querySelectorAll('*').forEach(el=>{
-    el.style.overflow='visible'; el.style.overflowX='visible'; el.style.overflowY='visible';
-    if(el.style.background) el.style.background='';
-    if(el.style.backgroundColor) el.style.backgroundColor='';
-    if(el.style.color&&el.style.color!=='#e63946') el.style.color='#111';
-    if(el.style.borderColor) el.style.borderColor='#333';
-  });
-  clone.querySelectorAll('rect').forEach(el=>{el.setAttribute('fill','#fff');el.setAttribute('stroke','#333');});
-  clone.querySelectorAll('path,line').forEach(el=>{el.setAttribute('stroke','#333');});
-  clone.querySelectorAll('text').forEach(el=>{
-    const f=el.getAttribute('fill');
-    if(f&&f!=='#e63946'&&f!=='#4cc9f0') el.setAttribute('fill','#111');
-  });
-  if(!withNames){
-    clone.querySelectorAll('span,div').forEach(el=>{
-      if(!el.children.length && /\(.+\)/.test(el.textContent))
-        el.textContent=el.textContent.replace(/\s*\(.+\)/g,'');
-    });
-  }
-
-  const bracketHTML=clone.outerHTML;
-  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<title>전체 대진표</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#e0e0e0;font-family:'Noto Sans KR',sans-serif;}
-.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 20px;background:#1a1a1a;display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
-.toolbar button{padding:7px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
-.btn-print{background:#e63946;color:#fff;}
-.btn-close{background:#555;color:#fff;}
-.hint{color:#999;font-size:11px;}
-.wrap{padding:70px 30px 30px;position:relative;}
-.bc{background:#fff;padding:20mm;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.2);}
-.bc *{overflow:visible !important;}
-.page-overlay{position:absolute;inset:0;pointer-events:none;z-index:10;}
-.ph{position:absolute;left:0;right:0;border-top:2px dashed rgba(30,100,220,.5);}
-.pv{position:absolute;top:0;bottom:0;border-left:2px dashed rgba(30,100,220,.5);}
-.pl{position:absolute;font-size:9px;color:rgba(30,100,220,.8);background:rgba(255,255,255,.9);padding:1px 5px;border-radius:3px;font-family:'Share Tech Mono',monospace;}
-@media print{
-  body{background:#fff;}
-  .toolbar{display:none !important;}
-  .wrap{padding:0;}
-  .bc{box-shadow:none;padding:15mm;}
-  .ph{border-top:1px dashed rgba(30,100,220,.3);}
-  .pv{border-left:1px dashed rgba(30,100,220,.3);}
-  .pl{display:none;}
-}
-</style></head><body>
-<div class="toolbar">
-  <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
-  <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <span class="hint">※ 파란 점선 = A4 페이지 경계 &nbsp;|&nbsp; PDF 저장 시 "대상: PDF로 저장" 선택</span>
-</div>
-<div class="wrap">
-  <div class="bc" id="bc">${bracketHTML}</div>
-  <div class="page-overlay" id="po"></div>
-</div>
-<script>
-const A4W=794,A4H=1123;
-function draw(){
-  const bc=document.getElementById('bc');
-  const po=document.getElementById('po');
-  if(!bc||!po)return;
-  po.innerHTML='';
-  const W=bc.offsetWidth, H=bc.offsetHeight;
-  const bRect=bc.getBoundingClientRect();
-  const pRect=bc.parentElement.getBoundingClientRect();
-  const ox=bRect.left-pRect.left, oy=bRect.top-pRect.top;
-  for(let y=A4H;y<H;y+=A4H){
-    const l=document.createElement('div');l.className='ph';l.style.top=(oy+y)+'px';po.appendChild(l);
-  }
-  for(let x=A4W;x<W;x+=A4W){
-    const l=document.createElement('div');l.className='pv';l.style.left=(ox+x)+'px';po.appendChild(l);
-  }
-  const cols=Math.max(1,Math.ceil(W/A4W)), rows=Math.max(1,Math.ceil(H/A4H));
-  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
-    const lb=document.createElement('div');lb.className='pl';
-    lb.textContent='P'+(r*cols+c+1);
-    lb.style.left=(ox+c*A4W+6)+'px'; lb.style.top=(oy+r*A4H+6)+'px';
-    po.appendChild(lb);
-  }
-}
-window.addEventListener('load',()=>setTimeout(draw,400));
-window.addEventListener('resize',draw);
-</script>
-</body></html>`;
-  win.document.write(html);
-  win.document.close();
-}
-
-// ── 선택 PDF (그룹별 한장씩) ──
-function _doPrint(groups, withNames){
+function _doPrint(groups, withRoster){
   const win=window.open('','_blank','width=900,height=800');
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
+  // 임시 DOM에서 대진표 렌더 후 라이트 테마로 변환
   const renderBracketLight=(g)=>{
     const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
     const tmpWrap=document.createElement('div');
@@ -2452,26 +2310,30 @@ function _doPrint(groups, withNames){
     );
     S.matches=taggedMatches;
     _renderBracketHTML(tmpWrap, taggedMatches, 'top', false);
+
+    // 모든 요소 라이트 테마 변환
     tmpWrap.querySelectorAll('*').forEach(el=>{
-      el.style.overflow='visible'; el.style.overflowX='visible'; el.style.overflowY='visible';
+      el.style.overflow='visible';
+      el.style.overflowX='visible';
+      el.style.overflowY='visible';
       if(el.style.background) el.style.background='';
       if(el.style.backgroundColor) el.style.backgroundColor='';
       if(el.style.color&&el.style.color!=='#e63946') el.style.color='#111';
       if(el.style.borderColor) el.style.borderColor='#333';
       if(el.style.border&&el.style.border.includes('1e1e30')) el.style.border=el.style.border.replace('#1e1e30','#333');
     });
-    tmpWrap.querySelectorAll('rect').forEach(el=>{el.setAttribute('fill','#fff');el.setAttribute('stroke','#333');});
-    tmpWrap.querySelectorAll('path,line').forEach(el=>{el.setAttribute('stroke','#333');});
+    // SVG rect/line/path 색상 변환
+    tmpWrap.querySelectorAll('rect').forEach(el=>{
+      el.setAttribute('fill','#fff');
+      el.setAttribute('stroke','#333');
+    });
+    tmpWrap.querySelectorAll('path,line').forEach(el=>{
+      el.setAttribute('stroke','#333');
+    });
     tmpWrap.querySelectorAll('text').forEach(el=>{
       const f=el.getAttribute('fill');
       if(f&&f!=='#e63946'&&f!=='#4cc9f0') el.setAttribute('fill','#111');
     });
-    if(!withNames){
-      tmpWrap.querySelectorAll('span,div').forEach(el=>{
-        if(!el.children.length && /\(.+\)/.test(el.textContent))
-          el.textContent=el.textContent.replace(/\s*\(.+\)/g,'');
-      });
-    }
     return tmpWrap.innerHTML;
   };
 
@@ -2486,11 +2348,38 @@ body{background:#f0f0f0;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
 .btn-close{background:#555;color:#fff;}
 .pages{padding:60px 20px 20px;}
-.page{width:210mm;min-height:297mm;background:#fff;color:#111;margin:0 auto 20px;padding:15mm;box-shadow:0 2px 12px rgba(0,0,0,.2);page-break-after:always;}
+.page{
+  width:210mm;min-height:297mm;
+  background:#fff;color:#111;
+  margin:0 auto 20px;
+  padding:15mm 15mm 15mm 15mm;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);
+  page-break-after:always;
+}
 .page:last-child{page-break-after:auto;}
-.group-title{font-size:14px;font-weight:700;color:#111;font-family:'Share Tech Mono',monospace;margin-bottom:10px;letter-spacing:1px;border-left:4px solid #111;padding-left:10px;}
+.group-title{
+  font-size:14px;font-weight:700;color:#111;
+  font-family:'Share Tech Mono',monospace;
+  margin-bottom:10px;letter-spacing:1px;
+  border-left:4px solid #111;padding-left:10px;
+}
+.roster-wrap{margin-bottom:14px;}
+.roster-title{font-size:11px;font-weight:700;color:#333;letter-spacing:1px;margin-bottom:6px;margin-top:8px;}
+.roster-grid{display:flex;flex-wrap:wrap;gap:4px;}
+.roster-item{font-size:11px;padding:3px 8px;border:1px solid #333;border-radius:3px;}
+.slot-num{font-weight:700;margin-right:4px;font-family:'Share Tech Mono',monospace;}
+.bracket-wrap{overflow:visible;}
+/* 대진표 박스 강제 라이트 테마 */
 .bracket-wrap *{overflow:visible !important;}
-@media print{body{background:#fff;}.toolbar{display:none !important;}.pages{padding:0;}.page{margin:0;box-shadow:none;width:100%;}}
+.bracket-wrap [style]{border-color:#333 !important;}
+.bracket-wrap div[style*="background"]{background:#fff !important;}
+.bracket-wrap span[style*="color"]{color:#111 !important;}
+@media print{
+  body{background:#fff;}
+  .toolbar{display:none !important;}
+  .pages{padding:0;}
+  .page{margin:0;box-shadow:none;width:100%;}
+}
 </style></head><body>
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
@@ -2499,10 +2388,33 @@ body{background:#f0f0f0;font-family:'Noto Sans KR',sans-serif;}
 </div>
 <div class="pages">`;
 
-  groups.forEach(g=>{
+  groups.forEach((g)=>{
     const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-    html+=`<div class="page"><div class="group-title">${shortLabel} (${g.slots.length}명)</div>`;
-    html+=`<div class="bracket-wrap">${renderBracketLight(g)}</div></div>`;
+    html+=`<div class="page">`;
+    html+=`<div class="group-title">${shortLabel} (${g.slots.length}명)</div>`;
+
+    if(withRoster){
+      html+=`<div class="roster-wrap">`;
+      html+=`<div class="roster-title">▶ 참가 명단</div><div class="roster-grid">`;
+      g.slots.forEach((s,i)=>{
+        const name=s.player?s.player.name:`${i+1}번`;
+        html+=`<div class="roster-item"><span class="slot-num">${i+1}</span>${name}</div>`;
+      });
+      html+=`</div>`;
+      if(g.matches&&g.matches[0]){
+        html+=`<div class="roster-title">▶ 1라운드 대진</div><div class="roster-grid">`;
+        g.matches[0].forEach((m,mi)=>{
+          const p1=m.p1?m.p1.name:'?';
+          const isBye=!m.p2;
+          html+=`<div class="roster-item"><span class="slot-num">${mi+1}경기</span>${p1} ${isBye?'(부전승)':'vs '+(m.p2?m.p2.name:'?')}</div>`;
+        });
+        html+=`</div>`;
+      }
+      html+=`</div>`;
+    }
+
+    html+=`<div class="bracket-wrap">${renderBracketLight(g)}</div>`;
+    html+=`</div>`;
   });
 
   html+=`</div></body></html>`;
