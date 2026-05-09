@@ -2605,11 +2605,15 @@ window.addEventListener('load',function(){
   });
   // 페이지 가이드 초기 빌드 (토글 전 계산만)
   buildPageGuides();
-  // A4 버튼 이벤트 등록
+  // A4 버튼 등록
   _a4Init();
 });
 
-/* ══ A4 용지 배치 ══ */
+/* ── A4 용지 배치 격자 ──
+   - 셀 크기 = A4 인쇄 가능 영역 px (고정, 창 크기 무관)
+   - cols×rows → 대진표를 비율 유지하며 scale
+   - 넘치면 자동 장수 증가
+*/
 var _a4On=false,_a4Orient='portrait',_a4C=1,_a4R=1,_a4Scale=1,_a4W=0,_a4H=0;
 const _A4={portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))},landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))}};
 
@@ -2637,7 +2641,6 @@ function _a4Measure(){
 }
 
 function _a4AutoFit(){
-  // 가로 1장 기준, 비율 유지 세로 장수 자동 산정
   const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
   _a4C=1;
   const s=pw/_a4W;
@@ -2653,37 +2656,28 @@ function _a4SyncD(){
 function _a4Draw(){
   const stage=document.getElementById('a4-stage');
   const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
-
-  // 비율 유지 스케일
   const sx=(_a4C*pw)/_a4W, sy=(_a4R*ph)/_a4H;
   _a4Scale=Math.min(sx,sy);
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
-
-  // 넘침 → 장수 자동 증가
   const scaledW=_a4W*_a4Scale, scaledH=_a4H*_a4Scale;
   const nc=Math.ceil(scaledW/pw), nr=Math.ceil(scaledH/ph);
   if(nc>_a4C||nr>_a4R){ _a4C=Math.max(_a4C,nc); _a4R=Math.max(_a4R,nr); _a4SyncD(); _a4Draw(); return; }
 
-  // 대진표 스케일 적용
   const disp=document.getElementById('bracket-display');
   disp.style.transform='scale('+_a4Scale+')';
   disp.style.transformOrigin='top left';
 
-  // stage 크기
   const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
   stage.style.minHeight=(gridH+80)+'px';
-
-  // 기존 격자 제거
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
 
   const isW=document.body.classList.contains('white-mode');
   const lc=isW?'rgba(0,100,220,0.55)':'rgba(76,201,240,0.65)';
   const sc=isW?'rgba(0,100,220,0.4)':'rgba(76,201,240,0.45)';
   const bc=isW?'rgba(0,80,200,0.28)':'rgba(76,201,240,0.28)';
-  const PAD=64; // preview-wrap padding-top
+  const PAD=64;
 
-  // 셀 배경
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');
@@ -2695,23 +2689,18 @@ function _a4Draw(){
       stage.appendChild(el);
     }
   }
-  // 가로선
   for(let r=0;r<=_a4R;r++){
     const el=document.createElement('div');
     el.className='a4g';
-    const b=(r===0||r===_a4R)?'2px solid '+sc:'2px dashed '+lc;
-    el.style.cssText='position:absolute;pointer-events:none;z-index:52;height:0;left:0;width:'+gridW+'px;top:'+(PAD+r*ph)+'px;border-top:'+b+';';
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;height:0;left:0;width:'+gridW+'px;top:'+(PAD+r*ph)+'px;border-top:'+(r===0||r===_a4R?'2px solid '+sc:'2px dashed '+lc)+';';
     stage.appendChild(el);
   }
-  // 세로선
   for(let c=0;c<=_a4C;c++){
     const el=document.createElement('div');
     el.className='a4g';
-    const b=(c===0||c===_a4C)?'2px solid '+sc:'2px dashed '+lc;
-    el.style.cssText='position:absolute;pointer-events:none;z-index:52;width:0;top:'+PAD+'px;left:'+(c*pw)+'px;height:'+gridH+'px;border-left:'+b+';';
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;width:0;top:'+PAD+'px;left:'+(c*pw)+'px;height:'+gridH+'px;border-left:'+(c===0||c===_a4C?'2px solid '+sc:'2px dashed '+lc)+';';
     stage.appendChild(el);
   }
-  // 페이지 번호
   let pn=1;
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
@@ -2723,11 +2712,9 @@ function _a4Draw(){
     }
   }
 
-  // 비율 표시
   const pct=Math.round(_a4Scale*100);
   document.getElementById('a4-pct').textContent='('+pct+'%)';
 
-  // 배지
   let badge=document.getElementById('a4-badge');
   if(!badge){ badge=document.createElement('div'); badge.id='a4-badge'; badge.style.cssText='position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.7;font-family:"Share Tech Mono",monospace;padding:6px 14px;border-radius:7px;z-index:9999;'; document.body.appendChild(badge); }
   const ol=_a4Orient==='portrait'?'세로용지':'가로용지';
