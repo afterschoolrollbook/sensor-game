@@ -2378,117 +2378,205 @@ function _writeFullPreviewWin(win, rawHTML){
   --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
-html,body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Noto Sans KR',sans-serif;
-  min-height:100vh;
-}
+html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
+
+/* ── 화이트 모드 ── */
+body.white-mode{background:#f4f4f4 !important;color:#111 !important;}
+body.white-mode .toolbar{background:#fff !important;border-bottom:1px solid #ddd !important;}
+body.white-mode .toggle-wrap{background:#f0f0f0 !important;border-color:#ccc !important;}
+body.white-mode .toggle-wrap span{color:#333 !important;}
+body.white-mode .preview-wrap{background:#f4f4f4;}
+/* 대진표 박스 화이트 */
+body.white-mode #bracket-display div[style]{background:#fff !important;border-color:#999 !important;color:#111 !important;}
+body.white-mode #bracket-display span{color:#111 !important;}
+body.white-mode #bracket-display rect{fill:#fff !important;stroke:#999 !important;}
+body.white-mode #bracket-display path,body.white-mode #bracket-display line{stroke:#888 !important;}
+body.white-mode #bracket-display text{fill:#111 !important;}
+/* VS 빨강 유지 */
+body.white-mode #bracket-display [style*="color:#e63946"],
+body.white-mode #bracket-display [style*="color: #e63946"]{color:#e63946 !important;}
+body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
+
 /* ── 툴바 ── */
-.toolbar{
-  position:fixed;top:0;left:0;right:0;
-  padding:10px 18px;
-  background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  display:flex;gap:8px;align-items:center;
-  z-index:999;flex-wrap:wrap;
-}
-.toolbar button{
-  padding:7px 16px;border:none;border-radius:6px;
-  font-size:12px;font-weight:700;cursor:pointer;
-  font-family:'Noto Sans KR',sans-serif;
-}
+.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
+.toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
-.btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
-/* 이름 토글 체크박스 */
-.name-toggle-wrap{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 14px;
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:8px;
-  cursor:pointer;
-  user-select:none;
-}
-.name-toggle-wrap input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
-.name-toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
-/* ── 미리보기 영역 ── */
-.preview-wrap{
-  padding:70px 24px 40px;
-  overflow:auto;
-  min-height:100vh;
-}
-/* 대진표 뷰 그대로 표시 + 연결선(SVG) 표시용 overflow visible 강제 */
-#bracket-display{overflow:visible !important;min-height:200px;}
+.btn-close{background:rgba(255,255,255,.08);border:1px solid #3a3a55;color:#9090b0;}
+.toggle-wrap{display:flex;align-items:center;gap:7px;padding:5px 13px;background:var(--card);border:1px solid var(--border2);border-radius:8px;cursor:pointer;user-select:none;}
+.toggle-wrap input{width:14px;height:14px;cursor:pointer;}
+.toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
+#chk-show-names{accent-color:#06d6a0;}
+#chk-white-mode{accent-color:#4cc9f0;}
+#chk-page-guide{accent-color:#4cc9f0;}
+
+/* ── 미리보기 ── */
+.preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+
+/* 연결선 포함 overflow 강제 */
+#bracket-display{overflow:visible !important;min-height:200px;position:relative;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
 
-/* 이름 숨김 모드 */
-body.hide-names .player-name-part{
-  opacity:0;
-  pointer-events:none;
-  width:0;overflow:hidden !important;display:inline-block;
-}
+/* ── 이름 숨김 (괄호 이름만 투명 - 박스/번호 유지) ── */
+body.hide-names .player-name-part{visibility:hidden;font-size:0 !important;width:0 !important;display:inline-block;overflow:hidden !important;}
 
-/* 인쇄 */
+/* ── A4 페이지 나누기 가이드 ── */
+.page-guide-line{
+  position:absolute;left:0;right:0;
+  border-top:2px dashed rgba(76,201,240,0.7);
+  pointer-events:none;z-index:50;
+  display:none;
+}
+.page-guide-line.visible{display:block;}
+.page-guide-line::after{
+  content:attr(data-label);
+  position:absolute;right:10px;top:-16px;
+  font-size:9px;color:#4cc9f0;background:rgba(8,8,15,.85);
+  padding:1px 6px;border-radius:3px;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;
+}
+body.white-mode .page-guide-line{border-top-color:rgba(0,100,220,0.6);}
+body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,240,.9);}
+
 @media print{
   html,body{background:var(--bg);}
+  body.white-mode{background:#fff !important;}
   .toolbar{display:none !important;}
   .preview-wrap{padding:0;}
   #bracket-display,#bracket-display *{overflow:visible !important;}
+  .page-guide-line{display:none !important;}
 }
 </style>
 </head>
-<body>
+<body class="white-mode">
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="name-toggle-wrap" title="이름 포함/제외 토글">
+  <label class="toggle-wrap">
     <input type="checkbox" id="chk-show-names" checked onchange="toggleNames(this.checked)">
-    <span id="name-toggle-label">✅ 이름 포함</span>
+    <span id="lbl-names">✅ 이름 포함</span>
   </label>
-  <span style="color:var(--text3);font-size:11px;margin-left:4px;">전체 대진표 — 현재 화면과 동일</span>
+  <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
+    <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="radio" name="theme-mode" value="white" checked onchange="toggleWhite(true)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬜ 화이트</span>
+    </label>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;display:inline-block;"></span>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="radio" name="theme-mode" value="dark" onchange="toggleWhite(false)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬛ 다크</span>
+    </label>
+  </div>
+  <label class="toggle-wrap">
+    <input type="checkbox" id="chk-page-guide" onchange="togglePageGuide(this.checked)">
+    <span>📐 페이지 나누기</span>
+  </label>
 </div>
-<div class="preview-wrap">
+<div class="preview-wrap" id="preview-wrap">
   <div id="bracket-display">${rawHTML}</div>
 </div>
 <script>
-// 이름 부분 span 래핑 (괄호 안 이름 식별)
+/* ── 이름 래핑: SVG text 노드 안의 "(이름)" 부분을 tspan으로, HTML 텍스트는 span으로 ── */
 function wrapNames(){
-  const walker=document.createTreeWalker(
-    document.getElementById('bracket-display'),
-    NodeFilter.SHOW_TEXT
-  );
-  const nodes=[];
-  let node;
-  while(node=walker.nextNode()) nodes.push(node);
+  const root=document.getElementById('bracket-display');
 
-  nodes.forEach(n=>{
-    const t=n.textContent;
-    // "N번 (이름)" 패턴에서 "(이름)" 부분 래핑
-    if(/\s*\([^)]+\)/.test(t)){
-      const span=document.createElement('span');
-      span.innerHTML=t.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
-      n.parentNode.replaceChild(span,n);
+  // 1) HTML 텍스트 노드
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+    acceptNode:n=>n.parentNode.closest('svg')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT
+  });
+  const htmlNodes=[];let n;
+  while(n=walker.nextNode()) htmlNodes.push(n);
+  htmlNodes.forEach(n=>{
+    if(/\s*\([^)]+\)/.test(n.textContent)){
+      const sp=document.createElement('span');
+      sp.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      n.parentNode.replaceChild(sp,n);
     }
+  });
+
+  // 2) SVG text 요소 — textContent에서 "(이름)" 부분 → tspan으로 분리
+  root.querySelectorAll('svg text').forEach(textEl=>{
+    const full=textEl.textContent;
+    if(!/\s*\([^)]+\)/.test(full)) return;
+    const fill=textEl.getAttribute('fill')||'#d0d0d0';
+    const fs=textEl.getAttribute('font-size')||'12';
+    const fw=textEl.getAttribute('font-weight')||'normal';
+    const ff=textEl.getAttribute('font-family')||'Noto Sans KR,sans-serif';
+    const x=textEl.getAttribute('x')||'0';
+    const y=textEl.getAttribute('y')||'0';
+    const anchor=textEl.getAttribute('text-anchor')||'start';
+    // "(이름)" 부분 분리
+    const parts=full.split(/(\s*\([^)]+\))/);
+    textEl.textContent='';
+    parts.forEach(part=>{
+      const ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');
+      ts.textContent=part;
+      if(/\s*\([^)]+\)/.test(part)) ts.classList.add('svg-name-part');
+      textEl.appendChild(ts);
+    });
   });
 }
 
 function toggleNames(show){
-  document.getElementById('name-toggle-label').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
+  document.getElementById('lbl-names').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
   document.body.classList.toggle('hide-names',!show);
+  // SVG tspan 숨김
+  document.querySelectorAll('.svg-name-part').forEach(ts=>{
+    ts.style.visibility=show?'':'hidden';
+    ts.style.fontSize=show?'':'0';
+  });
 }
 
-// 클릭 이벤트 제거 (미리보기 전용이므로 경기박스 클릭 비활성화)
+function toggleWhite(on){
+  // 라디오 버튼이므로 별도 라벨 업데이트 불필요
+  document.body.classList.toggle('white-mode',on);
+}
+
+/* ── A4 페이지 나누기 가이드 ── */
+// A4 = 297mm × 210mm. 세로 출력 기준 인쇄 가능 높이 ≒ 277mm (여백 20mm)
+// CSS 1px = 1/96 인치 = 25.4/96 mm → 1mm = 96/25.4 px ≈ 3.7795px
+var _guideOn=false;
+function togglePageGuide(on){
+  _guideOn=on;
+  document.querySelectorAll('.page-guide-line').forEach(el=>el.classList.toggle('visible',on));
+  if(on && document.querySelectorAll('.page-guide-line').length===0) buildPageGuides();
+}
+
+function buildPageGuides(){
+  const wrap=document.getElementById('preview-wrap');
+  const display=document.getElementById('bracket-display');
+  const totalH=display.scrollHeight;
+  const PX_PER_MM=96/25.4;
+  const A4_H_MM=277; // 인쇄 가능 높이 (여백 제외)
+  const A4_H_PX=A4_H_MM*PX_PER_MM;
+  const pages=Math.ceil(totalH/A4_H_PX);
+  // 기존 가이드 제거
+  wrap.querySelectorAll('.page-guide-line').forEach(e=>e.remove());
+  for(let i=1;i<pages;i++){
+    const guide=document.createElement('div');
+    guide.className='page-guide-line'+((_guideOn)?' visible':'');
+    // preview-wrap의 padding-top(64px) 포함
+    guide.style.top=(64+i*A4_H_PX)+'px';
+    guide.dataset.label='P'+i+' ↓  P'+(i+1)+' ↑';
+    wrap.appendChild(guide);
+  }
+  // 페이지 수 표시
+  const cnt=document.createElement('div');
+  cnt.style.cssText='position:fixed;bottom:10px;right:14px;font-size:10px;color:#4cc9f0;font-family:Share Tech Mono,monospace;background:rgba(8,8,15,.8);padding:3px 8px;border-radius:4px;z-index:999;';
+  cnt.id='page-count-badge';
+  cnt.textContent='총 '+pages+'페이지';
+  document.body.appendChild(cnt);
+}
+
 window.addEventListener('load',function(){
   wrapNames();
+  // 클릭 제거
   document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
-    el.removeAttribute('onclick');
-    el.style.cursor='default';
-    el.style.pointerEvents='none';
+    el.removeAttribute('onclick');el.style.cursor='default';el.style.pointerEvents='none';
   });
-  // 모달/오버레이 제거
-  document.querySelectorAll('[id*="modal"],[id*="overlay"]').forEach(el=>el.remove());
+  // 페이지 가이드 초기 빌드 (토글 전 계산만)
+  buildPageGuides();
 });
 <\/script>
 </body></html>`;
