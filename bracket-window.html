@@ -2411,6 +2411,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 
 /* ── 미리보기 ── */
 .preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+#bracket-scale-wrap{transform-origin:top left;will-change:transform;}
 
 /* 연결선 포함 overflow 강제 */
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;}
@@ -2472,16 +2473,24 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <input type="checkbox" id="chk-page-guide" onchange="togglePageGuide(this.checked)">
     <span>📐 페이지 나누기</span>
   </label>
+  <!-- 페이지 수 조절 -->
+  <div class="toggle-wrap" style="gap:6px;padding:5px 10px;">
+    <span style="font-size:11px;color:var(--text3);">출력 페이지:</span>
+    <button onclick="changePages(-1)" style="width:24px;height:24px;border-radius:5px;border:1px solid #3a3a55;background:rgba(255,255,255,.06);color:#9090b0;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">−</button>
+    <span id="page-count-display" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:Share Tech Mono,monospace;min-width:32px;text-align:center;">?장</span>
+    <button onclick="changePages(1)" style="width:24px;height:24px;border-radius:5px;border:1px solid #3a3a55;background:rgba(255,255,255,.06);color:#9090b0;font-size:14px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">＋</button>
+    <span style="font-size:10px;color:var(--text3);margin-left:2px;">에 맞춤</span>
+  </div>
 </div>
 <div class="preview-wrap" id="preview-wrap">
-  <div id="bracket-display">${rawHTML}</div>
+  <div id="bracket-scale-wrap" style="transform-origin:top left;transition:transform .2s;">
+    <div id="bracket-display">${rawHTML}</div>
+  </div>
 </div>
 <script>
-/* ── 이름 래핑: SVG text 노드 안의 "(이름)" 부분을 tspan으로, HTML 텍스트는 span으로 ── */
+/* ── 이름 래핑 ── */
 function wrapNames(){
   const root=document.getElementById('bracket-display');
-
-  // 1) HTML 텍스트 노드
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
     acceptNode:n=>n.parentNode.closest('svg')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT
   });
@@ -2494,19 +2503,9 @@ function wrapNames(){
       n.parentNode.replaceChild(sp,n);
     }
   });
-
-  // 2) SVG text 요소 — textContent에서 "(이름)" 부분 → tspan으로 분리
   root.querySelectorAll('svg text').forEach(textEl=>{
     const full=textEl.textContent;
     if(!/\s*\([^)]+\)/.test(full)) return;
-    const fill=textEl.getAttribute('fill')||'#d0d0d0';
-    const fs=textEl.getAttribute('font-size')||'12';
-    const fw=textEl.getAttribute('font-weight')||'normal';
-    const ff=textEl.getAttribute('font-family')||'Noto Sans KR,sans-serif';
-    const x=textEl.getAttribute('x')||'0';
-    const y=textEl.getAttribute('y')||'0';
-    const anchor=textEl.getAttribute('text-anchor')||'start';
-    // "(이름)" 부분 분리
     const parts=full.split(/(\s*\([^)]+\))/);
     textEl.textContent='';
     parts.forEach(part=>{
@@ -2521,7 +2520,6 @@ function wrapNames(){
 function toggleNames(show){
   document.getElementById('lbl-names').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
   document.body.classList.toggle('hide-names',!show);
-  // SVG tspan 숨김
   document.querySelectorAll('.svg-name-part').forEach(ts=>{
     ts.style.visibility=show?'':'hidden';
     ts.style.fontSize=show?'':'0';
@@ -2529,54 +2527,107 @@ function toggleNames(show){
 }
 
 function toggleWhite(on){
-  // 라디오 버튼이므로 별도 라벨 업데이트 불필요
   document.body.classList.toggle('white-mode',on);
 }
 
-/* ── A4 페이지 나누기 가이드 ── */
-// A4 = 297mm × 210mm. 세로 출력 기준 인쇄 가능 높이 ≒ 277mm (여백 20mm)
-// CSS 1px = 1/96 인치 = 25.4/96 mm → 1mm = 96/25.4 px ≈ 3.7795px
+/* ── 페이지 나누기 가이드 ── */
 var _guideOn=false;
+var _currentScale=1;
+var _naturalPages=1;
+var _targetPages=1;
+
+// A4 인쇄 가능 높이 px (96dpi 기준, 여백 20mm 제외)
+const PX_PER_MM=96/25.4;
+const A4_H_PX=277*PX_PER_MM; // ≈ 1047px
+const A4_W_PX=190*PX_PER_MM; // ≈ 718px (A4 가로 인쇄 가능폭)
+
 function togglePageGuide(on){
   _guideOn=on;
   document.querySelectorAll('.page-guide-line').forEach(el=>el.classList.toggle('visible',on));
-  if(on && document.querySelectorAll('.page-guide-line').length===0) buildPageGuides();
 }
 
 function buildPageGuides(){
   const wrap=document.getElementById('preview-wrap');
+  const scaleWrap=document.getElementById('bracket-scale-wrap');
   const display=document.getElementById('bracket-display');
-  const totalH=display.scrollHeight;
-  const PX_PER_MM=96/25.4;
-  const A4_H_MM=277; // 인쇄 가능 높이 (여백 제외)
-  const A4_H_PX=A4_H_MM*PX_PER_MM;
-  const pages=Math.ceil(totalH/A4_H_PX);
-  // 기존 가이드 제거
+  // 스케일 적용 전 원래 크기로 측정
+  const rawH=display.scrollHeight;
+  const rawW=display.scrollWidth;
+  _naturalPages=Math.max(1,Math.ceil(rawH/_currentScale/A4_H_PX));
+  _targetPages=_naturalPages;
+
+  refreshGuides();
+  updatePageBadge();
+}
+
+function refreshGuides(){
+  const wrap=document.getElementById('preview-wrap');
+  const scaleWrap=document.getElementById('bracket-scale-wrap');
+  const display=document.getElementById('bracket-display');
+
+  // 원본 크기 (스케일 무시)
+  const rawH=display.scrollHeight/_currentScale;
+  const rawW=display.scrollWidth/_currentScale;
+
+  // 타겟 페이지 수에 맞게 스케일 계산
+  const scaleByH=(_targetPages*A4_H_PX)/rawH;
+  // 가로도 A4 폭 초과하지 않게
+  const viewW=wrap.clientWidth-48;
+  const scaleByW=viewW/rawW;
+  _currentScale=Math.min(scaleByH,scaleByW,2); // 최대 2배
+  _currentScale=Math.max(_currentScale,0.05);  // 최소 5%
+
+  scaleWrap.style.transform='scale('+_currentScale+')';
+  // 스케일 후 실제 높이로 wrap 높이 설정 (스크롤 영역 확보)
+  const scaledH=rawH*_currentScale;
+  const scaledW=rawW*_currentScale;
+  scaleWrap.style.width=rawW+'px';
+  wrap.style.minHeight=(scaledH+80)+'px';
+
+  // 가이드 라인 재생성
   wrap.querySelectorAll('.page-guide-line').forEach(e=>e.remove());
-  for(let i=1;i<pages;i++){
+  const pageHScaled=A4_H_PX*_currentScale;
+  for(let i=1;i<_targetPages;i++){
     const guide=document.createElement('div');
-    guide.className='page-guide-line'+((_guideOn)?' visible':'');
-    // preview-wrap의 padding-top(64px) 포함
-    guide.style.top=(64+i*A4_H_PX)+'px';
-    guide.dataset.label='P'+i+' ↓  P'+(i+1)+' ↑';
+    guide.className='page-guide-line'+(_guideOn?' visible':'');
+    guide.style.top=(64+i*pageHScaled)+'px';
+    guide.dataset.label='P'+i+' / P'+(i+1);
     wrap.appendChild(guide);
   }
-  // 페이지 수 표시
-  const cnt=document.createElement('div');
-  cnt.style.cssText='position:fixed;bottom:10px;right:14px;font-size:10px;color:#4cc9f0;font-family:Share Tech Mono,monospace;background:rgba(8,8,15,.8);padding:3px 8px;border-radius:4px;z-index:999;';
-  cnt.id='page-count-badge';
-  cnt.textContent='총 '+pages+'페이지';
-  document.body.appendChild(cnt);
+
+  updatePageBadge();
+}
+
+function updatePageBadge(){
+  const disp=document.getElementById('page-count-display');
+  if(disp) disp.textContent=_targetPages+'장';
+  const pct=Math.round(_currentScale*100);
+  let badge=document.getElementById('scale-badge');
+  if(!badge){
+    badge=document.createElement('div');
+    badge.id='scale-badge';
+    badge.style.cssText='position:fixed;bottom:10px;right:14px;font-size:10px;color:#4cc9f0;font-family:Share Tech Mono,monospace;background:rgba(8,8,15,.85);padding:4px 10px;border-radius:5px;z-index:999;';
+    document.body.appendChild(badge);
+  }
+  badge.textContent=_targetPages+'장 출력  |  축소 '+pct+'%';
+}
+
+function changePages(delta){
+  const newVal=_targetPages+delta;
+  if(newVal<1||newVal>50) return;
+  _targetPages=newVal;
+  refreshGuides();
 }
 
 window.addEventListener('load',function(){
   wrapNames();
-  // 클릭 제거
   document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
     el.removeAttribute('onclick');el.style.cursor='default';el.style.pointerEvents='none';
   });
-  // 페이지 가이드 초기 빌드 (토글 전 계산만)
-  buildPageGuides();
+  // 초기 계산: rAF로 레이아웃 완료 후
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    buildPageGuides();
+  }));
 });
 <\/script>
 </body></html>`;
