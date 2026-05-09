@@ -2577,8 +2577,21 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="비율 유지하면서 설정한 세로 용지 수 높이에 맞게 대진표 크기를 조정합니다">
       <input type="checkbox" id="a4-fit-h" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 위아래맞추기
     </label>
+    <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);" title="A4 용지 테두리 기준으로 대진표를 좌우 가운데 정렬합니다">
+      <input type="checkbox" id="a4-fit-cx" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 가운데정렬
+    </label>
     <span id="a4-pct" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
     <button id="a4-help" title="A4 용지 배치 도움말" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:11px;font-weight:700;cursor:pointer;line-height:1;padding:0;">?</button>
+  </div>
+  <!-- 줌 컨트롤 (항상 표시) -->
+  <div id="zoom-ctrl" style="display:flex;align-items:center;gap:4px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;">
+    <span style="font-size:10px;color:var(--text3);margin-right:2px;">🔍 보기:</span>
+    <button class="zoom-btn" data-zoom="0.5"  onclick="_zoomSet(0.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">50%</button>
+    <button class="zoom-btn" data-zoom="0.75" onclick="_zoomSet(0.75)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">75%</button>
+    <button class="zoom-btn" data-zoom="1"    onclick="_zoomSet(1)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:rgba(76,201,240,.15);color:#4cc9f0;font-size:11px;font-weight:700;cursor:pointer;border-color:#4cc9f0;">100%</button>
+    <button class="zoom-btn" data-zoom="1.5"  onclick="_zoomSet(1.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">150%</button>
+    <button class="zoom-btn" data-zoom="2"    onclick="_zoomSet(2)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">200%</button>
+    <button onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
   </div>
   <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
@@ -2586,6 +2599,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <b style="color:#4cc9f0;">가로 N장 × 세로 N장</b> — 출력할 용지 수 설정<br>
     <b style="color:#4cc9f0;">좌우맞추기</b> — 비율 유지하면서 설정한 가로 용지 총 너비에 맞게 대진표를 축소/확대. 남거나 넘치는 세로를 보고 세로 장 수를 조절하세요.<br>
     <b style="color:#4cc9f0;">위아래맞추기</b> — 비율 유지하면서 설정한 세로 용지 총 높이에 맞게 축소/확대. 남거나 넘치는 가로를 보고 가로 장 수를 조절하세요.<br>
+    <b style="color:#4cc9f0;">가운데정렬</b> — 축소/확대 후 남은 공간을 기준으로 대진표를 A4 용지 너비 안에서 좌우 가운데 배치합니다.<br>
     <b style="color:#4cc9f0;">둘 다 체크</b> — 가로/세로 모두 딱 맞게 (비율 변경될 수 있음)<br>
     <div style="margin-top:12px;text-align:right;"><button onclick="document.getElementById('a4-help-box').style.display='none'" style="padding:4px 14px;border-radius:6px;border:1px solid #3a3a55;background:rgba(255,255,255,.08);color:#9090b0;cursor:pointer;font-size:12px;">닫기</button></div>
   </div>
@@ -2676,7 +2690,8 @@ window.addEventListener('load',function(){
 
 /* ── A4 용지 배치 격자 ── */
 var _a4On=false,_a4Orient='portrait',_a4C=1,_a4R=1,_a4Scale=1,_a4W=0,_a4H=0;
-const _A4={portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))},landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))}};
+var _zoomLevel=1; // 줌 비율 (1=100%)
+const _A4={portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))},landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))}};;
 
 function _a4Init(){
   document.getElementById('chk-a4').addEventListener('change',function(){ _a4Toggle(this.checked); });
@@ -2688,6 +2703,7 @@ function _a4Init(){
   document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-fit-w').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-fit-h').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
+  document.getElementById('a4-fit-cx').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-help').addEventListener('click',function(){
     const box=document.getElementById('a4-help-box');
     box.style.display=box.style.display==='none'?'block':'none';
@@ -2724,6 +2740,7 @@ function _a4Draw(){
   const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
   const fitW=document.getElementById('a4-fit-w').checked;
   const fitH=document.getElementById('a4-fit-h').checked;
+  const fitCX=document.getElementById('a4-fit-cx').checked;
   const sx=(_a4C*pw)/_a4W;
   const sy=(_a4R*ph)/_a4H;
 
@@ -2738,14 +2755,26 @@ function _a4Draw(){
   }
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
 
+  const gridW=_a4C*pw, gridH=_a4R*ph;
+  const scaledW=_a4W*_a4Scale;
+
+  // 가운데정렬: 격자 총 너비 기준으로 대진표를 가운데 배치
   const sw=document.getElementById('a4-scale-wrap');
   if(fitW||fitH){
-    if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; }
+    let offsetX=0;
+    if(fitCX){
+      // A4 격자 총 너비 기준 가운데
+      offsetX=Math.max(0,(gridW-scaledW)/2);
+    }
+    if(sw){
+      sw.style.transform='scale('+_a4Scale+')';
+      sw.style.transformOrigin='top left';
+      sw.style.marginLeft=offsetX+'px';
+    }
   } else {
-    if(sw){ sw.style.transform=''; }
+    if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   }
 
-  const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
   stage.style.minHeight=(gridH+80)+'px';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
@@ -2797,12 +2826,43 @@ function _a4Draw(){
 
 function _a4Clear(){
   const sw=document.getElementById('a4-scale-wrap');
-  if(sw){ sw.style.transform=''; }
+  if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   const stage=document.getElementById('a4-stage');
   stage.style.minHeight='';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
   document.getElementById('a4-pct').textContent='';
   const b=document.getElementById('a4-badge');if(b) b.style.display='none';
+}
+
+/* ── 줌(비율 보기) ── */
+function _zoomSet(ratio){
+  const stage=document.getElementById('a4-stage');
+  if(!stage) return;
+  if(ratio===null){
+    // '맞춤': 창 너비에 맞게 자동
+    const pw=document.getElementById('preview-wrap');
+    const wrapW=pw?pw.clientWidth-48:window.innerWidth-48;
+    // 콘텐츠 기준 너비
+    const sw=document.getElementById('a4-scale-wrap');
+    const contentW=sw?sw.scrollWidth:_a4W||800;
+    ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
+  }
+  _zoomLevel=ratio;
+  // a4-stage에 zoom transform 적용 (transform-origin top left)
+  stage.style.transformOrigin='top left';
+  stage.style.transform='scale('+ratio+')';
+  // 스크롤 가능 영역 확보: scaled 높이만큼 min-height 재조정
+  const oh=stage.offsetHeight||600;
+  stage.parentElement.style.minHeight=(oh*ratio+80)+'px';
+
+  // 버튼 활성화 표시 업데이트
+  document.querySelectorAll('.zoom-btn').forEach(function(btn){
+    const bz=parseFloat(btn.dataset.zoom);
+    const active=Math.abs(bz-ratio)<0.01;
+    btn.style.background=active?'rgba(76,201,240,.15)':'transparent';
+    btn.style.color=active?'#4cc9f0':'var(--text3)';
+    btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
+  });
 }
 <\/script>
 </body></html>`;
