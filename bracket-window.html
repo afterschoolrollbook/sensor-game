@@ -1213,7 +1213,7 @@ function _redrawBracketView(){
     spacer.style.cssText='flex:1;min-width:40px;';
 
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-start;';
 
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
@@ -1224,34 +1224,79 @@ function _redrawBracketView(){
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    const renderCourtGroups=(courtNum, container)=>{
-      const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
-      const reversed=(courtNum===2);
-      groups.forEach(g=>{
-        const labelParts=g.label.split('/').map(s=>s.trim());
-        const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    // ── D형 좌우 그룹 정렬 ──
+    // 원칙: 같은 인덱스 그룹은 항상 같은 y에서 시작
+    //       한쪽이 더 길면 → 짧은 쪽 슬롯에 하단 여백 추가해 다음 그룹 시작점 동기화
+    const lGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
+    const rGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
+    const maxGroups=Math.max(lGroups.length, rGroups.length);
 
-        const hdr=document.createElement('div');
-        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
-        hdr.textContent=shortLabel;
-        container.appendChild(hdr);
-
-        const groupWrap=document.createElement('div');
-        groupWrap.style.cssText='margin-bottom:16px;';
-
-        const taggedMatches=g.matches.map((round,ri)=>
-          round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-        );
-
-        S.matches=taggedMatches;
-        _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
-        _stripInnerScroll(groupWrap);
-        container.appendChild(groupWrap);
-      });
+    // 그룹 하나를 렌더링하고 내부 wrap 반환
+    const renderGroup=(g, container, reversed)=>{
+      const labelParts=g.label.split('/').map(s=>s.trim());
+      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:0;';
+      hdr.textContent=shortLabel;
+      container.appendChild(hdr);
+      const groupWrap=document.createElement('div');
+      groupWrap.style.cssText='margin-bottom:0;';
+      const taggedMatches=g.matches.map((round,ri)=>
+        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+      );
+      S.matches=taggedMatches;
+      _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
+      _stripInnerScroll(groupWrap);
+      container.appendChild(groupWrap);
+      return container; // 슬롯 전체 반환
     };
 
-    renderCourtGroups(1, lDiv);
-    renderCourtGroups(2, rDiv);
+    // 각 쌍을 슬롯으로 묶기: 슬롯이 실제 높이를 갖고 나서 패딩으로 나머지 보정
+    const syncSlots=[];
+    for(let i=0;i<maxGroups;i++){
+      const lg=lGroups[i], rg=rGroups[i];
+
+      // 슬롯: 내용 위에서 시작, 하단에 spacer로 높이 보정
+      const lSlot=document.createElement('div');
+      lSlot.style.cssText='display:flex;flex-direction:column;align-items:flex-start;box-sizing:border-box;';
+      lDiv.appendChild(lSlot);
+
+      const rSlot=document.createElement('div');
+      rSlot.style.cssText='display:flex;flex-direction:column;align-items:flex-start;box-sizing:border-box;';
+      rDiv.appendChild(rSlot);
+
+      if(lg) renderGroup(lg, lSlot, false);
+      if(rg) renderGroup(rg, rSlot, true);
+
+      // 양쪽 다 없으면 건너뜀
+      if(!lg && !rg) continue;
+
+      // 한쪽만 있으면 투명 처리 (공간은 유지)
+      if(!lg) lSlot.style.opacity='0';
+      if(!rg) rSlot.style.opacity='0';
+
+      // 슬롯 아래에 동적 spacer 추가 (높이 보정용)
+      const lSpacer=document.createElement('div'); lSpacer.style.cssText='flex-shrink:0;height:0;';
+      const rSpacer=document.createElement('div'); rSpacer.style.cssText='flex-shrink:0;height:0;';
+      lSlot.appendChild(lSpacer);
+      rSlot.appendChild(rSpacer);
+
+      syncSlots.push({lSlot,rSlot,lSpacer,rSpacer});
+    }
+
+    // RAF 2회 후: 실제 높이 측정 → 짧은 쪽 spacer로 보정
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      syncSlots.forEach(({lSlot,rSlot,lSpacer,rSpacer})=>{
+        const lH=lSlot.scrollHeight, rH=rSlot.scrollHeight;
+        const maxH=Math.max(lH,rH);
+        if(maxH>0){
+          // 짧은 쪽에 부족한 만큼 spacer 추가 (최소 16px 여백 포함)
+          const GAP=20;
+          lSpacer.style.height=Math.max(0, maxH-lH)+GAP+'px';
+          rSpacer.style.height=Math.max(0, maxH-rH)+GAP+'px';
+        }
+      });
+    }));
 
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(spacer);
@@ -2270,7 +2315,7 @@ function _renderPdfPreview(groups){
     const spacer=document.createElement('div');
     spacer.style.cssText='flex:1;min-width:24px;';
     const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
+    rDiv.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-start;';
 
     const mkLabel=(txt,align)=>{
       const d=document.createElement('div');
@@ -2280,24 +2325,53 @@ function _renderPdfPreview(groups){
     lDiv.appendChild(mkLabel('// 경기장 1','left'));
     rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    const renderCourtBlock=(courtNum, container, reversed)=>{
-      groups.filter(g=>g.court===courtNum).forEach(g=>{
-        const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-        const hdr=document.createElement('div');
-        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
-        hdr.textContent=shortLabel;
-        container.appendChild(hdr);
-        const gWrap=document.createElement('div');
-        gWrap.style.cssText='margin-bottom:16px;overflow:visible;';
-        const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
-        S.matches=taggedMatches;
-        _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
-        _applyOverflow(gWrap);
-        container.appendChild(gWrap);
-      });
+    // PDF D형 좌우 그룹 정렬: spacer 방식으로 시작점 동기화
+    const renderGroup_=(g, container, reversed)=>{
+      const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:0;';
+      hdr.textContent=shortLabel;
+      container.appendChild(hdr);
+      const gWrap=document.createElement('div');
+      gWrap.style.cssText='margin-bottom:0;overflow:visible;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
+      _applyOverflow(gWrap);
+      container.appendChild(gWrap);
     };
-    renderCourtBlock(1, lDiv, false);
-    renderCourtBlock(2, rDiv, true);
+    const lGroups_=groups.filter(g=>g.court===1);
+    const rGroups_=groups.filter(g=>g.court===2);
+    const maxG=Math.max(lGroups_.length,rGroups_.length);
+    const pdfSyncSlots=[];
+    for(let i=0;i<maxG;i++){
+      const lSlot=document.createElement('div');
+      lSlot.style.cssText='display:flex;flex-direction:column;align-items:flex-start;box-sizing:border-box;overflow:visible;';
+      lDiv.appendChild(lSlot);
+      const rSlot=document.createElement('div');
+      rSlot.style.cssText='display:flex;flex-direction:column;align-items:flex-start;box-sizing:border-box;overflow:visible;';
+      rDiv.appendChild(rSlot);
+      if(lGroups_[i]) renderGroup_(lGroups_[i], lSlot, false);
+      if(rGroups_[i]) renderGroup_(rGroups_[i], rSlot, true);
+      if(!lGroups_[i]) lSlot.style.opacity='0';
+      if(!rGroups_[i]) rSlot.style.opacity='0';
+      const lSp=document.createElement('div'); lSp.style.cssText='flex-shrink:0;height:0;';
+      const rSp=document.createElement('div'); rSp.style.cssText='flex-shrink:0;height:0;';
+      lSlot.appendChild(lSp);
+      rSlot.appendChild(rSp);
+      pdfSyncSlots.push({lSlot,rSlot,lSp,rSp});
+    }
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      pdfSyncSlots.forEach(({lSlot,rSlot,lSp,rSp})=>{
+        const lH=lSlot.scrollHeight, rH=rSlot.scrollHeight;
+        const maxH=Math.max(lH,rH);
+        if(maxH>0){
+          const GAP=20;
+          lSp.style.height=Math.max(0,maxH-lH)+GAP+'px';
+          rSp.style.height=Math.max(0,maxH-rH)+GAP+'px';
+        }
+      });
+    }));
 
     outerWrap.appendChild(lDiv);
     outerWrap.appendChild(spacer);
