@@ -2646,27 +2646,22 @@ function _a4Draw(){
   const sy=(_a4R*ph)/_a4H;
 
   if(fitW&&fitH){
-    // 둘 다: 각각 독립 적용 (비율 무시, 가로세로 따로 맞춤) → 비율 유지로 작은 쪽 기준
     _a4Scale=Math.min(sx,sy);
   } else if(fitW){
-    // 좌우맞추기: 가로 총 너비 기준으로만 스케일, 비율 유지
     _a4Scale=sx;
   } else if(fitH){
-    // 위아래맞추기: 세로 총 높이 기준으로만 스케일, 비율 유지
     _a4Scale=sy;
   } else {
-    // 맞추기 없음: 스케일 1 (원본 크기)
     _a4Scale=1;
   }
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
 
-  const scaledW=_a4W*_a4Scale, scaledH=_a4H*_a4Scale;
-  const nc=Math.ceil(scaledW/pw), nr=Math.ceil(scaledH/ph);
-  if(nc>_a4C||nr>_a4R){ _a4C=Math.max(_a4C,nc); _a4R=Math.max(_a4R,nr); _a4SyncD(); _a4Draw(); return; }
-
-  // scale 적용 — bracket-display 위 래퍼에만 (bracket-display 자체는 건드리지 않음)
   const sw=document.getElementById('a4-scale-wrap');
-  if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; }
+  if(fitW||fitH){
+    if(sw){ sw.style.transform='scale('+_a4Scale+')'; sw.style.transformOrigin='top left'; }
+  } else {
+    if(sw){ sw.style.transform=''; }
+  }
 
   const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
