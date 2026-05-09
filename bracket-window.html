@@ -2378,85 +2378,103 @@ function _writeFullPreviewWin(win, rawHTML){
   --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
-html,body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Noto Sans KR',sans-serif;
-  min-height:100vh;
-}
+html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;transition:background .25s,color .25s;}
+
+/* ── 화이트 모드 ── */
+body.white-mode{background:#f4f4f4 !important;color:#111 !important;}
+body.white-mode .toolbar{background:#fff !important;border-bottom:1px solid #ddd !important;}
+body.white-mode .toggle-wrap{background:#f0f0f0 !important;border-color:#ccc !important;}
+body.white-mode .toggle-wrap span{color:#333 !important;}
+body.white-mode .preview-wrap{background:#f4f4f4;}
+/* 대진표 박스 화이트 */
+body.white-mode #bracket-display div[style]{background:#fff !important;border-color:#999 !important;color:#111 !important;}
+body.white-mode #bracket-display span{color:#111 !important;}
+body.white-mode #bracket-display rect{fill:#fff !important;stroke:#999 !important;}
+body.white-mode #bracket-display path,body.white-mode #bracket-display line{stroke:#888 !important;}
+body.white-mode #bracket-display text{fill:#111 !important;}
+/* VS 빨강 유지 */
+body.white-mode #bracket-display [style*="color:#e63946"],
+body.white-mode #bracket-display [style*="color: #e63946"]{color:#e63946 !important;}
+body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
+
 /* ── 툴바 ── */
-.toolbar{
-  position:fixed;top:0;left:0;right:0;
-  padding:10px 18px;
-  background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  display:flex;gap:8px;align-items:center;
-  z-index:999;flex-wrap:wrap;
-}
-.toolbar button{
-  padding:7px 16px;border:none;border-radius:6px;
-  font-size:12px;font-weight:700;cursor:pointer;
-  font-family:'Noto Sans KR',sans-serif;
-}
+.toolbar{position:fixed;top:0;left:0;right:0;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;z-index:999;flex-wrap:wrap;}
+.toolbar button{padding:7px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .btn-print{background:#e63946;color:#fff;}
-.btn-close{background:rgba(255,255,255,.08);border:1px solid var(--border2) !important;color:var(--text2);}
-/* 이름 토글 체크박스 */
-.name-toggle-wrap{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 14px;
-  background:var(--card);
-  border:1px solid var(--border2);
-  border-radius:8px;
-  cursor:pointer;
-  user-select:none;
-}
-.name-toggle-wrap input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
-.name-toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
-/* ── 미리보기 영역 ── */
-.preview-wrap{
-  padding:70px 24px 40px;
-  overflow:auto;
-  min-height:100vh;
-}
-/* 대진표 뷰 그대로 표시 + 연결선(SVG) 표시용 overflow visible 강제 */
-#bracket-display{overflow:visible !important;min-height:200px;}
+.btn-close{background:rgba(255,255,255,.08);border:1px solid #3a3a55;color:#9090b0;}
+.toggle-wrap{display:flex;align-items:center;gap:7px;padding:5px 13px;background:var(--card);border:1px solid var(--border2);border-radius:8px;cursor:pointer;user-select:none;}
+.toggle-wrap input{width:14px;height:14px;cursor:pointer;}
+.toggle-wrap span{font-size:12px;font-weight:600;color:var(--text2);}
+#chk-show-names{accent-color:#06d6a0;}
+#chk-white-mode{accent-color:#4cc9f0;}
+#chk-page-guide{accent-color:#4cc9f0;}
+
+/* ── 미리보기 ── */
+.preview-wrap{padding:64px 24px 60px;overflow:auto;min-height:100vh;position:relative;}
+
+/* 연결선 포함 overflow 강제 */
+#bracket-display{overflow:visible !important;min-height:200px;position:relative;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
 
-/* 이름 숨김 모드 */
-body.hide-names .player-name-part{
-  opacity:0;
-  pointer-events:none;
-  width:0;overflow:hidden !important;display:inline-block;
-}
+/* ── 이름 숨김 (괄호 이름만 투명 - 박스/번호 유지) ── */
+body.hide-names .player-name-part{visibility:hidden;font-size:0 !important;width:0 !important;display:inline-block;overflow:hidden !important;}
 
-/* 인쇄 */
+/* ── A4 페이지 나누기 가이드 ── */
+.page-guide-line{
+  position:absolute;left:0;right:0;
+  border-top:2px dashed rgba(76,201,240,0.7);
+  pointer-events:none;z-index:50;
+  display:none;
+}
+.page-guide-line.visible{display:block;}
+.page-guide-line::after{
+  content:attr(data-label);
+  position:absolute;right:10px;top:-16px;
+  font-size:9px;color:#4cc9f0;background:rgba(8,8,15,.85);
+  padding:1px 6px;border-radius:3px;
+  font-family:'Share Tech Mono',monospace;white-space:nowrap;
+}
+body.white-mode .page-guide-line{border-top-color:rgba(0,100,220,0.6);}
+body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,240,.9);}
+
 @media print{
   html,body{background:var(--bg);}
+  body.white-mode{background:#fff !important;}
   .toolbar{display:none !important;}
   .preview-wrap{padding:0;}
   #bracket-display,#bracket-display *{overflow:visible !important;}
+  .page-guide-line{display:none !important;}
 }
-/* ── A4 격자 ── */
-.a4-cell{position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;}
-.a4-line{position:absolute;pointer-events:none;z-index:52;}
-.a4-lbl{position:absolute;pointer-events:none;z-index:60;font-size:9px;font-family:"Share Tech Mono",monospace;letter-spacing:1px;}
-#a4-badge{position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.7;font-family:"Share Tech Mono",monospace;padding:6px 14px;border-radius:7px;z-index:9999;display:none;}
 </style>
 </head>
-<body>
+<body class="white-mode">
 <div class="toolbar">
   <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
-  <label class="name-toggle-wrap" title="이름 포함/제외 토글">
+  <label class="toggle-wrap">
     <input type="checkbox" id="chk-show-names" checked onchange="toggleNames(this.checked)">
-    <span id="name-toggle-label">✅ 이름 포함</span>
+    <span id="lbl-names">✅ 이름 포함</span>
   </label>
-  <span style="color:var(--text3);font-size:11px;margin-left:4px;">전체 대진표 — 현재 화면과 동일</span>
-  <!-- A4 용지 배치 -->
-  <label class="name-toggle-wrap" style="cursor:pointer;">
-    <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;" onchange="a4Toggle(this.checked)">
-    <span style="font-size:12px;font-weight:600;color:var(--text2);">📐 A4 용지 배치</span>
+  <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
+    <span style="font-size:11px;color:var(--text3);margin-right:4px;">모드:</span>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="radio" name="theme-mode" value="white" checked onchange="toggleWhite(true)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬜ 화이트</span>
+    </label>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 4px;display:inline-block;"></span>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="radio" name="theme-mode" value="dark" onchange="toggleWhite(false)" style="accent-color:#4cc9f0;width:13px;height:13px;cursor:pointer;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">⬛ 다크</span>
+    </label>
+  </div>
+  <label class="toggle-wrap">
+    <input type="checkbox" id="chk-page-guide" onchange="togglePageGuide(this.checked)">
+    <span>📐 페이지 나누기</span>
+  </label>
+  <label class="toggle-wrap">
+    <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
+    <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
   </label>
   <div id="a4-ctrl" style="display:none;align-items:center;gap:6px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;">
     <span style="font-size:10px;color:var(--text3);">용지:</span>
@@ -2466,77 +2484,146 @@ body.hide-names .player-name-part{
     <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--text2);">
       <input type="radio" id="a4-landscape" name="a4-orient" style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;"> 가로
     </label>
-    <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;display:inline-block;"></span>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;"></span>
     <span style="font-size:10px;color:var(--text3);">가로</span>
-    <button id="a4-col-m" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;">−</button>
+    <button id="a4-cm" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">−</button>
     <span id="a4-cols" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
-    <button id="a4-col-p" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;">+</button>
+    <button id="a4-cp" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
     <span style="font-size:12px;color:var(--text3);margin:0 2px;">×</span>
     <span style="font-size:10px;color:var(--text3);">세로</span>
-    <button id="a4-row-m" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;">−</button>
+    <button id="a4-rm" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">−</button>
     <span id="a4-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
-    <button id="a4-row-p" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;">+</button>
+    <button id="a4-rp" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
     <span id="a4-pct" style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-left:4px;"></span>
   </div>
 </div>
 <div style="position:relative;" id="a4-stage">
-  <div class="preview-wrap" id="preview-wrap-inner">
+  <div class="preview-wrap" id="preview-wrap">
     <div id="bracket-display">${rawHTML}</div>
   </div>
 </div>
 <script>
-// 이름 부분 span 래핑 (괄호 안 이름 식별)
+/* ── 이름 래핑: SVG text 노드 안의 "(이름)" 부분을 tspan으로, HTML 텍스트는 span으로 ── */
 function wrapNames(){
-  const walker=document.createTreeWalker(
-    document.getElementById('bracket-display'),
-    NodeFilter.SHOW_TEXT
-  );
-  const nodes=[];
-  let node;
-  while(node=walker.nextNode()) nodes.push(node);
+  const root=document.getElementById('bracket-display');
 
-  nodes.forEach(n=>{
-    const t=n.textContent;
-    // "N번 (이름)" 패턴에서 "(이름)" 부분 래핑
-    if(/\s*\([^)]+\)/.test(t)){
-      const span=document.createElement('span');
-      span.innerHTML=t.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
-      n.parentNode.replaceChild(span,n);
+  // 1) HTML 텍스트 노드
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+    acceptNode:n=>n.parentNode.closest('svg')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT
+  });
+  const htmlNodes=[];let n;
+  while(n=walker.nextNode()) htmlNodes.push(n);
+  htmlNodes.forEach(n=>{
+    if(/\s*\([^)]+\)/.test(n.textContent)){
+      const sp=document.createElement('span');
+      sp.innerHTML=n.textContent.replace(/(\s*\([^)]+\))/g,'<span class="player-name-part">$1</span>');
+      n.parentNode.replaceChild(sp,n);
     }
+  });
+
+  // 2) SVG text 요소 — textContent에서 "(이름)" 부분 → tspan으로 분리
+  root.querySelectorAll('svg text').forEach(textEl=>{
+    const full=textEl.textContent;
+    if(!/\s*\([^)]+\)/.test(full)) return;
+    const fill=textEl.getAttribute('fill')||'#d0d0d0';
+    const fs=textEl.getAttribute('font-size')||'12';
+    const fw=textEl.getAttribute('font-weight')||'normal';
+    const ff=textEl.getAttribute('font-family')||'Noto Sans KR,sans-serif';
+    const x=textEl.getAttribute('x')||'0';
+    const y=textEl.getAttribute('y')||'0';
+    const anchor=textEl.getAttribute('text-anchor')||'start';
+    // "(이름)" 부분 분리
+    const parts=full.split(/(\s*\([^)]+\))/);
+    textEl.textContent='';
+    parts.forEach(part=>{
+      const ts=document.createElementNS('http://www.w3.org/2000/svg','tspan');
+      ts.textContent=part;
+      if(/\s*\([^)]+\)/.test(part)) ts.classList.add('svg-name-part');
+      textEl.appendChild(ts);
+    });
   });
 }
 
 function toggleNames(show){
-  document.getElementById('name-toggle-label').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
+  document.getElementById('lbl-names').textContent=show?'✅ 이름 포함':'🔲 이름 제외';
   document.body.classList.toggle('hide-names',!show);
+  // SVG tspan 숨김
+  document.querySelectorAll('.svg-name-part').forEach(ts=>{
+    ts.style.visibility=show?'':'hidden';
+    ts.style.fontSize=show?'':'0';
+  });
 }
 
-// 클릭 이벤트 제거 (미리보기 전용이므로 경기박스 클릭 비활성화)
+function toggleWhite(on){
+  // 라디오 버튼이므로 별도 라벨 업데이트 불필요
+  document.body.classList.toggle('white-mode',on);
+}
+
+/* ── A4 페이지 나누기 가이드 ── */
+// A4 = 297mm × 210mm. 세로 출력 기준 인쇄 가능 높이 ≒ 277mm (여백 20mm)
+// CSS 1px = 1/96 인치 = 25.4/96 mm → 1mm = 96/25.4 px ≈ 3.7795px
+var _guideOn=false;
+function togglePageGuide(on){
+  _guideOn=on;
+  document.querySelectorAll('.page-guide-line').forEach(el=>el.classList.toggle('visible',on));
+  if(on && document.querySelectorAll('.page-guide-line').length===0) buildPageGuides();
+}
+
+function buildPageGuides(){
+  const wrap=document.getElementById('preview-wrap');
+  const display=document.getElementById('bracket-display');
+  const totalH=display.scrollHeight;
+  const PX_PER_MM=96/25.4;
+  const A4_H_MM=277; // 인쇄 가능 높이 (여백 제외)
+  const A4_H_PX=A4_H_MM*PX_PER_MM;
+  const pages=Math.ceil(totalH/A4_H_PX);
+  // 기존 가이드 제거
+  wrap.querySelectorAll('.page-guide-line').forEach(e=>e.remove());
+  for(let i=1;i<pages;i++){
+    const guide=document.createElement('div');
+    guide.className='page-guide-line'+((_guideOn)?' visible':'');
+    // preview-wrap의 padding-top(64px) 포함
+    guide.style.top=(64+i*A4_H_PX)+'px';
+    guide.dataset.label='P'+i+' ↓  P'+(i+1)+' ↑';
+    wrap.appendChild(guide);
+  }
+  // 페이지 수 표시
+  const cnt=document.createElement('div');
+  cnt.style.cssText='position:fixed;bottom:10px;right:14px;font-size:10px;color:#4cc9f0;font-family:Share Tech Mono,monospace;background:rgba(8,8,15,.8);padding:3px 8px;border-radius:4px;z-index:999;';
+  cnt.id='page-count-badge';
+  cnt.textContent='총 '+pages+'페이지';
+  document.body.appendChild(cnt);
+}
+
 window.addEventListener('load',function(){
   wrapNames();
+  // 클릭 제거
   document.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
-    el.removeAttribute('onclick');
-    el.style.cursor='default';
-    el.style.pointerEvents='none';
+    el.removeAttribute('onclick');el.style.cursor='default';el.style.pointerEvents='none';
   });
-  // 모달/오버레이 제거
-  document.querySelectorAll('[id*="modal"],[id*="overlay"]').forEach(el=>el.remove());
+  // 페이지 가이드 초기 빌드 (토글 전 계산만)
+  buildPageGuides();
   // A4 버튼 이벤트 등록
-  _a4InitButtons();
+  _a4Init();
 });
 
-/* ══ A4 용지 배치 격자 ══
-   - 셀 크기 = A4 인쇄 가능 영역 px (고정, 창 크기 무관)
-   - cols×rows 설정 → 대진표를 비율 유지하며 스케일
-   - 넘치면 자동으로 장수 증가
-   - resize 이벤트 없음 (출력 내용 고정)
-*/
-var _a4On=false, _a4Orient='portrait', _a4Cols=1, _a4Rows=1, _a4Scale=1, _a4RawW=0, _a4RawH=0;
-const _A4PX={ portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))}, landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))} };
+/* ══ A4 용지 배치 ══ */
+var _a4On=false,_a4Orient='portrait',_a4C=1,_a4R=1,_a4Scale=1,_a4W=0,_a4H=0;
+const _A4={portrait:{w:Math.round(190*(96/25.4)),h:Math.round(277*(96/25.4))},landscape:{w:Math.round(277*(96/25.4)),h:Math.round(190*(96/25.4))}};
 
-function a4Toggle(on){
+function _a4Init(){
+  document.getElementById('chk-a4').addEventListener('change',function(){ _a4Toggle(this.checked); });
+  document.getElementById('a4-cm').addEventListener('click',function(){ if(!_a4On)return; _a4C=Math.max(1,_a4C-1); _a4SyncD(); _a4Draw(); });
+  document.getElementById('a4-cp').addEventListener('click',function(){ if(!_a4On)return; _a4C=Math.min(20,_a4C+1); _a4SyncD(); _a4Draw(); });
+  document.getElementById('a4-rm').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.max(1,_a4R-1); _a4SyncD(); _a4Draw(); });
+  document.getElementById('a4-rp').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.min(50,_a4R+1); _a4SyncD(); _a4Draw(); });
+  document.getElementById('a4-portrait').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='portrait';_a4AutoFit();_a4Draw();} });
+  document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_a4AutoFit();_a4Draw();} });
+}
+
+function _a4Toggle(on){
   _a4On=on;
   document.getElementById('a4-ctrl').style.display=on?'flex':'none';
   if(on){ _a4Measure(); _a4AutoFit(); _a4Draw(); }
@@ -2544,152 +2631,120 @@ function a4Toggle(on){
 }
 
 function _a4Measure(){
-  // scale=1 리셋 후 원본 크기 측정
   const d=document.getElementById('bracket-display');
-  _a4RawW=d.scrollWidth||d.offsetWidth||800;
-  _a4RawH=d.scrollHeight||d.offsetHeight||600;
+  _a4W=d.scrollWidth||d.offsetWidth||800;
+  _a4H=d.scrollHeight||d.offsetHeight||600;
 }
 
 function _a4AutoFit(){
   // 가로 1장 기준, 비율 유지 세로 장수 자동 산정
-  const pw=_A4PX[_a4Orient].w, ph=_A4PX[_a4Orient].h;
-  _a4Cols=1;
-  const s=pw/_a4RawW; // 가로 1장에 맞추는 스케일
-  _a4Rows=Math.max(1,Math.ceil((_a4RawH*s)/ph));
-  _a4SyncDisp();
+  const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
+  _a4C=1;
+  const s=pw/_a4W;
+  _a4R=Math.max(1,Math.ceil((_a4H*s)/ph));
+  _a4SyncD();
 }
 
-function _a4SyncDisp(){
-  document.getElementById('a4-cols').textContent=_a4Cols;
-  document.getElementById('a4-rows').textContent=_a4Rows;
+function _a4SyncD(){
+  document.getElementById('a4-cols').textContent=_a4C;
+  document.getElementById('a4-rows').textContent=_a4R;
 }
 
 function _a4Draw(){
   const stage=document.getElementById('a4-stage');
-  const pw=_A4PX[_a4Orient].w, ph=_A4PX[_a4Orient].h;
-  const gridW=_a4Cols*pw, gridH=_a4Rows*ph;
+  const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
 
-  // 스케일 계산 (비율 유지, cols×rows 안에 피팅)
-  const sx=gridW/_a4RawW, sy=gridH/_a4RawH;
+  // 비율 유지 스케일
+  const sx=(_a4C*pw)/_a4W, sy=(_a4R*ph)/_a4H;
   _a4Scale=Math.min(sx,sy);
   _a4Scale=Math.max(0.01,Math.min(_a4Scale,10));
 
-  // 실제 렌더 크기
-  const scaledW=_a4RawW*_a4Scale, scaledH=_a4RawH*_a4Scale;
-
-  // 넘침이면 장수 자동 증가 후 재귀
-  const needC=Math.ceil(scaledW/pw), needR=Math.ceil(scaledH/ph);
-  if(needC>_a4Cols||needR>_a4Rows){
-    _a4Cols=Math.max(_a4Cols,needC);
-    _a4Rows=Math.max(_a4Rows,needR);
-    _a4SyncDisp();
-    _a4Draw(); return;
-  }
+  // 넘침 → 장수 자동 증가
+  const scaledW=_a4W*_a4Scale, scaledH=_a4H*_a4Scale;
+  const nc=Math.ceil(scaledW/pw), nr=Math.ceil(scaledH/ph);
+  if(nc>_a4C||nr>_a4R){ _a4C=Math.max(_a4C,nc); _a4R=Math.max(_a4R,nr); _a4SyncD(); _a4Draw(); return; }
 
   // 대진표 스케일 적용
   const disp=document.getElementById('bracket-display');
   disp.style.transform='scale('+_a4Scale+')';
   disp.style.transformOrigin='top left';
-  disp.style.width=(_a4RawW)+'px';
 
-  // stage 높이 = 격자 높이 (스크롤 공간)
-  stage.style.minHeight=(gridH+80)+'px';
+  // stage 크기
+  const gridW=_a4C*pw, gridH=_a4R*ph;
   stage.style.position='relative';
+  stage.style.minHeight=(gridH+80)+'px';
 
   // 기존 격자 제거
-  stage.querySelectorAll('.a4-cell,.a4-line,.a4-lbl').forEach(e=>e.remove());
+  stage.querySelectorAll('.a4g').forEach(e=>e.remove());
 
   const isW=document.body.classList.contains('white-mode');
   const lc=isW?'rgba(0,100,220,0.55)':'rgba(76,201,240,0.65)';
   const sc=isW?'rgba(0,100,220,0.4)':'rgba(76,201,240,0.45)';
-  const bc=isW?'rgba(0,80,200,0.3)':'rgba(76,201,240,0.3)';
+  const bc=isW?'rgba(0,80,200,0.28)':'rgba(76,201,240,0.28)';
+  const PAD=64; // preview-wrap padding-top
 
   // 셀 배경
-  for(let r=0;r<_a4Rows;r++){
-    for(let c=0;c<_a4Cols;c++){
+  for(let r=0;r<_a4R;r++){
+    for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');
-      el.className='a4-cell';
-      el.style.cssText='left:'+(c*pw)+'px;top:'+(r*ph)+'px;width:'+pw+'px;height:'+ph+'px;'+
-        (isW?'background:#fff;border:1px solid rgba(0,100,220,0.15);box-shadow:0 2px 8px rgba(0,0,0,.07);':
-             'background:rgba(255,255,255,0.015);border:1px solid rgba(76,201,240,0.15);');
+      el.className='a4g';
+      el.style.cssText='position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;'
+        +'left:'+(c*pw)+'px;top:'+(PAD+r*ph)+'px;width:'+pw+'px;height:'+ph+'px;'
+        +(isW?'background:#fff;border:1px solid rgba(0,100,220,0.15);box-shadow:0 2px 8px rgba(0,0,0,.07);'
+             :'background:rgba(255,255,255,0.015);border:1px solid rgba(76,201,240,0.15);');
       stage.appendChild(el);
     }
   }
-
   // 가로선
-  for(let r=0;r<=_a4Rows;r++){
+  for(let r=0;r<=_a4R;r++){
     const el=document.createElement('div');
-    el.className='a4-line';
-    const border=(r===0||r===_a4Rows)?'2px solid '+sc:'2px dashed '+lc;
-    el.style.cssText='left:0;top:'+(r*ph)+'px;width:'+gridW+'px;height:0;border-top:'+border+';';
+    el.className='a4g';
+    const b=(r===0||r===_a4R)?'2px solid '+sc:'2px dashed '+lc;
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;height:0;left:0;width:'+gridW+'px;top:'+(PAD+r*ph)+'px;border-top:'+b+';';
     stage.appendChild(el);
   }
-
   // 세로선
-  for(let c=0;c<=_a4Cols;c++){
+  for(let c=0;c<=_a4C;c++){
     const el=document.createElement('div');
-    el.className='a4-line';
-    const border=(c===0||c===_a4Cols)?'2px solid '+sc:'2px dashed '+lc;
-    el.style.cssText='top:0;left:'+(c*pw)+'px;height:'+gridH+'px;width:0;border-left:'+border+';';
+    el.className='a4g';
+    const b=(c===0||c===_a4C)?'2px solid '+sc:'2px dashed '+lc;
+    el.style.cssText='position:absolute;pointer-events:none;z-index:52;width:0;top:'+PAD+'px;left:'+(c*pw)+'px;height:'+gridH+'px;border-left:'+b+';';
     stage.appendChild(el);
   }
-
   // 페이지 번호
   let pn=1;
-  for(let r=0;r<_a4Rows;r++){
-    for(let c=0;c<_a4Cols;c++){
+  for(let r=0;r<_a4R;r++){
+    for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');
-      el.className='a4-lbl';
-      el.style.cssText='left:'+(c*pw+5)+'px;top:'+(r*ph+5)+'px;color:'+bc+';';
+      el.className='a4g';
+      el.style.cssText='position:absolute;pointer-events:none;z-index:60;font-size:9px;font-family:"Share Tech Mono",monospace;letter-spacing:1px;color:'+bc+';left:'+(c*pw+5)+'px;top:'+(PAD+r*ph+5)+'px;';
       el.textContent='P'+(pn++);
       stage.appendChild(el);
     }
   }
 
-  // 비율 배지
+  // 비율 표시
   const pct=Math.round(_a4Scale*100);
   document.getElementById('a4-pct').textContent='('+pct+'%)';
-  const badge=document.getElementById('a4-badge');
+
+  // 배지
+  let badge=document.getElementById('a4-badge');
+  if(!badge){ badge=document.createElement('div'); badge.id='a4-badge'; badge.style.cssText='position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.7;font-family:"Share Tech Mono",monospace;padding:6px 14px;border-radius:7px;z-index:9999;'; document.body.appendChild(badge); }
   const ol=_a4Orient==='portrait'?'세로용지':'가로용지';
   badge.style.background=isW?'rgba(240,243,255,.96)':'rgba(8,8,15,.92)';
   badge.style.border=isW?'1px solid #b0c0e0':'1px solid #2a2a50';
-  badge.style.color=isW?'#333':'#9090b0';
-  badge.innerHTML='<span style="color:'+(isW?'#0050c0':'#4cc9f0')+';">'+_a4Cols+'×'+_a4Rows+'장 '+ol+'</span><br>'
-    +'출력비율: <b style="color:'+(pct>=80?(isW?'#006600':'#06d6a0'):pct>=40?(isW?'#885500':'#ffd60a'):'#e63946')+';">'+pct+'%</b>';
+  badge.innerHTML='<span style="color:'+(isW?'#0050c0':'#4cc9f0')+';">'+_a4C+'×'+_a4R+'장 '+ol+'</span><br>출력비율: <b style="color:'+(pct>=80?(isW?'#006600':'#06d6a0'):pct>=40?(isW?'#885500':'#ffd60a'):'#e63946')+';">'+pct+'%</b>';
   badge.style.display='';
 }
 
 function _a4Clear(){
   const disp=document.getElementById('bracket-display');
-  disp.style.transform='';
-  disp.style.transformOrigin='';
-  disp.style.width='';
+  disp.style.transform=''; disp.style.transformOrigin='';
   const stage=document.getElementById('a4-stage');
   stage.style.minHeight='';
-  stage.querySelectorAll('.a4-cell,.a4-line,.a4-lbl').forEach(e=>e.remove());
+  stage.querySelectorAll('.a4g').forEach(e=>e.remove());
   document.getElementById('a4-pct').textContent='';
-  document.getElementById('a4-badge').style.display='none';
-}
-
-function _a4InitButtons(){
-  document.getElementById('a4-col-m').addEventListener('click',function(){
-    if(!_a4On)return; _a4Cols=Math.max(1,_a4Cols-1); _a4SyncDisp(); _a4Draw();
-  });
-  document.getElementById('a4-col-p').addEventListener('click',function(){
-    if(!_a4On)return; _a4Cols=Math.min(20,_a4Cols+1); _a4SyncDisp(); _a4Draw();
-  });
-  document.getElementById('a4-row-m').addEventListener('click',function(){
-    if(!_a4On)return; _a4Rows=Math.max(1,_a4Rows-1); _a4SyncDisp(); _a4Draw();
-  });
-  document.getElementById('a4-row-p').addEventListener('click',function(){
-    if(!_a4On)return; _a4Rows=Math.min(50,_a4Rows+1); _a4SyncDisp(); _a4Draw();
-  });
-  document.getElementById('a4-portrait').addEventListener('change',function(){
-    if(!this.checked)return; _a4Orient='portrait'; if(_a4On){_a4AutoFit();_a4Draw();}
-  });
-  document.getElementById('a4-landscape').addEventListener('change',function(){
-    if(!this.checked)return; _a4Orient='landscape'; if(_a4On){_a4AutoFit();_a4Draw();}
-  });
+  const b=document.getElementById('a4-badge'); if(b) b.style.display='none';
 }
 <\/script>
 </body></html>`;
