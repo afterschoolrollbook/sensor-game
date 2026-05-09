@@ -2466,10 +2466,6 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     </label>
   </div>
   <label class="toggle-wrap">
-    <input type="checkbox" id="chk-page-guide" onchange="togglePageGuide(this.checked)">
-    <span>📐 페이지 나누기</span>
-  </label>
-  <label class="toggle-wrap">
     <input type="checkbox" id="chk-a4" style="accent-color:#4cc9f0;width:14px;height:14px;cursor:pointer;">
     <span style="font-size:12px;font-weight:600;color:var(--text2);">🗂 A4 용지 배치</span>
   </label>
@@ -2608,9 +2604,8 @@ function _a4Measure(){
 }
 
 function _a4AutoFit(){
-  const pw=_A4[_a4Orient].w, ph=_A4[_a4Orient].h;
   _a4C=1;
-  _a4R=Math.max(1,Math.ceil((_a4H*(pw/_a4W))/ph));
+  _a4R=1;
   _a4SyncD();
 }
 
@@ -2647,7 +2642,7 @@ function _a4Draw(){
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');el.className='a4g';
-      el.style.cssText='position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;left:'+(c*pw)+'px;top:'+(PAD+r*ph)+'px;width:'+pw+'px;height:'+ph+'px;'+(isW?'background:#fff;border:1px solid rgba(0,100,220,0.15);box-shadow:0 2px 8px rgba(0,0,0,.07);':'background:rgba(255,255,255,0.015);border:1px solid rgba(76,201,240,0.15);');
+      el.style.cssText='position:absolute;pointer-events:none;z-index:1;box-sizing:border-box;left:'+(c*pw)+'px;top:'+(PAD+r*ph)+'px;width:'+pw+'px;height:'+ph+'px;background:transparent;';
       stage.appendChild(el);
     }
   }
