@@ -1204,58 +1204,84 @@ function _redrawBracketView(){
     view.style.padding='12px';
 
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;min-width:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:100%;';
 
-    const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;flex-shrink:0;';
+    // ── 행(row) 단위 렌더링 ──
+    // 경기장1 그룹 / 경기장2 그룹을 각각 순서대로 가져와서
+    // 한 번에 하나씩 "행"으로 묶어 렌더링.
+    // 한 행 = [왼쪽 섹션 | 가운데 spacer | 오른쪽 섹션]
+    // → 행의 height가 CSS align-items:stretch 로 자동으로 같아짐.
+    // 한쪽이 체급이 더 많으면 나머지는 빈 셀로 처리.
 
-    const spacer=document.createElement('div');
-    spacer.style.cssText='flex:1;min-width:40px;';
+    const lGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
+    const rGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
+    const rowCount=Math.max(lGroups.length, rGroups.length);
 
-    const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
-
+    // 헤더 행 (경기장1 / 경기장2 레이블)
+    const hdrRow=document.createElement('div');
+    hdrRow.style.cssText='display:flex;flex-direction:row;gap:0;margin-bottom:6px;';
     const mkLabel=(txt,align='left')=>{
       const d=document.createElement('div');
-      d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
+      d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;text-align:${align};`;
       d.textContent=txt;
       return d;
     };
-    lDiv.appendChild(mkLabel('// 경기장 1','left'));
-    rDiv.appendChild(mkLabel('// 경기장 2','right'));
+    const hdrL=document.createElement('div');
+    hdrL.style.cssText='padding-right:24px;flex-shrink:0;';
+    hdrL.appendChild(mkLabel('// 경기장 1','left'));
+    const hdrSp=document.createElement('div');
+    hdrSp.style.cssText='flex:1;min-width:40px;';
+    const hdrR=document.createElement('div');
+    hdrR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
+    hdrR.appendChild(mkLabel('// 경기장 2','right'));
+    hdrRow.appendChild(hdrL); hdrRow.appendChild(hdrSp); hdrRow.appendChild(hdrR);
+    outerWrap.appendChild(hdrRow);
 
-    const renderCourtGroups=(courtNum, container)=>{
-      const groups=(S.groupBrackets||[]).filter(g=>g.court===courtNum);
-      const reversed=(courtNum===2);
-      groups.forEach(g=>{
-        const labelParts=g.label.split('/').map(s=>s.trim());
-        const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-
-        const hdr=document.createElement('div');
-        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
-        hdr.textContent=shortLabel;
-        container.appendChild(hdr);
-
-        const groupWrap=document.createElement('div');
-        groupWrap.style.cssText='margin-bottom:16px;';
-
-        const taggedMatches=g.matches.map((round,ri)=>
-          round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-        );
-
-        S.matches=taggedMatches;
-        _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
-        _stripInnerScroll(groupWrap);
-        container.appendChild(groupWrap);
-      });
+    const mkSection=(g, reversed)=>{
+      const labelParts=g.label.split('/').map(s=>s.trim());
+      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+      const sec=document.createElement('div');
+      sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;';
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;';
+      hdr.textContent=shortLabel;
+      sec.appendChild(hdr);
+      const groupWrap=document.createElement('div');
+      const taggedMatches=g.matches.map((round,ri)=>
+        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+      );
+      S.matches=taggedMatches;
+      _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
+      _stripInnerScroll(groupWrap);
+      sec.appendChild(groupWrap);
+      return sec;
     };
 
-    renderCourtGroups(1, lDiv);
-    renderCourtGroups(2, rDiv);
+    for(let i=0;i<rowCount;i++){
+      const row=document.createElement('div');
+      // stretch: 왼쪽/오른쪽 셀이 같은 height로 늘어남
+      row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;';
 
-    outerWrap.appendChild(lDiv);
-    outerWrap.appendChild(spacer);
-    outerWrap.appendChild(rDiv);
+      // 왼쪽 셀
+      const cellL=document.createElement('div');
+      cellL.style.cssText='padding-right:24px;flex-shrink:0;';
+      if(lGroups[i]) cellL.appendChild(mkSection(lGroups[i], false));
+      row.appendChild(cellL);
+
+      // 가운데 spacer
+      const sp=document.createElement('div');
+      sp.style.cssText='flex:1;min-width:40px;';
+      row.appendChild(sp);
+
+      // 오른쪽 셀
+      const cellR=document.createElement('div');
+      cellR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;';
+      if(rGroups[i]) cellR.appendChild(mkSection(rGroups[i], true));
+      row.appendChild(cellR);
+
+      outerWrap.appendChild(row);
+    }
+
     view.appendChild(outerWrap);
   } else {
     // A/B/C/E형 — 그룹별로 태깅해서 렌더링 (D형과 동일하게 _groupObj/_origRi/_origMi 보존)
@@ -2261,47 +2287,73 @@ function _renderPdfPreview(groups){
   };
 
   if(_bracketLayout==='D' && (_courtCount||1)>=2){
-    // D형: 경기장 1/2 좌우 배치로 렌더
+    // D형: 행(row) 단위 렌더링 — 체급 순서대로 왼쪽/오른쪽을 같은 행에 배치
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:row;gap:0;overflow:visible;';
-
-    const lDiv=document.createElement('div');
-    lDiv.style.cssText='padding-right:24px;flex-shrink:0;overflow:visible;';
-    const spacer=document.createElement('div');
-    spacer.style.cssText='flex:1;min-width:24px;';
-    const rDiv=document.createElement('div');
-    rDiv.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;overflow:visible;';
 
     const mkLabel=(txt,align)=>{
       const d=document.createElement('div');
       d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;text-align:${align};`;
       d.textContent=txt; return d;
     };
-    lDiv.appendChild(mkLabel('// 경기장 1','left'));
-    rDiv.appendChild(mkLabel('// 경기장 2','right'));
 
-    const renderCourtBlock=(courtNum, container, reversed)=>{
-      groups.filter(g=>g.court===courtNum).forEach(g=>{
-        const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-        const hdr=document.createElement('div');
-        hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
-        hdr.textContent=shortLabel;
-        container.appendChild(hdr);
-        const gWrap=document.createElement('div');
-        gWrap.style.cssText='margin-bottom:16px;overflow:visible;';
-        const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
-        S.matches=taggedMatches;
-        _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
-        _applyOverflow(gWrap);
-        container.appendChild(gWrap);
-      });
+    // 헤더 행
+    const hdrRow=document.createElement('div');
+    hdrRow.style.cssText='display:flex;flex-direction:row;gap:0;margin-bottom:6px;overflow:visible;';
+    const hdrL=document.createElement('div');
+    hdrL.style.cssText='padding-right:24px;flex-shrink:0;';
+    hdrL.appendChild(mkLabel('// 경기장 1','left'));
+    const hdrSp=document.createElement('div');
+    hdrSp.style.cssText='flex:1;min-width:24px;';
+    const hdrR=document.createElement('div');
+    hdrR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
+    hdrR.appendChild(mkLabel('// 경기장 2','right'));
+    hdrRow.appendChild(hdrL); hdrRow.appendChild(hdrSp); hdrRow.appendChild(hdrR);
+    outerWrap.appendChild(hdrRow);
+
+    const lGroups=groups.filter(g=>g.court===1);
+    const rGroups=groups.filter(g=>g.court===2);
+    const rowCount=Math.max(lGroups.length, rGroups.length);
+
+    const mkPdfSection=(g, reversed)=>{
+      const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+      const sec=document.createElement('div');
+      sec.style.cssText='display:flex;flex-direction:column;overflow:visible;';
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;';
+      hdr.textContent=shortLabel;
+      sec.appendChild(hdr);
+      const gWrap=document.createElement('div');
+      gWrap.style.cssText='overflow:visible;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
+      _applyOverflow(gWrap);
+      sec.appendChild(gWrap);
+      return sec;
     };
-    renderCourtBlock(1, lDiv, false);
-    renderCourtBlock(2, rDiv, true);
 
-    outerWrap.appendChild(lDiv);
-    outerWrap.appendChild(spacer);
-    outerWrap.appendChild(rDiv);
+    for(let i=0;i<rowCount;i++){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;overflow:visible;';
+
+      const cellL=document.createElement('div');
+      cellL.style.cssText='padding-right:24px;flex-shrink:0;overflow:visible;';
+      if(lGroups[i]) cellL.appendChild(mkPdfSection(lGroups[i], false));
+      row.appendChild(cellL);
+
+      const sp=document.createElement('div');
+      sp.style.cssText='flex:1;min-width:24px;';
+      row.appendChild(sp);
+
+      const cellR=document.createElement('div');
+      cellR.style.cssText='padding-left:24px;flex-shrink:0;overflow:visible;display:flex;flex-direction:column;align-items:flex-end;';
+      if(rGroups[i]) cellR.appendChild(mkPdfSection(rGroups[i], true));
+      row.appendChild(cellR);
+
+      outerWrap.appendChild(row);
+    }
+
     preview.appendChild(outerWrap);
   } else {
     // A/B/C/E형: 그룹별 세로 배치
