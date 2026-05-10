@@ -2547,9 +2547,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <!-- 1행 -->
   <div class="toolbar-row1">
-    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>
-    <button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:4px;">💾 PDF 저장</button>
-    <span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:6px;"></span>
+    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button><button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:6px;">💾 PDF 저장</button><span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:8px;"></span>
     <button class="btn-close" onclick="window.close()">✕ 닫기</button>
     <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
     <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
@@ -2753,13 +2751,11 @@ window.addEventListener('load',function(){
   buildPageGuides();
   // A4 버튼 등록
   _a4Init();
-  // A4 용지 배치 기본 ON — 가로방향 2×14 기본 세팅
+  // A4 용지 배치 기본 ON — 레이아웃 완료 후 실행
   setTimeout(function(){
     const chkA4=document.getElementById('chk-a4');
-    // 가로(landscape) 방향 선택
     const rLand=document.getElementById('a4-landscape');
     if(rLand){ rLand.checked=true; _a4Orient='landscape'; }
-    // 가로 2장, 세로 14장
     _a4C=2; _a4R=14; _a4SyncD();
     if(chkA4){ chkA4.checked=true; _a4Toggle(true); }
   }, 300);
@@ -3104,74 +3100,54 @@ function _zoomSet(ratio){
   });
 }
 
-/* ── PDF 저장 (html2canvas + jsPDF) ── */
+/* ── PDF 저장 ── */
 async function savePDF(){
   const btn=document.getElementById('btn-pdf-save');
   const status=document.getElementById('pdf-save-status');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ 생성 중...'; }
-  if(status){ status.textContent='대진표를 이미지로 변환 중...'; status.style.display='inline'; }
+  if(btn){btn.disabled=true;btn.textContent='⏳ 생성 중...';}
+  if(status){status.textContent='이미지 변환 중...';status.style.display='inline';}
   try{
-    if(!window.jspdf){
-      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    }
-    if(!window.html2canvas){
-      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    }
-    const { jsPDF } = window.jspdf;
-    const stage = document.getElementById('a4-stage');
-    const grids = stage ? stage.querySelectorAll('.a4g') : [];
+    if(!window.jspdf) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    const {jsPDF}=window.jspdf;
+    const stage=document.getElementById('a4-stage');
+    const grids=stage?stage.querySelectorAll('.a4g'):[];
     grids.forEach(el=>el.style.visibility='hidden');
-    const toolbar = document.querySelector('.toolbar');
-    if(toolbar) toolbar.style.display='none';
-    if(status){ status.textContent='화면 캡처 중 (잠시 기다려주세요)...'; }
+    const tb=document.querySelector('.toolbar');if(tb)tb.style.display='none';
+    if(status)status.textContent='화면 캡처 중...';
     await new Promise(r=>setTimeout(r,120));
-    const isWhite = document.body.classList.contains('white-mode');
-    const target = stage || document.getElementById('bracket-display');
-    const canvas = await html2canvas(target, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: isWhite ? '#ffffff' : '#08080f',
-      logging: false,
-      scrollX: 0, scrollY: 0
+    const isW=document.body.classList.contains('white-mode');
+    const cvs=await html2canvas(stage||document.getElementById('bracket-display'),{
+      scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,
+      backgroundColor:isW?'#ffffff':'#08080f'
     });
     grids.forEach(el=>el.style.visibility='');
-    if(toolbar) toolbar.style.display='';
-    const paper = (typeof _getPaperSize==='function') ? _getPaperSize() : {w:Math.round(297*96/25.4), h:Math.round(210*96/25.4)};
-    const isLandscape = (typeof _a4Orient!=='undefined') ? _a4Orient==='landscape' : true;
-    const cols = (typeof _a4C!=='undefined') ? _a4C : 2;
-    const rows = (typeof _a4R!=='undefined') ? _a4R : 14;
-    const pw = isLandscape ? Math.max(paper.w,paper.h) : Math.min(paper.w,paper.h);
-    const ph = isLandscape ? Math.min(paper.w,paper.h) : Math.max(paper.w,paper.h);
-    const pxPerMm = 96/25.4;
-    const totalWmm = cols * pw / pxPerMm;
-    const totalHmm = rows * ph / pxPerMm;
-    if(status){ status.textContent='PDF 생성 중...'; }
+    if(tb)tb.style.display='';
+    const paper=(typeof _getPaperSize==='function')?_getPaperSize():{w:Math.round(297*96/25.4),h:Math.round(210*96/25.4)};
+    const lsc=(typeof _a4Orient!=='undefined')?_a4Orient==='landscape':true;
+    const cols=(typeof _a4C!=='undefined')?_a4C:2;
+    const rows=(typeof _a4R!=='undefined')?_a4R:14;
+    const pw=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
+    const ph=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
+    const m=96/25.4;
+    const wmm=cols*pw/m, hmm=rows*ph/m;
+    if(status)status.textContent='PDF 생성 중...';
     await new Promise(r=>setTimeout(r,50));
-    const pdf = new jsPDF({
-      orientation: isLandscape ? 'landscape' : 'portrait',
-      unit: 'mm',
-      format: [totalWmm, totalHmm]
-    });
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    pdf.addImage(imgData, 'JPEG', 0, 0, totalWmm, totalHmm);
-    const now = new Date();
-    const ds = now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
-    const pk = (typeof _paperKey!=='undefined') ? _paperKey : 'A4';
+    const pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[wmm,hmm]});
+    pdf.addImage(cvs.toDataURL('image/jpeg',0.95),'JPEG',0,0,wmm,hmm);
+    const now=new Date();
+    const ds=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+    const pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     pdf.save('대진표_'+pk+'_'+cols+'x'+rows+'_'+ds+'.pdf');
-    if(status){ status.textContent='✅ 저장 완료!'; setTimeout(()=>{ status.style.display='none'; },3000); }
-  } catch(err){
-    console.error(err);
-    alert('PDF 저장 실패: '+err.message);
-    if(status) status.style.display='none';
+    if(status){status.textContent='✅ 저장 완료!';setTimeout(()=>{status.style.display='none';},3000);}
+  }catch(err){
+    console.error(err);alert('PDF 저장 실패: '+err.message);
+    if(status)status.style.display='none';
   }
-  if(btn){ btn.disabled=false; btn.textContent='💾 PDF 저장'; }
+  if(btn){btn.disabled=false;btn.textContent='💾 PDF 저장';}
 }
-function _loadScript(src){
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=rej;
-    document.head.appendChild(s);
-  });
+function _ldScr(src){
+  return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
 }
 <\/script>
 </body></html>`;
@@ -3298,9 +3274,7 @@ body:not(.white-mode) div[style*="border:2px solid #4"]{border-color:#ffffff !im
 </head>
 <body class="${hideNamesInitial?'hide-names':''}">
 <div class="toolbar">
-  <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>
-  <button class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:4px;">💾 PDF 저장</button>
-  <span id="pdf-save-status2" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:6px;"></span>
+  <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
   <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:${hideNamesInitial?'rgba(76,201,240,.12)':'transparent'};border:1px solid ${hideNamesInitial?'var(--accent)':'var(--border2)'};color:${hideNamesInitial?'var(--accent)':'var(--text3)'};border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${hideNamesInitial?'👁 이름 보이기':'👁 이름 가리기'}</button>
   <div class="toolbar-row3" style="width:100%;border-top:1px solid var(--border);margin-top:0;">
@@ -3868,9 +3842,6 @@ function _renderInfoHeader(){
 }
 window.addEventListener('load',function(){ _initInfoChips(); });
 
-
-
-}
 </script>
 </body>
 </html>
