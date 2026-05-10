@@ -2444,7 +2444,8 @@ function _writeFullPreviewWin(win, rawHTML){
   --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
-html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow:auto;transition:background .25s,color .25s;}
+html{overflow:auto;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;min-width:max-content;transition:background .25s,color .25s;}
 
 /* ── 다크모드 대진표 선명도 강화 ── */
 body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#ffffff !important;border-width:2px !important;}
