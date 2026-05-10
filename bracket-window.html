@@ -2444,7 +2444,7 @@ function _writeFullPreviewWin(win, rawHTML){
   --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
 }
-html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:auto;overflow-y:auto;transition:background .25s,color .25s;}
+html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow:auto;transition:background .25s,color .25s;}
 
 /* ── 다크모드 대진표 선명도 강화 ── */
 body:not(.white-mode) div[style*="border:1px solid #1"]{border-color:#ffffff !important;border-width:2px !important;}
@@ -2500,7 +2500,7 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #btn-hide-names.active{background:rgba(76,201,240,.12) !important;border-color:var(--accent) !important;color:var(--accent) !important;}
 
 /* ── 미리보기 ── */
-.preview-wrap{padding:165px 24px 60px;overflow:visible;min-height:100vh;position:relative;}
+.preview-wrap{padding:165px 24px 60px;overflow:visible;min-height:100vh;width:max-content;min-width:100%;box-sizing:border-box;position:relative;}
 
 /* 연결선 포함 overflow 강제 */
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
@@ -2629,8 +2629,8 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <div style="margin-top:12px;text-align:right;"><button onclick="document.getElementById('a4-help-box').style.display='none'" style="padding:4px 14px;border-radius:6px;border:1px solid #3a3a55;background:rgba(255,255,255,.08);color:#9090b0;cursor:pointer;font-size:12px;">닫기</button></div>
   </div>
 </div>
-<div style="position:relative;" id="a4-stage">
-  <div class="preview-wrap" id="preview-wrap">
+<div class="preview-wrap" id="preview-wrap">
+  <div style="position:relative;" id="a4-stage">
     <div id="a4-scale-wrap" style="transform-origin:top left;">
       <div id="bracket-display">${rawHTML}</div>
     </div>
@@ -2976,8 +2976,7 @@ function _zoomSet(ratio){
   const sw=document.getElementById('a4-scale-wrap');
   if(!sw) return;
   if(ratio===null){
-    const pw=document.getElementById('preview-wrap');
-    const wrapW=(pw?pw.clientWidth:window.innerWidth)-48;
+    const wrapW=window.innerWidth-48;
     const contentW=sw.scrollWidth || 800;
     ratio=Math.max(0.1, Math.min(wrapW/contentW, 4));
   }
@@ -2994,7 +2993,6 @@ function _zoomSet(ratio){
     if(stage){
       const contentW=_a4W||sw.scrollWidth||800;
       const contentH=_a4H||sw.scrollHeight||600;
-      const PADL=0;
       if(_a4On){
         const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
         stage.style.width=Math.max(gridW, contentW*ratio)+'px';
@@ -3572,8 +3570,7 @@ function _zoomSet(ratio){
   const sw=document.getElementById('a4-scale-wrap');
   if(!sw) return;
   if(ratio===null){
-    const pw=document.getElementById('preview-wrap');
-    const wrapW=(pw?pw.clientWidth:window.innerWidth)-48;
+    const wrapW=window.innerWidth-48;
     const contentW=sw.scrollWidth||(_a4W||800);
     ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
   }
@@ -3590,7 +3587,6 @@ function _zoomSet(ratio){
     if(stage){
       const contentW=_a4W||sw.scrollWidth||800;
       const contentH=_a4H||sw.scrollHeight||600;
-      const PADL=0;
       /* A4가 켜진 경우 격자 너비도 고려 */
       if(_a4On){
         const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
