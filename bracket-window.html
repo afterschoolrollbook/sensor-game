@@ -2507,6 +2507,8 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
+/* SVG 연결선 — position:absolute가 a4-stage 기준이 아닌 bracket-display 기준이 되도록 */
+#a4-scale-wrap{position:relative;}
 /* 정보표시 헤더는 화이트모드 오버라이드에서 제외 */
 #bracket-display #pdf-info-header,
 #bracket-display #pdf-info-header *,
@@ -2665,6 +2667,11 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   <div class="toolbar-row3">
     <span style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:1px;white-space:nowrap;font-family:'Share Tech Mono',monospace;">📋 정보표시:</span>
     <div id="info-hdr-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 6px;flex-shrink:0;"></span>
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text3);">
+      <input type="checkbox" id="chk-pagenum" checked style="accent-color:#4cc9f0;width:12px;height:12px;cursor:pointer;">
+      페이지 번호 출력
+    </label>
   </div><!-- /toolbar-row3 -->
   <div id="a4-help-box" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#13131f;border:1px solid #3a3a55;border-radius:12px;padding:20px 24px;max-width:360px;font-size:12px;color:#9090b0;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="font-size:14px;font-weight:700;color:#f0f0f8;margin-bottom:10px;">🗂 A4 용지 배치 도움말</div>
@@ -3148,6 +3155,42 @@ function _zoomStep(delta){
 }
 
 
+/* ── 인쇄 전용: 연결선 SVG 좌표 scale 보정 ──
+   step4.js의 SVG 연결선은 getBoundingClientRect() 뷰포트 기준으로 그려져 있어
+   CSS scale()이 적용된 상태에서는 좌표가 scale만큼 축소된 값으로 기록됨.
+   scale 제거 후 이 함수를 호출하면 각 path 좌표를 (1/scale)배 늘려 보정한다.
+   step4.js 코드는 수정하지 않고 캡처 직전에만 보정, 캡처 후 원복. */
+function _recalcConnectorSVGs(root, scale){
+  if(!scale||scale===1) return;
+  var factor=1/scale; /* scale이 0.8이면 좌표를 1.25배로 */
+  root.querySelectorAll('svg[style*="position:absolute"]').forEach(function(svgEl){
+    svgEl.querySelectorAll('path').forEach(function(p){
+      var d=p.getAttribute('d');
+      if(!d) return;
+      /* M, H, V, L 명령의 숫자값을 factor배 */
+      var fixed=d.replace(/([MHVL,\s])([-\d.]+)/g, function(match, cmd, num){
+        return cmd + (parseFloat(num)*factor).toFixed(2);
+      });
+      p.setAttribute('d', fixed);
+      p._origD=d; /* 원복용 저장 */
+    });
+    /* SVG width/height도 보정 */
+    var w=parseFloat(svgEl.getAttribute('width')||0);
+    var h=parseFloat(svgEl.getAttribute('height')||0);
+    if(w) { svgEl._origW=svgEl.getAttribute('width'); svgEl.setAttribute('width', w*factor); }
+    if(h) { svgEl._origH=svgEl.getAttribute('height'); svgEl.setAttribute('height', h*factor); }
+  });
+}
+function _restoreConnectorSVGs(root){
+  root.querySelectorAll('svg[style*="position:absolute"]').forEach(function(svgEl){
+    svgEl.querySelectorAll('path').forEach(function(p){
+      if(p._origD){ p.setAttribute('d',p._origD); delete p._origD; }
+    });
+    if(svgEl._origW){ svgEl.setAttribute('width',svgEl._origW); delete svgEl._origW; }
+    if(svgEl._origH){ svgEl.setAttribute('height',svgEl._origH); delete svgEl._origH; }
+  });
+}
+
 /* ── 격자 기반 인쇄: A4 설정 그대로 브라우저 인쇄 ── */
 async function _printFromGrid(){
   /* A4 격자가 꺼져 있으면 일반 인쇄로 */
@@ -3187,22 +3230,36 @@ async function _printFromGrid(){
     ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
     var isW=document.body.classList.contains('white-mode');
     var H2C=2; /* 인쇄는 2× 해상도로 (속도/품질 균형) */
+    /* ── FIX: a4-scale-wrap의 CSS transform을 일시 제거해 실제 크기로 캡처 ── */
+    var sw=document.getElementById('a4-scale-wrap');
+    var prevSwTransform=sw?sw.style.transform:'';
+    var prevSwMarginLeft=sw?sw.style.marginLeft:'';
+    if(sw){ sw.style.transform=''; sw.style.marginLeft='0px'; }
+
+    /* ── 연결선 SVG 좌표 재계산 (scale 제거 후 offset 기반으로 재그리기) ──
+       step4.js의 SVG는 getBoundingClientRect() 기준으로 그려져 있어
+       scale이 걸린 상태에서 좌표가 어긋남. scale 제거 후 재계산. */
+    _recalcConnectorSVGs(target, _a4Scale);
     await new Promise(function(r){setTimeout(r,150);});
+    var captureW=target.scrollWidth, captureH=target.scrollHeight;
     var fc=await html2canvas(target,{
       scale:H2C,useCORS:true,logging:false,scrollX:0,scrollY:0,
       backgroundColor:isW?'#ffffff':'#08080f',
-      width:target.scrollWidth,height:target.scrollHeight
+      width:captureW,height:captureH
     });
     /* 복원 */
+    if(sw){ sw.style.transform=prevSwTransform; sw.style.marginLeft=prevSwMarginLeft; }
+    _restoreConnectorSVGs(target);
     target.style.overflow=prevOvf;
     target.style.overflowX=prevOvfX;
     target.style.overflowY=prevOvfY;
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* 슬라이스 크기 (savePDF와 동일 계산) */
-    var sliceW=H2C*cellW/_a4Scale;
-    var sliceH=H2C*cellH/_a4Scale;
+    /* ── FIX: 슬라이스 크기 = 실제 콘텐츠 픽셀 / 격자 수 (scale 무관) ── */
+    /* 스케일 미적용 상태에서 캡처했으므로 _a4Scale 나누기 불필요 */
+    var sliceW=Math.ceil(fc.width/_a4C);
+    var sliceH=Math.ceil(fc.height/_a4R);
     /* 페이지 이미지 div 생성 */
     var wrap=document.createElement('div');
     wrap.id='_grid_print_wrap';
@@ -3219,8 +3276,10 @@ async function _printFromGrid(){
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
         if(sw>0&&sh>0) octx.drawImage(fc,sx,sy,sw,sh,0,0,sw,sh);
-        /* ── 페이지 넘버링 ── */
+        /* ── 페이지 넘버링 (체크박스 ON일 때만) ── */
         (function(){
+          var chkPgNum=document.getElementById('chk-pagenum');
+          if(chkPgNum&&!chkPgNum.checked) return;
           var pageNum=r*cols+c+1;
           var totalPages=rows*cols;
           var fSize=Math.max(22, Math.round(oc.height*0.022));
@@ -3312,32 +3371,31 @@ async function savePDF(){
     var ovfPrev2=ovfTargets2.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
     ovfTargets2.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
     if(status)status.textContent='Capturing...';
+    /* ── FIX: a4-scale-wrap의 CSS transform을 일시 제거해 실제 크기로 캡처 ── */
+    var sw2=document.getElementById('a4-scale-wrap');
+    var prevSwTransform2=sw2?sw2.style.transform:'';
+    var prevSwMarginLeft2=sw2?sw2.style.marginLeft:'';
+    if(sw2){ sw2.style.transform=''; sw2.style.marginLeft='0px'; }
+    _recalcConnectorSVGs(target, _a4Scale);
     await new Promise(function(r){setTimeout(r,200);});
     var isW=document.body.classList.contains('white-mode');
     var H2C_SCALE=3;
+    var captureW2=target.scrollWidth, captureH2=target.scrollHeight;
     var fc=await html2canvas(target,{
       scale:H2C_SCALE,useCORS:true,logging:false,scrollX:0,scrollY:0,
       backgroundColor:isW?'#ffffff':'#08080f',
-      width:target.scrollWidth,height:target.scrollHeight
+      width:captureW2,height:captureH2
     });
     /* restore */
+    if(sw2){ sw2.style.transform=prevSwTransform2; sw2.style.marginLeft=prevSwMarginLeft2; }
+    _restoreConnectorSVGs(target);
     target.style.overflow=prevOvf2;
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* FIXED: A4 격자가 ON이고 scale이 적용된 경우
-       슬라이스 경계 = "A4 1셀 크기 / _a4Scale" (원본 좌표계 기준)
-       → 미리보기의 A4 격자와 정확히 일치하도록 계산 */
-    var sliceW, sliceH;
-    if(_a4On && typeof _a4Scale !== 'undefined' && _a4Scale > 0){
-      var contentScale=_a4Scale;
-      sliceW=H2C_SCALE*cellW/contentScale;
-      sliceH=H2C_SCALE*cellH/contentScale;
-    } else {
-      /* A4 격자 OFF: 캔버스를 cols×rows 등분 (기존 방식) */
-      sliceW=fc.width/cols;
-      sliceH=fc.height/rows;
-    }
+    /* ── FIX: 스케일 미적용 캡처이므로 단순 등분 ── */
+    var sliceW=Math.ceil(fc.width/cols);
+    var sliceH=Math.ceil(fc.height/rows);
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
@@ -3357,8 +3415,10 @@ async function savePDF(){
           octx.drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
         }
         pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
-        /* ── 페이지 넘버링 ── */
+        /* ── 페이지 넘버링 (체크박스 ON일 때만) ── */
         (function(){
+          var chkPgNum=document.getElementById('chk-pagenum');
+          if(chkPgNum&&!chkPgNum.checked) return;
           var pageNum=r*cols+c+1;
           var totalPages=rows*cols;
           var pgTxt=String(pageNum)+' / '+String(totalPages);
