@@ -2534,14 +2534,19 @@ body.white-mode .page-guide-line{border-top-color:rgba(0,100,220,0.6);}
 body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,240,.9);}
 
 @media print{
-  html,body{background:var(--bg);}
+  html,body{background:white;}
   body.white-mode{background:#fff !important;}
   .toolbar{display:none !important;}
   .preview-wrap{padding:0;}
   #bracket-display,#bracket-display *{overflow:visible !important;}
   .page-guide-line{display:none !important;}
-  .a4g{display:none !important;}  /* A4 격자선 인쇄 숨김 */
+  .a4g{display:none !important;}
   #a4-badge{display:none !important;}
+  /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 슬라이스 이미지만 출력 ── */
+  body._grid_printing > *:not(#_grid_print_wrap){ display:none !important; }
+  #_grid_print_wrap{ display:block !important; }
+  #_grid_print_wrap > div{ page-break-after:always; break-after:page; }
+  #_grid_print_wrap > div:last-child{ page-break-after:auto; break-after:auto; }
 }
 </style>
 </head>
@@ -2549,7 +2554,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <!-- 1행 -->
   <div class="toolbar-row1">
-    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button><button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:6px;">💾 PDF 저장</button><span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:8px;"></span>
+    <button class="btn-print" id="btn-print-main" onclick="_printFromGrid()">🖨️ 인쇄</button><button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:6px;">💾 PDF 저장</button><span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:8px;"></span>
     <button class="btn-close" onclick="window.close()">✕ 닫기</button>
     <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
     <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
@@ -2644,12 +2649,16 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   <!-- 줌 컨트롤 -->
   <div id="zoom-ctrl" style="display:flex;align-items:center;gap:4px;padding:5px 12px;background:var(--card);border:1px solid var(--border2);border-radius:8px;">
     <span style="font-size:10px;color:var(--text3);margin-right:2px;">🔍 보기:</span>
+    <button onclick="_zoomStep(-0.05)" title="-5%" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">−</button>
+    <span id="zoom-pct-display" style="font-size:12px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:42px;text-align:center;">100%</span>
+    <button onclick="_zoomStep(+0.05)" title="+5%" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
+    <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;flex-shrink:0;"></span>
     <button class="zoom-btn" data-zoom="0.5"  onclick="_zoomSet(0.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">50%</button>
     <button class="zoom-btn" data-zoom="0.75" onclick="_zoomSet(0.75)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">75%</button>
     <button class="zoom-btn" data-zoom="1"    onclick="_zoomSet(1)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:rgba(76,201,240,.15);color:#4cc9f0;font-size:11px;font-weight:700;cursor:pointer;border-color:#4cc9f0;">100%</button>
     <button class="zoom-btn" data-zoom="1.5"  onclick="_zoomSet(1.5)"  style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">150%</button>
     <button class="zoom-btn" data-zoom="2"    onclick="_zoomSet(2)"    style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;">200%</button>
-    <button onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
+    <button id="zoom-fit-btn" onclick="_zoomSet(null)" style="padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;" title="창 너비에 맞게 자동 조정">맞춤</button>
   </div>
   </div><!-- /toolbar-row2 -->
   <!-- 3행: 정보표시 체크박스 -->
@@ -3088,9 +3097,10 @@ function _renderInfoHeader(){
 function _zoomSet(ratio){
   const zw=document.getElementById('zoom-wrap');
   if(!zw) return;
+  var isFit=(ratio===null);
 
   /* 맞춤(null): 현재 zoom-wrap 원본 너비 기준으로 창에 맞는 비율 계산 */
-  if(ratio===null){
+  if(isFit){
     /* 일시적으로 scale 제거해 실제 너비 측정 */
     zw.style.transform='';
     const naturalW=zw.scrollWidth||zw.offsetWidth||800;
@@ -3108,13 +3118,122 @@ function _zoomSet(ratio){
     zw.style.marginBottom=(h*ratio - h)+'px';
   }
 
+  /* 퍼센트 표시 업데이트 */
+  const disp=document.getElementById('zoom-pct-display');
+  if(disp) disp.textContent=Math.round(ratio*100)+'%';
+
+  /* 프리셋 버튼 활성화 표시 */
   document.querySelectorAll('.zoom-btn').forEach(function(btn){
     const bz=parseFloat(btn.dataset.zoom);
-    const active=!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
+    const active=!isFit&&!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
     btn.style.background=active?'rgba(76,201,240,.15)':'transparent';
     btn.style.color=active?'#4cc9f0':'var(--text3)';
     btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
   });
+
+  /* 맞춤 버튼 활성화 표시 */
+  var fitBtn=document.getElementById('zoom-fit-btn');
+  if(fitBtn){
+    fitBtn.style.background=isFit?'rgba(76,201,240,.15)':'transparent';
+    fitBtn.style.color=isFit?'#4cc9f0':'var(--text3)';
+    fitBtn.style.borderColor=isFit?'#4cc9f0':'var(--border2)';
+  }
+}
+
+/* ── 줌 -/+ 미세 조정 (5% 단위) ── */
+function _zoomStep(delta){
+  var next=Math.round((_zoomLevel+delta)*100)/100;
+  next=Math.max(0.1,Math.min(next,5));
+  _zoomSet(next);
+}
+
+
+/* ── 격자 기반 인쇄: A4 설정 그대로 브라우저 인쇄 ── */
+async function _printFromGrid(){
+  /* A4 격자가 꺼져 있으면 일반 인쇄로 */
+  if(!_a4On || typeof _a4Scale==='undefined' || _a4Scale<=0){
+    window.print(); return;
+  }
+  var btn=document.getElementById('btn-print-main');
+  if(btn){btn.disabled=true;btn.textContent='처리중...';}
+  try{
+    if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    var paper=_getPaperSize();
+    var lsc=_a4Orient==='landscape';
+    var cols=_a4C, rows=_a4R;
+    var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
+    var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
+    var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
+    /* 격자·툴바 숨김 */
+    var tb=document.querySelector('.toolbar');
+    if(tb)tb.style.display='none';
+    var stage=document.getElementById('a4-stage');
+    var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
+    grids.forEach(function(el){el.style.display='none';});
+    /* 원본(비스케일) 캡처 */
+    var target=document.getElementById('bracket-display');
+    var isW=document.body.classList.contains('white-mode');
+    var H2C=2; /* 인쇄는 2× 해상도로 (속도/품질 균형) */
+    await new Promise(function(r){setTimeout(r,150);});
+    var fc=await html2canvas(target,{
+      scale:H2C,useCORS:true,logging:false,scrollX:0,scrollY:0,
+      backgroundColor:isW?'#ffffff':'#08080f',
+      width:target.scrollWidth,height:target.scrollHeight
+    });
+    /* 복원 */
+    grids.forEach(function(el){el.style.display='';});
+    if(tb)tb.style.display='';
+    /* 슬라이스 크기 (savePDF와 동일 계산) */
+    var sliceW=H2C*cellW/_a4Scale;
+    var sliceH=H2C*cellH/_a4Scale;
+    /* 페이지 이미지 div 생성 */
+    var wrap=document.createElement('div');
+    wrap.id='_grid_print_wrap';
+    wrap.style.cssText='display:none;'; /* 화면에선 숨김, 인쇄 시 @media print로 표시 */
+    for(var r=0;r<rows;r++){
+      for(var c=0;c<cols;c++){
+        var oc=document.createElement('canvas');
+        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
+        var sw=Math.min(Math.round(sliceW),Math.max(0,fc.width-sx));
+        var sh=Math.min(Math.round(sliceH),Math.max(0,fc.height-sy));
+        oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
+        var octx=oc.getContext('2d');
+        /* 콘텐츠 밖 영역 검정 방지 */
+        octx.fillStyle=isW?'#ffffff':'#08080f';
+        octx.fillRect(0,0,oc.width,oc.height);
+        if(sw>0&&sh>0) octx.drawImage(fc,sx,sy,sw,sh,0,0,sw,sh);
+        var pd=document.createElement('div');
+        pd.style.cssText='width:'+cellWmm+'mm;height:'+cellHmm+'mm;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background:white;';
+        var img=document.createElement('img');
+        img.src=oc.toDataURL('image/jpeg',0.95);
+        img.style.cssText='width:100%;height:100%;display:block;';
+        pd.appendChild(img); wrap.appendChild(pd);
+      }
+    }
+    document.body.appendChild(wrap);
+    /* @page 규칙 확인 */
+    _applyPageCSS();
+    /* 인쇄 모드 진입 */
+    document.body.classList.add('_grid_printing');
+    await new Promise(function(r){setTimeout(r,100);});
+    window.print();
+    /* 인쇄 완료 후 정리 */
+    function _cleanup(){
+      document.body.classList.remove('_grid_printing');
+      var el=document.getElementById('_grid_print_wrap');
+      if(el)el.remove();
+      if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
+    }
+    window.addEventListener('afterprint',_cleanup,{once:true});
+    setTimeout(_cleanup,8000); /* afterprint 미지원 브라우저 대비 */
+  }catch(err){
+    console.error(err);
+    alert('인쇄 준비 실패: '+err.message);
+    document.body.classList.remove('_grid_printing');
+    var el=document.getElementById('_grid_print_wrap');
+    if(el)el.remove();
+    if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
+  }
 }
 
 /* PDF save - grid based, no gridlines */
@@ -3177,11 +3296,15 @@ async function savePDF(){
         if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
         var oc=document.createElement('canvas');
         oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
+        var octx=oc.getContext('2d');
+        /* 콘텐츠 밖 영역(마지막 페이지 등) 검정 방지 — 배경색으로 채우기 */
+        octx.fillStyle=isW?'#ffffff':'#08080f';
+        octx.fillRect(0,0,oc.width,oc.height);
         var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
         var sw=Math.min(Math.round(sliceW), Math.max(0, fc.width-sx));
         var sh=Math.min(Math.round(sliceH), Math.max(0, fc.height-sy));
         if(sw>0 && sh>0){
-          oc.getContext('2d').drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
+          octx.drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
         }
         pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
         page++;
