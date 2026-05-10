@@ -3178,37 +3178,45 @@ function _execPrint(){
 }
 
 function _showPdfGuide(onConfirm){
-  /* 이미 본 경우 바로 인쇄 */
   if(sessionStorage.getItem('pdf-guide-seen')){ onConfirm(); return; }
 
+  /* 콜백을 전역에 임시 저장 (onclick 인라인에서 toString 사용 금지) */
+  window._pdfGuideConfirm=onConfirm;
+
   const overlay=document.createElement('div');
+  overlay.id='pdf-guide-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;';
   const box=document.createElement('div');
   const isW=document.body.classList.contains('white-mode');
   box.style.cssText='background:'+(isW?'#fff':'#13131f')+';border:1px solid '+(isW?'#ddd':'#3a3a55')+';border-radius:14px;padding:28px 28px 22px;max-width:400px;width:90%;font-family:"Noto Sans KR",sans-serif;box-shadow:0 8px 40px rgba(0,0,0,.4);';
-  box.innerHTML=`
-<div style="font-size:16px;font-weight:700;color:#e63946;margin-bottom:14px;">🖨️ PDF로 저장하는 방법</div>
-<div style="font-size:13px;color:${isW?'#333':'#c0c0d8'};line-height:2;">
-  인쇄 창이 열리면:<br>
-  <b style="color:${isW?'#0050c0':'#4cc9f0'};">① 대상(프린터)</b> 클릭<br>
-  <b style="color:${isW?'#0050c0':'#4cc9f0'};">② "PDF로 저장"</b> 선택<br>
-  <b style="color:${isW?'#0050c0':'#4cc9f0'};">③ 저장</b> 버튼 클릭<br>
-  <br>
-  <span style="font-size:11px;color:${isW?'#888':'#5a5a7a'};">※ 용지 크기는 설정한 대로 자동 반영됩니다.</span>
-</div>
-<div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
-  <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:${isW?'#888':'#5a5a7a'};cursor:pointer;margin-right:auto;">
-    <input type="checkbox" id="pdf-guide-no-more" style="cursor:pointer;"> 다시 보지 않기
-  </label>
-  <button onclick="
-    if(document.getElementById('pdf-guide-no-more').checked) sessionStorage.setItem('pdf-guide-seen','1');
-    document.body.removeChild(this.closest('[style*=inset]'));
-    (${onConfirm.toString()})();
-  " style="padding:8px 22px;background:#e63946;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">인쇄 창 열기</button>
-  <button onclick="document.body.removeChild(this.closest('[style*=inset]'))" style="padding:8px 16px;background:transparent;border:1px solid ${isW?'#ccc':'#3a3a55'};color:${isW?'#555':'#9090b0'};border-radius:8px;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">취소</button>
-</div>`;
+  box.innerHTML=
+    '<div style="font-size:16px;font-weight:700;color:#e63946;margin-bottom:14px;">🖨 PDF로 저장하는 방법</div>'+
+    '<div style="font-size:13px;color:'+(isW?'#333':'#c0c0d8')+';line-height:2;">'+
+    '인쇄 창이 열리면:<br>'+
+    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">① 대상(프린터)</b> 클릭<br>'+
+    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">② &quot;PDF로 저장&quot;</b> 선택<br>'+
+    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">③ 저장</b> 버튼 클릭<br><br>'+
+    '<span style="font-size:11px;color:'+(isW?'#888':'#5a5a7a')+';">※ 용지 크기는 설정한 대로 자동 반영됩니다.</span>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">'+
+    '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:'+(isW?'#888':'#5a5a7a')+';cursor:pointer;margin-right:auto;">'+
+    '<input type="checkbox" id="pdf-guide-no-more" style="cursor:pointer;"> 다시 보지 않기'+
+    '</label>'+
+    '<button id="pdf-guide-ok" style="padding:8px 22px;background:#e63946;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;">인쇄 창 열기</button>'+
+    '<button id="pdf-guide-cancel" style="padding:8px 16px;background:transparent;border:1px solid '+(isW?'#ccc':'#3a3a55')+';color:'+(isW?'#555':'#9090b0')+';border-radius:8px;font-size:13px;cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;">취소</button>'+
+    '</div>';
   overlay.appendChild(box);
   document.body.appendChild(overlay);
+
+  document.getElementById('pdf-guide-ok').addEventListener('click',function(){
+    if(document.getElementById('pdf-guide-no-more').checked) sessionStorage.setItem('pdf-guide-seen','1');
+    document.body.removeChild(overlay);
+    if(window._pdfGuideConfirm){ window._pdfGuideConfirm(); window._pdfGuideConfirm=null; }
+  });
+  document.getElementById('pdf-guide-cancel').addEventListener('click',function(){
+    document.body.removeChild(overlay);
+    window._pdfGuideConfirm=null;
+  });
 }
 
 /* ── 줌 버튼: zoom-wrap 전체(격자+콘텐츠)를 화면 배율로 조정 ── */
