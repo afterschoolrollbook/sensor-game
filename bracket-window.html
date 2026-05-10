@@ -2506,6 +2506,13 @@ body.white-mode #bracket-display text[fill="#e63946"]{fill:#e63946 !important;}
 #bracket-display{overflow:visible !important;min-height:200px;position:relative;width:max-content;}
 #bracket-display *{overflow:visible !important;font-family:'Noto Sans KR',sans-serif;}
 #bracket-display svg{overflow:visible !important;}
+/* 정보표시 헤더는 화이트모드 오버라이드에서 제외 */
+#bracket-display #pdf-info-header,
+#bracket-display #pdf-info-header *,
+body.white-mode #bracket-display #pdf-info-header div[style],
+body.white-mode #bracket-display #pdf-info-header span{
+  background:unset !important;border-color:unset !important;color:unset !important;
+}
 
 /* ── A4 페이지 나누기 가이드 ── */
 .page-guide-line{
@@ -2944,7 +2951,7 @@ function _renderInfoHeader(){
   const s2 =checked.slogan2   ? (valMap.slogan2  ||'—')   : null;
   const hdr=document.createElement('div');
   hdr.id='pdf-info-header';
-  hdr.style.cssText='width:100%;padding:16px 24px 13px;margin-bottom:2px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:'+hdrBg+';box-sizing:border-box;';
+  hdr.style.cssText='min-width:max-content;width:100%;padding:16px 24px 13px;margin-bottom:8px;border-bottom:2px solid #e63946 !important;font-family:"Noto Sans KR",sans-serif !important;background:'+hdrBg+' !important;box-sizing:border-box;color:unset !important;';
   let inner='';
   if(en!==null)  inner+='<div style="font-size:20px;font-weight:700;color:'+(en?titleColor:emptyColor)+';letter-spacing:.3px;margin-bottom:3px;">'+(en||'—')+'</div>';
   if(sub!==null) inner+='<div style="font-size:12px;color:'+(sub?metaColor:emptyColor)+';margin-bottom:5px;">'+(sub||'—')+'</div>';
@@ -2959,8 +2966,9 @@ function _renderInfoHeader(){
   if(s2!==null) slogans.push('<span style="color:'+(s2!=='—'?sloganColor:emptyColor)+';">'+s2+'</span>');
   if(slogans.length) inner+='<div style="font-size:11px;font-style:italic;">'+slogans.join('  ·  ')+'</div>';
   hdr.innerHTML=inner;
+  /* bracket-display 안 첫 자식으로 → 대진표와 너비 컨텍스트 공유 */
   const bd=document.getElementById('bracket-display');
-  if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
+  if(bd) bd.insertBefore(hdr, bd.firstChild);
 }
 
 /* ── 줌 버튼 ── */
@@ -3685,7 +3693,7 @@ function _renderInfoHeader(){
   const s2 =checked.slogan2   ? (valMap.slogan2  ||'—')   : null;
   const hdr=document.createElement('div');
   hdr.id='pdf-info-header';
-  hdr.style.cssText='width:100%;padding:16px 24px 13px;margin-bottom:2px;border-bottom:2px solid #e63946;font-family:"Noto Sans KR",sans-serif;background:'+hdrBg+';box-sizing:border-box;';
+  hdr.style.cssText='min-width:max-content;width:100%;padding:16px 24px 13px;margin-bottom:8px;border-bottom:2px solid #e63946 !important;font-family:"Noto Sans KR",sans-serif !important;background:'+hdrBg+' !important;box-sizing:border-box;color:unset !important;';
   let inner='';
   if(en!==null)  inner+='<div style="font-size:20px;font-weight:700;color:'+(en?titleColor:emptyColor)+';letter-spacing:.3px;margin-bottom:3px;">'+(en||'—')+'</div>';
   if(sub!==null) inner+='<div style="font-size:12px;color:'+(sub?metaColor:emptyColor)+';margin-bottom:5px;">'+(sub||'—')+'</div>';
@@ -3700,8 +3708,9 @@ function _renderInfoHeader(){
   if(s2!==null) slogans.push('<span style="color:'+(s2!=='—'?sloganColor:emptyColor)+';">'+s2+'</span>');
   if(slogans.length) inner+='<div style="font-size:11px;font-style:italic;">'+slogans.join('  ·  ')+'</div>';
   hdr.innerHTML=inner;
+  /* bracket-display 안 첫 자식으로 → 대진표와 너비 컨텍스트 공유 */
   const bd=document.getElementById('bracket-display');
-  if(bd&&bd.parentNode) bd.parentNode.insertBefore(hdr, bd);
+  if(bd) bd.insertBefore(hdr, bd.firstChild);
 }
 window.addEventListener('load',function(){ _initInfoChips(); });
 
