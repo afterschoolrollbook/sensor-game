@@ -2789,8 +2789,12 @@ function _a4Draw(){
       sw.style.marginLeft=offsetX+'px';
     }
   } else {
-    /* A4 맞추기 없을 때: 줌 버튼(_zoomSet)이 관리하므로 여기선 리셋만 */
-    if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
+    /* 맞추기 체크 없을 때: 현재 줌 레벨을 유지 */
+    if(sw){
+      sw.style.transform=(_zoomLevel && _zoomLevel!==1)?'scale('+_zoomLevel+')':'';
+      sw.style.transformOrigin='top left';
+      sw.style.marginLeft='';
+    }
   }
 
   stage.style.position='relative';
@@ -2961,9 +2965,14 @@ function _zoomSet(ratio){
     ratio=Math.max(0.1, Math.min(wrapW/contentW, 4));
   }
   _zoomLevel=ratio;
-  if(!_a4On){
+  /* 좌우/위아래 맞추기가 켜져 있으면 _a4Draw가 scale을 관리 → 줌 무시
+     그 외에는 (A4 ON/OFF 무관하게) 줌 적용 */
+  const fitW=_a4On && document.getElementById('a4-fit-w') && document.getElementById('a4-fit-w').checked;
+  const fitH=_a4On && document.getElementById('a4-fit-h') && document.getElementById('a4-fit-h').checked;
+  if(!fitW && !fitH){
     sw.style.transformOrigin='top left';
     sw.style.transform='scale('+ratio+')';
+    sw.style.marginLeft='';
     const stage=document.getElementById('a4-stage');
     if(stage){
       const contentH=sw.scrollHeight||600;
@@ -3546,11 +3555,14 @@ function _zoomSet(ratio){
     ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
   }
   _zoomLevel=ratio;
-  /* A4 맞추기가 켜져 있으면 _a4Draw()가 transform을 관리하므로 건드리지 않음 */
-  if(!_a4On){
+  /* 좌우/위아래 맞추기가 켜져 있을 때만 _a4Draw가 scale을 관리
+     그 외에는 A4 ON/OFF 무관하게 줌 적용 */
+  const fitW=_a4On && document.getElementById('a4-fit-w') && document.getElementById('a4-fit-w').checked;
+  const fitH=_a4On && document.getElementById('a4-fit-h') && document.getElementById('a4-fit-h').checked;
+  if(!fitW && !fitH){
     sw.style.transformOrigin='top left';
     sw.style.transform='scale('+ratio+')';
-    /* 스케일 후 실제 점유 높이를 부모에 반영 */
+    sw.style.marginLeft='';
     const stage=document.getElementById('a4-stage');
     if(stage){
       const contentH=sw.scrollHeight||600;
@@ -3559,7 +3571,7 @@ function _zoomSet(ratio){
   }
   document.querySelectorAll('.zoom-btn').forEach(function(btn){
     const bz=parseFloat(btn.dataset.zoom);
-    const active=Math.abs(bz-ratio)<0.01;
+    const active=!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
     btn.style.background=active?'rgba(76,201,240,.15)':'transparent';
     btn.style.color=active?'#4cc9f0':'var(--text3)';
     btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
