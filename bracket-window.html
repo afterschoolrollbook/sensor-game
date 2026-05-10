@@ -3103,6 +3103,76 @@ function _zoomSet(ratio){
     btn.style.borderColor=active?'#4cc9f0':'var(--border2)';
   });
 }
+
+/* ── PDF 저장 (html2canvas + jsPDF) ── */
+async function savePDF(){
+  const btn=document.getElementById('btn-pdf-save');
+  const status=document.getElementById('pdf-save-status');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ 생성 중...'; }
+  if(status){ status.textContent='대진표를 이미지로 변환 중...'; status.style.display='inline'; }
+  try{
+    if(!window.jspdf){
+      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    }
+    if(!window.html2canvas){
+      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    }
+    const { jsPDF } = window.jspdf;
+    const stage = document.getElementById('a4-stage');
+    const grids = stage ? stage.querySelectorAll('.a4g') : [];
+    grids.forEach(el=>el.style.visibility='hidden');
+    const toolbar = document.querySelector('.toolbar');
+    if(toolbar) toolbar.style.display='none';
+    if(status){ status.textContent='화면 캡처 중 (잠시 기다려주세요)...'; }
+    await new Promise(r=>setTimeout(r,120));
+    const isWhite = document.body.classList.contains('white-mode');
+    const target = stage || document.getElementById('bracket-display');
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: isWhite ? '#ffffff' : '#08080f',
+      logging: false,
+      scrollX: 0, scrollY: 0
+    });
+    grids.forEach(el=>el.style.visibility='');
+    if(toolbar) toolbar.style.display='';
+    const paper = (typeof _getPaperSize==='function') ? _getPaperSize() : {w:Math.round(297*96/25.4), h:Math.round(210*96/25.4)};
+    const isLandscape = (typeof _a4Orient!=='undefined') ? _a4Orient==='landscape' : true;
+    const cols = (typeof _a4C!=='undefined') ? _a4C : 2;
+    const rows = (typeof _a4R!=='undefined') ? _a4R : 14;
+    const pw = isLandscape ? Math.max(paper.w,paper.h) : Math.min(paper.w,paper.h);
+    const ph = isLandscape ? Math.min(paper.w,paper.h) : Math.max(paper.w,paper.h);
+    const pxPerMm = 96/25.4;
+    const totalWmm = cols * pw / pxPerMm;
+    const totalHmm = rows * ph / pxPerMm;
+    if(status){ status.textContent='PDF 생성 중...'; }
+    await new Promise(r=>setTimeout(r,50));
+    const pdf = new jsPDF({
+      orientation: isLandscape ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: [totalWmm, totalHmm]
+    });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(imgData, 'JPEG', 0, 0, totalWmm, totalHmm);
+    const now = new Date();
+    const ds = now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+    const pk = (typeof _paperKey!=='undefined') ? _paperKey : 'A4';
+    pdf.save('대진표_'+pk+'_'+cols+'x'+rows+'_'+ds+'.pdf');
+    if(status){ status.textContent='✅ 저장 완료!'; setTimeout(()=>{ status.style.display='none'; },3000); }
+  } catch(err){
+    console.error(err);
+    alert('PDF 저장 실패: '+err.message);
+    if(status) status.style.display='none';
+  }
+  if(btn){ btn.disabled=false; btn.textContent='💾 PDF 저장'; }
+}
+function _loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
 <\/script>
 </body></html>`;
 
@@ -3799,91 +3869,7 @@ function _renderInfoHeader(){
 window.addEventListener('load',function(){ _initInfoChips(); });
 
 
-/* ── PDF 저장 (html2canvas + jsPDF) ── */
-async function savePDF(){
-  const btn=document.getElementById('btn-pdf-save');
-  const status=document.getElementById('pdf-save-status');
-  btn.disabled=true; btn.textContent='⏳ 생성 중...';
-  status.textContent='대진표를 이미지로 변환하는 중...'; status.style.display='inline';
-  try{
-    // jsPDF + html2canvas 동적 로드
-    if(!window.jspdf){
-      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    }
-    if(!window.html2canvas){
-      await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    }
 
-    const { jsPDF } = window.jspdf;
-    const stage = document.getElementById('a4-stage');
-    const scaleWrap = document.getElementById('a4-scale-wrap');
-
-    // 인쇄 전 격자선(.a4g) 임시 숨김
-    const grids = stage.querySelectorAll('.a4g');
-    grids.forEach(el=>el.style.visibility='hidden');
-    // 툴바 숨김
-    document.querySelector('.toolbar').style.display='none';
-
-    status.textContent='화면 캡처 중 (잠시 기다려주세요)...';
-    await new Promise(r=>setTimeout(r,100));
-
-    const isWhite = document.body.classList.contains('white-mode');
-    const canvas = await html2canvas(stage, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: isWhite ? '#ffffff' : '#08080f',
-      logging: false,
-      width: stage.offsetWidth,
-      height: stage.offsetHeight,
-      scrollX: 0, scrollY: 0
-    });
-
-    // 격자선·툴바 복원
-    grids.forEach(el=>el.style.visibility='');
-    document.querySelector('.toolbar').style.display='';
-
-    // 용지 크기·방향 결정
-    const paper = _getPaperSize();
-    const isLandscape = _a4Orient === 'landscape';
-    const pdfW = isLandscape ? paper.h : paper.w; // mm 단위 (jsPDF 기본 mm)
-    const pdfH = isLandscape ? paper.w : paper.h;
-    const totalW = _a4C * pdfW;
-    const totalH = _a4R * pdfH;
-
-    status.textContent='PDF 생성 중...';
-    await new Promise(r=>setTimeout(r,50));
-
-    const pdf = new jsPDF({
-      orientation: isLandscape ? 'landscape' : 'portrait',
-      unit: 'mm',
-      format: [totalW, totalH]
-    });
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    pdf.addImage(imgData, 'JPEG', 0, 0, totalW, totalH);
-
-    // 파일명: 날짜 포함
-    const now = new Date();
-    const ds = now.getFullYear()+''+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
-    const paperName = (_paperKey==='custom'?'custom':_paperKey);
-    pdf.save('대진표_'+paperName+'_'+_a4C+'x'+_a4R+'_'+ds+'.pdf');
-
-    status.textContent='✅ 저장 완료!';
-    setTimeout(()=>{ status.style.display='none'; },3000);
-  } catch(err){
-    console.error(err);
-    alert('PDF 저장 실패: '+err.message);
-    status.style.display='none';
-  }
-  btn.disabled=false; btn.textContent='💾 PDF 저장';
-}
-
-function _loadScript(src){
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=rej;
-    document.head.appendChild(s);
-  });
 }
 </script>
 </body>
