@@ -2976,31 +2976,40 @@ function _renderInfoHeader(){
 function _zoomSet(ratio){
   const sw=document.getElementById('a4-scale-wrap');
   if(!sw) return;
+
+  /* 맞추기 체크 해제 → 사용자가 수동 비율을 선택한 것 */
+  const elFitW=document.getElementById('a4-fit-w');
+  const elFitH=document.getElementById('a4-fit-h');
+  if(elFitW) elFitW.checked=false;
+  if(elFitH) elFitH.checked=false;
+
+  /* 맞춤 버튼(ratio===null): 창 너비 기준으로 자동 비율 계산 */
   if(ratio===null){
     const wrapW=window.innerWidth-48;
-    const contentW=sw.scrollWidth || 800;
+    /* 현재 scale 제거 후 원본 콘텐츠 너비 사용 */
+    const contentW=_a4W||sw.scrollWidth||800;
     ratio=Math.max(0.1, Math.min(wrapW/contentW, 4));
   }
   _zoomLevel=ratio;
-  /* 좌우/위아래 맞추기가 켜져 있으면 _a4Draw가 scale을 관리 → 줌 무시
-     그 외에는 (A4 ON/OFF 무관하게) 줌 적용 */
-  const fitW=_a4On && document.getElementById('a4-fit-w') && document.getElementById('a4-fit-w').checked;
-  const fitH=_a4On && document.getElementById('a4-fit-h') && document.getElementById('a4-fit-h').checked;
-  if(!fitW && !fitH){
-    sw.style.transformOrigin='top left';
-    sw.style.transform='scale('+ratio+')';
-    sw.style.marginLeft='';
-    const stage=document.getElementById('a4-stage');
-    if(stage){
-      const contentW=_a4W||sw.scrollWidth||800;
-      const contentH=_a4H||sw.scrollHeight||600;
-      if(_a4On){
-        const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
-        stage.style.width=Math.max(gridW, contentW*ratio)+'px';
-      }
-      stage.style.minHeight=(contentH*ratio+80)+'px';
+
+  sw.style.transformOrigin='top left';
+  sw.style.transform='scale('+ratio+')';
+  sw.style.marginLeft='';
+
+  const stage=document.getElementById('a4-stage');
+  if(stage){
+    const contentW=_a4W||sw.scrollWidth||800;
+    const contentH=_a4H||sw.scrollHeight||600;
+    if(_a4On){
+      const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
+      stage.style.width=Math.max(gridW, contentW*ratio)+'px';
     }
+    stage.style.minHeight=(contentH*ratio+80)+'px';
   }
+
+  /* A4 격자도 새 비율 기준으로 다시 그림 */
+  if(_a4On) _a4Draw();
+
   document.querySelectorAll('.zoom-btn').forEach(function(btn){
     const bz=parseFloat(btn.dataset.zoom);
     const active=!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
@@ -3570,32 +3579,39 @@ renderList();
 function _zoomSet(ratio){
   const sw=document.getElementById('a4-scale-wrap');
   if(!sw) return;
+
+  /* 맞추기 체크 해제 → 사용자가 수동 비율을 선택한 것 */
+  const elFitW=document.getElementById('a4-fit-w');
+  const elFitH=document.getElementById('a4-fit-h');
+  if(elFitW) elFitW.checked=false;
+  if(elFitH) elFitH.checked=false;
+
+  /* 맞춤 버튼(ratio===null): 창 너비 기준으로 자동 비율 계산 */
   if(ratio===null){
     const wrapW=window.innerWidth-48;
-    const contentW=sw.scrollWidth||(_a4W||800);
+    const contentW=_a4W||sw.scrollWidth||800;
     ratio=Math.max(0.1,Math.min(wrapW/contentW,4));
   }
   _zoomLevel=ratio;
-  /* 좌우/위아래 맞추기가 켜져 있을 때만 _a4Draw가 scale을 관리
-     그 외에는 A4 ON/OFF 무관하게 줌 적용 */
-  const fitW=_a4On && document.getElementById('a4-fit-w') && document.getElementById('a4-fit-w').checked;
-  const fitH=_a4On && document.getElementById('a4-fit-h') && document.getElementById('a4-fit-h').checked;
-  if(!fitW && !fitH){
-    sw.style.transformOrigin='top left';
-    sw.style.transform='scale('+ratio+')';
-    sw.style.marginLeft='';
-    const stage=document.getElementById('a4-stage');
-    if(stage){
-      const contentW=_a4W||sw.scrollWidth||800;
-      const contentH=_a4H||sw.scrollHeight||600;
-      /* A4가 켜진 경우 격자 너비도 고려 */
-      if(_a4On){
-        const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
-        stage.style.width=Math.max(gridW, contentW*ratio)+'px';
-      }
-      stage.style.minHeight=(contentH*ratio+80)+'px';
+
+  sw.style.transformOrigin='top left';
+  sw.style.transform='scale('+ratio+')';
+  sw.style.marginLeft='';
+
+  const stage=document.getElementById('a4-stage');
+  if(stage){
+    const contentW=_a4W||sw.scrollWidth||800;
+    const contentH=_a4H||sw.scrollHeight||600;
+    if(_a4On){
+      const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
+      stage.style.width=Math.max(gridW, contentW*ratio)+'px';
     }
+    stage.style.minHeight=(contentH*ratio+80)+'px';
   }
+
+  /* A4 격자도 새 비율 기준으로 다시 그림 */
+  if(_a4On) _a4Draw();
+
   document.querySelectorAll('.zoom-btn').forEach(function(btn){
     const bz=parseFloat(btn.dataset.zoom);
     const active=!isNaN(bz)&&Math.abs(bz-ratio)<0.01;
