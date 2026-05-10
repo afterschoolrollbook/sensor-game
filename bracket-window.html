@@ -3100,54 +3100,74 @@ function _zoomSet(ratio){
   });
 }
 
-/* ── PDF 저장 ── */
+/* PDF save - grid based, no gridlines */
 async function savePDF(){
-  const btn=document.getElementById('btn-pdf-save');
-  const status=document.getElementById('pdf-save-status');
-  if(btn){btn.disabled=true;btn.textContent='⏳ 생성 중...';}
-  if(status){status.textContent='이미지 변환 중...';status.style.display='inline';}
+  var btn=document.getElementById('btn-pdf-save');
+  var status=document.getElementById('pdf-save-status');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  if(status){status.textContent='Loading...';status.style.display='inline';}
   try{
     if(!window.jspdf) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    const {jsPDF}=window.jspdf;
-    const stage=document.getElementById('a4-stage');
-    const grids=stage?stage.querySelectorAll('.a4g'):[];
-    grids.forEach(el=>el.style.visibility='hidden');
-    const tb=document.querySelector('.toolbar');if(tb)tb.style.display='none';
-    if(status)status.textContent='화면 캡처 중...';
-    await new Promise(r=>setTimeout(r,120));
-    const isW=document.body.classList.contains('white-mode');
-    const cvs=await html2canvas(stage||document.getElementById('bracket-display'),{
-      scale:2,useCORS:true,logging:false,scrollX:0,scrollY:0,
-      backgroundColor:isW?'#ffffff':'#08080f'
+    var jsPDF=window.jspdf.jsPDF;
+    var paper=(typeof _getPaperSize==='function')?_getPaperSize():{w:Math.round(297*96/25.4),h:Math.round(210*96/25.4)};
+    var lsc=(typeof _a4Orient!=='undefined')?_a4Orient==='landscape':true;
+    var cols=(typeof _a4C!=='undefined')?_a4C:2;
+    var rows=(typeof _a4R!=='undefined')?_a4R:14;
+    var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
+    var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
+    var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
+    /* hide toolbar and grid lines */
+    var tb=document.querySelector('.toolbar');
+    if(tb)tb.style.display='none';
+    var stage=document.getElementById('a4-stage');
+    var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
+    grids.forEach(function(el){el.style.display='none';});
+    var scaleWrap=document.getElementById('a4-scale-wrap');
+    var target=scaleWrap||document.getElementById('bracket-display');
+    if(status)status.textContent='Capturing...';
+    await new Promise(function(r){setTimeout(r,200);});
+    var isW=document.body.classList.contains('white-mode');
+    var fc=await html2canvas(target,{
+      scale:3,useCORS:true,logging:false,scrollX:0,scrollY:0,
+      backgroundColor:isW?'#ffffff':'#08080f',
+      width:target.scrollWidth,height:target.scrollHeight
     });
-    grids.forEach(el=>el.style.visibility='');
+    /* restore */
+    grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    const paper=(typeof _getPaperSize==='function')?_getPaperSize():{w:Math.round(297*96/25.4),h:Math.round(210*96/25.4)};
-    const lsc=(typeof _a4Orient!=='undefined')?_a4Orient==='landscape':true;
-    const cols=(typeof _a4C!=='undefined')?_a4C:2;
-    const rows=(typeof _a4R!=='undefined')?_a4R:14;
-    const pw=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
-    const ph=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
-    const m=96/25.4;
-    const wmm=cols*pw/m, hmm=rows*ph/m;
-    if(status)status.textContent='PDF 생성 중...';
-    await new Promise(r=>setTimeout(r,50));
-    const pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[wmm,hmm]});
-    pdf.addImage(cvs.toDataURL('image/jpeg',0.95),'JPEG',0,0,wmm,hmm);
-    const now=new Date();
-    const ds=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
-    const pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
-    pdf.save('대진표_'+pk+'_'+cols+'x'+rows+'_'+ds+'.pdf');
-    if(status){status.textContent='✅ 저장 완료!';setTimeout(()=>{status.style.display='none';},3000);}
+    /* slice canvas into pages */
+    var sliceW=fc.width/cols, sliceH=fc.height/rows;
+    var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
+    var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
+    var page=0;
+    for(var r=0;r<rows;r++){
+      for(var c=0;c<cols;c++){
+        if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
+        var oc=document.createElement('canvas');
+        oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
+        oc.getContext('2d').drawImage(fc,
+          Math.round(c*sliceW),Math.round(r*sliceH),
+          Math.round(sliceW),Math.round(sliceH),
+          0,0,oc.width,oc.height);
+        pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
+        page++;
+        if(status)status.textContent='PDF '+page+'/'+(rows*cols);
+        await new Promise(function(r){setTimeout(r,0);});
+      }
+    }
+    var now=new Date();
+    var ds=now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+    pdf.save('bracket_'+pk+'_'+cols+'x'+rows+'_'+ds+'.pdf');
+    if(status){status.textContent='Done! ('+page+'p)';setTimeout(function(){status.style.display='none';},4000);}
   }catch(err){
-    console.error(err);alert('PDF 저장 실패: '+err.message);
+    console.error(err);alert('PDF save failed: '+err.message);
     if(status)status.style.display='none';
   }
-  if(btn){btn.disabled=false;btn.textContent='💾 PDF 저장';}
+  if(btn){btn.disabled=false;btn.textContent='PDF Save';}
 }
 function _ldScr(src){
-  return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
 }
 <\/script>
 </body></html>`;
