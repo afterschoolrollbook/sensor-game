@@ -2713,6 +2713,11 @@ window.addEventListener('load',function(){
   buildPageGuides();
   // A4 버튼 등록
   _a4Init();
+  // A4 용지 배치 기본 ON — 레이아웃 완료 후 실행
+  setTimeout(function(){
+    const chkA4=document.getElementById('chk-a4');
+    if(chkA4){ chkA4.checked=true; _a4Toggle(true); }
+  }, 300);
   // 정보표시 칩 초기화
   _initInfoChips();
 });
