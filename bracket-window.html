@@ -3158,6 +3158,8 @@ async function _printFromGrid(){
   if(btn){btn.disabled=true;btn.textContent='처리중...';}
   try{
     if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    /* ── 캡처 전: 정보 헤더 강제 렌더 & overflow 해제 ── */
+    if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     var paper=_getPaperSize();
     var lsc=_a4Orient==='landscape';
     var cols=_a4C, rows=_a4R;
@@ -3172,6 +3174,17 @@ async function _printFromGrid(){
     grids.forEach(function(el){el.style.display='none';});
     /* 원본(비스케일) 캡처 */
     var target=document.getElementById('bracket-display');
+    /* ── overflow 해제: 오른쪽 경기장 잘림 방지 ── */
+    var prevOvf=target.style.overflow;
+    var prevOvfX=target.style.overflowX;
+    var prevOvfY=target.style.overflowY;
+    target.style.overflow='visible';
+    target.style.overflowX='visible';
+    target.style.overflowY='visible';
+    /* 부모 컨테이너들도 overflow 해제 */
+    var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(Boolean);
+    var ovfPrev=ovfTargets.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
+    ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
     var isW=document.body.classList.contains('white-mode');
     var H2C=2; /* 인쇄는 2× 해상도로 (속도/품질 균형) */
     await new Promise(function(r){setTimeout(r,150);});
@@ -3181,6 +3194,10 @@ async function _printFromGrid(){
       width:target.scrollWidth,height:target.scrollHeight
     });
     /* 복원 */
+    target.style.overflow=prevOvf;
+    target.style.overflowX=prevOvfX;
+    target.style.overflowY=prevOvfY;
+    ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
     /* 슬라이스 크기 (savePDF와 동일 계산) */
@@ -3202,6 +3219,29 @@ async function _printFromGrid(){
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
         if(sw>0&&sh>0) octx.drawImage(fc,sx,sy,sw,sh,0,0,sw,sh);
+        /* ── 페이지 넘버링 ── */
+        (function(){
+          var pageNum=r*cols+c+1;
+          var totalPages=rows*cols;
+          var fSize=Math.max(22, Math.round(oc.height*0.022));
+          var pgTxt=pageNum+' / '+totalPages;
+          octx.save();
+          octx.font='bold '+fSize+'px Arial, sans-serif';
+          var tw=octx.measureText(pgTxt).width;
+          var pad=fSize*0.45;
+          var bx=oc.width-tw-pad*2-8;
+          var by=oc.height-fSize-pad*1.4-8;
+          /* 배경 박스 */
+          octx.fillStyle=isW?'rgba(255,255,255,0.88)':'rgba(10,10,20,0.82)';
+          octx.beginPath();
+          if(octx.roundRect){octx.roundRect(bx,by,tw+pad*2,fSize+pad*1.2,5);}
+          else{octx.rect(bx,by,tw+pad*2,fSize+pad*1.2);}
+          octx.fill();
+          /* 텍스트 */
+          octx.fillStyle=isW?'#222222':'#dddddd';
+          octx.fillText(pgTxt, bx+pad, by+fSize+pad*0.15);
+          octx.restore();
+        })();
         var pd=document.createElement('div');
         pd.style.cssText='width:'+cellWmm+'mm;height:'+cellHmm+'mm;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background:white;';
         var img=document.createElement('img');
@@ -3259,10 +3299,18 @@ async function savePDF(){
     var stage=document.getElementById('a4-stage');
     var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
     grids.forEach(function(el){el.style.display='none';});
-    /* FIXED: capture bracket-display (원본 비스케일 콘텐츠)
-       scaleWrap은 transform:scale() 적용된 요소라 html2canvas가
-       scrollWidth 크기로만 캡처 → 전체의 1/scale 만큼만 캡처되는 버그 수정 */
+    /* ── 캡처 전: 정보 헤더 강제 렌더 ── */
+    if(typeof _renderInfoHeader==='function') _renderInfoHeader();
+    /* FIXED: capture bracket-display (원본 비스케일 콘텐츠) */
     var target=document.getElementById('bracket-display')||document.getElementById('a4-scale-wrap');
+    /* overflow 해제: 오른쪽 경기장 잘림 방지 */
+    var prevOvf2=target.style.overflow;
+    target.style.overflow='visible';
+    target.style.overflowX='visible';
+    target.style.overflowY='visible';
+    var ovfTargets2=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(function(el){return el&&el!==target;});
+    var ovfPrev2=ovfTargets2.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
+    ovfTargets2.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
     if(status)status.textContent='Capturing...';
     await new Promise(function(r){setTimeout(r,200);});
     var isW=document.body.classList.contains('white-mode');
@@ -3273,6 +3321,8 @@ async function savePDF(){
       width:target.scrollWidth,height:target.scrollHeight
     });
     /* restore */
+    target.style.overflow=prevOvf2;
+    ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
     /* FIXED: A4 격자가 ON이고 scale이 적용된 경우
@@ -3307,6 +3357,22 @@ async function savePDF(){
           octx.drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
         }
         pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
+        /* ── 페이지 넘버링 ── */
+        (function(){
+          var pageNum=r*cols+c+1;
+          var totalPages=rows*cols;
+          var pgTxt=String(pageNum)+' / '+String(totalPages);
+          var fs=7;
+          pdf.setFontSize(fs);
+          pdf.setTextColor(160,160,160);
+          /* 우하단 흰 박스 위에 텍스트 */
+          var margin=2.5;
+          var approxW=pgTxt.length*fs*0.38;
+          var boxH=fs*0.7;
+          pdf.setFillColor(255,255,255);
+          pdf.rect(cellWmm-approxW-margin*2, cellHmm-boxH-margin, approxW+margin*2, boxH+margin, 'F');
+          pdf.text(pgTxt, cellWmm-margin, cellHmm-margin, {align:'right'});
+        })();
         page++;
         if(status)status.textContent='PDF '+page+'/'+(rows*cols);
         await new Promise(function(r){setTimeout(r,0);});
