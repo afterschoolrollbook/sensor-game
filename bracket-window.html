@@ -2547,7 +2547,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <!-- 1행 -->
   <div class="toolbar-row1">
-    <button class="btn-print" onclick="smartPrint()">🖨️ 인쇄 / PDF 저장</button><button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:6px;">💾 PDF 저장</button><span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:8px;"></span>
+    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button><button id="btn-pdf-save" class="btn-print" onclick="savePDF()" style="background:#06d6a0;color:#08080f;margin-left:6px;">💾 PDF 저장</button><span id="pdf-save-status" style="font-size:11px;color:#06d6a0;font-family:'Share Tech Mono',monospace;display:none;margin-left:8px;"></span>
     <button class="btn-close" onclick="window.close()">✕ 닫기</button>
     <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
     <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
@@ -3169,24 +3169,6 @@ async function savePDF(){
 function _ldScr(src){
   return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
 }
-
-/* smartPrint: 현재 A4 설정 기준으로 @page 크기 주입 후 인쇄 */
-function smartPrint(){
-  var lsc=(typeof _a4Orient!=='undefined')?_a4Orient==='landscape':true;
-  var cols=(typeof _a4C!=='undefined')?_a4C:2;
-  var rows=(typeof _a4R!=='undefined')?_a4R:14;
-  var paper=(typeof _getPaperSize==='function')?_getPaperSize():{w:Math.round(210*96/25.4),h:Math.round(297*96/25.4)};
-  var m=96/25.4;
-  var cellWmm=lsc?Math.max(paper.w,paper.h)/m:Math.min(paper.w,paper.h)/m;
-  var cellHmm=lsc?Math.min(paper.w,paper.h)/m:Math.max(paper.w,paper.h)/m;
-  var old=document.getElementById('_pgst');
-  if(old)old.remove();
-  var st=document.createElement('style');
-  st.id='_pgst';
-  st.textContent='@page{size:'+cellWmm+'mm '+cellHmm+'mm;margin:0;}';
-  document.head.appendChild(st);
-  window.print();
-}
 <\/script>
 </body></html>`;
 
@@ -3312,7 +3294,7 @@ body:not(.white-mode) div[style*="border:2px solid #4"]{border-color:#ffffff !im
 </head>
 <body class="${hideNamesInitial?'hide-names':''}">
 <div class="toolbar">
-  <button class="btn-print" onclick="smartPrint()">🖨️ 인쇄 / PDF 저장</button>
+  <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
   <button class="btn-close" onclick="window.close()">✕ 닫기</button>
   <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:${hideNamesInitial?'rgba(76,201,240,.12)':'transparent'};border:1px solid ${hideNamesInitial?'var(--accent)':'var(--border2)'};color:${hideNamesInitial?'var(--accent)':'var(--text3)'};border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${hideNamesInitial?'👁 이름 보이기':'👁 이름 가리기'}</button>
   <div class="toolbar-row3" style="width:100%;border-top:1px solid var(--border);margin-top:0;">
@@ -3455,24 +3437,6 @@ window.addEventListener('load',function(){
   // SVG overflow visible 강제
   document.querySelectorAll('svg').forEach(s=>s.setAttribute('overflow','visible'));
 });
-
-/* smartPrint: 현재 A4 설정 기준으로 @page 크기 주입 후 인쇄 */
-function smartPrint(){
-  var lsc=(typeof _a4Orient!=='undefined')?_a4Orient==='landscape':true;
-  var cols=(typeof _a4C!=='undefined')?_a4C:2;
-  var rows=(typeof _a4R!=='undefined')?_a4R:14;
-  var paper=(typeof _getPaperSize==='function')?_getPaperSize():{w:Math.round(210*96/25.4),h:Math.round(297*96/25.4)};
-  var m=96/25.4;
-  var cellWmm=lsc?Math.max(paper.w,paper.h)/m:Math.min(paper.w,paper.h)/m;
-  var cellHmm=lsc?Math.min(paper.w,paper.h)/m:Math.max(paper.w,paper.h)/m;
-  var old=document.getElementById('_pgst');
-  if(old)old.remove();
-  var st=document.createElement('style');
-  st.id='_pgst';
-  st.textContent='@page{size:'+cellWmm+'mm '+cellHmm+'mm;margin:0;}';
-  document.head.appendChild(st);
-  window.print();
-}
 <\/script>
 </body></html>`;
 
