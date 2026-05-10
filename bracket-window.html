@@ -2540,6 +2540,8 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   .preview-wrap{padding:0;}
   #bracket-display,#bracket-display *{overflow:visible !important;}
   .page-guide-line{display:none !important;}
+  .a4g{display:none !important;}  /* A4 격자선 인쇄 숨김 */
+  #a4-badge{display:none !important;}
 }
 </style>
 </head>
@@ -2705,6 +2707,20 @@ function toggleWhite(on){
   if(typeof _renderInfoHeader==='function') _renderInfoHeader();
 }
 
+/* ── @page 자동 방향 적용 ── */
+function _applyPageCSS(){
+  var existing=document.getElementById('_page_rule_style');
+  if(existing) existing.remove();
+  var st=document.createElement('style');
+  st.id='_page_rule_style';
+  var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
+  var sizeMap={A4:'A4',A3:'A3',A5:'A5',Letter:'letter',Legal:'legal'};
+  var sizeStr=sizeMap[pk]||'A4';
+  var orient=(_a4Orient==='landscape')?'landscape':'portrait';
+  st.textContent='@page{size:'+sizeStr+' '+orient+';margin:0;}';
+  document.head.appendChild(st);
+}
+
 /* ── A4 페이지 나누기 가이드 ── */
 // A4 = 297mm × 210mm. 세로 출력 기준 인쇄 가능 높이 ≒ 277mm (여백 20mm)
 // CSS 1px = 1/96 인치 = 25.4/96 mm → 1mm = 96/25.4 px ≈ 3.7795px
@@ -2757,6 +2773,7 @@ window.addEventListener('load',function(){
     const rLand=document.getElementById('a4-landscape');
     if(rLand){ rLand.checked=true; _a4Orient='landscape'; }
     _a4C=2; _a4R=14; _a4SyncD();
+    _applyPageCSS();  /* 초기 @page 방향 적용 */
     if(chkA4){ chkA4.checked=true; _a4Toggle(true); }
   }, 300);
   // 정보표시 칩 초기화
@@ -2828,8 +2845,8 @@ function _a4Init(){
   document.getElementById('a4-cp').addEventListener('click',function(){ if(!_a4On)return; _a4C=Math.min(20,_a4C+1); _a4SyncD(); _a4Draw(); });
   document.getElementById('a4-rm').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.max(1,_a4R-1); _a4SyncD(); _a4Draw(); });
   document.getElementById('a4-rp').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.min(50,_a4R+1); _a4SyncD(); _a4Draw(); });
-  document.getElementById('a4-portrait').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='portrait';_a4AutoFit();_a4Draw();} });
-  document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_a4AutoFit();_a4Draw();} });
+  document.getElementById('a4-portrait').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='portrait';_applyPageCSS();_a4AutoFit();_a4Draw();} });
+  document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_applyPageCSS();_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-fit-w').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-fit-h').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
   document.getElementById('a4-fit-cx').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
@@ -3123,21 +3140,35 @@ async function savePDF(){
     var stage=document.getElementById('a4-stage');
     var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
     grids.forEach(function(el){el.style.display='none';});
-    var scaleWrap=document.getElementById('a4-scale-wrap');
-    var target=scaleWrap||document.getElementById('bracket-display');
+    /* FIXED: capture bracket-display (원본 비스케일 콘텐츠)
+       scaleWrap은 transform:scale() 적용된 요소라 html2canvas가
+       scrollWidth 크기로만 캡처 → 전체의 1/scale 만큼만 캡처되는 버그 수정 */
+    var target=document.getElementById('bracket-display')||document.getElementById('a4-scale-wrap');
     if(status)status.textContent='Capturing...';
     await new Promise(function(r){setTimeout(r,200);});
     var isW=document.body.classList.contains('white-mode');
+    var H2C_SCALE=3;
     var fc=await html2canvas(target,{
-      scale:3,useCORS:true,logging:false,scrollX:0,scrollY:0,
+      scale:H2C_SCALE,useCORS:true,logging:false,scrollX:0,scrollY:0,
       backgroundColor:isW?'#ffffff':'#08080f',
       width:target.scrollWidth,height:target.scrollHeight
     });
     /* restore */
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* slice canvas into pages */
-    var sliceW=fc.width/cols, sliceH=fc.height/rows;
+    /* FIXED: A4 격자가 ON이고 scale이 적용된 경우
+       슬라이스 경계 = "A4 1셀 크기 / _a4Scale" (원본 좌표계 기준)
+       → 미리보기의 A4 격자와 정확히 일치하도록 계산 */
+    var sliceW, sliceH;
+    if(_a4On && typeof _a4Scale !== 'undefined' && _a4Scale > 0){
+      var contentScale=_a4Scale;
+      sliceW=H2C_SCALE*cellW/contentScale;
+      sliceH=H2C_SCALE*cellH/contentScale;
+    } else {
+      /* A4 격자 OFF: 캔버스를 cols×rows 등분 (기존 방식) */
+      sliceW=fc.width/cols;
+      sliceH=fc.height/rows;
+    }
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
@@ -3146,10 +3177,12 @@ async function savePDF(){
         if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
         var oc=document.createElement('canvas');
         oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
-        oc.getContext('2d').drawImage(fc,
-          Math.round(c*sliceW),Math.round(r*sliceH),
-          Math.round(sliceW),Math.round(sliceH),
-          0,0,oc.width,oc.height);
+        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
+        var sw=Math.min(Math.round(sliceW), Math.max(0, fc.width-sx));
+        var sh=Math.min(Math.round(sliceH), Math.max(0, fc.height-sy));
+        if(sw>0 && sh>0){
+          oc.getContext('2d').drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
+        }
         pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
         page++;
         if(status)status.textContent='PDF '+page+'/'+(rows*cols);
