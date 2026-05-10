@@ -2534,15 +2534,12 @@ body.white-mode .page-guide-line{border-top-color:rgba(0,100,220,0.6);}
 body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,240,.9);}
 
 @media print{
-  html,body{background:#fff !important;margin:0;padding:0;}
+  html,body{background:var(--bg);}
+  body.white-mode{background:#fff !important;}
   .toolbar{display:none !important;}
-  .preview-wrap{padding:0 !important;}
-  #zoom-wrap{transform:none !important;}
+  .preview-wrap{padding:0;}
   #bracket-display,#bracket-display *{overflow:visible !important;}
   .page-guide-line{display:none !important;}
-  .a4g{display:none !important;}
-  #a4-badge{display:none !important;}
-  /* _doPrintSetup이 동적으로 #print-page-style 태그를 삽입 */
 }
 </style>
 </head>
@@ -2550,7 +2547,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
 <div class="toolbar">
   <!-- 1행 -->
   <div class="toolbar-row1">
-    <button class="btn-print" onclick="_doPrintSetup()">🖨️ 인쇄 / PDF 저장</button>
+    <button class="btn-print" onclick="window.print()">🖨️ PDF 저장 / 인쇄</button>
     <button class="btn-close" onclick="window.close()">✕ 닫기</button>
     <button id="btn-hide-names" onclick="toggleNames()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">👁 이름 가리기</button>
     <div class="toggle-wrap" style="gap:4px;padding:5px 10px;">
@@ -3065,158 +3062,6 @@ function _renderInfoHeader(){
   /* bracket-display 안 첫 자식으로 → 대진표와 너비 컨텍스트 공유 */
   const bd=document.getElementById('bracket-display');
   if(bd) bd.insertBefore(hdr, bd.firstChild);
-}
-
-/* ── 인쇄 / PDF 저장 ── */
-function _doPrintSetup(){
-  _showPdfGuide(function(){ _execPrint(); });
-}
-
-function _execPrint(){
-  const paper=_getPaperSize();
-  const pw=paper.w, ph=paper.h;           /* 용지 1장 px */
-  const MM=25.4/96;
-  const pwMM=(pw*MM).toFixed(2);
-  const phMM=(ph*MM).toFixed(2);
-  const sc=(_a4On && _a4Scale!==1) ? _a4Scale : 1;
-
-  /* 인쇄용 스타일 동적 주입 */
-  const old=document.getElementById('print-page-style');
-  if(old) old.remove();
-  const st=document.createElement('style');
-  st.id='print-page-style';
-
-  if(_a4On){
-    /* A4 배치 모드: 각 셀을 별도 페이지로 */
-    let pageCSS='';
-    /* 각 행(r)×열(c) 셀을 .print-cell 로 생성 → 인쇄 시 각각 한 페이지 */
-    st.textContent=`
-@page { size: ${pwMM}mm ${phMM}mm; margin: 0; }
-@media print {
-  html,body { margin:0; padding:0; background:#fff !important; }
-  .toolbar, #a4-badge, .page-guide-line, .a4g { display:none !important; }
-  #zoom-wrap { transform: none !important; }
-  .preview-wrap { padding:0 !important; }
-  /* 인쇄 셀 컨테이너 */
-  #print-cells { display:block !important; }
-  #a4-stage, #a4-scale-wrap, #bracket-display { display:none !important; }
-  .print-cell {
-    width: ${pwMM}mm;
-    height: ${phMM}mm;
-    overflow: hidden;
-    page-break-after: always;
-    page-break-inside: avoid;
-    position: relative;
-    box-sizing: border-box;
-  }
-  .print-cell:last-child { page-break-after: auto; }
-  .print-cell-inner {
-    position: absolute;
-    transform-origin: top left;
-  }
-}`;
-  } else {
-    /* A4 배치 OFF: 그냥 화면 그대로 인쇄 */
-    st.textContent=`
-@page { margin: 10mm; }
-@media print {
-  html,body { margin:0; padding:0; background:#fff !important; }
-  .toolbar, #a4-badge, .page-guide-line { display:none !important; }
-  #zoom-wrap { transform: none !important; }
-  .preview-wrap { padding:0 !important; }
-}`;
-  }
-  document.head.appendChild(st);
-
-  /* A4 배치 ON: 셀 분리 인쇄 */
-  if(_a4On){
-    /* 기존 print-cells 제거 */
-    const oldCells=document.getElementById('print-cells');
-    if(oldCells) oldCells.remove();
-
-    const sw=document.getElementById('a4-scale-wrap');
-    if(!sw){ window.print(); return; }
-
-    /* 원본 콘텐츠를 clone해서 각 셀 위치에 맞게 offset 적용 */
-    const cells=document.createElement('div');
-    cells.id='print-cells';
-    cells.style.display='none'; /* 화면에는 안 보임, 인쇄 시만 표시 */
-    document.body.appendChild(cells);
-
-    for(let r=0;r<_a4R;r++){
-      for(let c=0;c<_a4C;c++){
-        const cell=document.createElement('div');
-        cell.className='print-cell';
-
-        const inner=document.createElement('div');
-        inner.className='print-cell-inner';
-        /* scale된 콘텐츠에서 이 셀에 해당하는 offset */
-        const ox = c * pw;   /* 셀 내 콘텐츠 시작 X */
-        const oy = r * ph;   /* 셀 내 콘텐츠 시작 Y */
-        /* scale-wrap을 그대로 clone해서 offset 이동 */
-        const clone=sw.cloneNode(true);
-        clone.style.transform='scale('+sc+')';
-        clone.style.transformOrigin='top left';
-        clone.style.marginLeft='';
-        inner.style.transform='translate(-'+ox+'px, -'+oy+'px)';
-        inner.style.width=(pw/_a4C*_a4C)+'px'; /* 충분한 너비 */
-        inner.appendChild(clone);
-        cell.appendChild(inner);
-        cells.appendChild(cell);
-      }
-    }
-    window.print();
-    /* 인쇄 후 정리 */
-    setTimeout(function(){
-      const s=document.getElementById('print-page-style'); if(s) s.remove();
-      const p=document.getElementById('print-cells'); if(p) p.remove();
-    }, 3000);
-  } else {
-    window.print();
-    setTimeout(function(){ const s=document.getElementById('print-page-style'); if(s) s.remove(); }, 2000);
-  }
-}
-
-function _showPdfGuide(onConfirm){
-  if(sessionStorage.getItem('pdf-guide-seen')){ onConfirm(); return; }
-
-  /* 콜백을 전역에 임시 저장 (onclick 인라인에서 toString 사용 금지) */
-  window._pdfGuideConfirm=onConfirm;
-
-  const overlay=document.createElement('div');
-  overlay.id='pdf-guide-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;';
-  const box=document.createElement('div');
-  const isW=document.body.classList.contains('white-mode');
-  box.style.cssText='background:'+(isW?'#fff':'#13131f')+';border:1px solid '+(isW?'#ddd':'#3a3a55')+';border-radius:14px;padding:28px 28px 22px;max-width:400px;width:90%;font-family:"Noto Sans KR",sans-serif;box-shadow:0 8px 40px rgba(0,0,0,.4);';
-  box.innerHTML=
-    '<div style="font-size:16px;font-weight:700;color:#e63946;margin-bottom:14px;">🖨 PDF로 저장하는 방법</div>'+
-    '<div style="font-size:13px;color:'+(isW?'#333':'#c0c0d8')+';line-height:2;">'+
-    '인쇄 창이 열리면:<br>'+
-    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">① 대상(프린터)</b> 클릭<br>'+
-    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">② &quot;PDF로 저장&quot;</b> 선택<br>'+
-    '<b style="color:'+(isW?'#0050c0':'#4cc9f0')+';">③ 저장</b> 버튼 클릭<br><br>'+
-    '<span style="font-size:11px;color:'+(isW?'#888':'#5a5a7a')+';">※ 용지 크기는 설정한 대로 자동 반영됩니다.</span>'+
-    '</div>'+
-    '<div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">'+
-    '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:'+(isW?'#888':'#5a5a7a')+';cursor:pointer;margin-right:auto;">'+
-    '<input type="checkbox" id="pdf-guide-no-more" style="cursor:pointer;"> 다시 보지 않기'+
-    '</label>'+
-    '<button id="pdf-guide-ok" style="padding:8px 22px;background:#e63946;border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;">인쇄 창 열기</button>'+
-    '<button id="pdf-guide-cancel" style="padding:8px 16px;background:transparent;border:1px solid '+(isW?'#ccc':'#3a3a55')+';color:'+(isW?'#555':'#9090b0')+';border-radius:8px;font-size:13px;cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;">취소</button>'+
-    '</div>';
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-
-  document.getElementById('pdf-guide-ok').addEventListener('click',function(){
-    if(document.getElementById('pdf-guide-no-more').checked) sessionStorage.setItem('pdf-guide-seen','1');
-    document.body.removeChild(overlay);
-    if(window._pdfGuideConfirm){ window._pdfGuideConfirm(); window._pdfGuideConfirm=null; }
-  });
-  document.getElementById('pdf-guide-cancel').addEventListener('click',function(){
-    document.body.removeChild(overlay);
-    window._pdfGuideConfirm=null;
-  });
 }
 
 /* ── 줌 버튼: zoom-wrap 전체(격자+콘텐츠)를 화면 배율로 조정 ── */
