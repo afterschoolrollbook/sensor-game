@@ -2706,6 +2706,8 @@ function toggleNames(){
       clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
       clone.querySelectorAll('svg').forEach(s=>{s.setAttribute('overflow','visible');s.style.overflow='visible';});
       dst.innerHTML=clone.innerHTML;
+      /* bracket-display 교체 후 정보표시 헤더 재렌더 */
+      if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     }
     p.window._hideNames=savedHide;
     p._renderPdfPreview(p.S.groupBrackets);
@@ -3214,14 +3216,14 @@ async function _printFromGrid(){
       for(var c=0;c<cols;c++){
         var oc=document.createElement('canvas');
         var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
-        var sw=Math.min(Math.round(sliceW),Math.max(0,fc.width-sx));
-        var sh=Math.min(Math.round(sliceH),Math.max(0,fc.height-sy));
+        var sliceSw=Math.min(Math.round(sliceW),Math.max(0,fc.width-sx));
+        var sliceSh=Math.min(Math.round(sliceH),Math.max(0,fc.height-sy));
         oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
         var octx=oc.getContext('2d');
         /* 콘텐츠 밖 영역 검정 방지 */
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
-        if(sw>0&&sh>0) octx.drawImage(fc,sx,sy,sw,sh,0,0,sw,sh);
+        if(sliceSw>0&&sliceSh>0) octx.drawImage(fc,sx,sy,sliceSw,sliceSh,0,0,sliceSw,sliceSh);
         var pd=document.createElement('div');
         pd.style.cssText='width:'+cellWmm+'mm;height:'+cellHmm+'mm;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background:white;';
         var img=document.createElement('img');
