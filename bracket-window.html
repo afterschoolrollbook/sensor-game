@@ -2779,33 +2779,41 @@ function _a4Draw(){
 
   const gridW=_a4C*pw, gridH=_a4R*ph;
   const sw=document.getElementById('a4-scale-wrap');
+
+  /* 실제 적용할 scale 결정 */
+  let applyScale = _a4Scale;
+  let offsetX = 0;
+
   if(fitW||fitH){
-    /* scaledW: 콘텐츠를 _a4Scale로 축소/확대한 실제 너비 */
     const scaledW=_a4W*_a4Scale;
-    const offsetX=(fitCX && scaledW<gridW) ? Math.round((gridW-scaledW)/2) : 0;
-    if(sw){
-      sw.style.transform='scale('+_a4Scale+')';
-      sw.style.transformOrigin='top left';
-      sw.style.marginLeft=offsetX+'px';
-    }
+    offsetX=(fitCX && scaledW<gridW) ? Math.round((gridW-scaledW)/2) : 0;
   } else {
-    /* 맞추기 체크 없을 때: 현재 줌 레벨을 유지 */
-    if(sw){
-      sw.style.transform=(_zoomLevel && _zoomLevel!==1)?'scale('+_zoomLevel+')':'';
-      sw.style.transformOrigin='top left';
-      sw.style.marginLeft='';
-    }
+    /* 맞추기 미체크: 줌 레벨 사용 */
+    applyScale = _zoomLevel || 1;
   }
 
+  if(sw){
+    sw.style.transform='scale('+applyScale+')';
+    sw.style.transformOrigin='top left';
+    sw.style.marginLeft=offsetX+'px';
+  }
+
+  const PAD=64, PADL=24;
+  /* stage 너비 = 격자 너비와 scale된 콘텐츠 너비 중 큰 값 + 여백 */
+  const scaledContentW = _a4W * applyScale;
+  const scaledContentH = _a4H * applyScale;
+  const stageW = Math.max(gridW + PADL + 24, scaledContentW + PADL + 24, offsetX + scaledContentW + PADL + 24);
+  const stageH = Math.max(gridH + PAD + 80, scaledContentH + PAD + 80);
+
   stage.style.position='relative';
-  stage.style.minHeight=(gridH+80)+'px';
+  stage.style.width = stageW + 'px';
+  stage.style.minHeight = stageH + 'px';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
 
   const isW=document.body.classList.contains('white-mode');
   const lc=isW?'rgba(0,100,220,0.55)':'rgba(76,201,240,0.65)';
   const sc=isW?'rgba(0,100,220,0.4)':'rgba(76,201,240,0.45)';
   const bc=isW?'rgba(0,80,200,0.28)':'rgba(76,201,240,0.28)';
-  const PAD=64, PADL=24;
   for(let r=0;r<_a4R;r++){
     for(let c=0;c<_a4C;c++){
       const el=document.createElement('div');el.className='a4g';
@@ -2832,7 +2840,7 @@ function _a4Draw(){
       stage.appendChild(el);
     }
   }
-  const pct=Math.round(_a4Scale*100);
+  const pct=Math.round(applyScale*100);
   document.getElementById('a4-pct').textContent='('+pct+'%)';
   let badge=document.getElementById('a4-badge');
   if(!badge){ badge=document.createElement('div');badge.id='a4-badge';badge.style.cssText='position:fixed;bottom:10px;right:14px;font-size:11px;line-height:1.7;font-family:"Share Tech Mono",monospace;padding:6px 14px;border-radius:7px;z-index:9999;';document.body.appendChild(badge); }
@@ -2847,6 +2855,7 @@ function _a4Clear(){
   if(sw){ sw.style.transform=''; sw.style.marginLeft=''; }
   const stage=document.getElementById('a4-stage');
   stage.style.minHeight='';
+  stage.style.width='';
   stage.querySelectorAll('.a4g').forEach(e=>e.remove());
   document.getElementById('a4-pct').textContent='';
   const b=document.getElementById('a4-badge');if(b) b.style.display='none';
@@ -2975,7 +2984,13 @@ function _zoomSet(ratio){
     sw.style.marginLeft='';
     const stage=document.getElementById('a4-stage');
     if(stage){
-      const contentH=sw.scrollHeight||600;
+      const contentW=_a4W||sw.scrollWidth||800;
+      const contentH=_a4H||sw.scrollHeight||600;
+      const PADL=24;
+      if(_a4On){
+        const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
+        stage.style.width=Math.max(gridW+PADL+24, contentW*ratio+PADL+24)+'px';
+      }
       stage.style.minHeight=(contentH*ratio+80)+'px';
     }
   }
@@ -3565,7 +3580,14 @@ function _zoomSet(ratio){
     sw.style.marginLeft='';
     const stage=document.getElementById('a4-stage');
     if(stage){
-      const contentH=sw.scrollHeight||600;
+      const contentW=_a4W||sw.scrollWidth||800;
+      const contentH=_a4H||sw.scrollHeight||600;
+      const PADL=24;
+      /* A4가 켜진 경우 격자 너비도 고려 */
+      if(_a4On){
+        const gridW=_a4C*(_A4[_a4Orient]||_A4['landscape']).w;
+        stage.style.width=Math.max(gridW+PADL+24, contentW*ratio+PADL+24)+'px';
+      }
       stage.style.minHeight=(contentH*ratio+80)+'px';
     }
   }
