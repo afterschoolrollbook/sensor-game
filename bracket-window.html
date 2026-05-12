@@ -3205,9 +3205,11 @@ async function _printFromGrid(){
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* 슬라이스 크기: scale 제거 후 캡처했으므로 캔버스 크기를 격자 수로 등분 */
-    var sliceW=Math.ceil(fc.width/_a4C);
-    var sliceH=Math.ceil(fc.height/_a4R);
+    /* 슬라이스 크기: 용지 1장 크기(px) × html2canvas scale
+       — 캔버스를 단순 등분하면 격자 경계와 어긋나므로
+         실제 용지 1칸의 픽셀 크기를 기준으로 잘라야 한다 */
+    var sliceW=Math.round(cellW*H2C);
+    var sliceH=Math.round(cellH*H2C);
     /* 페이지 이미지 div 생성 */
     var wrap=document.createElement('div');
     wrap.id='_grid_print_wrap';
@@ -3311,9 +3313,11 @@ async function savePDF(){
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* 슬라이스 크기: scale 제거 후 캡처했으므로 캔버스 크기를 격자 수로 등분 */
-    var sliceW=Math.ceil(fc.width/cols);
-    var sliceH=Math.ceil(fc.height/rows);
+    /* 슬라이스 크기: 용지 1장 크기(px) × html2canvas scale
+       — 캔버스를 단순 등분하면 격자 경계와 어긋나므로
+         실제 용지 1칸의 픽셀 크기를 기준으로 잘라야 한다 */
+    var sliceW=Math.round(cellW*H2C_SCALE);
+    var sliceH=Math.round(cellH*H2C_SCALE);
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
