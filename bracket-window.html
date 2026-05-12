@@ -5219,9 +5219,7 @@ async function _printFromGrid(){
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
-    /* 격자·툴바 숨김 */
-    var tb=document.querySelector('.toolbar');
-    if(tb)tb.style.display='none';
+    /* 격자 숨김 (툴바는 position:fixed라 캡처 대상에서 자동 제외됨 — 숨김 불필요) */
     var stage=document.getElementById('a4-stage');
     var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
     grids.forEach(function(el){el.style.display='none';});
@@ -5259,7 +5257,6 @@ async function _printFromGrid(){
     target.style.overflow=prevOvf;
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
-    if(tb)tb.style.display='';
 
     /* 이미지를 canvas에 그린 후 슬라이스 */
     var fullImg=new Image();
