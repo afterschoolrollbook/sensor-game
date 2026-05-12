@@ -2544,7 +2544,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   .page-guide-line{display:none !important;}
   .a4g{display:none !important;}
   #a4-badge{display:none !important;}
-  /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 CSS-clip 페이지만 출력 ── */
+  /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 슬라이스 이미지만 출력 ── */
   body._grid_printing > *:not(#_grid_print_wrap){ display:none !important; }
   #_grid_print_wrap{ display:block !important; margin:0 !important; padding:0 !important; }
   #_grid_print_wrap > div{
@@ -2730,11 +2730,11 @@ function _applyPageCSS(){
   if(existing) existing.remove();
   var st=document.createElement('style');
   st.id='_page_rule_style';
-  var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
-  var sizeMap={A4:'A4',A3:'A3',A5:'A5',Letter:'letter',Legal:'legal'};
-  var sizeStr=sizeMap[pk]||'A4';
-  var orient=(_a4Orient==='landscape')?'landscape':'portrait';
-  st.textContent='@page{size:'+sizeStr+' '+orient+';margin:0;}';
+  /* 정확한 mm 수치로 지정 — 브라우저별 용지명 해석 차이 방지 */
+  var paper=_getPaperSize();
+  var wMM=(paper.w/(96/25.4)).toFixed(2);
+  var hMM=(paper.h/(96/25.4)).toFixed(2);
+  st.textContent='@page{size:'+wMM+'mm '+hMM+'mm;margin:0;}';
   document.head.appendChild(st);
 }
 
@@ -3157,14 +3157,26 @@ function _zoomStep(delta){
 
 
 /* ── 격자 기반 인쇄: A4 설정 그대로 브라우저 인쇄 ── */
-function _printFromGrid(){
+async function _printFromGrid(){
   /* A4 격자가 꺼져 있으면 일반 인쇄로 */
-  if(!_a4On){
+  if(!_a4On || typeof _a4Scale==='undefined' || _a4Scale<=0){
     window.print(); return;
   }
   var btn=document.getElementById('btn-print-main');
   if(btn){btn.disabled=true;btn.textContent='처리중...';}
   try{
+    /* html-to-image: html2canvas보다 품질이 좋고 폰트/SVG를 정확히 렌더링 */
+    if(!window.htmlToImage){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js';
+        s.onload=res; s.onerror=function(){
+          /* fallback: html2canvas */
+          rej(new Error('html-to-image load failed'));
+        };
+        document.head.appendChild(s);
+      });
+    }
     /* 정보 헤더 강제 렌더 */
     if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     var paper=_getPaperSize();
@@ -3173,93 +3185,109 @@ function _printFromGrid(){
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
-
-    /* 대진표 원본 크기 측정 */
+    /* 격자·툴바 숨김 */
+    var tb=document.querySelector('.toolbar');
+    if(tb)tb.style.display='none';
+    var stage=document.getElementById('a4-stage');
+    var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
+    grids.forEach(function(el){el.style.display='none';});
+    /* 캡처 대상 */
     var target=document.getElementById('bracket-display');
-    var origW=target.scrollWidth, origH=target.scrollHeight;
+    var prevOvf=target.style.overflow;
+    target.style.overflow='visible';
+    target.style.overflowX='visible';
+    target.style.overflowY='visible';
+    var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(Boolean);
+    var ovfPrev=ovfTargets.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
+    ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
+    /* a4-scale-wrap transform 일시 제거 */
+    var sw=document.getElementById('a4-scale-wrap');
+    var prevSwTransform=sw?sw.style.transform:'';
+    var prevSwMarginLeft=sw?sw.style.marginLeft:'';
+    if(sw){sw.style.transform='';sw.style.marginLeft='0px';}
+    var isW=document.body.classList.contains('white-mode');
+    var SCALE=2; /* 캡처 해상도 배율 */
+    await new Promise(function(r){setTimeout(r,150);});
 
-    /* 격자 1칸에 해당하는 원본 픽셀 크기 */
-    var tileW=origW/cols, tileH=origH/rows;
+    /* html-to-image로 고품질 캡처 */
+    var dataUrl=await window.htmlToImage.toJpeg(target,{
+      quality:0.97,
+      pixelRatio:SCALE,
+      backgroundColor:isW?'#ffffff':'#08080f',
+      width:target.scrollWidth,
+      height:target.scrollHeight,
+      style:{overflow:'visible',overflowX:'visible',overflowY:'visible'}
+    });
 
-    /* _a4Draw()와 동일한 배율: fitW/fitH 체크 여부 반영 */
-    var fitW=document.getElementById('a4-fit-w').checked;
-    var fitH=document.getElementById('a4-fit-h').checked;
-    var sc;
-    if(fitW&&fitH){ sc=Math.min(cellW/tileW,cellH/tileH); }
-    else if(fitW){  sc=cellW/tileW; }
-    else if(fitH){  sc=cellH/tileH; }
-    else{           sc=_a4Scale>0?_a4Scale:1; }
+    /* 복원 */
+    if(sw){sw.style.transform=prevSwTransform;sw.style.marginLeft=prevSwMarginLeft;}
+    target.style.overflow=prevOvf;
+    ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
+    grids.forEach(function(el){el.style.display='';});
+    if(tb)tb.style.display='';
 
-    /* @page 크기 설정 */
-    _applyPageCSS();
+    /* 이미지를 canvas에 그린 후 슬라이스 */
+    var fullImg=new Image();
+    await new Promise(function(r){fullImg.onload=r;fullImg.src=dataUrl;});
+    var fcW=fullImg.naturalWidth, fcH=fullImg.naturalHeight;
 
-    /* 인쇄용 wrap 생성 (화면에서는 숨김) */
+    var sliceW=Math.ceil(fcW/cols);
+    var sliceH=Math.ceil(fcH/rows);
+
+    /* @page 크기: 정확한 mm 수치로 지정 */
+    var existing=document.getElementById('_page_rule_style');
+    if(existing)existing.remove();
+    var st=document.createElement('style');
+    st.id='_page_rule_style';
+    st.textContent='@page{size:'+cellWmm+'mm '+cellHmm+'mm;margin:0;}';
+    document.head.appendChild(st);
+
+    /* 페이지 div 생성 */
     var wrap=document.createElement('div');
     wrap.id='_grid_print_wrap';
     wrap.style.cssText='display:none;';
-
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
-        /* 용지 1장 div */
+        var oc=document.createElement('canvas');
+        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
+        var sw2=Math.min(sliceW,Math.max(0,fcW-sx));
+        var sh2=Math.min(sliceH,Math.max(0,fcH-sy));
+        oc.width=sliceW; oc.height=sliceH;
+        var octx=oc.getContext('2d');
+        octx.fillStyle=isW?'#ffffff':'#08080f';
+        octx.fillRect(0,0,oc.width,oc.height);
+        if(sw2>0&&sh2>0) octx.drawImage(fullImg,sx,sy,sw2,sh2,0,0,sw2,sh2);
         var pd=document.createElement('div');
         pd.style.cssText=
           'display:block;'+
           'width:'+cellWmm+'mm;'+
           'height:'+cellHmm+'mm;'+
           'overflow:hidden;'+
-          'position:relative;'+
           'margin:0;padding:0;'+
           'box-sizing:border-box;'+
-          'background:#fff;'+
+          'background:white;'+
           'page-break-after:always;'+
           'break-after:page;'+
           'page-break-inside:avoid;'+
           'break-inside:avoid;';
-
-        /* cellW×cellH 크기의 클리핑 컨테이너 */
-        var inner=document.createElement('div');
-        inner.style.cssText=
-          'position:absolute;'+
-          'top:0;left:0;'+
-          'width:'+cellW+'px;'+
-          'height:'+cellH+'px;'+
-          'overflow:hidden;';
-
-        /* 대진표 복사본: scale + translate로 해당 칸만 표시
-           CSS transform은 오른쪽부터 적용되므로
-           translate(-c*tileW, -r*tileH) → 해당 칸을 원점으로
-           scale(sc, sc) → 용지 크기에 맞게 확대 */
-        var bd=document.createElement('div');
-        bd.style.cssText=
-          'position:absolute;'+
-          'top:0;left:0;'+
-          'width:'+origW+'px;'+
-          'height:'+origH+'px;'+
-          'transform-origin:top left;'+
-          'transform:scale('+sc+') translate('+(-c*tileW)+'px,'+(-r*tileH)+'px);';
-        bd.innerHTML=target.innerHTML;
-
-        inner.appendChild(bd);
-        pd.appendChild(inner);
-        wrap.appendChild(pd);
+        var img=document.createElement('img');
+        img.src=oc.toDataURL('image/jpeg',0.97);
+        img.style.cssText='width:100%;height:100%;display:block;';
+        pd.appendChild(img); wrap.appendChild(pd);
       }
     }
-
     document.body.appendChild(wrap);
     document.body.classList.add('_grid_printing');
-
-    setTimeout(function(){
-      window.print();
-      function _cleanup(){
-        document.body.classList.remove('_grid_printing');
-        var el=document.getElementById('_grid_print_wrap');
-        if(el)el.remove();
-        if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
-      }
-      window.addEventListener('afterprint',_cleanup,{once:true});
-      setTimeout(_cleanup,8000);
-    },200);
-
+    await new Promise(function(r){setTimeout(r,200);});
+    window.print();
+    function _cleanup(){
+      document.body.classList.remove('_grid_printing');
+      var el=document.getElementById('_grid_print_wrap');
+      if(el)el.remove();
+      if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
+    }
+    window.addEventListener('afterprint',_cleanup,{once:true});
+    setTimeout(_cleanup,8000);
   }catch(err){
     console.error(err);
     alert('인쇄 준비 실패: '+err.message);
