@@ -5234,14 +5234,16 @@ async function _printFromGrid(){
     var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(Boolean);
     var ovfPrev=ovfTargets.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
     ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
-    /* transform 제거하지 않고 scale 적용된 상태 그대로 캡처
-       → 화면 격자선 위치 = 캡처 이미지 슬라이스 위치 정확히 일치 */
+    /* a4-scale-wrap transform 일시 제거 */
     var sw=document.getElementById('a4-scale-wrap');
+    var prevSwTransform=sw?sw.style.transform:'';
+    var prevSwMarginLeft=sw?sw.style.marginLeft:'';
+    if(sw){sw.style.transform='';sw.style.marginLeft='0px';}
     var isW=document.body.classList.contains('white-mode');
     var SCALE=2; /* 캡처 해상도 배율 */
     await new Promise(function(r){setTimeout(r,150);});
 
-    /* html-to-image로 고품질 캡처 */
+    /* html-to-image로 고품질 캡처 — 폰트는 이미 Base64 임베드되어 있으므로 skipFonts */
     var dataUrl=await window.htmlToImage.toJpeg(target,{
       quality:0.97,
       pixelRatio:SCALE,
@@ -5253,6 +5255,7 @@ async function _printFromGrid(){
     });
 
     /* 복원 */
+    if(sw){sw.style.transform=prevSwTransform;sw.style.marginLeft=prevSwMarginLeft;}
     target.style.overflow=prevOvf;
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
@@ -5263,12 +5266,11 @@ async function _printFromGrid(){
     await new Promise(function(r){fullImg.onload=r;fullImg.src=dataUrl;});
     var fcW=fullImg.naturalWidth, fcH=fullImg.naturalHeight;
 
-    /* ── 슬라이스 크기: scale 적용된 상태로 캡처했으므로
-       한 페이지 = cellW*_a4Scale*SCALE × cellH*_a4Scale*SCALE
-       단, applyScale=1일때(맞추기 미체크)는 cellW*SCALE 그대로 */
-    var applyScale=(_a4Scale&&(document.getElementById('a4-fit-w').checked||document.getElementById('a4-fit-h').checked))?_a4Scale:1;
-    var sliceW=Math.round(cellW*applyScale*SCALE);
-    var sliceH=Math.round(cellH*applyScale*SCALE);
+    /* ── 슬라이스 크기: 이미지를 cols×rows로 정확히 등분 ──
+       캡처된 전체 이미지를 격자 수로 나눈 것이 한 페이지분
+       canvas는 정확히 cellW×cellH(용지 px)로 설정해서 인쇄시 1:1 대응 */
+    var sliceW=fcW/cols;
+    var sliceH=fcH/rows;
 
     /* @page 크기: 정확한 mm 수치로 지정 */
     var existing=document.getElementById('_page_rule_style');
