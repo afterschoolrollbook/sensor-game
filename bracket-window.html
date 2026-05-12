@@ -4551,6 +4551,7 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   #a4-badge{display:none !important;}
   /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 슬라이스 이미지만 출력 ── */
   body._grid_printing > *:not(#_grid_print_wrap){ display:none !important; }
+  body._grid_printing .toolbar{ display:flex !important; }
   #_grid_print_wrap{ display:block !important; margin:0 !important; padding:0 !important; }
   #_grid_print_wrap > div{
     page-break-after:always; break-after:page;
