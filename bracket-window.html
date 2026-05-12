@@ -5266,12 +5266,11 @@ async function _printFromGrid(){
     await new Promise(function(r){fullImg.onload=r;fullImg.src=dataUrl;});
     var fcW=fullImg.naturalWidth, fcH=fullImg.naturalHeight;
 
-    /* ── 슬라이스 크기를 정확히 계산 ──
-       캡처 이미지(px) = 실제 콘텐츠 * SCALE
-       용지 px = cellW * SCALE (96dpi 기준)
-       슬라이스는 정확히 용지 px 크기로 잘라서 img에 100% 채우면 1:1 대응 */
-    var sliceW=Math.round(cellW*SCALE);
-    var sliceH=Math.round(cellH*SCALE);
+    /* ── 슬라이스 크기: 이미지를 cols×rows로 정확히 등분 ──
+       캡처된 전체 이미지를 격자 수로 나눈 것이 한 페이지분
+       canvas는 정확히 cellW×cellH(용지 px)로 설정해서 인쇄시 1:1 대응 */
+    var sliceW=fcW/cols;
+    var sliceH=fcH/rows;
 
     /* @page 크기: 정확한 mm 수치로 지정 */
     var existing=document.getElementById('_page_rule_style');
@@ -5288,16 +5287,17 @@ async function _printFromGrid(){
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
         var oc=document.createElement('canvas');
-        /* 캔버스를 정확히 용지 px 크기로 설정 (SCALE 배율 적용) */
-        oc.width=sliceW; oc.height=sliceH;
+        /* 캔버스는 용지 px 크기(cellW×cellH)로 — 인쇄시 mm와 정확히 1:1 */
+        oc.width=cellW; oc.height=cellH;
         var octx=oc.getContext('2d');
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
-        /* 이미지에서 정확한 위치만큼 잘라서 캔버스 전체에 그림 */
+        /* 이미지 슬라이스 위치 */
         var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
         var sw2=Math.min(sliceW,Math.max(0,fcW-sx));
         var sh2=Math.min(sliceH,Math.max(0,fcH-sy));
-        if(sw2>0&&sh2>0) octx.drawImage(fullImg,sx,sy,sw2,sh2,0,0,sliceW,sliceH);
+        /* 슬라이스를 캔버스(용지) 크기에 맞게 stretch */
+        if(sw2>0&&sh2>0) octx.drawImage(fullImg,sx,sy,sw2,sh2,0,0,cellW,cellH);
         var pd=document.createElement('div');
         pd.style.cssText=
           'display:block;'+
@@ -5392,9 +5392,9 @@ async function savePDF(){
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* 슬라이스 크기: 용지 px 크기 × H2C_SCALE = 정확한 페이지당 픽셀 수 */
-    var sliceW=Math.round(cellW*H2C_SCALE);
-    var sliceH=Math.round(cellH*H2C_SCALE);
+    /* 슬라이스 크기: 캡처 이미지를 cols×rows로 등분 */
+    var sliceW=fc.width/cols;
+    var sliceH=fc.height/rows;
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
@@ -5402,7 +5402,7 @@ async function savePDF(){
       for(var c=0;c<cols;c++){
         if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
         var oc=document.createElement('canvas');
-        oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
+        oc.width=Math.round(cellW); oc.height=Math.round(cellH);
         var octx=oc.getContext('2d');
         /* 콘텐츠 밖 영역(마지막 페이지 등) 검정 방지 — 배경색으로 채우기 */
         octx.fillStyle=isW?'#ffffff':'#08080f';
@@ -5411,8 +5411,8 @@ async function savePDF(){
         var sw=Math.min(Math.round(sliceW), Math.max(0, fc.width-sx));
         var sh=Math.min(Math.round(sliceH), Math.max(0, fc.height-sy));
         if(sw>0 && sh>0){
-          /* 캔버스 전체(용지 크기)에 맞게 stretch */
-          octx.drawImage(fc, sx, sy, sw, sh, 0, 0, Math.round(sliceW), Math.round(sliceH));
+          /* 슬라이스를 캔버스(용지 크기)에 stretch */
+          octx.drawImage(fc, sx, sy, sw, sh, 0, 0, oc.width, oc.height);
         }
         pdf.addImage(oc.toDataURL('image/jpeg',0.93),'JPEG',0,0,cellWmm,cellHmm);
         page++;
