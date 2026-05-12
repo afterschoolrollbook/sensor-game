@@ -3236,13 +3236,16 @@ async function _printFromGrid(){
     var SCALE=2; /* 캡처 해상도 배율 */
     await new Promise(function(r){setTimeout(r,150);});
 
-    /* html-to-image로 고품질 캡처 */
+    /* html-to-image로 고품질 캡처
+       skipFonts:true — 외부 폰트(Google Fonts 등) CSS 인라인 시도를 건너뜀
+       → CORS SecurityError 방지. 폰트는 이미 브라우저에 로드된 상태라 출력 품질 무관 */
     var dataUrl=await window.htmlToImage.toJpeg(target,{
       quality:0.97,
       pixelRatio:SCALE,
       backgroundColor:isW?'#ffffff':'#08080f',
       width:target.scrollWidth,
       height:target.scrollHeight,
+      skipFonts:true,
       style:{overflow:'visible',overflowX:'visible',overflowY:'visible'}
     });
 
