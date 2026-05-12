@@ -2544,14 +2544,13 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
   .page-guide-line{display:none !important;}
   .a4g{display:none !important;}
   #a4-badge{display:none !important;}
-  /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 슬라이스 이미지만 출력 ── */
+  /* ── 격자 기반 인쇄 모드: 미리보기 숨기고 CSS-clip 페이지만 출력 ── */
   body._grid_printing > *:not(#_grid_print_wrap){ display:none !important; }
   #_grid_print_wrap{ display:block !important; margin:0 !important; padding:0 !important; }
   #_grid_print_wrap > div{
     page-break-after:always; break-after:page;
     page-break-inside:avoid; break-inside:avoid;
     margin:0 !important; padding:0 !important;
-    display:block !important;
   }
   #_grid_print_wrap > div:last-child{ page-break-after:auto; break-after:auto; }
 }
@@ -2731,11 +2730,11 @@ function _applyPageCSS(){
   if(existing) existing.remove();
   var st=document.createElement('style');
   st.id='_page_rule_style';
-  /* 정확한 mm 수치로 지정 — 브라우저별 용지명 해석 차이를 방지 */
-  var paper=_getPaperSize();
-  var wMM=Math.round(paper.w/(96/25.4)*100)/100;
-  var hMM=Math.round(paper.h/(96/25.4)*100)/100;
-  st.textContent='@page{size:'+wMM+'mm '+hMM+'mm;margin:0;}';
+  var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
+  var sizeMap={A4:'A4',A3:'A3',A5:'A5',Letter:'letter',Legal:'legal'};
+  var sizeStr=sizeMap[pk]||'A4';
+  var orient=(_a4Orient==='landscape')?'landscape':'portrait';
+  st.textContent='@page{size:'+sizeStr+' '+orient+';margin:0;}';
   document.head.appendChild(st);
 }
 
@@ -3157,99 +3156,88 @@ function _zoomStep(delta){
 }
 
 
-/* ── 격자 기반 인쇄: html2canvas 없이 CSS clip 방식으로 정확하게 ── */
+/* ── 격자 기반 인쇄: A4 설정 그대로 브라우저 인쇄 ── */
 function _printFromGrid(){
+  /* A4 격자가 꺼져 있으면 일반 인쇄로 */
   if(!_a4On){
     window.print(); return;
   }
   var btn=document.getElementById('btn-print-main');
   if(btn){btn.disabled=true;btn.textContent='처리중...';}
-
   try{
+    /* 정보 헤더 강제 렌더 */
+    if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     var paper=_getPaperSize();
     var lsc=_a4Orient==='landscape';
     var cols=_a4C, rows=_a4R;
-    /* 용지 1장 크기 (px) */
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
 
-    /* 대진표 원본 크기 */
+    /* 대진표 원본 크기 측정 */
     var target=document.getElementById('bracket-display');
     var origW=target.scrollWidth, origH=target.scrollHeight;
 
     /* 격자 1칸에 해당하는 원본 픽셀 크기 */
     var tileW=origW/cols, tileH=origH/rows;
 
-    /* _a4Draw()와 동일한 배율 사용 — 비율 유지
-       _a4Scale = (cols*cellW)/origW = cellW/tileW
-       (fitW 체크 기준; 미체크시 1) */
+    /* _a4Draw()와 동일한 배율: fitW/fitH 체크 여부 반영 */
     var fitW=document.getElementById('a4-fit-w').checked;
     var fitH=document.getElementById('a4-fit-h').checked;
     var sc;
-    if(fitW&&fitH){ sc=Math.min(cellW/tileW, cellH/tileH); }
+    if(fitW&&fitH){ sc=Math.min(cellW/tileW,cellH/tileH); }
     else if(fitW){  sc=cellW/tileW; }
     else if(fitH){  sc=cellH/tileH; }
-    else {          sc=_a4Scale>0?_a4Scale:1; }
-    var scaleX=sc, scaleY=sc;
-
-    /* 대진표 HTML 복사 */
-    var srcHTML=target.outerHTML;
+    else{           sc=_a4Scale>0?_a4Scale:1; }
 
     /* @page 크기 설정 */
     _applyPageCSS();
 
-    /* 인쇄용 wrap 생성 */
+    /* 인쇄용 wrap 생성 (화면에서는 숨김) */
     var wrap=document.createElement('div');
     wrap.id='_grid_print_wrap';
     wrap.style.cssText='display:none;';
 
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
-        /* 용지 1장 div — 이 크기가 @page와 일치 */
+        /* 용지 1장 div */
         var pd=document.createElement('div');
-        pd.style.cssText=[
-          'display:block',
-          'width:'+cellWmm+'mm',
-          'height:'+cellHmm+'mm',
-          'overflow:hidden',
-          'margin:0',
-          'padding:0',
-          'box-sizing:border-box',
-          'position:relative',
-          'background:#fff',
-          'page-break-after:always',
-          'break-after:page',
-          'page-break-inside:avoid',
-          'break-inside:avoid'
-        ].join(';')+';';
+        pd.style.cssText=
+          'display:block;'+
+          'width:'+cellWmm+'mm;'+
+          'height:'+cellHmm+'mm;'+
+          'overflow:hidden;'+
+          'position:relative;'+
+          'margin:0;padding:0;'+
+          'box-sizing:border-box;'+
+          'background:#fff;'+
+          'page-break-after:always;'+
+          'break-after:page;'+
+          'page-break-inside:avoid;'+
+          'break-inside:avoid;';
 
-        /* 대진표를 이 칸에 맞게 잘라서 배치하는 컨테이너 */
+        /* cellW×cellH 크기의 클리핑 컨테이너 */
         var inner=document.createElement('div');
-        inner.style.cssText=[
-          'position:absolute',
-          'top:0',
-          'left:0',
-          'width:'+cellW+'px',
-          'height:'+cellH+'px',
-          'overflow:hidden'
-        ].join(';')+';';
+        inner.style.cssText=
+          'position:absolute;'+
+          'top:0;left:0;'+
+          'width:'+cellW+'px;'+
+          'height:'+cellH+'px;'+
+          'overflow:hidden;';
 
-        /* 대진표 복사본:
-           - transform:scale()은 원본 크기 기준으로 동작
-           - translate로 해당 칸 위치를 뷰포트 좌상단으로 이동
-           - scale 후 tileW*scaleX=cellW, tileH*scaleY=cellH → 용지 1장에 딱 맞음 */
+        /* 대진표 복사본: scale + translate로 해당 칸만 표시
+           CSS transform은 오른쪽부터 적용되므로
+           translate(-c*tileW, -r*tileH) → 해당 칸을 원점으로
+           scale(sc, sc) → 용지 크기에 맞게 확대 */
         var bd=document.createElement('div');
-        bd.style.cssText=[
-          'position:absolute',
-          'top:0',
-          'left:0',
-          'width:'+origW+'px',
-          'height:'+origH+'px',
-          'transform-origin:top left',
-          'transform:scale('+scaleX+','+scaleY+') translate('+(-c*tileW)+'px,'+(-r*tileH)+'px)'
-        ].join(';')+';';
-        bd.innerHTML=srcHTML.replace(/^<div[^>]*>/,'').replace(/<\/div>$/,'');
+        bd.style.cssText=
+          'position:absolute;'+
+          'top:0;left:0;'+
+          'width:'+origW+'px;'+
+          'height:'+origH+'px;'+
+          'transform-origin:top left;'+
+          'transform:scale('+sc+') translate('+(-c*tileW)+'px,'+(-r*tileH)+'px);';
+        bd.innerHTML=target.innerHTML;
 
         inner.appendChild(bd);
         pd.appendChild(inner);
@@ -3335,9 +3323,9 @@ async function savePDF(){
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-    /* 슬라이스 크기: 캔버스를 격자 수로 균등 분할 */
-    var sliceW=Math.round(fc.width/cols);
-    var sliceH=Math.round(fc.height/rows);
+    /* 슬라이스 크기: scale 제거 후 캡처했으므로 캔버스 크기를 격자 수로 등분 */
+    var sliceW=Math.ceil(fc.width/cols);
+    var sliceH=Math.ceil(fc.height/rows);
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
