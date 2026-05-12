@@ -5219,7 +5219,7 @@ async function _printFromGrid(){
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
-    /* 격자·툴바 숨김 — visibility:hidden으로 레이아웃 유지하며 캡처에서 제외 */
+    /* 격자·툴바 숨김 */
     var tb=document.querySelector('.toolbar');
     if(tb)tb.style.visibility='hidden';
     var stage=document.getElementById('a4-stage');
