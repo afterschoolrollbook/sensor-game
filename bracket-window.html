@@ -3234,6 +3234,21 @@ async function _printFromGrid(){
     if(sw){sw.style.transform='';sw.style.marginLeft='0px';}
     var isW=document.body.classList.contains('white-mode');
     var SCALE=2; /* 캡처 해상도 배율 */
+
+    /* ── 슬라이스 크기를 미리보기 격자선과 정확히 일치시키기 ──
+       미리보기 격자선은 "용지 1장(px) 단위"로 그려지고,
+       콘텐츠에는 actualScale 배율이 적용돼 있다.
+       → 자연 크기 캡처 후 슬라이스 경계 = cellW / actualScale (px)
+       균등 분할(fcW/cols)은 fitW 체크 시에만 우연히 맞고, 나머지는 어긋남 */
+    var fitWchk=(document.getElementById('a4-fit-w')||{}).checked;
+    var fitHchk=(document.getElementById('a4-fit-h')||{}).checked;
+    var actualScale=(fitWchk||fitHchk)?_a4Scale:1;
+    var cellNatW=cellW/actualScale;   /* 용지 1장 가로 = 자연 크기(px) */
+    var cellNatH=cellH/actualScale;   /* 용지 1장 세로 = 자연 크기(px) */
+    /* 캡처 캔버스는 전체 격자를 담을 수 있어야 함 */
+    var captureW=Math.max(target.scrollWidth, Math.ceil(cols*cellNatW));
+    var captureH=Math.max(target.scrollHeight, Math.ceil(rows*cellNatH));
+
     await new Promise(function(r){setTimeout(r,150);});
 
     /* html-to-image로 고품질 캡처
@@ -3243,8 +3258,8 @@ async function _printFromGrid(){
       quality:0.97,
       pixelRatio:SCALE,
       backgroundColor:isW?'#ffffff':'#08080f',
-      width:target.scrollWidth,
-      height:target.scrollHeight,
+      width:captureW,
+      height:captureH,
       skipFonts:true,
       style:{overflow:'visible',overflowX:'visible',overflowY:'visible'}
     });
@@ -3260,8 +3275,9 @@ async function _printFromGrid(){
     await new Promise(function(r){fullImg.onload=r;fullImg.src=dataUrl;});
     var fcW=fullImg.naturalWidth, fcH=fullImg.naturalHeight;
 
-    var sliceW=Math.ceil(fcW/cols);
-    var sliceH=Math.ceil(fcH/rows);
+    /* 슬라이스 크기: 격자선과 동일한 기준 (용지 1장 = cellNatW×cellNatH 자연px) */
+    var sliceW=Math.round(cellNatW*SCALE);
+    var sliceH=Math.round(cellNatH*SCALE);
 
     /* @page 크기: 정확한 mm 수치로 지정 */
     var existing=document.getElementById('_page_rule_style');
@@ -3278,7 +3294,8 @@ async function _printFromGrid(){
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
         var oc=document.createElement('canvas');
-        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
+        /* 각 슬라이스 시작점: 누적 오차 방지를 위해 매번 정수 계산 */
+        var sx=Math.round(c*cellNatW*SCALE), sy=Math.round(r*cellNatH*SCALE);
         var sw2=Math.min(sliceW,Math.max(0,fcW-sx));
         var sh2=Math.min(sliceH,Math.max(0,fcH-sy));
         oc.width=sliceW; oc.height=sliceH;
@@ -3363,6 +3380,17 @@ async function savePDF(){
     var prevSwTransform2=sw2?sw2.style.transform:'';
     var prevSwMarginLeft2=sw2?sw2.style.marginLeft:'';
     if(sw2){sw2.style.transform='';sw2.style.marginLeft='0px';}
+
+    /* 슬라이스 크기를 미리보기 격자선과 정확히 일치시키기
+       (균등 분할 fc.width/cols 는 fitW 체크 시에만 우연히 맞음) */
+    var fitWchk2=(document.getElementById('a4-fit-w')||{}).checked;
+    var fitHchk2=(document.getElementById('a4-fit-h')||{}).checked;
+    var actualScale2=(fitWchk2||fitHchk2)?_a4Scale:1;
+    var cellNatW2=cellW/actualScale2;
+    var cellNatH2=cellH/actualScale2;
+    var captureW2=Math.max(target.scrollWidth, Math.ceil(cols*cellNatW2));
+    var captureH2=Math.max(target.scrollHeight, Math.ceil(rows*cellNatH2));
+
     if(status)status.textContent='Capturing...';
     await new Promise(function(r){setTimeout(r,200);});
     var isW=document.body.classList.contains('white-mode');
@@ -3370,16 +3398,16 @@ async function savePDF(){
     var fc=await html2canvas(target,{
       scale:H2C_SCALE,useCORS:true,logging:false,scrollX:0,scrollY:0,
       backgroundColor:isW?'#ffffff':'#08080f',
-      width:target.scrollWidth,height:target.scrollHeight
+      width:captureW2,height:captureH2
     });
     /* restore */
     if(sw2){sw2.style.transform=prevSwTransform2;sw2.style.marginLeft=prevSwMarginLeft2;}
     target.style.overflow=prevOvf2;
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
-    /* 슬라이스 크기: scale 제거 후 캡처했으므로 캔버스 크기를 격자 수로 등분 */
-    var sliceW=Math.ceil(fc.width/cols);
-    var sliceH=Math.ceil(fc.height/rows);
+    /* 슬라이스 크기: 용지 1장 = cellNatW2×cellNatH2 자연px 기준 */
+    var sliceW=Math.round(cellNatW2*H2C_SCALE);
+    var sliceH=Math.round(cellNatH2*H2C_SCALE);
     var pk=(typeof _paperKey!=='undefined')?_paperKey:'A4';
     var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
     var page=0;
@@ -3387,14 +3415,15 @@ async function savePDF(){
       for(var c=0;c<cols;c++){
         if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
         var oc=document.createElement('canvas');
-        oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
+        oc.width=sliceW; oc.height=sliceH;
         var octx=oc.getContext('2d');
         /* 콘텐츠 밖 영역(마지막 페이지 등) 검정 방지 — 배경색으로 채우기 */
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
-        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
-        var sw=Math.min(Math.round(sliceW), Math.max(0, fc.width-sx));
-        var sh=Math.min(Math.round(sliceH), Math.max(0, fc.height-sy));
+        /* 각 슬라이스 시작점: 누적 오차 방지를 위해 매번 정수 계산 */
+        var sx=Math.round(c*cellNatW2*H2C_SCALE), sy=Math.round(r*cellNatH2*H2C_SCALE);
+        var sw=Math.min(sliceW, Math.max(0, fc.width-sx));
+        var sh=Math.min(sliceH, Math.max(0, fc.height-sy));
         if(sw>0 && sh>0){
           octx.drawImage(fc, sx, sy, sw, sh, 0, 0, sw, sh);
         }
