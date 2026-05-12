@@ -2730,6 +2730,7 @@ function _applyPageCSS(){
   if(existing) existing.remove();
   var st=document.createElement('style');
   st.id='_page_rule_style';
+  /* 정확한 mm 수치로 지정 — 브라우저별 용지명 해석 차이 방지 */
   var paper=_getPaperSize();
   var wMM=(paper.w/(96/25.4)).toFixed(2);
   var hMM=(paper.h/(96/25.4)).toFixed(2);
@@ -3164,53 +3165,58 @@ async function _printFromGrid(){
   var btn=document.getElementById('btn-print-main');
   if(btn){btn.disabled=true;btn.textContent='처리중...';}
   try{
-    if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    /* 정보 헤더 강제 렌더 */
+    /* jsPDF + html-to-image 조합
+       - html-to-image: 폰트/SVG 고품질 캡처 (skipFonts로 CORS 우회)
+       - jsPDF: 브라우저 여백 설정과 무관하게 정확한 크기로 PDF 생성
+       - 생성된 PDF를 새 탭에 열면 브라우저 PDF뷰어에서 바로 인쇄 가능 */
+    if(!window.jspdf) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    if(!window.htmlToImage){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
     if(typeof _renderInfoHeader==='function') _renderInfoHeader();
-    /* 폰트 완전 로드 대기 — 폰트 누락 시 글자 크기 달라져 슬라이스 위치 어긋남 */
-    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    var jsPDF=window.jspdf.jsPDF;
     var paper=_getPaperSize();
     var lsc=_a4Orient==='landscape';
     var cols=_a4C, rows=_a4R;
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
-    /* 격자·툴바 숨김 */
+    /* 툴바·격자 숨김 */
     var tb=document.querySelector('.toolbar');
     if(tb)tb.style.display='none';
     var stage=document.getElementById('a4-stage');
     var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
     grids.forEach(function(el){el.style.display='none';});
     /* 캡처 대상 */
-    var target=document.getElementById('bracket-display');
+    var target=document.getElementById('bracket-display')||document.getElementById('a4-scale-wrap');
     var prevOvf=target.style.overflow;
     target.style.overflow='visible';
     target.style.overflowX='visible';
     target.style.overflowY='visible';
-    var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(Boolean);
+    var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(function(el){return el&&el!==target;});
     var ovfPrev=ovfTargets.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
     ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
-    /* a4-scale-wrap CSS transform 일시 제거 → 원본 크기로 캡처 */
     var sw=document.getElementById('a4-scale-wrap');
     var prevSwTransform=sw?sw.style.transform:'';
     var prevSwMarginLeft=sw?sw.style.marginLeft:'';
     if(sw){sw.style.transform='';sw.style.marginLeft='0px';}
     var isW=document.body.classList.contains('white-mode');
-    var H2C=2;
-    await new Promise(function(r){setTimeout(r,150);});
-    var origW=target.scrollWidth, origH=target.scrollHeight;
-    var fc=await html2canvas(target,{
-      scale:H2C,
-      useCORS:true,
-      logging:false,
-      scrollX:0,scrollY:0,
+    var SCALE=2;
+    await new Promise(function(r){setTimeout(r,200);});
+    /* html-to-image 캡처 (skipFonts: CORS 에러 방지) */
+    var dataUrl=await window.htmlToImage.toJpeg(target,{
+      quality:0.97,
+      pixelRatio:SCALE,
       backgroundColor:isW?'#ffffff':'#08080f',
-      width:origW,
-      height:origH,
-      /* windowWidth/windowHeight를 캡처 영역과 동일하게 설정
-         → 미디어쿼리·폰트 크기가 화면 크기에 따라 달라지는 것을 방지 */
-      windowWidth:origW,
-      windowHeight:origH
+      width:target.scrollWidth,
+      height:target.scrollHeight,
+      skipFonts:true,
+      style:{overflow:'visible',overflowX:'visible',overflowY:'visible'}
     });
     /* 복원 */
     if(sw){sw.style.transform=prevSwTransform;sw.style.marginLeft=prevSwMarginLeft;}
@@ -3218,67 +3224,40 @@ async function _printFromGrid(){
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
     if(tb)tb.style.display='';
-
-    /* 슬라이스: 캔버스를 cols×rows로 균등 분할 */
-    var sliceW=Math.ceil(fc.width/cols);
-    var sliceH=Math.ceil(fc.height/rows);
-
-    /* @page 크기: 정확한 mm 수치로 지정 */
-    var existing=document.getElementById('_page_rule_style');
-    if(existing)existing.remove();
-    var pst=document.createElement('style');
-    pst.id='_page_rule_style';
-    pst.textContent='@page{size:'+cellWmm.toFixed(2)+'mm '+cellHmm.toFixed(2)+'mm;margin:0;}';
-    document.head.appendChild(pst);
-
-    /* 페이지 이미지 div 생성 */
-    var wrap=document.createElement('div');
-    wrap.id='_grid_print_wrap';
-    wrap.style.cssText='display:none;';
+    /* 이미지 로드 후 슬라이스 */
+    var fullImg=new Image();
+    await new Promise(function(r){fullImg.onload=r;fullImg.src=dataUrl;});
+    var fcW=fullImg.naturalWidth, fcH=fullImg.naturalHeight;
+    var sliceW=Math.ceil(fcW/cols);
+    var sliceH=Math.ceil(fcH/rows);
+    /* jsPDF로 정확한 크기 PDF 생성 — 브라우저 여백 설정 영향 없음 */
+    var pdf=new jsPDF({orientation:lsc?'landscape':'portrait',unit:'mm',format:[cellWmm,cellHmm]});
+    var page=0;
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
+        if(page>0) pdf.addPage([cellWmm,cellHmm],lsc?'landscape':'portrait');
         var oc=document.createElement('canvas');
         var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
-        var sliceSw=Math.min(sliceW,Math.max(0,fc.width-sx));
-        var sliceSh=Math.min(sliceH,Math.max(0,fc.height-sy));
+        var sw2=Math.min(sliceW,Math.max(0,fcW-sx));
+        var sh2=Math.min(sliceH,Math.max(0,fcH-sy));
         oc.width=sliceW; oc.height=sliceH;
         var octx=oc.getContext('2d');
         octx.fillStyle=isW?'#ffffff':'#08080f';
         octx.fillRect(0,0,oc.width,oc.height);
-        if(sliceSw>0&&sliceSh>0) octx.drawImage(fc,sx,sy,sliceSw,sliceSh,0,0,sliceSw,sliceSh);
-        var pd=document.createElement('div');
-        pd.style.cssText=
-          'display:block;'+
-          'width:'+cellWmm.toFixed(2)+'mm;'+
-          'height:'+cellHmm.toFixed(2)+'mm;'+
-          'overflow:hidden;margin:0;padding:0;'+
-          'box-sizing:border-box;background:white;'+
-          'page-break-after:always;break-after:page;'+
-          'page-break-inside:avoid;break-inside:avoid;';
-        var img=document.createElement('img');
-        img.src=oc.toDataURL('image/jpeg',0.96);
-        img.style.cssText='width:100%;height:100%;display:block;';
-        pd.appendChild(img); wrap.appendChild(pd);
+        if(sw2>0&&sh2>0) octx.drawImage(fullImg,sx,sy,sw2,sh2,0,0,sw2,sh2);
+        pdf.addImage(oc.toDataURL('image/jpeg',0.97),'JPEG',0,0,cellWmm,cellHmm);
+        page++;
       }
     }
-    document.body.appendChild(wrap);
-    document.body.classList.add('_grid_printing');
-    await new Promise(function(r){setTimeout(r,200);});
-    window.print();
-    function _cleanup(){
-      document.body.classList.remove('_grid_printing');
-      var el=document.getElementById('_grid_print_wrap');
-      if(el)el.remove();
-      if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
-    }
-    window.addEventListener('afterprint',_cleanup,{once:true});
-    setTimeout(_cleanup,8000);
+    /* PDF를 새 탭에서 열기 → 브라우저 PDF 뷰어에서 인쇄 */
+    var pdfBlob=pdf.output('blob');
+    var pdfUrl=URL.createObjectURL(pdfBlob);
+    var printWin=window.open(pdfUrl,'_blank');
+    if(!printWin) alert('팝업이 차단되었습니다. 팝업을 허용하거나 PDF 저장 버튼을 사용해 주세요.');
+    if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
   }catch(err){
     console.error(err);
     alert('인쇄 준비 실패: '+err.message);
-    document.body.classList.remove('_grid_printing');
-    var el=document.getElementById('_grid_print_wrap');
-    if(el)el.remove();
     if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
   }
 }
