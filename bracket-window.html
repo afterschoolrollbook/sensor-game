@@ -2630,13 +2630,13 @@ body.white-mode .page-guide-line::after{color:#0064dc;background:rgba(240,240,24
     <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;"></span>
     <span style="font-size:10px;color:var(--text3);">가로</span>
     <button id="a4-cm" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">−</button>
-    <span id="a4-cols" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
+    <input id="a4-cols" type="number" min="1" max="20" value="1" style="width:36px;font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;text-align:center;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.3);border-radius:4px;padding:1px 2px;outline:none;-moz-appearance:textfield;">
     <button id="a4-cp" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
     <span style="font-size:12px;color:var(--text3);margin:0 2px;">×</span>
     <span style="font-size:10px;color:var(--text3);">세로</span>
     <button id="a4-rm" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">−</button>
-    <span id="a4-rows" style="font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;min-width:18px;text-align:center;">1</span>
+    <input id="a4-rows" type="number" min="1" max="50" value="1" style="width:36px;font-size:13px;font-weight:700;color:#4cc9f0;font-family:'Share Tech Mono',monospace;text-align:center;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.3);border-radius:4px;padding:1px 2px;outline:none;-moz-appearance:textfield;">
     <button id="a4-rp" style="width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:#9090b0;font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0;">+</button>
     <span style="font-size:11px;color:var(--text3);">장</span>
     <span style="width:1px;height:14px;background:var(--border2);margin:0 2px;"></span>
@@ -2862,6 +2862,35 @@ function _a4Init(){
   document.getElementById('a4-cp').addEventListener('click',function(){ if(!_a4On)return; _a4C=Math.min(20,_a4C+1); _a4SyncD(); _a4Draw(); });
   document.getElementById('a4-rm').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.max(1,_a4R-1); _a4SyncD(); _a4Draw(); });
   document.getElementById('a4-rp').addEventListener('click',function(){ if(!_a4On)return; _a4R=Math.min(50,_a4R+1); _a4SyncD(); _a4Draw(); });
+  /* 직접 입력 이벤트 */
+  (function(){
+    var colsEl=document.getElementById('a4-cols');
+    var rowsEl=document.getElementById('a4-rows');
+    function applyColInput(){
+      var v=parseInt(colsEl.value,10);
+      if(isNaN(v)||v<1) v=1;
+      if(v>20) v=20;
+      _a4C=v; colsEl.value=v;
+      if(_a4On){ _a4SyncD(); _a4Draw(); }
+    }
+    function applyRowInput(){
+      var v=parseInt(rowsEl.value,10);
+      if(isNaN(v)||v<1) v=1;
+      if(v>50) v=50;
+      _a4R=v; rowsEl.value=v;
+      if(_a4On){ _a4SyncD(); _a4Draw(); }
+    }
+    colsEl.addEventListener('change', applyColInput);
+    colsEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ applyColInput(); this.blur(); } });
+    colsEl.addEventListener('blur', applyColInput);
+    rowsEl.addEventListener('change', applyRowInput);
+    rowsEl.addEventListener('keydown', function(e){ if(e.key==='Enter'){ applyRowInput(); this.blur(); } });
+    rowsEl.addEventListener('blur', applyRowInput);
+    /* 스핀 버튼(화살표 키) 숨기기 CSS */
+    var sty=document.createElement('style');
+    sty.textContent='#a4-cols::-webkit-inner-spin-button,#a4-cols::-webkit-outer-spin-button,#a4-rows::-webkit-inner-spin-button,#a4-rows::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}';
+    document.head.appendChild(sty);
+  })();
   document.getElementById('a4-portrait').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='portrait';_applyPageCSS();_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-landscape').addEventListener('change',function(){ if(this.checked&&_a4On){_a4Orient='landscape';_applyPageCSS();_a4AutoFit();_a4Draw();} });
   document.getElementById('a4-fit-w').addEventListener('change',function(){ if(_a4On) _a4Draw(); });
@@ -2895,8 +2924,8 @@ function _a4AutoFit(){
 }
 
 function _a4SyncD(){
-  document.getElementById('a4-cols').textContent=_a4C;
-  document.getElementById('a4-rows').textContent=_a4R;
+  document.getElementById('a4-cols').value=_a4C;
+  document.getElementById('a4-rows').value=_a4R;
 }
 
 function _a4Draw(){
