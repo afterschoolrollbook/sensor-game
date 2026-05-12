@@ -3157,108 +3157,121 @@ function _zoomStep(delta){
 }
 
 
-/* ── 격자 기반 인쇄: A4 설정 그대로 브라우저 인쇄 ── */
-async function _printFromGrid(){
-  /* A4 격자가 꺼져 있으면 일반 인쇄로 */
-  if(!_a4On || typeof _a4Scale==='undefined' || _a4Scale<=0){
+/* ── 격자 기반 인쇄: html2canvas 없이 CSS clip 방식으로 정확하게 ── */
+function _printFromGrid(){
+  if(!_a4On){
     window.print(); return;
   }
   var btn=document.getElementById('btn-print-main');
   if(btn){btn.disabled=true;btn.textContent='처리중...';}
+
   try{
-    if(!window.html2canvas) await _ldScr('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    /* 캡처 전: 정보 헤더 강제 렌더 */
-    if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     var paper=_getPaperSize();
     var lsc=_a4Orient==='landscape';
     var cols=_a4C, rows=_a4R;
+    /* 용지 1장 크기 (px) */
     var cellW=lsc?Math.max(paper.w,paper.h):Math.min(paper.w,paper.h);
     var cellH=lsc?Math.min(paper.w,paper.h):Math.max(paper.w,paper.h);
     var cellWmm=cellW/(96/25.4), cellHmm=cellH/(96/25.4);
-    /* 격자·툴바 숨김 */
-    var tb=document.querySelector('.toolbar');
-    if(tb)tb.style.display='none';
-    var stage=document.getElementById('a4-stage');
-    var grids=stage?Array.from(stage.querySelectorAll('.a4g')):[];
-    grids.forEach(function(el){el.style.display='none';});
-    /* 캡처 대상 */
+
+    /* 대진표 원본 크기 */
     var target=document.getElementById('bracket-display');
-    /* overflow 해제: 오른쪽·하단 잘림 방지 */
-    var prevOvf=target.style.overflow;
-    target.style.overflow='visible';
-    target.style.overflowX='visible';
-    target.style.overflowY='visible';
-    var ovfTargets=[document.getElementById('a4-scale-wrap'),document.getElementById('zoom-wrap'),document.getElementById('preview-wrap')].filter(Boolean);
-    var ovfPrev=ovfTargets.map(function(el){return{el:el,ov:el.style.overflow,ox:el.style.overflowX,oy:el.style.overflowY};});
-    ovfTargets.forEach(function(el){el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
-    /* a4-scale-wrap의 CSS transform 일시 제거 → 실제 크기로 캡처 */
-    var sw=document.getElementById('a4-scale-wrap');
-    var prevSwTransform=sw?sw.style.transform:'';
-    var prevSwMarginLeft=sw?sw.style.marginLeft:'';
-    if(sw){sw.style.transform='';sw.style.marginLeft='0px';}
-    var isW=document.body.classList.contains('white-mode');
-    var H2C=2;
-    await new Promise(function(r){setTimeout(r,150);});
-    var fc=await html2canvas(target,{
-      scale:H2C,useCORS:true,logging:false,scrollX:0,scrollY:0,
-      backgroundColor:isW?'#ffffff':'#08080f',
-      width:target.scrollWidth,height:target.scrollHeight
-    });
-    /* 복원 */
-    if(sw){sw.style.transform=prevSwTransform;sw.style.marginLeft=prevSwMarginLeft;}
-    target.style.overflow=prevOvf;
-    ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
-    grids.forEach(function(el){el.style.display='';});
-    if(tb)tb.style.display='';
-    /* 슬라이스 크기: 캔버스(원본×H2C)를 격자 수로 균등 분할 */
-    var sliceW=Math.round(fc.width/cols);
-    var sliceH=Math.round(fc.height/rows);
-    console.log('[인쇄디버그] canvas='+fc.width+'x'+fc.height
-      +' cols='+cols+' rows='+rows
-      +' sliceW='+sliceW+' sliceH='+sliceH
-      +' _a4W='+_a4W+' _a4H='+_a4H
-      +' _a4Scale='+_a4Scale
-      +' cellW='+cellW+' cellH='+cellH);
-    /* 페이지 이미지 div 생성 */
+    var origW=target.scrollWidth, origH=target.scrollHeight;
+
+    /* 격자 1칸에 해당하는 원본 픽셀 크기 */
+    var tileW=origW/cols, tileH=origH/rows;
+
+    /* _a4Draw()와 동일한 배율 사용 — 비율 유지
+       _a4Scale = (cols*cellW)/origW = cellW/tileW
+       (fitW 체크 기준; 미체크시 1) */
+    var fitW=document.getElementById('a4-fit-w').checked;
+    var fitH=document.getElementById('a4-fit-h').checked;
+    var sc;
+    if(fitW&&fitH){ sc=Math.min(cellW/tileW, cellH/tileH); }
+    else if(fitW){  sc=cellW/tileW; }
+    else if(fitH){  sc=cellH/tileH; }
+    else {          sc=_a4Scale>0?_a4Scale:1; }
+    var scaleX=sc, scaleY=sc;
+
+    /* 대진표 HTML 복사 */
+    var srcHTML=target.outerHTML;
+
+    /* @page 크기 설정 */
+    _applyPageCSS();
+
+    /* 인쇄용 wrap 생성 */
     var wrap=document.createElement('div');
     wrap.id='_grid_print_wrap';
-    wrap.style.cssText='display:none;'; /* 화면에선 숨김, 인쇄 시 @media print로 표시 */
+    wrap.style.cssText='display:none;';
+
     for(var r=0;r<rows;r++){
       for(var c=0;c<cols;c++){
-        var oc=document.createElement('canvas');
-        var sx=Math.round(c*sliceW), sy=Math.round(r*sliceH);
-        var sliceSw=Math.min(Math.round(sliceW),Math.max(0,fc.width-sx));
-        var sliceSh=Math.min(Math.round(sliceH),Math.max(0,fc.height-sy));
-        oc.width=Math.round(sliceW); oc.height=Math.round(sliceH);
-        var octx=oc.getContext('2d');
-        /* 콘텐츠 밖 영역 검정 방지 */
-        octx.fillStyle=isW?'#ffffff':'#08080f';
-        octx.fillRect(0,0,oc.width,oc.height);
-        if(sliceSw>0&&sliceSh>0) octx.drawImage(fc,sx,sy,sliceSw,sliceSh,0,0,sliceSw,sliceSh);
+        /* 용지 1장 div — 이 크기가 @page와 일치 */
         var pd=document.createElement('div');
-        pd.style.cssText='display:block;width:'+cellWmm+'mm;height:'+cellHmm+'mm;max-width:'+cellWmm+'mm;max-height:'+cellHmm+'mm;overflow:hidden;margin:0;padding:0;box-sizing:border-box;background:white;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;';
-        var img=document.createElement('img');
-        img.src=oc.toDataURL('image/jpeg',0.95);
-        img.style.cssText='width:100%;height:100%;display:block;';
-        pd.appendChild(img); wrap.appendChild(pd);
+        pd.style.cssText=[
+          'display:block',
+          'width:'+cellWmm+'mm',
+          'height:'+cellHmm+'mm',
+          'overflow:hidden',
+          'margin:0',
+          'padding:0',
+          'box-sizing:border-box',
+          'position:relative',
+          'background:#fff',
+          'page-break-after:always',
+          'break-after:page',
+          'page-break-inside:avoid',
+          'break-inside:avoid'
+        ].join(';')+';';
+
+        /* 대진표를 이 칸에 맞게 잘라서 배치하는 컨테이너 */
+        var inner=document.createElement('div');
+        inner.style.cssText=[
+          'position:absolute',
+          'top:0',
+          'left:0',
+          'width:'+cellW+'px',
+          'height:'+cellH+'px',
+          'overflow:hidden'
+        ].join(';')+';';
+
+        /* 대진표 복사본:
+           - transform:scale()은 원본 크기 기준으로 동작
+           - translate로 해당 칸 위치를 뷰포트 좌상단으로 이동
+           - scale 후 tileW*scaleX=cellW, tileH*scaleY=cellH → 용지 1장에 딱 맞음 */
+        var bd=document.createElement('div');
+        bd.style.cssText=[
+          'position:absolute',
+          'top:0',
+          'left:0',
+          'width:'+origW+'px',
+          'height:'+origH+'px',
+          'transform-origin:top left',
+          'transform:scale('+scaleX+','+scaleY+') translate('+(-c*tileW)+'px,'+(-r*tileH)+'px)'
+        ].join(';')+';';
+        bd.innerHTML=srcHTML.replace(/^<div[^>]*>/,'').replace(/<\/div>$/,'');
+
+        inner.appendChild(bd);
+        pd.appendChild(inner);
+        wrap.appendChild(pd);
       }
     }
+
     document.body.appendChild(wrap);
-    /* @page 규칙 확인 */
-    _applyPageCSS();
-    /* 인쇄 모드 진입 */
     document.body.classList.add('_grid_printing');
-    await new Promise(function(r){setTimeout(r,100);});
-    window.print();
-    /* 인쇄 완료 후 정리 */
-    function _cleanup(){
-      document.body.classList.remove('_grid_printing');
-      var el=document.getElementById('_grid_print_wrap');
-      if(el)el.remove();
-      if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
-    }
-    window.addEventListener('afterprint',_cleanup,{once:true});
-    setTimeout(_cleanup,8000); /* afterprint 미지원 브라우저 대비 */
+
+    setTimeout(function(){
+      window.print();
+      function _cleanup(){
+        document.body.classList.remove('_grid_printing');
+        var el=document.getElementById('_grid_print_wrap');
+        if(el)el.remove();
+        if(btn){btn.disabled=false;btn.textContent='🖨️ 인쇄';}
+      }
+      window.addEventListener('afterprint',_cleanup,{once:true});
+      setTimeout(_cleanup,8000);
+    },200);
+
   }catch(err){
     console.error(err);
     alert('인쇄 준비 실패: '+err.message);
