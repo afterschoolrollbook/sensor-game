@@ -2434,8 +2434,7 @@ function printSelected(){
     });
     const rawHTML=hiddenWrap.innerHTML;
     hiddenWrap.remove();
-    _writeFullPreviewWin(win, rawHTML);
-    win.addEventListener('beforeunload', ()=>{ window._popupSelectedGroups=null; });
+    _writeFullPreviewWin(win, rawHTML, '선택 대진표 미리보기');
   }));
 }
 
@@ -2476,9 +2475,10 @@ function _openFullPreviewWindow(){
   }));
 }
 
-function _writeFullPreviewWin(win, rawHTML){
+function _writeFullPreviewWin(win, rawHTML, winTitle){
+  winTitle=winTitle||'전체 대진표 미리보기';
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<title>전체 대진표 미리보기</title>
+<title>${winTitle}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Share+Tech+Mono&family=Bebas+Neue&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
