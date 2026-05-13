@@ -1133,6 +1133,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const urlParams=new URLSearchParams(location.search);
   const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
   if(targetStep>1)goS(targetStep);
+  if(targetStep===6)try{g6Init();}catch(e){}
   // pvcw 크기 바뀔 때마다 scale 재계산
   ['pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
   // restore
@@ -1269,7 +1270,7 @@ function saveCurrentStep(){
     }catch(e){}
   }
   // 마지막 저장 스텝 기록 — 다음 스텝으로, 뒤로 가도 덮어쓰지 않음
-  try{const next=Math.min(cs+1,5);const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(next>cur)localStorage.setItem('sgp_last_step',String(next));}catch(e){}
+  try{const next=Math.min(cs+1,6);const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(next>cur)localStorage.setItem('sgp_last_step',String(next));}catch(e){}
   toast('저장 완료!','success',1500);
 }
 
@@ -1707,7 +1708,7 @@ function buildConfirm(){
   const nav=document.getElementById('snav');
   if(!nav.querySelector('.bstart')){
     const a=document.createElement('button');a.className='bstart';
-    a.onclick=()=>{saveCurrentStep();saveAll();goS(6);g6Init();};
+    a.onclick=()=>{saveCurrentStep();saveAll();localStorage.setItem('sgp_last_step','6');goS(6);g6Init();};
     a.innerHTML='🚀 게임 시작';nav.appendChild(a);
   }
 }
