@@ -198,7 +198,66 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pc-name{font-size:14px;font-weight:700;margin-bottom:2px}
 .pc-desc{font-size:11px;color:var(--text3);line-height:1.4}
 
-/* CONFIRM */
+/* GAME PANEL (Step 6) */
+.g6-timer-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px 16px;text-align:center;margin-bottom:11px;}
+.g6-cplayer{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;}
+.g6-cname{font-family:'Bebas Neue',cursive;font-size:30px;letter-spacing:2px;margin-bottom:10px;}
+.g6-time{font-family:'Share Tech Mono',monospace;font-size:52px;line-height:1;color:var(--accent);margin-bottom:4px;transition:color .3s;}
+.g6-time.running{color:var(--green);}
+.g6-time.stopped{color:var(--red);}
+.g6-lapinfo{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:12px;}
+.g6-btns{display:flex;gap:7px;justify-content:center;}
+.g6-btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.g6-btn.start{background:var(--red);color:#fff;}
+.g6-btn.start:disabled{background:var(--border2);color:var(--text3);cursor:default;}
+.g6-btn.lap{background:var(--card2);border:1px solid var(--border2);color:var(--text2);}
+.g6-btn.lap:disabled{opacity:.4;cursor:default;}
+.g6-btn.stop{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.g6-btn.stop:disabled{opacity:.4;cursor:default;}
+.g6-laplist{display:flex;flex-direction:column;gap:4px;margin-top:10px;max-height:100px;overflow-y:auto;}
+.g6-lapitem{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:5px;background:var(--card2);font-size:12px;}
+.g6-lapnum{font-family:'Share Tech Mono',monospace;color:var(--text3);width:44px;}
+.g6-laptime{font-family:'Share Tech Mono',monospace;flex:1;}
+.g6-lapbest{color:var(--green);}
+.g6-queue-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:11px;}
+.g6-queue-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.g6-queue-list{display:flex;flex-wrap:wrap;gap:5px;}
+.g6-qtag{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .2s;}
+.g6-qtag.cur{background:var(--red);border-color:var(--red);color:#fff;}
+.g6-rank-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:11px;}
+.g6-rank-title{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.g6-rank-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;border:1px solid var(--border);font-size:12px;margin-bottom:4px;transition:all .2s;}
+.g6-rank-item.r1{border-color:rgba(255,214,10,.3);background:rgba(255,214,10,.04);}
+.g6-rank-item.cur{border-color:rgba(76,201,240,.3);background:rgba(76,201,240,.04);}
+.g6-rno{font-family:'Bebas Neue',cursive;font-size:18px;color:var(--text3);width:22px;text-align:center;}
+.g6-rank-item.r1 .g6-rno{color:var(--yellow);}
+.g6-rnm{flex:1;font-weight:600;}
+.g6-rtm{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);}
+.g6-match-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:11px;}
+.g6-match-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.g6-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:10px;}
+.g6-player{background:var(--card2);border:2px solid var(--border);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;}
+.g6-player:hover{border-color:var(--green);}
+.g6-player.winner{border-color:var(--green);background:rgba(6,214,160,.08);}
+.g6-player.loser{opacity:.4;}
+.g6-pnm{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:1px;}
+.g6-ptm{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);}
+.g6-vsbadge{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--red);letter-spacing:2px;text-align:center;}
+.g6-sensor-bar{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:11px;font-size:11px;}
+.g6-sdot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.g6-sdot.active{background:var(--green);box-shadow:0 0 6px var(--green);}
+.g6-sdot.alert{background:var(--red);box-shadow:0 0 6px var(--red);}
+.g6-bottom{display:flex;gap:7px;margin-top:4px;}
+.g6-opendisp{flex:1;padding:10px;background:var(--card2);border:1px solid var(--border2);color:var(--text2);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s;}
+.g6-opendisp:hover{border-color:var(--accent);color:var(--accent);}
+.g6-result-btn{padding:10px 16px;background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;}
+.g6-result-btn:hover{background:#05b88a;}
+/* countdown overlay */
+#g6-countdown{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;flex-direction:column;}
+#g6-countdown.show{display:flex;}
+#g6-cdnum{font-family:'Bebas Neue',cursive;font-size:180px;line-height:1;color:var(--red);}
+#g6-cdlbl{font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:4px;color:var(--text3);margin-top:12px;}
+
 .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
 .cbox{background:var(--card);border-radius:9px;padding:13px;border:1px solid var(--border)}
 .ck{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
@@ -547,8 +606,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <div class="nav-links">
     <a class="nl" href="index.html">홈</a>
     <a class="nl cur" href="setup.html">행사설정</a>
-    
-    <a class="nl" href="game.html">게임진행</a>
     <a class="nl" href="result.html">결과</a>
   </div>
 </nav>
@@ -623,7 +680,78 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div id="ptbadges"></div>
       </div>
 
+      <!-- STEP 6: 게임 진행 -->
+      <div class="sp" id="s6">
+        <div class="sh" style="margin-bottom:14px;">
+          <div class="sno">// STEP 06</div>
+          <div class="stitle">게임 진행</div>
+        </div>
+        <!-- 센서 상태 -->
+        <div class="g6-sensor-bar">
+          <div class="g6-sdot" id="g6-dot-a"></div><span>센서 A (출발)</span>
+          <div class="g6-sdot" style="margin-left:8px;" id="g6-dot-b"></div><span>센서 B (결승)</span>
+          <span style="flex:1;color:var(--text3);" id="g6-sensor-status">시뮬레이션 모드</span>
+          <button class="g6-btn stop" style="padding:5px 10px;font-size:11px;" onclick="g6ConnectSerial()">🔌 Arduino</button>
+        </div>
+        <!-- 토너먼트 매치 박스 (토너먼트 시에만 표시) -->
+        <div class="g6-match-box" id="g6-match-box" style="display:none;">
+          <div class="g6-match-title">
+            <span id="g6-round-badge" style="color:var(--red);">1라운드</span>
+            <span id="g6-match-progress" style="color:var(--text3);">매치 1/1</span>
+          </div>
+          <div class="g6-vs">
+            <div class="g6-player" id="g6-p1" onclick="g6SelectWinner('p1')">
+              <div class="g6-pnm" id="g6-p1-name">—</div>
+              <div class="g6-ptm" id="g6-p1-time">—</div>
+            </div>
+            <div class="g6-vsbadge">VS</div>
+            <div class="g6-player" id="g6-p2" onclick="g6SelectWinner('p2')">
+              <div class="g6-pnm" id="g6-p2-name">—</div>
+              <div class="g6-ptm" id="g6-p2-time">—</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:7px;">
+            <button class="g6-btn start" style="flex:1;" onclick="g6ConfirmWinner()">승자 확정 →</button>
+          </div>
+        </div>
+        <!-- 타이머 -->
+        <div class="g6-timer-box">
+          <div class="g6-cplayer">// 현재 도전자</div>
+          <div class="g6-cname" id="g6-cname">—</div>
+          <div class="g6-time" id="g6-time">00:00.000</div>
+          <div class="g6-lapinfo" id="g6-lapinfo">바퀴 0 / 1</div>
+          <div class="g6-btns">
+            <button class="g6-btn start" id="g6-start" onclick="g6Start()">▶ 출발</button>
+            <button class="g6-btn lap" id="g6-lap" onclick="g6Lap()" disabled>🔁 랩</button>
+            <button class="g6-btn stop" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
+          </div>
+          <div class="g6-laplist" id="g6-laplist"></div>
+        </div>
+        <!-- 대기 순서 -->
+        <div class="g6-queue-box">
+          <div class="g6-queue-title">대기 순서</div>
+          <div class="g6-queue-list" id="g6-queue"></div>
+        </div>
+        <!-- 실시간 순위 -->
+        <div class="g6-rank-box">
+          <div class="g6-rank-title">
+            실시간 순위
+            <span style="font-size:10px;background:rgba(6,214,160,.15);color:var(--green);padding:2px 8px;border-radius:8px;" id="g6-rank-count">0명</span>
+          </div>
+          <div id="g6-rank-list"><div style="color:var(--text3);font-size:12px;">아직 기록이 없어요</div></div>
+        </div>
+        <!-- 하단 버튼 -->
+        <div class="g6-bottom">
+          <button class="g6-opendisp" onclick="g6OpenDisplay()">📺 전광판 열기</button>
+          <button class="g6-opendisp" onclick="g6ResetGame()" style="flex:0;padding:10px 13px;color:var(--text3);">🔄 초기화</button>
+          <a href="result.html" class="g6-result-btn">결과 보기 →</a>
+        </div>
+      </div>
+
     </div><!-- /sw -->
+
+    <!-- 카운트다운 오버레이 -->
+    <div id="g6-countdown"><div id="g6-cdnum">3</div><div id="g6-cdlbl">// READY</div></div>
 
     <div id="snav">
       <button class="bprev" id="bprev" onclick="prevS()" style="display:none">← 이전</button>
@@ -959,7 +1087,7 @@ const TC=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585',
 
 /* ── STATE ── */
 let cs=1;
-const SL=['기본정보','게임모드','참가자','진행방식','확인/시작'];
+const SL=['기본정보','게임모드','참가자','진행방식','확인/시작','게임 진행'];
 let S={
   en:'',sub:'',gl:'',dt:'',pl:'',sp:'',s1:'',s2:'',
   di:{eventname:true},
@@ -1035,6 +1163,7 @@ function goS(n){
   if(cs===3)buildMG();
   if(cs===4)buildProc();
   if(cs===5)buildConfirm();
+  if(cs===6)g6Refresh();
   updatePv();
 }
 function saveAndNext(){
@@ -1044,17 +1173,16 @@ function saveAndNext(){
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
   buildStepSummary(cs);
-  document.getElementById('bprev').style.display=cs===1?'none':'';
+  document.getElementById('bprev').style.display=(cs===1||cs===6)?'none':'';
   const bn=document.getElementById('bnext');
   const badge=document.getElementById('saved-badge');
-  if(cs===5){
+  if(cs===5||cs===6){
     bn.style.display='none';
     if(badge)badge.style.display='none';
   } else {
     bn.style.display='';
     const lb=['','💾 저장 후 다음 (게임 모드)','💾 저장 후 다음 (참가자)','💾 저장 후 다음 (진행방식)','💾 저장 후 다음 (확인&시작)'];
     bn.textContent=lb[cs]||'💾 저장 후 다음';
-    // 저장 뱃지 표시
     const saved=App.getState();
     const isSaved=saved.event?.name&&saved.event.name!=='게임 행사';
     if(badge){badge.style.display=isSaved?'flex':'none';}
@@ -1567,7 +1695,9 @@ function buildConfirm(){
   // start button
   const nav=document.getElementById('snav');
   if(!nav.querySelector('.bstart')){
-    const a=document.createElement('a');a.href='game.html';a.className='bstart';a.onclick=saveAll;a.innerHTML='🚀 게임 시작';nav.appendChild(a);
+    const a=document.createElement('button');a.className='bstart';
+    a.onclick=()=>{saveAll();goS(6);g6Init();};
+    a.innerHTML='🚀 게임 시작';nav.appendChild(a);
   }
 }
 function saveAll(){
@@ -2409,7 +2539,247 @@ function initPtsPopupDrag(){
   });
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePtsPopup();});
+
+/* ══ STEP 6: 게임 진행 ══ */
+let g6_idx=0, g6_lapCount=0, g6_targetLaps=1, g6_rafId=null, g6_startTs=0, g6_elapsed=0, g6_laps=[], g6_running=false, g6_pendingWinner=null, g6_serialPort=null;
+
+function g6Init(){
+  g6_idx=0; g6_lapCount=0; g6_elapsed=0; g6_laps=[]; g6_running=false; g6_pendingWinner=null;
+  g6_targetLaps=S.laps||1;
+  g6Refresh();
+}
+
+function g6Refresh(){
+  if(!document.getElementById('g6-cname'))return;
+  g6RenderQueue();
+  g6RenderRank();
+  g6SetParticipant(g6_idx);
+  // 토너먼트 대진 표시
+  const hasTour=S.matches&&S.matches.length;
+  const mb=document.getElementById('g6-match-box');
+  if(mb)mb.style.display=hasTour?'':'none';
+  if(hasTour)g6RenderMatch();
+}
+
+function g6SetParticipant(idx){
+  if(!S.pts.length)return;
+  g6_idx=((idx%S.pts.length)+S.pts.length)%S.pts.length;
+  const p=S.pts[g6_idx];
+  const el=document.getElementById('g6-cname');
+  if(el)el.textContent=p?p.name:'—';
+  g6_lapCount=0;
+  g6UpdateLapInfo();
+  const ll=document.getElementById('g6-laplist');
+  if(ll)ll.innerHTML='';
+  g6RenderQueue();
+}
+
+function g6UpdateLapInfo(){
+  const el=document.getElementById('g6-lapinfo');
+  if(el)el.textContent=`바퀴 ${g6_lapCount} / ${g6_targetLaps}`;
+}
+
+function g6Tick(){
+  if(!g6_running)return;
+  g6_elapsed=performance.now()-g6_startTs;
+  const el=document.getElementById('g6-time');
+  if(el)el.textContent=g6FmtTime(g6_elapsed);
+  try{localStorage.setItem('sgp_display_time',g6FmtTime(g6_elapsed));}catch(e){}
+  g6_rafId=requestAnimationFrame(g6Tick);
+}
+
+function g6Start(){
+  if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
+  // 카운트다운
+  let n=3;
+  const ov=document.getElementById('g6-countdown');
+  const nm=document.getElementById('g6-cdnum');
+  ov.classList.add('show');
+  nm.textContent=n;
+  const iv=setInterval(()=>{
+    n--;
+    if(n>0){nm.textContent=n;}
+    else{clearInterval(iv);ov.classList.remove('show');g6DoStart();}
+  },900);
+}
+
+function g6DoStart(){
+  g6_lapCount=0; g6_laps=[];
+  g6UpdateLapInfo();
+  const ll=document.getElementById('g6-laplist');if(ll)ll.innerHTML='';
+  const te=document.getElementById('g6-time');
+  if(te){te.textContent='00:00.000';te.className='g6-time running';}
+  g6_startTs=performance.now();g6_elapsed=0;g6_running=true;
+  cancelAnimationFrame(g6_rafId);g6_rafId=requestAnimationFrame(g6Tick);
+  document.getElementById('g6-start').disabled=true;
+  document.getElementById('g6-stop').disabled=false;
+  document.getElementById('g6-lap').disabled=(g6_targetLaps<=1);
+}
+
+function g6Stop(){
+  if(!g6_running)return;
+  g6_running=false;cancelAnimationFrame(g6_rafId);
+  const te=document.getElementById('g6-time');if(te)te.className='g6-time stopped';
+  document.getElementById('g6-start').disabled=false;
+  document.getElementById('g6-stop').disabled=true;
+  document.getElementById('g6-lap').disabled=true;
+  const p=S.pts[g6_idx];
+  if(p){
+    // App state에 기록 저장
+    try{
+      const st=App.getState();
+      const recs=st.records||{};
+      if(!recs[p.id])recs[p.id]=[];
+      recs[p.id].push({time:g6_elapsed,ts:Date.now()});
+      App.setState({records:recs});
+    }catch(e){}
+    toast(`${p.name}: ${g6FmtTime(g6_elapsed)}`,'success');
+    g6RenderRank();
+    const next=(g6_idx+1)%S.pts.length;
+    setTimeout(()=>{
+      g6SetParticipant(next);
+      const te2=document.getElementById('g6-time');
+      if(te2){te2.textContent='00:00.000';te2.className='g6-time';}
+      document.getElementById('g6-start').disabled=false;
+      g6RenderQueue();
+    },1500);
+  }
+  // 전광판 갱신
+  try{if(typeof updatePv==='function')updatePv();}catch(e){}
+}
+
+function g6Lap(){
+  const lapTs=performance.now();
+  const lapTime=g6_laps.length?lapTs-g6_startTs-g6_laps.reduce((a,b)=>a+b,0):lapTs-g6_startTs;
+  g6_laps.push(lapTime);
+  g6_lapCount++;
+  g6UpdateLapInfo();
+  const best=g6_laps.length>1?Math.min(...g6_laps):null;
+  const isBest=best&&lapTime===best;
+  const item=document.createElement('div');item.className='g6-lapitem';
+  item.innerHTML=`<span class="g6-lapnum">LAP ${g6_lapCount}</span><span class="g6-laptime ${isBest?'g6-lapbest':''}">${g6FmtTime(lapTime)}</span><span style="font-size:10px;color:var(--text3);">${g6FmtTime(g6_elapsed)}</span>${isBest?'<span style="font-size:9px;color:var(--green);margin-left:auto;">BEST</span>':''}`;
+  const ll=document.getElementById('g6-laplist');if(ll)ll.prepend(item);
+  if(g6_lapCount>=g6_targetLaps)g6Stop();
+}
+
+function g6FmtTime(ms){
+  const t=Math.max(0,ms);
+  const m=Math.floor(t/60000);
+  const s=Math.floor((t%60000)/1000);
+  const ms2=Math.floor(t%1000);
+  return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms2).padStart(3,'0')}`;
+}
+
+function g6RenderQueue(){
+  const el=document.getElementById('g6-queue');if(!el)return;
+  el.innerHTML=S.pts.map((p,i)=>`<div class="g6-qtag${i===g6_idx?' cur':''}" onclick="g6SetParticipant(${i})" style="${p.color?`border-color:${p.color};`:''}">${p.name}</div>`).join('');
+}
+
+function g6RenderRank(){
+  const el=document.getElementById('g6-rank-list');if(!el)return;
+  const cnt=document.getElementById('g6-rank-count');
+  try{
+    const st=App.getState();
+    const recs=st.records||{};
+    const ranked=S.pts.map(p=>{
+      const pr=recs[p.id]||[];
+      const best=pr.length?Math.min(...pr.map(r=>r.time)):null;
+      return{p,best};
+    }).filter(x=>x.best!==null).sort((a,b)=>a.best-b.best);
+    if(cnt)cnt.textContent=ranked.length+'명';
+    if(!ranked.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;">아직 기록이 없어요</div>';return;}
+    el.innerHTML=ranked.map((x,i)=>{
+      const isCur=S.pts[g6_idx]?.id===x.p.id;
+      return`<div class="g6-rank-item${i===0?' r1':''}${isCur?' cur':''}"><div class="g6-rno">${['🥇','🥈','🥉'][i]??i+1}</div><div style="width:6px;height:6px;border-radius:50%;background:${x.p.color||'var(--text3)'};flex-shrink:0;"></div><div class="g6-rnm">${x.p.name}</div><div class="g6-rtm">${g6FmtTime(x.best)}</div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--text3);font-size:12px;">기록 없음</div>';}
+}
+
+function g6RenderMatch(){
+  if(!S.matches||!S.matches.length)return;
+  // 현재 미결 매치 찾기
+  let cur=null;
+  outer:for(let ri=0;ri<S.matches.length;ri++){
+    for(let mi=0;mi<S.matches[ri].length;mi++){
+      const m=S.matches[ri][mi];
+      if(!m.winner&&m.p1&&m.p2&&!m.bye){cur={m,ri,mi};break outer;}
+    }
+  }
+  if(!cur){
+    const mb=document.getElementById('g6-match-box');
+    if(mb)mb.innerHTML='<div style="text-align:center;padding:16px;font-size:24px;">🏆 토너먼트 완료!</div>';
+    return;
+  }
+  const{m,ri,mi}=cur;
+  const rb=document.getElementById('g6-round-badge');const mp=document.getElementById('g6-match-progress');
+  const rnames=['1라운드','2라운드','3라운드','4라운드','결승'];
+  if(rb)rb.textContent=ri===S.matches.length-1&&S.matches.length>1?'결승':rnames[ri]||`${ri+1}라운드`;
+  if(mp)mp.textContent=`매치 ${mi+1}/${S.matches[ri].length}`;
+  const p1n=document.getElementById('g6-p1-name');const p2n=document.getElementById('g6-p2-name');
+  const p1t=document.getElementById('g6-p1-time');const p2t=document.getElementById('g6-p2-time');
+  const getTime=p=>{try{const st=App.getState();const recs=(st.records||{})[p?.id]||[];const best=recs.length?Math.min(...recs.map(r=>r.time)):null;return best?g6FmtTime(best):'기록없음';}catch(e){return'—';}};
+  if(p1n)p1n.textContent=m.p1?.name||'TBD';if(p2n)p2n.textContent=m.p2?.name||'TBD';
+  if(p1t)p1t.textContent=getTime(m.p1);if(p2t)p2t.textContent=getTime(m.p2);
+  document.getElementById('g6-p1').dataset.ri=ri;document.getElementById('g6-p1').dataset.mi=mi;document.getElementById('g6-p1').dataset.slot='p1';
+  document.getElementById('g6-p2').dataset.ri=ri;document.getElementById('g6-p2').dataset.mi=mi;document.getElementById('g6-p2').dataset.slot='p2';
+  g6_pendingWinner=null;
+  ['g6-p1','g6-p2'].forEach(id=>{const el=document.getElementById(id);if(el){el.className='g6-player';}});
+  // 현재 매치 p1을 도전자로 자동 설정
+  if(m.p1){const idx=S.pts.findIndex(p=>p.id===m.p1.id||p.name===m.p1.name);if(idx>=0)g6SetParticipant(idx);}
+}
+
+function g6SelectWinner(slot){
+  g6_pendingWinner=slot;
+  document.getElementById('g6-p1').className='g6-player'+(slot==='p1'?' winner':' loser');
+  document.getElementById('g6-p2').className='g6-player'+(slot==='p2'?' winner':' loser');
+}
+
+function g6ConfirmWinner(){
+  if(!g6_pendingWinner){toast('승자를 선택하세요','error');return;}
+  const p1el=document.getElementById('g6-p1');
+  const ri=parseInt(p1el.dataset.ri),mi=parseInt(p1el.dataset.mi);
+  const m=S.matches[ri][mi];
+  const winner=g6_pendingWinner==='p1'?m.p1:m.p2;
+  S.matches[ri][mi].winner=winner;
+  // 다음 라운드에 승자 배치
+  if(!S.matches[ri+1])S.matches.push([]);
+  const nextRound=S.matches[ri+1];
+  const paired=nextRound.find(nm=>nm.tbd_from_ri===ri&&Math.floor(nm.tbd_mi_a/2)===Math.floor(mi/2));
+  if(paired){if(mi%2===0)paired.p1=winner;else paired.p2=winner;}
+  else{nextRound.push({p1:mi%2===0?winner:null,p2:mi%2===1?winner:null,tbd_from_ri:ri,tbd_mi_a:mi,winner:null,bye:false});}
+  toast(winner.name+' 승리!','success');
+  try{if(typeof updatePv==='function')updatePv();}catch(e){}
+  setTimeout(g6RenderMatch,300);
+}
+
+function g6OpenDisplay(){
+  window.open('display.html','sgp_display','width=1280,height=720');
+  toast('전광판 창을 HDMI 화면으로 드래그 후 F11 전체화면!','info');
+}
+
+function g6ResetGame(){
+  if(!confirm('현재 게임 기록을 초기화할까요?'))return;
+  try{const st=App.getState();App.setState({...st,records:{}});}catch(e){}
+  g6_idx=0;g6_lapCount=0;g6_elapsed=0;g6_laps=[];g6_running=false;
+  cancelAnimationFrame(g6_rafId);
+  const te=document.getElementById('g6-time');if(te){te.textContent='00:00.000';te.className='g6-time';}
+  document.getElementById('g6-start').disabled=false;
+  document.getElementById('g6-stop').disabled=true;
+  document.getElementById('g6-lap').disabled=true;
+  g6Refresh();
+  toast('게임 초기화됨','info');
+}
+
+async function g6ConnectSerial(){
+  try{
+    g6_serialPort=await navigator.serial.requestPort();
+    await g6_serialPort.open({baudRate:9600});
+    document.getElementById('g6-dot-a').classList.add('active');
+    document.getElementById('g6-sensor-status').textContent='Arduino 연결됨';
+    toast('Arduino 연결 성공!','success');
+  }catch(e){toast('Arduino 연결 실패: '+e.message,'error');}
+}
+
 document.getElementById('pts-popup').addEventListener('click',e=>{if(e.target===document.getElementById('pts-popup'))closePtsPopup();});
 
 // bracket-window.html과의 메시지 통신
