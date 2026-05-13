@@ -727,11 +727,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           </div>
           <div class="g6-laplist" id="g6-laplist"></div>
         </div>
-        <!-- 대기 순서 -->
-        <div class="g6-queue-box">
-          <div class="g6-queue-title">대기 순서</div>
-          <div class="g6-queue-list" id="g6-queue"></div>
-        </div>
         <!-- 실시간 순위 -->
         <div class="g6-rank-box">
           <div class="g6-rank-title">
@@ -742,9 +737,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         </div>
         <!-- 하단 버튼 -->
         <div class="g6-bottom">
+          <button class="g6-opendisp" onclick="g6OpenBracket()" style="flex:0;padding:10px 13px;">📋 대진표 보기</button>
           <button class="g6-opendisp" onclick="g6OpenDisplay()">📺 전광판 열기</button>
           <button class="g6-opendisp" onclick="g6ResetGame()" style="flex:0;padding:10px 13px;color:var(--text3);">🔄 초기화</button>
-          <a href="result.html" class="g6-result-btn">결과 보기 →</a>
+          <a href="result.html" class="g6-result-btn">결과 →</a>
         </div>
       </div>
 
@@ -837,7 +833,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       </div>
       <div style="display:flex;gap:6px">
         <button class="pvbtn" onclick="resetPv()">↺ 초기화</button>
-        <button class="pvbtn p" onclick="openDisp()">⬜ HDMI 열기</button>
+        <button class="pvbtn p" onclick="openDisp()">📺 전광판 미리보기</button>
       </div>
     </div>
     <!-- 탭 -->
@@ -1146,11 +1142,12 @@ window.addEventListener('DOMContentLoaded',()=>{
 /* ── NAV ── */
 function buildNav(){
   const w=document.getElementById('navsteps');w.innerHTML='';
-  for(let i=1;i<=5;i++){
+  const maxStep=cs===6?6:5;
+  for(let i=1;i<=maxStep;i++){
     if(i>1){const sep=document.createElement('span');sep.className='nsi-sep';sep.textContent='›';w.appendChild(sep);}
     const d=document.createElement('div');
     d.className='nsi'+(i===cs?' active':i<cs?' done':'');
-    d.onclick=()=>goS(i);
+    if(i!==cs)d.onclick=()=>goS(i);
     d.innerHTML=`<span class="nsi-num">${String(i).padStart(2,'0')}</span><span class="nsi-label">${SL[i-1]}</span>`;
     w.appendChild(d);
   }
@@ -1173,14 +1170,21 @@ function saveAndNext(){
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
   buildStepSummary(cs);
-  document.getElementById('bprev').style.display=(cs===1||cs===6)?'none':'';
+  document.getElementById('bprev').style.display=(cs===1)?'none':'';
   const bn=document.getElementById('bnext');
   const badge=document.getElementById('saved-badge');
-  if(cs===5||cs===6){
+  const bstart=document.querySelector('.bstart');
+  if(cs===6){
     bn.style.display='none';
     if(badge)badge.style.display='none';
+    if(bstart)bstart.style.display='none';
+  } else if(cs===5){
+    bn.style.display='none';
+    if(badge)badge.style.display='none';
+    if(bstart)bstart.style.display='';
   } else {
     bn.style.display='';
+    if(bstart)bstart.style.display='none';
     const lb=['','💾 저장 후 다음 (게임 모드)','💾 저장 후 다음 (참가자)','💾 저장 후 다음 (진행방식)','💾 저장 후 다음 (확인&시작)'];
     bn.textContent=lb[cs]||'💾 저장 후 다음';
     const saved=App.getState();
@@ -2750,6 +2754,11 @@ function g6ConfirmWinner(){
   toast(winner.name+' 승리!','success');
   try{if(typeof updatePv==='function')updatePv();}catch(e){}
   setTimeout(g6RenderMatch,300);
+}
+
+function g6OpenBracket(){
+  try{localStorage.setItem('sgp_pts',JSON.stringify(S.pts));}catch(e){}
+  window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
 }
 
 function g6OpenDisplay(){
