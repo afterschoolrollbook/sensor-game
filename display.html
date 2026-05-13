@@ -363,80 +363,116 @@ function refresh2(){
 }
 
 // ── 3번 ──
-// ── 3번 ──
 function refresh3(){
   const view=document.getElementById('pts-bracket-view');
   if(!view) return;
-
   let groups=[];
   try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){}
   if(!groups.length){
     view.innerHTML='<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:16px;padding:20px;">대진표 없음</div>';
     return;
   }
-
   const layout=localStorage.getItem('sgp_layout')||'A';
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
   window._bracketLayout=layout;
   if(!window.S) window.S={matches:[],groupBrackets:groups,laps:1};
   else window.S.groupBrackets=groups;
 
-  // 진행중 경기 ri/mi 찾아서 isCurrentMatchIdx 오버라이드
-  let curRi=-1, curMi=-1;
+  // 진행중 경기: 그룹레이블+ri+mi로 특정
+  let curGroupLabel='', curRi=-1, curMi=-1;
   try{
     const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
     const curP1=mv.p1||'', curP2=mv.p2||'';
     const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
     if(curP1&&curP2){
       outer: for(const g of groups){
+        const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
         for(let ri=0;ri<g.matches.length;ri++){
           for(let mi=0;mi<g.matches[ri].length;mi++){
             const m=g.matches[ri][mi];
             const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curRi=ri;curMi=mi;break outer;}
+            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
           }
         }
       }
     }
   }catch(e){}
-  window.isCurrentMatchIdx=function(ri,mi){ return ri===curRi&&mi===curMi; };
 
+  _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi);
+}
+
+
+function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi){
+  function stripScroll(div){
+    div.querySelectorAll('*').forEach(el=>{
+      if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
+    });
+  }
+  window.isCurrentMatchIdx=function(ri,mi){
+    if(curRi<0||curMi<0) return false;
+    const curGrp=window.S.matches?.[0]?.[0]?._groupLabel||'';
+    return ri===curRi&&mi===curMi&&curGrp===curGroupLabel;
+  };
   const saved=window.S.matches;
   view.innerHTML='';
   view.style.overflow='auto';
-  view.style.display='flex';
-  view.style.flexDirection='column';
-
-  const outerWrap=document.createElement('div');
-  outerWrap.style.cssText='padding:8px;min-width:max-content;';
-
-  groups.forEach(g=>{
-    const labelParts=g.label.split('/').map(s=>s.trim());
-    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
-    hdr.textContent=shortLabel;
-    outerWrap.appendChild(hdr);
-    const groupWrap=document.createElement('div');
-    groupWrap.style.cssText='margin-bottom:16px;position:relative;';
-    const taggedMatches=g.matches.map((round,ri)=>
-      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-    );
-    window.S.matches=taggedMatches;
-    try{
-      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
-      (fns[layout]||renderBracketA)(groupWrap);
-      groupWrap.querySelectorAll('*').forEach(el=>{
-        if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
-      });
-    }catch(e){ groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>'; }
-    outerWrap.appendChild(groupWrap);
-  });
-
-  view.appendChild(outerWrap);
+  if(layout==='D'&&courtCount>=2){
+    const lGroups=groups.filter(g=>g.court===1);
+    const rGroups=groups.filter(g=>g.court===2);
+    const rowCount=Math.max(lGroups.length,rGroups.length);
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:100%;padding:12px;';
+    const hdrRow=document.createElement('div');hdrRow.style.cssText='display:flex;flex-direction:row;gap:0;margin-bottom:6px;';
+    const mkLbl=(txt,align)=>{const d=document.createElement('div');d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;text-align:${align};`;d.textContent=txt;return d;};
+    const hL=document.createElement('div');hL.style.cssText='padding-right:24px;flex-shrink:0;';hL.appendChild(mkLbl('// 경기장 1','left'));
+    const hSp=document.createElement('div');hSp.style.cssText='flex:1;min-width:40px;';
+    const hR=document.createElement('div');hR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
+    if(rGroups.length) hR.appendChild(mkLbl('// 경기장 2','right'));
+    hdrRow.appendChild(hL);hdrRow.appendChild(hSp);hdrRow.appendChild(hR);
+    outerWrap.appendChild(hdrRow);
+    const mkSection=(g,reversed)=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      const sec=document.createElement('div');sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
+      hdr.textContent=shortLabel;sec.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      window.S.matches=taggedMatches;
+      try{_renderBracketHTML(groupWrap,taggedMatches,'top',reversed);stripScroll(groupWrap);}catch(e){}
+      sec.appendChild(groupWrap);return sec;
+    };
+    for(let i=0;i<rowCount;i++){
+      const row=document.createElement('div');row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;';
+      const cL=document.createElement('div');cL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;';
+      if(lGroups[i]) cL.appendChild(mkSection(lGroups[i],false));
+      const sp=document.createElement('div');sp.style.cssText='flex:1;min-width:40px;';
+      const cR=document.createElement('div');cR.style.cssText='padding-left:24px;flex-shrink:0;min-width:max-content;display:flex;flex-direction:column;align-items:flex-end;';
+      if(rGroups[i]) cR.appendChild(mkSection(rGroups[i],true));
+      row.appendChild(cL);row.appendChild(sp);row.appendChild(cR);
+      outerWrap.appendChild(row);
+    }
+    view.appendChild(outerWrap);
+  } else {
+    const outerWrap=document.createElement('div');outerWrap.style.cssText='padding:8px;min-width:max-content;';
+    groups.forEach(g=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+      hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      window.S.matches=taggedMatches;
+      try{
+        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+        (fns[layout]||renderBracketA)(groupWrap);
+        stripScroll(groupWrap);
+      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>';}
+      outerWrap.appendChild(groupWrap);
+    });
+    view.appendChild(outerWrap);
+  }
   window.S.matches=saved;
 }
-
 
 function renderRank(state,cfg){
   const el=document.getElementById('d1-rank');
