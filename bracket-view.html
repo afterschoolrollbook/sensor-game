@@ -208,6 +208,7 @@ function _redraw(){
           const taggedMatches=grpItem.g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:grpItem.g,_origMi:mi,_origRi:ri})));
           S.matches=taggedMatches;
           renderBracketD(cell);
+          _stripInnerScroll(cell);
         }
         rowEl.appendChild(cell);
       });
@@ -231,6 +232,7 @@ function _redraw(){
       S.matches=taggedMatches;
       const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
       (fns[_bracketLayout]||renderBracketA)(groupWrap);
+      _stripInnerScroll(groupWrap);
       outerWrap.appendChild(groupWrap);
     });
     view.appendChild(outerWrap);
