@@ -108,19 +108,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #d2-info{font-family:'Share Tech Mono',monospace;font-size:clamp(12px,1.5vw,18px);color:var(--text3);letter-spacing:3px;z-index:2;}
 
 /* ══ 3번 화면 ══ */
-#disp3{width:100%;height:100%;display:flex;flex-direction:column;padding:24px;gap:16px;background:var(--bg);position:relative;overflow:auto;}
-#d3-inner{display:flex;flex-wrap:wrap;gap:24px;z-index:2;}
-.d3-grp{display:flex;flex-direction:column;gap:6px;}
-.d3-grp-label{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--red);margin-bottom:4px;}
-.d3-grp-rounds{display:flex;gap:10px;}
-.d3-col{display:flex;flex-direction:column;gap:8px;min-width:140px;}
-.d3-ct{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;color:var(--text3);margin-bottom:4px;}
-.d3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.d3-match.cur-match{border-color:var(--red);box-shadow:0 0 12px rgba(230,57,70,.5);}
-.d3-pl{padding:9px 13px;font-size:clamp(13px,1.4vw,20px);font-weight:700;border-bottom:1px solid var(--border);}
-.d3-pl:last-child{border-bottom:none;}
-.d3-pl.winner{color:var(--red);}
-.d3-pl.loser{opacity:.4;}
+#disp3{width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;}
+#pts-bracket-view{flex:1;min-height:0;padding:16px 18px;overflow:auto;display:flex;flex-direction:column;}
 
 /* 오버레이 */
 #countdown-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.9);display:none;flex-direction:column;align-items:center;justify-content:center;}
@@ -224,12 +213,13 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <!-- 3번 화면 -->
 <div id="screen-3">
 <div id="disp3">
-  <div id="d3-inner">
+  <div id="pts-bracket-view">
     <div style="color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:16px;">대진표 없음</div>
   </div>
 </div>
 </div>
 
+<script src="js/step4.js"></script>
 <script src="js/app.js"></script>
 <script>
 let _raf=false;
@@ -341,13 +331,11 @@ function refresh1(){
 // ── 2번 ──
 function refresh2(){
   const cfg=getCfg();
-  // sgp_display_vs에 저장된 값 우선 사용 (bracket-view / g6에서 설정한 이름+label)
   let p1='—', p2='—', label='참가자를 등록해주세요';
   try{
     const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
     if(mv.p1){p1=mv.p1; p2=mv.p2||'—'; label=mv.label||'진행 중';}
-    else{const vs=getVs(App.getState()); p1=vs.p1; p2=vs.p2; label=p1!=='—'?'진행 중':'참가자를 등록해주세요';}
-  }catch(e){const vs=getVs(App.getState()); p1=vs.p1; p2=vs.p2; label=p1!=='—'?'진행 중':'참가자를 등록해주세요';}
+  }catch(e){}
   _set('d2-p1', p1); _set('d2-p2', p2);
   _set('d2-info', label);
 
@@ -375,46 +363,78 @@ function refresh2(){
 }
 
 // ── 3번 ──
+// ── 3번 ──
 function refresh3(){
-  const el=document.getElementById('d3-inner');
-  if(!el) return;
+  const view=document.getElementById('pts-bracket-view');
+  if(!view) return;
+
   let groups=[];
   try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){}
   if(!groups.length){
-    el.innerHTML='<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:16px;">대진표 없음</div>';
+    view.innerHTML='<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:16px;padding:20px;">대진표 없음</div>';
     return;
   }
-  let curP1='', curP2='';
-  try{ const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}'); curP1=mv.p1||''; curP2=mv.p2||''; }catch(e){}
-  const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
-  const isCur=(n1,n2)=>curP1&&curP2&&_cn(n1)===curP1&&_cn(n2)===curP2;
-  let html='';
+
+  const layout=localStorage.getItem('sgp_layout')||'A';
+  window._bracketLayout=layout;
+  if(!window.S) window.S={matches:[],groupBrackets:groups,laps:1};
+  else window.S.groupBrackets=groups;
+
+  // 진행중 경기 ri/mi 찾아서 isCurrentMatchIdx 오버라이드
+  let curRi=-1, curMi=-1;
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    const curP1=mv.p1||'', curP2=mv.p2||'';
+    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
+    if(curP1&&curP2){
+      outer: for(const g of groups){
+        for(let ri=0;ri<g.matches.length;ri++){
+          for(let mi=0;mi<g.matches[ri].length;mi++){
+            const m=g.matches[ri][mi];
+            const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curRi=ri;curMi=mi;break outer;}
+          }
+        }
+      }
+    }
+  }catch(e){}
+  window.isCurrentMatchIdx=function(ri,mi){ return ri===curRi&&mi===curMi; };
+
+  const saved=window.S.matches;
+  view.innerHTML='';
+  view.style.overflow='auto';
+  view.style.display='flex';
+  view.style.flexDirection='column';
+
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='padding:8px;min-width:max-content;';
+
   groups.forEach(g=>{
-    if(!g.matches||!g.matches.length) return;
-    const rounds=g.matches;
-    const rn=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
-    html+=`<div class="d3-grp"><div class="d3-grp-label">${g.label||''}</div><div class="d3-grp-rounds">`;
-    rounds.forEach((round,ri)=>{
-      html+=`<div class="d3-col"><div class="d3-ct">${rn[ri]||ri+1+'R'}</div>`;
-      (Array.isArray(round)?round:[]).forEach(m=>{
-        const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'BYE';
-        const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'BYE';
-        const wid=m.winner?(typeof m.winner==='object'?m.winner.id:m.winner):null;
-        const p1id=m.p1?(typeof m.p1==='object'?m.p1.id:m.p1):null;
-        const p2id=m.p2?(typeof m.p2==='object'?m.p2.id:m.p2):null;
-        const cur=isCur(p1n,p2n);
-        const p1cls=wid?(wid===p1id?'winner':'loser'):'';
-        const p2cls=wid?(wid===p2id?'winner':'loser'):'';
-        html+=`<div class="d3-match${cur?' cur-match':''}">`;
-        html+=`<div class="d3-pl ${p1cls}">${_cn(p1n)}</div>`;
-        html+=`<div class="d3-pl ${p2cls}">${_cn(p2n)}</div>`;
-        html+=`</div>`;
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+    hdr.textContent=shortLabel;
+    outerWrap.appendChild(hdr);
+    const groupWrap=document.createElement('div');
+    groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    window.S.matches=taggedMatches;
+    try{
+      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+      (fns[layout]||renderBracketA)(groupWrap);
+      groupWrap.querySelectorAll('*').forEach(el=>{
+        if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
       });
-      html+=`</div>`;
-    });
-    html+=`</div></div>`;
+    }catch(e){ groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>'; }
+    outerWrap.appendChild(groupWrap);
   });
-  if(el.innerHTML!==html) el.innerHTML=html;
+
+  view.appendChild(outerWrap);
+  window.S.matches=saved;
 }
 
 

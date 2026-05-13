@@ -563,9 +563,14 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv2-info{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--text3);letter-spacing:3px;z-index:2;}
 /* 3번 화면: 대진표 */
 #pv3-wrap{width:100%;aspect-ratio:16/9;flex-shrink:0;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
-#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;flex-direction:column;padding:16px;overflow:hidden;}
+#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;padding:40px;gap:24px;}
 #pv3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
-#pv3-inner{flex:1;min-height:0;overflow:auto;z-index:2;}
+#pv3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
+.pv3-col{display:flex;flex-direction:column;gap:10px;min-width:160px;}
+.pv3-ct{font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:3px;color:var(--text3);margin-bottom:6px;}
+.pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.pv3-pl{padding:10px 16px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border);}
+.pv3-pl:last-child{border-bottom:none;}
 /* 순위 OFF시 타이머 전체 확장 */
 
 /* TOAST */
@@ -1896,26 +1901,35 @@ function updatePv3(){
     view.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
     return;
   }
-  // 진행중 경기 강조
-  let curP1='', curP2='';
-  try{ const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}'); curP1=mv.p1||''; curP2=mv.p2||''; }catch(e){}
-  const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()\[\]]/g,'').trim()||n:'';
-  window.isCurrentMatchIdx=function(m){
-    if(!curP1||!curP2) return false;
-    const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
-    const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-    return _cn(p1n)===curP1&&_cn(p2n)===curP2;
-  };
-  function stripScroll(div){
-    div.querySelectorAll('*').forEach(el=>{
-      if(el.style.overflow==='auto'||el.style.overflowX==='auto'||el.style.overflowY==='auto')
-        el.style.overflow='visible';
-    });
-  }
+  // step4.js의 _getAvailW가 pts-bracket-view ID를 사용하므로 임시로 ID 변경
+  view.id='pts-bracket-view';
+
+  // 진행중 경기 ri/mi 찾기
+  let curRi=-1,curMi=-1;
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    const curP1=mv.p1||'',curP2=mv.p2||'';
+    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
+    if(curP1&&curP2){
+      outer: for(const g of groups){
+        for(let ri=0;ri<g.matches.length;ri++){
+          for(let mi=0;mi<g.matches[ri].length;mi++){
+            const m=g.matches[ri][mi];
+            const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curRi=ri;curMi=mi;break outer;}
+          }
+        }
+      }
+    }
+  }catch(e){}
+  window.isCurrentMatchIdx=function(ri,mi){return ri===curRi&&mi===curMi;};
+
+  const savedMatches=S.matches;
   view.innerHTML='';
   const outerWrap=document.createElement('div');
   outerWrap.style.cssText='padding:4px;min-width:max-content;';
-  const savedMatches=S.matches;
+
   groups.forEach(g=>{
     const labelParts=g.label.split('/').map(s=>s.trim());
     const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
@@ -1931,16 +1945,19 @@ function updatePv3(){
     S.matches=taggedMatches;
     try{
       const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
-      const fn=fns[_bracketLayout]||renderBracketA;
-      fn(groupWrap);
-      stripScroll(groupWrap);
-    }catch(e){ groupWrap.innerHTML='<div style="color:var(--text3);font-size:10px;">렌더링 오류</div>'; }
+      (fns[_bracketLayout]||renderBracketA)(groupWrap);
+      groupWrap.querySelectorAll('*').forEach(el=>{
+        if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
+      });
+    }catch(e){ groupWrap.innerHTML='<div style="color:red;font-size:10px;">오류:'+e.message+'</div>'; }
     outerWrap.appendChild(groupWrap);
   });
+
   S.matches=savedMatches;
   view.appendChild(outerWrap);
+  // ID 복원
+  view.id='pv3-inner';
 }
-
 
 
 /* ── PVC SCALE (TV 비율 축소) ── */
