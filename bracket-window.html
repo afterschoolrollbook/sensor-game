@@ -2409,36 +2409,32 @@ function printSelected(){
   /* 팝업의 toggleNames가 전체 그룹 대신 선택 그룹만 재렌더하도록 저장 */
   window._popupSelectedGroups = sel;
 
-  /* #pdf-preview 를 건드리지 않고 숨겨진 컨테이너에 선택 그룹만 렌더링 */
-  const saved=S.matches;
-  const hiddenWrap=document.createElement('div');
-  hiddenWrap.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;width:1200px;';
-  document.body.appendChild(hiddenWrap);
+  /* _renderPdfPreview는 #pdf-preview에만 렌더하므로,
+     임시 요소에 pdf-preview ID를 달아 선택 그룹만 렌더링 후 원상복구 */
+  const realPreview=document.getElementById('pdf-preview');
+  const tempPreview=document.createElement('div');
+  tempPreview.id='pdf-preview';
+  tempPreview.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;width:1200px;';
+  document.body.appendChild(tempPreview);
+  if(realPreview) realPreview.id='pdf-preview-bak';
 
-  sel.forEach(g=>{
-    const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
-    const taggedMatches=g.matches.map((round,ri)=>
-      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
-    );
-    S.matches=taggedMatches;
-    _renderBracketHTML(hiddenWrap, taggedMatches, 'top', false);
-  });
-  S.matches=saved;
+  _renderPdfPreview(sel);  /* tempPreview에 선택 그룹만 렌더 (경기장 레이아웃 포함) */
 
-  /* rAF 2회 대기 → 연결선 SVG 렌더 완료 후 복사 */
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    hiddenWrap.querySelectorAll('*').forEach(el=>{
-      el.style.overflow='visible';
-      el.style.overflowX='visible';
-      el.style.overflowY='visible';
+    tempPreview.querySelectorAll('*').forEach(el=>{
+      el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';
     });
-    hiddenWrap.querySelectorAll('svg').forEach(s=>{
-      s.setAttribute('overflow','visible');
-      s.style.overflow='visible';
+    tempPreview.querySelectorAll('svg').forEach(s=>{
+      s.setAttribute('overflow','visible');s.style.overflow='visible';
     });
-    const rawHTML=hiddenWrap.innerHTML;
-    hiddenWrap.remove();
+    const rawHTML=tempPreview.innerHTML;
+
+    /* ID 복원 */
+    tempPreview.remove();
+    if(realPreview) realPreview.id='pdf-preview';
+
     _writeFullPreviewWin(win, rawHTML, '선택 대진표 미리보기');
+    win.addEventListener('beforeunload', ()=>{ window._popupSelectedGroups=null; });
   }));
 }
 
