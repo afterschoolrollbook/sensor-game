@@ -15,7 +15,8 @@
   --border:#2a2a40;
 }
 html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;user-select:none;}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);pointer-events:none;z-index:999;}
+/* 스캔라인: will-change로 GPU 레이어 분리 → CPU repaint 제거 */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:999;will-change:transform;transform:translateZ(0);}
 
 #screen-1,#screen-2,#screen-3{position:fixed;inset:0;}
 #screen-2,#screen-3{display:none;}
@@ -95,7 +96,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 /* ══ 2번 화면 — setup.html #pv2 와 동일 ══ */
 #disp2{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,40px);background:var(--bg);position:relative;}
-#disp2::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
+#disp2::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;will-change:transform;transform:translateZ(0);}
 #d2-lbl{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2vw,22px);letter-spacing:4px;color:var(--text3);z-index:2;}
 #d2-row{display:flex;align-items:center;gap:clamp(30px,6vw,100px);z-index:2;width:80%;}
 .d2-pl{flex:1;text-align:center;}
@@ -106,7 +107,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 /* ══ 3번 화면 — setup.html #pv3 와 동일 ══ */
 #disp3{width:100%;height:100%;display:flex;padding:40px;gap:24px;background:var(--bg);position:relative;overflow:hidden;}
-#disp3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
+#disp3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;will-change:transform;transform:translateZ(0);}
 #d3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
 .d3-col{display:flex;flex-direction:column;gap:10px;min-width:200px;}
 .d3-ct{font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:3px;color:var(--text3);margin-bottom:6px;}
@@ -221,22 +222,48 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <script src="js/timer.js"></script>
 <script>
 let lastStateStr='', lastCfgStr='', _raf=false;
+let _timerRaf=null; // 타이머 RAF 핸들
+
+/* ── BroadcastChannel 수신 (setup.html과 같은 origin) ── */
+let _dispBc=null;
+try{
+  _dispBc=new BroadcastChannel('sgp_cmd');
+  _dispBc.onmessage=e=>{handleCmd(e.data);};
+}catch(e){}
 
 function scheduleRefresh(){
   if(_raf)return; _raf=true;
-  requestAnimationFrame(()=>{ _raf=false; refreshAll(); });
+  requestAnimationFrame(()=>{ _raf=false; refreshVisible(); });
 }
 
+/* 현재 보이는 화면만 갱신 (성능 최적화) */
+function refreshVisible(){
+  refresh1(); // 1번은 항상 (타이머/순위 데이터)
+  if(currentScreen===2) refresh2();
+  if(currentScreen===3) refresh3();
+}
+
+function refreshAll(){ refresh1(); refresh2(); refresh3(); }
+
 function startPolling(){
-  setInterval(()=>{
-    if(Timer.isRunning()) _set('d1-time', App.formatTime(Timer.getElapsed()));
-  },50);
+  /* 타이머: setInterval 대신 RAF 루프 — 화면이 숨겨지면 자동 중단 */
+  function timerLoop(){
+    if(Timer.isRunning()){
+      _set('d1-time', App.formatTime(Timer.getElapsed()));
+    }
+    _timerRaf=requestAnimationFrame(timerLoop);
+  }
+  _timerRaf=requestAnimationFrame(timerLoop);
+
+  /* 상태 폴링: 300ms → 500ms (불필요한 DOM 비교 횟수 절반 감소) */
   setInterval(()=>{
     const s=localStorage.getItem('sgp_state');
-    if(s!==lastStateStr){lastStateStr=s;scheduleRefresh();}
     const c=localStorage.getItem('sgp_display_config');
-    if(c!==lastCfgStr){lastCfgStr=c;scheduleRefresh();}
-  },300);
+    const changed=(s!==lastStateStr)||(c!==lastCfgStr);
+    if(s!==lastStateStr) lastStateStr=s;
+    if(c!==lastCfgStr)   lastCfgStr=c;
+    if(changed) scheduleRefresh();
+  },500);
 }
 
 function getCfg(){try{return JSON.parse(localStorage.getItem('sgp_display_config')||'{}');}catch{return {};}}
@@ -297,9 +324,22 @@ function refresh1(){
   const gn=(di.gamename&&(cfg.gameLabel||ss.gl))?(cfg.gameLabel||ss.gl):(state.gameType||'SGP').toUpperCase();
   _set('d1-gname', '// '+gn);
 
-  // 색상
-  if(ev.primaryColor) document.documentElement.style.setProperty('--red', ev.primaryColor);
-  if(ev.accentColor)  document.documentElement.style.setProperty('--accent', ev.accentColor);
+  // 색상 적용 — cfg 우선, 없으면 state.event fallback
+  const THEME_MAP={
+    'dark-racing':  {red:'#e63946',accent:'#4cc9f0'},
+    'neon-blue':    {red:'#4361ee',accent:'#4cc9f0'},
+    'gold-black':   {red:'#ffd60a',accent:'#ffffff'},
+    'green-dark':   {red:'#06d6a0',accent:'#4cc9f0'},
+    'purple-dark':  {red:'#7b2fff',accent:'#f72585'},
+    'fire-red':     {red:'#ff6b35',accent:'#ffd60a'},
+  };
+  const themeColors=cfg.theme&&THEME_MAP[cfg.theme]?THEME_MAP[cfg.theme]:null;
+  // pointColor(직접 선택) > primaryColor(ds-tab1 저장) > theme > event.primaryColor
+  const redColor=cfg.pointColor||cfg.primaryColor||themeColors?.red||ev.primaryColor||null;
+  const accentColor=cfg.accentColor||themeColors?.accent||ev.accentColor||null;
+  const root=document.documentElement;
+  if(redColor)   root.style.setProperty('--red',   redColor);
+  if(accentColor)root.style.setProperty('--accent',accentColor);
 
   updateTicker(cfg,di,ss);
 }
@@ -307,13 +347,40 @@ function refresh1(){
 // ── 2번 ──
 function refresh2(){
   const vs=getVs(App.getState());
+  const cfg=getCfg();
   _set('d2-p1', vs.p1); _set('d2-p2', vs.p2);
   _set('d2-info', vs.p1!=='—'?'진행 중':'참가자를 등록해주세요');
+
+  // 폰트 — vs2Font 없으면 titleFont fallback
+  const fontMap={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
+  const ff=fontMap[cfg.vs2Font||cfg.titleFont]||fontMap.bebas;
+  const p1el=document.getElementById('d2-p1');
+  const p2el=document.getElementById('d2-p2');
+  const vsel=document.getElementById('d2-vs');
+  if(p1el)p1el.style.fontFamily=ff;
+  if(p2el)p2el.style.fontFamily=ff;
+  if(vsel)vsel.style.fontFamily=ff;
+
+  // 배경 스타일
+  const disp2=document.getElementById('disp2');
+  if(disp2){
+    const BG={
+      dark:'var(--bg)',
+      gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',
+      blur:'rgba(10,10,20,0.95)',
+      solid:'#0d1b2a',
+    };
+    disp2.style.background=BG[cfg.vs2Bg||'dark']||BG.dark;
+  }
 }
 
 // ── 3번 ──
 function refresh3(){
   const state=App.getState();
+  const cfg=getCfg();
+  const fontMap={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
+  // bracket3Font 없으면 titleFont fallback
+  const ff=fontMap[cfg.bracket3Font||cfg.titleFont]||fontMap.bebas;
   const el=document.getElementById('d3-inner');
   const rounds=state.tournament?.rounds||state.matches||[];
   if(!rounds.length){
@@ -333,6 +400,8 @@ function refresh3(){
     return `<div class="d3-col"><div class="d3-ct">${rn[ri]||ri+1+'R'}</div>${ms}</div>`;
   }).join('');
   if(el.innerHTML!==newHtml) el.innerHTML=newHtml;
+  // 폰트 적용
+  document.querySelectorAll('#d3-inner .d3-pl').forEach(x=>x.style.fontFamily=ff);
 }
 
 function renderRank(state,cfg){
@@ -404,22 +473,37 @@ function switchScreen(n){
   btn.textContent=({1:'📺 2번 화면',2:'🏆 3번 대진표',3:'🔙 1번 전광판'})[n]||'📺 화면전환';
   btn.classList.toggle('on-2',n!==1);
   try{localStorage.setItem('sgp_screen',String(n));}catch(e){}
+  // 전환 즉시 해당 화면 갱신
+  if(n===2) refresh2();
+  if(n===3) refresh3();
+}
+
+function handleCmd(cmd){
+  if(!cmd)return;
+  if(cmd.type==='countdown')   triggerCountdown();
+  if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
+  if(cmd.type==='timer_start'){
+    document.getElementById('d1-time').className='running';
+    try{if(Timer&&Timer.start)Timer.start();}catch(e){}
+  }
+  if(cmd.type==='timer_stop'){
+    document.getElementById('d1-time').className='stopped';
+    try{if(Timer&&Timer.stop)Timer.stop();}catch(e){}
+  }
+  if(cmd.type==='timer_reset'){
+    _set('d1-time','00:00.000');
+    document.getElementById('d1-time').className='';
+    try{if(Timer&&Timer.reset)Timer.reset();}catch(e){}
+  }
+  if(cmd.type==='clear_rank')  scheduleRefresh();
+  if(cmd.type==='screen_1')    switchScreen(1);
+  if(cmd.type==='screen_2')    switchScreen(2);
+  if(cmd.type==='screen_3')    switchScreen(3);
 }
 
 window.addEventListener('storage',e=>{
   if(e.key==='sgp_display_cmd'){
-    try{
-      const cmd=JSON.parse(e.newValue||'{}');
-      if(cmd.type==='countdown')   triggerCountdown();
-      if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
-      if(cmd.type==='timer_start') document.getElementById('d1-time').className='running';
-      if(cmd.type==='timer_stop')  document.getElementById('d1-time').className='stopped';
-      if(cmd.type==='timer_reset'){_set('d1-time','00:00.000');document.getElementById('d1-time').className='';}
-      if(cmd.type==='clear_rank')  scheduleRefresh();
-      if(cmd.type==='screen_1')    switchScreen(1);
-      if(cmd.type==='screen_2')    switchScreen(2);
-      if(cmd.type==='screen_3')    switchScreen(3);
-    }catch(err){}
+    try{handleCmd(JSON.parse(e.newValue||'{}'));}catch(err){}
   }
   if(e.key==='sgp_display_time')   _set('d1-time', e.newValue||'00:00.000');
   if(e.key==='sgp_display_player') _set('d1-chal', e.newValue||'—');
