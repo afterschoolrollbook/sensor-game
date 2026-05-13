@@ -1118,6 +1118,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.s1)S.s1=a.settings.s1;
       if(a.settings.s2)S.s2=a.settings.s2;
       if(a.settings.di)S.di={...S.di,...a.settings.di};
+      if(a.settings.blk)S.blk={...S.blk,...a.settings.blk};
+      if(a.settings.titleFont)S.titleFont=a.settings.titleFont;
+      if(a.settings.rankCount)S.rankCount=a.settings.rankCount;
+      if(a.settings.theme)S.theme=a.settings.theme;
+      if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
+      if(a.settings.matches)S.matches=a.settings.matches;
     }
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
@@ -1700,14 +1706,38 @@ function buildConfirm(){
   const nav=document.getElementById('snav');
   if(!nav.querySelector('.bstart')){
     const a=document.createElement('button');a.className='bstart';
-    a.onclick=()=>{saveAll();goS(6);g6Init();};
+    a.onclick=()=>{saveCurrentStep();saveAll();goS(6);g6Init();};
     a.innerHTML='🚀 게임 시작';nav.appendChild(a);
   }
 }
 function saveAll(){
   try{
-    App.setState({event:{name:S.en||'SGP 행사',subtitle:S.sub,primaryColor:S.pointColor||'#e63946',accentColor:'#4cc9f0'},gameType:S.selG,mode:S.rm,participants:S.pts,settings:{laps:S.laps,rm:S.rm,proc:S.proc}});
-    // 기존 config 유지(autoSwitch 등)하면서 병합 저장
+    const prev=App.getState();
+    App.setState({
+      event:{name:S.en||'SGP 행사',subtitle:S.sub,primaryColor:S.pointColor||'#e63946',accentColor:'#4cc9f0'},
+      gameType:S.selG,
+      mode:S.rm,
+      participants:S.pts,
+      settings:{
+        ...((prev&&prev.settings)||{}),
+        laps:S.laps||1,
+        proc:S.proc,
+        rm:S.rm,
+        gl:S.gl||'',
+        dt:S.dt||'',
+        pl:S.pl||'',
+        sp:S.sp||'',
+        s1:S.s1||'',
+        s2:S.s2||'',
+        di:S.di,
+        blk:S.blk,
+        titleFont:S.titleFont,
+        rankCount:S.rankCount,
+        theme:S.theme||null,
+        pointColor:S.pointColor||null,
+        matches:S.matches||null,
+      }
+    });
     const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
     const cfg=Object.assign(existingCfg,{
       eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
