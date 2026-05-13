@@ -473,11 +473,14 @@ function switchScreen(n){
   if(n===3) refresh3();
 }
 
+const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
+
 function handleCmd(cmd){
   if(!cmd)return;
   if(cmd.type==='set_match'){
-    _set('d1-vs-p1', cmd.p1||'—'); _set('d1-vs-p2', cmd.p2||'—');
-    _set('d2-p1',    cmd.p1||'—'); _set('d2-p2',    cmd.p2||'—');
+    const p1=cleanName(cmd.p1||'—'), p2=cleanName(cmd.p2||'—');
+    _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
+    _set('d2-p1',    p1); _set('d2-p2',    p2);
     _set('d2-info',  cmd.label||'진행 중');
   }
   if(cmd.type==='countdown')   triggerCountdown();
@@ -511,8 +514,9 @@ window.addEventListener('storage',e=>{
   if(e.key==='sgp_display_vs'){
     try{
       const vs=JSON.parse(e.newValue||'{}');
-      _set('d1-vs-p1', vs.p1||'—'); _set('d1-vs-p2', vs.p2||'—');
-      _set('d2-p1',    vs.p1||'—'); _set('d2-p2',    vs.p2||'—');
+      const p1=cleanName(vs.p1||'—'), p2=cleanName(vs.p2||'—');
+      _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
+      _set('d2-p1',    p1); _set('d2-p2',    p2);
       _set('d2-info',  vs.label||'진행 중');
     }catch(err){}
   }
