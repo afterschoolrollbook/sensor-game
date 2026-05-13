@@ -36,6 +36,10 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 .tos.error{border-color:var(--red);color:var(--red);}
 .tos.info{border-color:var(--accent);color:var(--accent);}
 @keyframes tsin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* 경기 카드 상단 레이블 줄바꿈 방지
+   캡처 해상도(2x)에서 폰트 메트릭이 달라져도 1줄 유지 */
+#bracket-display [style*="color:#555"],
+#pdf-preview [style*="color:#555"] { white-space: nowrap !important; }
 </style>
 </head>
 <body>
@@ -3539,6 +3543,8 @@ html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
 .group-title{font-size:14px;font-weight:700;color:#111;font-family:'Share Tech Mono',monospace;margin-bottom:10px;letter-spacing:1px;border-left:4px solid #e63946;padding-left:10px;}
 .bracket-wrap{overflow:visible;}
 .bracket-wrap *{overflow:visible !important;}
+/* 경기 카드 상단 레이블 줄바꿈 방지 */
+.bracket-wrap [style*="color:#555"] { white-space: nowrap !important; }
 /* 라이트 테마 강제 — 경기 박스만 타겟팅 (전체 div 적용 시 레이아웃 파괴됨) */
 .bracket-wrap [style*="background:#0d0d1a"]{background:#ffffff !important;}
 .bracket-wrap [style*="background:#0a0a14"]{background:#f8f8f8 !important;}
