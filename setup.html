@@ -1899,7 +1899,9 @@ function updatePv2(){
 function updatePv3(){
   const el=document.getElementById('pv3-inner');if(!el)return;
   let groups=[];
-  try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){}
+  // S.groupBrackets 우선 (메모리), 없으면 localStorage
+  if(S.groupBrackets&&S.groupBrackets.length) groups=S.groupBrackets;
+  else{ try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){} }
   if(!groups.length){
     el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
     return;
