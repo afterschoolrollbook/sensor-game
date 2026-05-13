@@ -2402,6 +2402,9 @@ function printSelected(){
   const win=window.open('','_blank','width=1200,height=900');
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
+  /* 팝업의 toggleNames가 전체 그룹 대신 선택 그룹만 재렌더하도록 저장 */
+  window._popupSelectedGroups = sel;
+
   /* #pdf-preview 를 건드리지 않고 숨겨진 컨테이너에 선택 그룹만 렌더링 */
   const saved=S.matches;
   const hiddenWrap=document.createElement('div');
@@ -2432,6 +2435,7 @@ function printSelected(){
     const rawHTML=hiddenWrap.innerHTML;
     hiddenWrap.remove();
     _writeFullPreviewWin(win, rawHTML);
+    win.addEventListener('beforeunload', ()=>{ window._popupSelectedGroups=null; });
   }));
 }
 
@@ -2739,7 +2743,9 @@ function toggleNames(){
   const p=window.opener;
   const savedHide=p.window._hideNames;
   p.window._hideNames=hiding;
-  p._renderPdfPreview(p.S.groupBrackets);
+  /* 선택 PDF 팝업이면 선택된 그룹만, 전체이면 전체 그룹 재렌더 */
+  const groups=p.window._popupSelectedGroups || p.S.groupBrackets;
+  p._renderPdfPreview(groups);
   p.requestAnimationFrame(()=>p.requestAnimationFrame(()=>{
     const src=p.document.getElementById('pdf-preview');
     const dst=document.getElementById('bracket-display');
@@ -2748,11 +2754,10 @@ function toggleNames(){
       clone.querySelectorAll('*').forEach(el=>{el.style.overflow='visible';el.style.overflowX='visible';el.style.overflowY='visible';});
       clone.querySelectorAll('svg').forEach(s=>{s.setAttribute('overflow','visible');s.style.overflow='visible';});
       dst.innerHTML=clone.innerHTML;
-      /* bracket-display 교체 후 정보표시 헤더 재렌더 */
       if(typeof _renderInfoHeader==='function') _renderInfoHeader();
     }
     p.window._hideNames=savedHide;
-    p._renderPdfPreview(p.S.groupBrackets);
+    p._renderPdfPreview(p.window._popupSelectedGroups || p.S.groupBrackets);
   }));
 }
 
