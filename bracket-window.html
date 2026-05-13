@@ -2397,43 +2397,41 @@ function printAll(){
 function printSelected(){
   const sel=_getSelectedGroups();
   if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
-
-  if(!S.groupBrackets?.length){
-    toast('대진표를 먼저 만들어주세요','error'); return;
-  }
-
-  // 선택된 그룹만 pdf-preview에 렌더 후 전체 PDF와 동일한 창으로 열기
-  const savedHide=window._hideNames;
-  window._hideNames=false;
-  _renderPdfPreview(sel);          // 선택 그룹만 렌더
-  window._hideNames=savedHide;
+  if(!S.groupBrackets?.length){ toast('대진표를 먼저 만들어주세요','error'); return; }
 
   const win=window.open('','_blank','width=1200,height=900');
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
+  /* #pdf-preview 를 건드리지 않고 숨겨진 컨테이너에 선택 그룹만 렌더링 */
+  const saved=S.matches;
+  const hiddenWrap=document.createElement('div');
+  hiddenWrap.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;width:1200px;';
+  document.body.appendChild(hiddenWrap);
+
+  sel.forEach(g=>{
+    const shortLabel=g.label.split('/').map(s=>s.trim()).join(' · ');
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    S.matches=taggedMatches;
+    _renderBracketHTML(hiddenWrap, taggedMatches, 'top', false);
+  });
+  S.matches=saved;
+
+  /* rAF 2회 대기 → 연결선 SVG 렌더 완료 후 복사 */
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const previewEl=document.getElementById('pdf-preview');
-    if(!previewEl){ toast('미리보기 생성 실패','error'); win.close(); return; }
-    const clone=previewEl.cloneNode(true);
-    clone.querySelectorAll('*').forEach(el=>{
+    hiddenWrap.querySelectorAll('*').forEach(el=>{
       el.style.overflow='visible';
       el.style.overflowX='visible';
       el.style.overflowY='visible';
     });
-    clone.querySelectorAll('svg').forEach(s=>{
+    hiddenWrap.querySelectorAll('svg').forEach(s=>{
       s.setAttribute('overflow','visible');
       s.style.overflow='visible';
     });
-    const rawHTML=clone.innerHTML;
+    const rawHTML=hiddenWrap.innerHTML;
+    hiddenWrap.remove();
     _writeFullPreviewWin(win, rawHTML);
-
-    // 팝업이 닫힌 후 메인 미리보기를 원래 전체 그룹으로 복원
-    const restoreInterval=setInterval(function(){
-      if(win.closed){
-        clearInterval(restoreInterval);
-        _renderPdfPreview(_getSelectedGroups());
-      }
-    }, 500);
   }));
 }
 
