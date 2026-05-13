@@ -620,7 +620,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div class="sh"><div class="sno">// STEP 05</div><div class="stitle">확인 & 시작</div></div>
         <div class="cgrid" id="cgrid"></div>
         <div class="dt-title" style="margin-bottom:9px">참가자</div>
-        <div class="pt-badges" id="ptbadges"></div>
+        <div id="ptbadges"></div>
       </div>
 
     </div><!-- /sw -->
@@ -982,7 +982,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     if(a.participants?.length)S.pts=[...a.participants];
     if(a.gameType)S.selG=a.gameType;
-    if(a.mode)S.rm=a.mode;
+    if(a.mode){const modeMap={'individual':'ind','team':'team'};S.rm=modeMap[a.mode]||a.mode;}
     if(a.settings){
       if(a.settings.laps)S.laps=a.settings.laps;
       if(a.settings.proc)S.proc=a.settings.proc;
@@ -1032,6 +1032,7 @@ function goS(n){
   cs=Math.max(1,Math.min(5,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
+  if(cs===3)buildMG();
   if(cs===4)buildProc();
   if(cs===5)buildConfirm();
   updatePv();
@@ -1485,7 +1486,7 @@ function buildMG(){
     const d=document.createElement('div');
     d.className='mc'+(S.rm===m.id?' sel':'');
     d.innerHTML=`<div class="mc-icon">${m.icon}</div><div class="mc-name">${m.name}</div><div class="mc-sub">${m.sub}</div>`;
-    d.onclick=()=>{S.rm=m.id;buildMG();renderPA();};
+    d.onclick=()=>{S.rm=m.id;buildMG();renderPA();try{const a=App.getState();App.setState(Object.assign({},a,{mode:S.rm,settings:Object.assign({},a.settings||{},{rm:S.rm})}));}catch(e){}};
     w.appendChild(d);
   });
 }
@@ -1549,18 +1550,20 @@ function impXls(){
 function buildConfirm(){
   const g=ALLG.find(x=>x.id===S.selG)||{name:S.selG};
   const pr=PROCS.find(x=>x.id===S.proc)||{name:S.proc};
-  const rm=REGMODES.find(x=>x.id===S.rm)||{name:S.rm};
+  const modeIdMap={'individual':'ind','team':'team'};
+  const rmId=modeIdMap[S.rm]||S.rm;
+  const rm=REGMODES.find(x=>x.id===rmId)||REGMODES[0];
   const items=[
     {k:'행사명',v:S.en||'—'},{k:'종목명',v:S.gl||g.name||'—'},
     {k:'일시',v:S.dt||'—'},{k:'장소',v:S.pl||'—'},
     {k:'게임',v:g.name||'—'},
-    {k:'참가방식',v:rm.name},{k:'진행방식',v:pr.name},
+    {k:'참가방식',v:rm.name},
   ];
   const cg=document.getElementById('cgrid');cg.innerHTML='';
   items.forEach(x=>{const d=document.createElement('div');d.className='cbox';d.innerHTML=`<div class="ck">${x.k}</div><div class="cv${x.v==='—'?' empty':''}">${x.v}</div>`;cg.appendChild(d);});
   const pb=document.getElementById('ptbadges');pb.innerHTML='';
   if(!S.pts.length){pb.innerHTML='<div style="color:var(--text3);font-size:13px">참가자 없음</div>';}
-  else{S.pts.slice(0,20).forEach(p=>{const d=document.createElement('div');d.className='ptbadge';d.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${p.color}"></div>${p.name}`;pb.appendChild(d);});if(S.pts.length>20){const m=document.createElement('div');m.className='ptbadge';m.textContent=`+${S.pts.length-20}명`;pb.appendChild(m);}}
+  else{try{buildParticipantGroups(pb);}catch(e){S.pts.slice(0,20).forEach(p=>{const d=document.createElement('div');d.className='ptbadge';d.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${p.color}"></div>${p.name}`;pb.appendChild(d);});if(S.pts.length>20){const m=document.createElement('div');m.className='ptbadge';m.textContent=`+${S.pts.length-20}명`;pb.appendChild(m);}}}
   // start button
   const nav=document.getElementById('snav');
   if(!nav.querySelector('.bstart')){
@@ -1569,7 +1572,7 @@ function buildConfirm(){
 }
 function saveAll(){
   try{
-    App.setState({event:{name:S.en||'SGP 행사',subtitle:S.sub,primaryColor:S.pointColor||'#e63946',accentColor:'#4cc9f0'},gameType:S.selG,mode:S.proc.startsWith('team')?'team':'individual',participants:S.pts,settings:{laps:S.laps}});
+    App.setState({event:{name:S.en||'SGP 행사',subtitle:S.sub,primaryColor:S.pointColor||'#e63946',accentColor:'#4cc9f0'},gameType:S.selG,mode:S.rm,participants:S.pts,settings:{laps:S.laps,rm:S.rm,proc:S.proc}});
     // 기존 config 유지(autoSwitch 등)하면서 병합 저장
     const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
     const cfg=Object.assign(existingCfg,{
