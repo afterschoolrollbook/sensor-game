@@ -3802,8 +3802,10 @@ function onMatchClick(ri, mi, matchObj, event){
   const grpObj  = matchObj?._groupObj || null;
   const origMi  = matchObj?._origMi  ?? mi;
   const origRi  = matchObj?._origRi  ?? ri;
-  const p1      = matchObj?.p1?.name || (matchObj?.p1 ? String(matchObj.p1) : '—');
-  const p2      = matchObj?.p2?.name || (matchObj?.p2 ? String(matchObj.p2) : '—');
+  // "2번 (선동혁)" → "선동혁", "3번 [방영호]" → "방영호"
+  const cleanName = n => n ? n.replace(/^\d+번\s*/, '').replace(/[()[\]]/g, '').trim() || n : '—';
+  const p1 = cleanName(matchObj?.p1?.name || (matchObj?.p1 ? String(matchObj.p1) : ''));
+  const p2 = cleanName(matchObj?.p2?.name || (matchObj?.p2 ? String(matchObj.p2) : ''));
   const grpLbl  = matchObj?._groupLabel || grpObj?.label || '';
   const label   = `${grpLbl} ${origRi+1}라운드 ${origMi+1}경기`.trim();
 

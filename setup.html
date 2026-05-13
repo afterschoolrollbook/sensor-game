@@ -1851,6 +1851,16 @@ function togBlk(id,el){
 
 /* ── 2번/3번 화면 ── */
 function updatePv2(){
+  // bracket-view에서 수동 선택한 경기 우선 사용
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    if(mv.p1){
+      document.getElementById('pv2-p1').textContent=mv.p1;
+      document.getElementById('pv2-p2').textContent=mv.p2||'—';
+      document.getElementById('pv2-info').textContent=mv.label||'진행 중';
+      return;
+    }
+  }catch(e){}
   let p1=null,p2=null,matchInfo='참가자를 등록해주세요';
   if(S.matches&&S.matches.length){
     let found=null,totalM=0,completedM=0;
@@ -2853,6 +2863,20 @@ window.addEventListener('message',e=>{
     try{if(typeof updatePv==='function')updatePv();}catch(err){}
     toast((e.data.label||'대진표')+' 적용 완료!','success');
   }
+});
+
+// bracket-view 경기 선택 → 2번 미리보기 즉시 업데이트
+window.addEventListener('storage', e=>{
+  if(e.key!=='sgp_display_vs') return;
+  try{
+    const vs=JSON.parse(e.newValue||'{}');
+    const p1el=document.getElementById('pv2-p1');
+    const p2el=document.getElementById('pv2-p2');
+    const infoEl=document.getElementById('pv2-info');
+    if(p1el) p1el.textContent=vs.p1||'—';
+    if(p2el) p2el.textContent=vs.p2||'—';
+    if(infoEl) infoEl.textContent=vs.label||'진행 중';
+  }catch(err){}
 });
 </script>
 </body>
