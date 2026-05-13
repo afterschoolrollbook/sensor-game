@@ -336,10 +336,16 @@ function refresh1(){
 
 // ── 2번 ──
 function refresh2(){
-  const vs=getVs(App.getState());
   const cfg=getCfg();
-  _set('d2-p1', vs.p1); _set('d2-p2', vs.p2);
-  _set('d2-info', vs.p1!=='—'?'진행 중':'참가자를 등록해주세요');
+  // sgp_display_vs에 저장된 값 우선 사용 (bracket-view / g6에서 설정한 이름+label)
+  let p1='—', p2='—', label='참가자를 등록해주세요';
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    if(mv.p1){p1=mv.p1; p2=mv.p2||'—'; label=mv.label||'진행 중';}
+    else{const vs=getVs(App.getState()); p1=vs.p1; p2=vs.p2; label=p1!=='—'?'진행 중':'참가자를 등록해주세요';}
+  }catch(e){const vs=getVs(App.getState()); p1=vs.p1; p2=vs.p2; label=p1!=='—'?'진행 중':'참가자를 등록해주세요';}
+  _set('d2-p1', p1); _set('d2-p2', p2);
+  _set('d2-info', label);
 
   // 폰트 — vs2Font 없으면 titleFont fallback
   const fontMap={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
