@@ -2679,26 +2679,7 @@ function buildPageGuides(){
 }
 
 window.addEventListener('load',function(){
-  // 클릭 제거 (대진표 내부만 — 툴바 버튼 제외)
-  const _bd=document.getElementById('bracket-display');
-  if(_bd) _bd.querySelectorAll('[onclick],[data-match-id]').forEach(el=>{
-    el.removeAttribute('onclick');el.style.cursor='default';el.style.pointerEvents='none';
-  });
-  // 페이지 가이드 초기 빌드
-  buildPageGuides();
-  // A4 버튼 등록
-  _a4Init();
-  // A4 용지 배치 기본 ON — 레이아웃 완료 후 실행
-  setTimeout(function(){
-    const chkA4=document.getElementById('chk-a4');
-    const rLand=document.getElementById('a4-landscape');
-    if(rLand){ rLand.checked=true; _a4Orient='landscape'; }
-    _a4C=2; _a4R=14; _a4SyncD();
-    _applyPageCSS();  /* 초기 @page 방향 적용 */
-    if(chkA4){ chkA4.checked=true; _a4Toggle(true); }
-  }, 300);
-  // 정보표시 칩 초기화
-  _initInfoChips();
+  // PDF/A4 관련 기능은 bracket-view에서 사용 안 함
 });
 
 /* ── A4 용지 배치 격자 ── */
