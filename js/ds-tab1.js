@@ -31,12 +31,9 @@ function buildDsTheme(){
       el.classList.add('on');
       const pc=document.getElementById('ds-primary-color');
       if(pc)pc.value=t.primary;
-      // accent 색상도 함께 적용
-      document.documentElement.style.setProperty('--accent',t.accent);
-      // S state 동기화
-      if(typeof S!=='undefined'){S.theme=t.id;S.pointColor=null;}
-      applyDsColor(t.primary);
-      saveDsCfg();
+      // S state 동기화 후 config 저장 (웹페이지 색은 안 바꿈)
+      if(typeof S!=='undefined'){S.theme=t.id;S.pointColor=null;S.accentColor=null;}
+      if(typeof saveCfgNow==='function') saveCfgNow();
     };
     grid.appendChild(el);
   });
@@ -48,8 +45,12 @@ function buildDsTheme(){
     el.className='ds-swatch';
     el.style.background=col;
     el.onclick=()=>{
-      document.getElementById('ds-primary-color').value=col;
-      applyDsColor(col);
+      // 웹페이지 CSS 변수 안 건드림 — display.html 타이머 색만 변경
+      if(typeof S!=='undefined'){S.pointColor=col;S.theme=dsCurTheme||null;}
+      if(typeof saveCfgNow==='function') saveCfgNow();
+      // 선택 표시
+      presets.querySelectorAll('.ds-swatch').forEach(x=>x.style.outline='none');
+      el.style.outline='2px solid white';
     };
     presets.appendChild(el);
   });
@@ -58,11 +59,8 @@ function buildDsTheme(){
 function applyDsColor(color){
   const val=color||document.getElementById('ds-primary-color')?.value;
   if(!val)return;
-  document.documentElement.style.setProperty('--red',val);
-  // accent: 현재 테마에서 가져오기
+  // S state 동기화 → config 저장 (웹페이지 색은 변경 안 함)
   const curT=DS_THEMES.find(t=>t.id===dsCurTheme);
-  if(curT) document.documentElement.style.setProperty('--accent',curT.accent);
-  // S state 동기화 → saveCfgNow()가 theme/pointColor를 config에 포함시킴
   if(typeof S!=='undefined'){
     S.pointColor=val;
     S.theme=dsCurTheme||null;
