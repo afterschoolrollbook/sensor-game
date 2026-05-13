@@ -3796,23 +3796,42 @@ function _doRemoveRound(origRi, origMi, grpObj){
   toast(`${g.label} ${origRi+1}-${origMi+1} 경기를 삭제했어요`,'success');
 }
 
+let _selectedMatchId = null;
+
 function onMatchClick(ri, mi, matchObj, event){
-  event = event || window.event;
-  // 클릭된 경기 박스 DOM 요소 찾기
-  let anchorEl = null;
-  if(matchObj&&matchObj._domId){
-    anchorEl = document.querySelector(`[data-match-id="${matchObj._domId}"]`);
-  }
-  if(!anchorEl && event) anchorEl = event.currentTarget || event.target;
-  if(!anchorEl) anchorEl = document.getElementById('pts-bracket-view');
+  const grpObj  = matchObj?._groupObj || null;
+  const origMi  = matchObj?._origMi  ?? mi;
+  const origRi  = matchObj?._origRi  ?? ri;
+  const p1      = matchObj?.p1?.name || (matchObj?.p1 ? String(matchObj.p1) : '—');
+  const p2      = matchObj?.p2?.name || (matchObj?.p2 ? String(matchObj.p2) : '—');
+  const grpLbl  = matchObj?._groupLabel || grpObj?.label || '';
+  const label   = `${grpLbl} ${origRi+1}라운드 ${origMi+1}경기`.trim();
 
-  // 연결 대기 중이고 다른 경기 클릭 → 모달에 "이 경기와 연결" 표시
-  if(_linkSel){
-    const isSame = matchObj&&matchObj._domId && _linkSel.matchObj&&matchObj._domId===_linkSel.matchObj._domId;
-    if(!isSame){ _showMatchModal(anchorEl, ri, mi, matchObj); return; }
+  // 이전 선택 강조 제거
+  if(_selectedMatchId){
+    const prev = document.querySelector(`[data-match-id="${_selectedMatchId}"]`);
+    if(prev){ prev.style.outline=''; prev.style.boxShadow=''; }
+  }
+  // 새 선택 강조
+  if(matchObj?._domId){
+    _selectedMatchId = matchObj._domId;
+    const el = document.querySelector(`[data-match-id="${matchObj._domId}"]`);
+    if(el){ el.style.outline='2px solid var(--red)'; el.style.boxShadow='0 0 12px rgba(230,57,70,.5)'; }
   }
 
-  _showMatchModal(anchorEl, ri, mi, matchObj);
+  // localStorage 저장 → setup.html / display.html 수신
+  const vsData = { p1, p2, label };
+  try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
+
+  // BroadcastChannel + storage cmd → display.html 즉시 반영
+  const cmd = { type:'set_match', p1, p2, label, ts:Date.now() };
+  try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
+  try{
+    if(!window._bvBc) window._bvBc = new BroadcastChannel('sgp_cmd');
+    window._bvBc.postMessage(cmd);
+  }catch(e){}
+
+  toast(`${label} 선택됨`, 'info');
 }
 
 function advanceMatch(ri,mi){

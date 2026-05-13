@@ -228,7 +228,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 <script src="js/app.js"></script>
 <script>
-let lastStateStr='', lastCfgStr='', _raf=false;
+let _raf=false;
 
 /* ── BroadcastChannel 수신 ── */
 let _dispBc=null;
@@ -249,18 +249,6 @@ function refreshVisible(){
   if(currentScreen===3) refresh3();
 }
 function refreshAll(){ refresh1(); refresh2(); refresh3(); }
-
-function startPolling(){
-  /* 상태/config 변경 감지: 500ms 폴링 */
-  setInterval(()=>{
-    const s=localStorage.getItem('sgp_state');
-    const c=localStorage.getItem('sgp_display_config');
-    const changed=(s!==lastStateStr)||(c!==lastCfgStr);
-    if(s!==lastStateStr) lastStateStr=s;
-    if(c!==lastCfgStr)   lastCfgStr=c;
-    if(changed) scheduleRefresh();
-  },500);
-}
 
 function getCfg(){try{return JSON.parse(localStorage.getItem('sgp_display_config')||'{}');}catch{return {};}}
 
@@ -479,6 +467,11 @@ function switchScreen(n){
 
 function handleCmd(cmd){
   if(!cmd)return;
+  if(cmd.type==='set_match'){
+    _set('d1-vs-p1', cmd.p1||'—'); _set('d1-vs-p2', cmd.p2||'—');
+    _set('d2-p1',    cmd.p1||'—'); _set('d2-p2',    cmd.p2||'—');
+    _set('d2-info',  cmd.label||'진행 중');
+  }
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
   if(cmd.type==='timer_start'){
@@ -507,6 +500,15 @@ window.addEventListener('storage',e=>{
   if(e.key==='sgp_display_time')   _set('d1-time', e.newValue||'00:00.000');
   if(e.key==='sgp_display_player') _set('d1-chal', e.newValue||'—');
   if(e.key==='sgp_display_lap')    _set('d1-lap',  e.newValue||'');
+  if(e.key==='sgp_display_vs'){
+    try{
+      const vs=JSON.parse(e.newValue||'{}');
+      _set('d1-vs-p1', vs.p1||'—'); _set('d1-vs-p2', vs.p2||'—');
+      _set('d2-p1',    vs.p1||'—'); _set('d2-p2',    vs.p2||'—');
+      _set('d2-info',  vs.label||'진행 중');
+    }catch(err){}
+  }
+  if(e.key==='sgp_state'||e.key==='sgp_display_config') scheduleRefresh();
 });
 
 document.addEventListener('keydown',e=>{
@@ -518,7 +520,6 @@ document.addEventListener('keydown',e=>{
 
 refreshVisible();
 startClock();
-startPolling();
 // 초기: 1번 화면 티커 활성화
 document.getElementById('screen-1').classList.add('visible');
 </script>
