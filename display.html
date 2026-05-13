@@ -18,7 +18,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* 스캔라인: will-change로 GPU 레이어 분리 → CPU repaint 제거 */
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:999;will-change:transform;transform:translateZ(0);}
 
-#screen-1,#screen-2,#screen-3{position:fixed;inset:0;}
+#screen-1,#screen-2,#screen-3{position:fixed;inset:0;contain:strict;}
 #screen-2,#screen-3{display:none;}
 
 /* ══ 1번 전광판 — setup.html #pvc 와 동일 ══ */
@@ -40,13 +40,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 #d1-main{display:flex;gap:14px;align-items:stretch;overflow:hidden;min-height:0;position:relative;z-index:2;}
 
 /* 타이머 */
-#d1-timer{flex:1.3;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.018);border:1px solid rgba(76,201,240,.12);border-radius:9px;padding:18px;position:relative;overflow:hidden;}
+#d1-timer{flex:1.3;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.018);border:1px solid rgba(76,201,240,.12);border-radius:9px;padding:18px;position:relative;overflow:hidden;contain:layout;}
 #d1-timer::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.04) 0%,transparent 70%);}
 .tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,13px);letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;}
 #d1-chal{font-family:'Bebas Neue',cursive;font-size:clamp(28px,4vw,52px);letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1;}
-#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--accent);text-shadow:0 0 60px rgba(76,201,240,.4);transition:color .3s;position:relative;z-index:1;}
-#d1-time.running{color:var(--green);text-shadow:0 0 60px rgba(6,214,160,.4);}
-#d1-time.stopped{color:var(--red);text-shadow:0 0 60px rgba(230,57,70,.4);}
+#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--accent);text-shadow:0 0 30px rgba(76,201,240,.35);transition:color .3s;position:relative;z-index:1;contain:layout style;}
+#d1-time.running{color:var(--green);text-shadow:0 0 30px rgba(6,214,160,.35);}
+#d1-time.stopped{color:var(--red);text-shadow:0 0 30px rgba(230,57,70,.35);}
 #d1-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.4vw,18px);color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1;}
 
 /* 우측 패널 */
@@ -219,12 +219,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 <script src="js/app.js"></script>
-<script src="js/timer.js"></script>
 <script>
 let lastStateStr='', lastCfgStr='', _raf=false;
-let _timerRaf=null; // 타이머 RAF 핸들
 
-/* ── BroadcastChannel 수신 (setup.html과 같은 origin) ── */
+/* ── BroadcastChannel 수신 ── */
 let _dispBc=null;
 try{
   _dispBc=new BroadcastChannel('sgp_cmd');
@@ -236,26 +234,16 @@ function scheduleRefresh(){
   requestAnimationFrame(()=>{ _raf=false; refreshVisible(); });
 }
 
-/* 현재 보이는 화면만 갱신 (성능 최적화) */
+/* 현재 보이는 화면만 갱신 */
 function refreshVisible(){
-  refresh1(); // 1번은 항상 (타이머/순위 데이터)
+  refresh1();
   if(currentScreen===2) refresh2();
   if(currentScreen===3) refresh3();
 }
-
 function refreshAll(){ refresh1(); refresh2(); refresh3(); }
 
 function startPolling(){
-  /* 타이머: setInterval 대신 RAF 루프 — 화면이 숨겨지면 자동 중단 */
-  function timerLoop(){
-    if(Timer.isRunning()){
-      _set('d1-time', App.formatTime(Timer.getElapsed()));
-    }
-    _timerRaf=requestAnimationFrame(timerLoop);
-  }
-  _timerRaf=requestAnimationFrame(timerLoop);
-
-  /* 상태 폴링: 300ms → 500ms (불필요한 DOM 비교 횟수 절반 감소) */
+  /* 상태/config 변경 감지: 500ms 폴링 */
   setInterval(()=>{
     const s=localStorage.getItem('sgp_state');
     const c=localStorage.getItem('sgp_display_config');
@@ -482,18 +470,11 @@ function handleCmd(cmd){
   if(!cmd)return;
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
-  if(cmd.type==='timer_start'){
-    document.getElementById('d1-time').className='running';
-    try{if(Timer&&Timer.start)Timer.start();}catch(e){}
-  }
-  if(cmd.type==='timer_stop'){
-    document.getElementById('d1-time').className='stopped';
-    try{if(Timer&&Timer.stop)Timer.stop();}catch(e){}
-  }
+  if(cmd.type==='timer_start') document.getElementById('d1-time').className='running';
+  if(cmd.type==='timer_stop')  document.getElementById('d1-time').className='stopped';
   if(cmd.type==='timer_reset'){
     _set('d1-time','00:00.000');
     document.getElementById('d1-time').className='';
-    try{if(Timer&&Timer.reset)Timer.reset();}catch(e){}
   }
   if(cmd.type==='clear_rank')  scheduleRefresh();
   if(cmd.type==='screen_1')    switchScreen(1);
@@ -517,7 +498,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Tab'){e.preventDefault();switchScreen();}
 });
 
-refreshAll();
+refreshVisible();
 startClock();
 startPolling();
 </script>
