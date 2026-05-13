@@ -1157,7 +1157,7 @@ function buildNav(){
 }
 function goS(n){
   document.getElementById('s'+cs).classList.remove('active');
-  cs=Math.max(1,Math.min(5,n));
+  cs=Math.max(1,Math.min(6,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
   if(cs===3)buildMG();
