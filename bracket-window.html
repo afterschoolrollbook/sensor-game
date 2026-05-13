@@ -260,6 +260,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="openShuffleNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔀 랜덤 섞기</button>
         <button onclick="printAll()" style="padding:5px 16px;background:var(--red);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;">🖨️ 전체 PDF</button>
         <button onclick="printSelected()" style="padding:5px 16px;background:rgba(76,201,240,.15);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;font-weight:700;">📄 선택 PDF</button>
+        <button onclick="finalizeBracket()" id="btn-finalize" style="padding:5px 18px;background:linear-gradient(135deg,#06d6a0,#00b97a);border:none;color:#fff;border-radius:8px;font-size:12px;font-weight:700;box-shadow:0 0 12px rgba(6,214,160,0.35);letter-spacing:.3px;">✅ 완성</button>
       </div>
     </div>
     <div style="padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);">
@@ -1598,6 +1599,67 @@ function goStep4(){
   show('pts-step4');
   _renderPdfCheckboxes();
   _renderPdfPreview([]); // 초기엔 아무것도 표시 안 함
+}
+
+/* ── 완성 버튼 — 전광판에서 불러올 수 있도록 전체 데이터 저장 ── */
+function finalizeBracket(){
+  try{
+    // 1) groupBrackets 정제 (순환참조 제거)
+    const clean=S.groupBrackets.map(g=>({
+      ...g,
+      matches:g.matches.map(round=>round.map(m=>{
+        const {_groupObj,...rest}=m; return rest;
+      }))
+    }));
+
+    // 2) display config (행사명·일시·장소 등)
+    const dispCfg=(()=>{ try{ return JSON.parse(localStorage.getItem('sgp_display_config')||'{}'); }catch(e){ return {}; } })();
+
+    // 3) 완성 데이터 패키지
+    const finalData={
+      version:2,
+      finalizedAt: new Date().toISOString(),
+      groupBrackets: clean,
+      courtCount: _courtCount||1,
+      layout: _bracketLayout||'A',
+      settings: S.settings||{},
+      displayConfig: dispCfg,
+      totalGroups: clean.length,
+      totalParticipants: clean.reduce((sum,g)=>sum+(g.slots?g.slots.length:0),0),
+    };
+
+    // 4) 전광판용 키에 저장 (sgp_bracket_final)
+    localStorage.setItem('sgp_bracket_final', JSON.stringify(finalData));
+    // 기존 키들도 동기화
+    localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
+    localStorage.setItem('sgp_courtCount', String(finalData.courtCount));
+    localStorage.setItem('sgp_layout', finalData.layout);
+    localStorage.setItem('sgp_bracket_temp', JSON.stringify({groupBrackets:clean, savedAt:new Date().toLocaleTimeString()}));
+
+    // 5) 부모창에도 알림
+    if(window.opener){
+      window.opener.postMessage({type:'sgp_bracket_finalized', finalData},'*');
+    }
+
+    // 6) 버튼 상태 변경
+    const btn=document.getElementById('btn-finalize');
+    if(btn){
+      btn.textContent='✅ 완성됨';
+      btn.style.background='linear-gradient(135deg,#00b97a,#008f5e)';
+      btn.style.boxShadow='0 0 18px rgba(6,214,160,0.55)';
+      setTimeout(()=>{
+        btn.textContent='✅ 완성';
+        btn.style.background='linear-gradient(135deg,#06d6a0,#00b97a)';
+        btn.style.boxShadow='0 0 12px rgba(6,214,160,0.35)';
+      },2500);
+    }
+
+    const g=clean.length, p=finalData.totalParticipants;
+    toast('완성! '+g+'개 체급 · '+p+'명 저장됨 — 전광판에서 불러올 수 있어요','success');
+  } catch(e){
+    console.error(e);
+    toast('완성 저장 실패: '+e.message,'error');
+  }
 }
 
 // ── 체급 선택 체크박스 렌더 ──
