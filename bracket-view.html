@@ -4038,18 +4038,43 @@ window.addEventListener('load',function(){ _initInfoChips(); });
 
 
 // ── BRACKET VIEW: 자동 로드 ──
+function _showLoadError(msg){
+  const view=document.getElementById('pts-bracket-view');
+  if(view) view.innerHTML='<div style="color:#e63946;font-size:13px;padding:24px;font-family:monospace;white-space:pre-wrap;">'+msg+'</div>';
+  toast(msg.split('\n')[0],'error');
+  console.error('[bracket-view]',msg);
+}
 window.addEventListener('load', ()=>{
   try{
     const savedLayout = localStorage.getItem('sgp_layout');
     if(savedLayout) _bracketLayout = savedLayout;
 
-    const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
-    const raw = localStorage.getItem('sgp_groupBrackets');
     let gb = null;
-    if(temp && temp.groupBrackets && temp.groupBrackets.length) gb = temp.groupBrackets;
-    else if(raw) gb = JSON.parse(raw);
+    // 1순위: sgp_bracket_temp
+    try{
+      const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
+      if(temp && temp.groupBrackets && temp.groupBrackets.length) gb = temp.groupBrackets;
+    }catch(e){}
+    // 2순위: sgp_groupBrackets
+    if(!gb || !gb.length){
+      try{
+        const raw = localStorage.getItem('sgp_groupBrackets');
+        if(raw) gb = JSON.parse(raw);
+      }catch(e){ _showLoadError('sgp_groupBrackets 파싱 오류: '+e.message); return; }
+    }
+    // 3순위: sgp_bracket_final
+    if(!gb || !gb.length){
+      try{
+        const fin = JSON.parse(localStorage.getItem('sgp_bracket_final') || '{}');
+        if(fin && fin.groupBrackets && fin.groupBrackets.length) gb = fin.groupBrackets;
+      }catch(e){}
+    }
 
-    if(!gb || !gb.length){ toast('저장된 대진표가 없습니다','error'); return; }
+    if(!gb || !gb.length){
+      const raw = localStorage.getItem('sgp_groupBrackets');
+      _showLoadError('저장된 대진표가 없습니다.\nsgp_groupBrackets = '+(raw||'(null)').slice(0,120));
+      return;
+    }
 
     S.groupBrackets = gb;
     S.activeGroup = 0;
@@ -4066,8 +4091,7 @@ window.addEventListener('load', ()=>{
     renderBracketTabs();
     _redrawBracketView();
   }catch(e){
-    toast('불러오기 실패: ' + e.message, 'error');
-    console.error(e);
+    _showLoadError('렌더링 오류: '+e.message+'\n'+e.stack);
   }
 });
 </script>
