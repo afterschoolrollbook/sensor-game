@@ -239,22 +239,20 @@ function autoDetectSortKeys(){
 
 
 function show(stepId){
-  ['pts-step1','pts-step2','pts-step3','pts-step4'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.classList.toggle('on', id===stepId);
+  // bracket-view: pts-step3만 허용, 나머지는 무시
+  if(stepId !== 'pts-step3') return;
+  const el=document.getElementById('pts-step3');
+  if(el) el.classList.add('on');
+  const ci=document.getElementById('step3-court-info');
+  if(ci) ci.textContent=`경기장 ${_courtCount||1}개`;
+  ['A','B','C','D','E'].forEach(x=>{
+    const btn=document.getElementById('popup-lay-'+x);
+    if(!btn) return;
+    const active=x===(_bracketLayout||'A');
+    btn.style.borderColor=active?'var(--red)':'var(--border2)';
+    btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
+    btn.style.color=active?'var(--red)':'var(--text2)';
   });
-  if(stepId==='pts-step3'){
-    const ci=document.getElementById('step3-court-info');
-    if(ci) ci.textContent=`경기장 ${_courtCount||1}개`;
-    // 앞에서 선택된 레이아웃 그대로 하이라이트
-    ['A','B','C','D','E'].forEach(x=>{
-      const btn=document.getElementById('popup-lay-'+x);
-      if(!btn) return;
-      const active=x===(_bracketLayout||'A');
-      btn.style.borderColor=active?'var(--red)':'var(--border2)';
-      btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
-      btn.style.color=active?'var(--red)':'var(--text2)';
-    });
-  }
 }
 
 function togglePtsSort(key){
@@ -337,7 +335,7 @@ function confirmPtsGroup(){
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
   } catch(e){}
   toast('저장 완료!', 'success');
-  show('pts-step2'); setPtsMode('tournament'); renderOrderArea();
+  // [bracket-view: 제거됨] 라인 338
   setCompType(_compType||'national');
   setCourtCount(_courtCount||1);
   _bracketLayout='A';
@@ -347,7 +345,7 @@ function confirmPtsGroup(){
   updateBracketPreview();
   renderPtsOverview();
 }
-function goStep1(){ show('pts-step1'); }
+  // [bracket-view: 제거됨] 라인 348
 let _compType='national';
 let _courtCount=1;
 
@@ -601,8 +599,8 @@ function _initLayoutTooltips(){
   });
 }
 
-function goStep2(){
-  show('pts-step2');
+  // [bracket-view: 제거됨] 라인 602
+  // [bracket-view: 제거됨] 라인 603
   setPtsMode('tournament');
   renderOrderArea();
   setCompType(_compType||'national');
@@ -1392,11 +1390,11 @@ function applyBracket(){
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
   }catch(e){}
   toast(g.label+' 대진표 적용 완료!','success');
-  setTimeout(()=>goStep4(), 400);
+  // [bracket-view: 제거됨] 라인 1393
 }
 
-function goStep4(){
-  show('pts-step4');
+  // [bracket-view: 제거됨] 라인 1396
+  // [bracket-view: 제거됨] 라인 1397
   _renderPdfCheckboxes();
   _renderPdfPreview([]); // 초기엔 아무것도 표시 안 함
 }
@@ -3870,7 +3868,7 @@ document.addEventListener('keydown', e=>{
           show('pts-step3');
           renderBracketTabs();
           _redrawBracketView();
-          setTimeout(()=>goStep4(), 100);
+  // [bracket-view: 제거됨] 라인 3871
           toast('이전 설정 불러왔어요','info');
         } else if(savedStep==='3'){
           const savedGB=localStorage.getItem('sgp_groupBrackets');
@@ -3880,7 +3878,7 @@ document.addEventListener('keydown', e=>{
           _redrawBracketView();
           toast('이전 설정 불러왔어요','info');
         } else {
-          goStep2();
+  // [bracket-view: 제거됨] 라인 3881
           toast('이전 설정 불러왔어요','info');
         }
       }, 0);
@@ -3890,7 +3888,7 @@ document.addEventListener('keydown', e=>{
 
 function restoreThenGo(){
   if(window._restoreBanner) window._restoreBanner.remove();
-  goStep2();
+  // [bracket-view: 제거됨] 라인 3891
   toast('이어서 진행합니다!','success');
 }
 
