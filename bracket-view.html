@@ -46,7 +46,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
   <div id="hdr">
     <div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:2px;">// BRACKET VIEW</div>
-      <div style="font-size:15px;font-weight:700;" id="win-title">대진표 보기</div>
+      <div style="font-size:15px;font-weight:700;" id="win-title">대진표</div>
     </div>
     <button onclick="window.close()" style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);font-size:13px;padding:5px 14px;border-radius:6px;font-weight:700;">✕ 닫기</button>
   </div>
@@ -207,34 +207,12 @@ window.addEventListener('message', e=>{
   renderPtsOverview();
 });
 
-// 완전히 로드된 뒤 localStorage에서 대진표 바로 표시
+// 완전히 로드된 뒤 부모창에 "준비됨" 신호 → 부모가 데이터를 밀어줌
+// (localStorage가 있으면 이미 renderList()로 표시되므로 추가 요청은 스킵)
 window.addEventListener('load', ()=>{
-  // 저장된 레이아웃 복원
-  try{
-    const savedLayout=localStorage.getItem('sgp_layout');
-    if(savedLayout) _bracketLayout=savedLayout;
-  }catch(e){}
-  // groupBrackets 로드
-  try{
-    const temp=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');
-    const raw=localStorage.getItem('sgp_groupBrackets');
-    let gb=null;
-    if(temp&&temp.groupBrackets&&temp.groupBrackets.length) gb=temp.groupBrackets;
-    else if(raw) gb=JSON.parse(raw);
-    if(gb&&gb.length){
-      S.groupBrackets=gb; S.activeGroup=0;
-      // 행사명 표시
-      try{
-        const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
-        const st=JSON.parse(localStorage.getItem('sgp_state')||'{}');
-        const name=(cfg.eventName||st.event?.name||'').trim();
-        if(name) document.getElementById('win-title').textContent='대진표 — '+name;
-      }catch(e){}
-      show('pts-step3');
-      renderBracketTabs();
-      _redrawBracketView();
-    }
-  }catch(e){ toast('대진표 불러오기 실패: '+e.message,'error'); }
+  if(!_pts.length && window.opener){
+    try{ window.opener.postMessage({type:'sgp_pts_request'},'*'); }catch(e){}
+  }
 });
 
 let _sortKeys=[], _groups={}, _mode='tournament';
@@ -262,7 +240,7 @@ function autoDetectSortKeys(){
 
 function show(stepId){
   ['pts-step1','pts-step2','pts-step3','pts-step4'].forEach(id=>{
-    document.getElementById(id).classList.toggle('on', id===stepId);
+    const el=document.getElementById(id); if(el) el.classList.toggle('on', id===stepId);
   });
   if(stepId==='pts-step3'){
     const ci=document.getElementById('step3-court-info');
@@ -4078,6 +4056,40 @@ function _renderInfoHeader(){
 }
 window.addEventListener('load',function(){ _initInfoChips(); });
 
+
+// ── BRACKET VIEW: 자동 로드 ──
+window.addEventListener('load', ()=>{
+  try{
+    const savedLayout = localStorage.getItem('sgp_layout');
+    if(savedLayout) _bracketLayout = savedLayout;
+
+    const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
+    const raw = localStorage.getItem('sgp_groupBrackets');
+    let gb = null;
+    if(temp && temp.groupBrackets && temp.groupBrackets.length) gb = temp.groupBrackets;
+    else if(raw) gb = JSON.parse(raw);
+
+    if(!gb || !gb.length){ toast('저장된 대진표가 없습니다','error'); return; }
+
+    S.groupBrackets = gb;
+    S.activeGroup = 0;
+    _courtCount = Math.max(...gb.map(g => g.court || 1));
+
+    try{
+      const cfg = JSON.parse(localStorage.getItem('sgp_display_config') || '{}');
+      const st = JSON.parse(localStorage.getItem('sgp_state') || '{}');
+      const name = (cfg.eventName || st.event?.name || '').trim();
+      if(name) document.getElementById('win-title').textContent = '대진표 — ' + name;
+    }catch(e){}
+
+    show('pts-step3');
+    renderBracketTabs();
+    _redrawBracketView();
+  }catch(e){
+    toast('불러오기 실패: ' + e.message, 'error');
+    console.error(e);
+  }
+});
 </script>
 </body>
 </html>
