@@ -1900,11 +1900,13 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
   }
   window.isCurrentMatchIdx=function(ri,mi){
     if(curRi<0||curMi<0) return false;
-    const curGrp=window.S.matches?.[0]?.[0]?._groupLabel||'';
+    const curGrp=S.matches?.[0]?.[0]?._groupLabel||'';
     return ri===curRi&&mi===curMi&&curGrp===curGroupLabel;
   };
   const saved=S.matches;
-  view.innerHTML='';
+  // S.pts 보존 확인
+  if(!S.pts) S.pts=[];
+  if(!S.matches) S.matches=[];
   view.style.overflow='auto';
   if(layout==='D'&&courtCount>=2){
     const lGroups=groups.filter(g=>g.court===1);
@@ -1952,10 +1954,15 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       S.matches=taggedMatches;
       try{
-        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
-        (fns[layout]||renderBracketA)(groupWrap);
+        // renderBracketA/B/C는 내부에서 S.matches를 다시 읽으므로
+        // _renderBracketHTML에 taggedMatches를 직접 전달
+        if(layout==='B'||layout==='C'){
+          _renderBracketHoriz(groupWrap,taggedMatches,layout==='B'?'bottom-up':'top-down');
+        } else {
+          _renderBracketHTML(groupWrap,taggedMatches,'top');
+        }
         stripScroll(groupWrap);
-      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>';}
+      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:10px;word-break:break-all;">'+e.message+'<br>'+e.stack+'</div>';}
       outerWrap.appendChild(groupWrap);
     });
     view.appendChild(outerWrap);
@@ -2001,30 +2008,6 @@ function updatePv3(){
   _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi);
   view.id='pv3-inner';
 }
-
-  // step4.js의 _getAvailW가 pts-bracket-view ID를 사용하므로 임시로 ID 변경
-  view.id='pts-bracket-view';
-
-  // 진행중 경기 ri/mi 찾기
-  let curRi=-1,curMi=-1;
-  try{
-    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
-    const curP1=mv.p1||'',curP2=mv.p2||'';
-    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
-    if(curP1&&curP2){
-      outer: for(const g of groups){
-        for(let ri=0;ri<g.matches.length;ri++){
-          for(let mi=0;mi<g.matches[ri].length;mi++){
-            const m=g.matches[ri][mi];
-            const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
-            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curRi=ri;curMi=mi;break outer;}
-          }
-        }
-      }
-    }
-  }catch(e){}
-
 
 /* ── PVC SCALE (TV 비율 축소) ── */
 function scaleEl(wrapId, elId){
