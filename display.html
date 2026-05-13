@@ -426,8 +426,6 @@ function updateTicker(cfg,di,ss){
 }
 
 function getVs(state){
-  // "2번 (선동혁)" → "선동혁", "3번 [방영호]" → "방영호"
-  const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
   const rounds=state.tournament?.rounds||state.matches||[];
   for(const round of rounds)
     for(const m of (Array.isArray(round)?round:[]))
