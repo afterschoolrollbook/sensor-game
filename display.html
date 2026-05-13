@@ -46,7 +46,7 @@ body::after {
 #display-canvas {
   width: 100vw; height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   padding: 40px;
   gap: 24px;
   position: relative;
@@ -255,6 +255,23 @@ body::after {
 }
 .event-meta-tag span { color: var(--text); font-size: 13px; }
 
+/* ── 티커 블록 ── */
+.blk-ticker {
+  overflow: hidden; white-space: nowrap;
+  border-top: 1px solid var(--dim);
+  padding-top: 10px;
+}
+.blk-ticker-inner {
+  display: inline-block;
+  font-family: var(--font-m);
+  font-size: 14px; letter-spacing: 2px; color: var(--dim);
+  animation: tickerScroll 30s linear infinite;
+}
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* ── 드래그 블록 (비활성화된 border) ── */
 .dragging { opacity: .5; border: 2px dashed var(--primary) !important; }
 .drag-over { border: 2px solid var(--green) !important; }
@@ -337,6 +354,11 @@ body::after {
     <div class="blk-footer-game" id="disp-game-label">// TIMELAP</div>
     <div class="blk-footer-time" id="disp-clock"></div>
   </div>
+
+  <!-- 티커 -->
+  <div class="blk-ticker" id="blk-ticker">
+    <span class="blk-ticker-inner" id="blk-ticker-inner">SGP PLATFORM</span>
+  </div>
 </div><!-- /display-canvas -->
 </div><!-- /screen-1 -->
 
@@ -354,92 +376,119 @@ body::after {
 <script>
 // ── 상태 공유 (localStorage 폴링) ──
 let lastStateStr = '';
+let lastCfgStr   = '';
 let clockInterval = null;
 
 function startPolling() {
   setInterval(() => {
+    // sgp_state 변경 감지 (순위·참가자 등)
     const cur = localStorage.getItem('sgp_state');
     if (cur !== lastStateStr) {
       lastStateStr = cur;
+      refreshDisplay();
+    }
+    // sgp_display_config 변경 감지 (블록·폰트·테마·색상 등 설정 패널 실시간 반영)
+    const curCfg = localStorage.getItem('sgp_display_config');
+    if (curCfg !== lastCfgStr) {
+      lastCfgStr = curCfg;
       refreshDisplay();
     }
     // 타이머 실시간 업데이트
     if (Timer.isRunning()) {
       document.getElementById('disp-timer').textContent = App.formatTime(Timer.getElapsed());
     }
-  }, 50);
+  }, 100);
 }
 
 function refreshDisplay() {
   const state = App.getState();
   const cfg   = getDisplayConfig();
-  const ev    = state.event || {};
+  const di    = cfg.displayItems || {};          // setup의 S.di — 표시 항목 on/off
+  const blk   = cfg.blk || {};                  // setup의 S.blk — 블록 on/off
+  const ss    = state.settings || {};            // App.setState settings (dt, pl 등)
+  const ev    = state.event    || {};
 
-  // 헤더 표시 여부
-  document.getElementById('blk-header').style.display = cfg.showHeader !== false ? 'flex' : 'none';
+  // ── 블록 on/off (setup 미리보기의 blk 설정과 동기화) ──
+  const showEl = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? (el._defaultDisplay || '') : 'none';
+  };
+  showEl('blk-header', blk.header !== false);
+  showEl('blk-timer',  blk.timer  !== false);
+  showEl('blk-rank',   blk.rank   !== false);
+  showEl('blk-footer', blk.footer !== false);
+  showEl('blk-ticker', blk.ticker !== false);
 
-  // 행사명
-  document.getElementById('blk-event-name').textContent =
-    ev.showEventName !== false ? (ev.name || '게임 행사') : '';
+  // ── 행사명 ──
+  const eventNameEl = document.getElementById('blk-event-name');
+  eventNameEl.textContent = di.eventname !== false
+    ? (cfg.eventName || ev.name || '게임 행사') : '';
 
-  // 로고
+  // ── 타이틀 폰트 (setup의 titleFont 설정 반영) ──
+  const fontMap = {
+    bebas:    "'Bebas Neue',cursive",
+    rajdhani: "'Rajdhani',sans-serif",
+    mono:     "'Share Tech Mono',monospace",
+    noto:     "'Noto Sans KR',sans-serif",
+    serif:    'Georgia,serif',
+  };
+  eventNameEl.style.fontFamily = fontMap[cfg.titleFont] || fontMap.bebas;
+
+  // ── 로고 ──
   if (ev.logo) {
     document.getElementById('logo-img').src = ev.logo;
     document.getElementById('blk-logo').style.display = 'block';
   }
 
-  // 부제목 → 행사명 아래 작게 표시
-  const subtitleEl = document.getElementById('blk-subtitle') ||
-    (() => {
-      const el = document.createElement('div');
-      el.id = 'blk-subtitle';
-      el.style.cssText = 'font-family:var(--font-m);font-size:14px;letter-spacing:3px;color:var(--dim);margin-top:2px;';
-      document.getElementById('blk-event-name').insertAdjacentElement('afterend', el);
-      return el;
-    })();
-  subtitleEl.textContent = ev.showSubtitle && ev.subtitle ? ev.subtitle : '';
+  // ── 부제목 ──
+  let subtitleEl = document.getElementById('blk-subtitle');
+  if (!subtitleEl) {
+    subtitleEl = document.createElement('div');
+    subtitleEl.id = 'blk-subtitle';
+    subtitleEl.style.cssText = 'font-family:var(--font-m);font-size:14px;letter-spacing:3px;color:var(--dim);margin-top:2px;';
+    eventNameEl.insertAdjacentElement('afterend', subtitleEl);
+  }
+  subtitleEl.textContent = di.subtitle ? (cfg.subtitle || ss.sub || '') : '';
 
-  // 메타 정보 (일시, 장소, 후원, 종목명)
+  // ── 메타 정보 (종목명·일시·장소·후원) ──
   const metaEl = document.getElementById('blk-event-meta');
   const metaItems = [];
-  if (ev.showGameName && ev.gameName) metaItems.push({ icon:'🏆', val: ev.gameName });
-  if (ev.showDate    && ev.date)      metaItems.push({ icon:'📅', val: ev.date });
-  if (ev.showPlace   && ev.place)     metaItems.push({ icon:'📍', val: ev.place });
-  if (ev.showSponsor && ev.sponsor)   metaItems.push({ icon:'🤝', val: ev.sponsor });
+  if (di.gamename && (cfg.gameLabel || ss.gl)) metaItems.push({ icon:'🏆', val: cfg.gameLabel || ss.gl });
+  if (di.date     && (cfg.dt        || ss.dt)) metaItems.push({ icon:'📅', val: cfg.dt        || ss.dt });
+  if (di.place    && (cfg.pl        || ss.pl)) metaItems.push({ icon:'📍', val: cfg.pl        || ss.pl });
+  if (di.sponsor  && (cfg.sponsor   || ss.sp)) metaItems.push({ icon:'🤝', val: cfg.sponsor   || ss.sp });
   metaEl.innerHTML = metaItems.map(m =>
     `<div class="event-meta-tag">${m.icon} <span>${m.val}</span></div>`
   ).join('');
   metaEl.style.display = metaItems.length ? 'flex' : 'none';
 
-  // 슬로건 (1, 2)
+  // ── 슬로건 ──
   const sloganEl = document.getElementById('blk-slogan');
   const slogans = [];
-  if (ev.showSlogan1 && ev.slogan1) slogans.push(ev.slogan1);
-  if (ev.showSlogan2 && ev.slogan2) slogans.push(ev.slogan2);
+  if (di.slogan1 && (cfg.slogan1 || ss.s1)) slogans.push(cfg.slogan1 || ss.s1);
+  if (di.slogan2 && (cfg.slogan2 || ss.s2)) slogans.push(cfg.slogan2 || ss.s2);
   sloganEl.innerHTML = slogans.map(s => `<div>${s}</div>`).join('');
   sloganEl.style.display = slogans.length ? 'block' : 'none';
 
-  // 현재 도전자
+  // ── 현재 도전자 ──
   const p = state.participants?.[0];
   if (p) document.getElementById('disp-current-name').textContent = p.name;
 
-  // 순위판
-  document.getElementById('blk-rank').style.display = cfg.showRank !== false ? 'flex' : 'none';
+  // ── 순위판 ──
   renderRank();
 
-  // 랩 정보
-  document.getElementById('disp-lap-info').style.display = cfg.showLap !== false ? 'block' : 'none';
-
-  // 게임 라벨
-  const gameName = ev.showGameName && ev.gameName ? ev.gameName : (state.gameType || 'GAME').toUpperCase();
+  // ── 게임 라벨 ──
+  const gameName = (di.gamename && (cfg.gameLabel || ss.gl))
+    ? (cfg.gameLabel || ss.gl)
+    : (state.gameType || 'GAME').toUpperCase();
   document.getElementById('disp-game-label').textContent = '// ' + gameName;
 
-  // 푸터
-  document.getElementById('blk-footer').style.display = cfg.showFooter !== false ? 'flex' : 'none';
-
-  // 테마 컬러
+  // ── 테마 컬러 ──
   if (ev.primaryColor) document.documentElement.style.setProperty('--primary', ev.primaryColor);
   if (ev.accentColor)  document.documentElement.style.setProperty('--accent',  ev.accentColor);
+
+  // ── 티커 내용 ──
+  updateTicker(cfg, di, ss);
 }
 
 function renderRank() {
@@ -464,6 +513,22 @@ function renderRank() {
         : '<div class="rank-no-record">기록없음</div>'}
     </div>`;
   }).join('');
+}
+
+// ── 티커 내용 업데이트 ──
+function updateTicker(cfg, di, ss) {
+  const el = document.getElementById('blk-ticker-inner');
+  if (!el) return;
+  const parts = [];
+  if (di.eventname && (cfg.eventName || ss.en)) parts.push('★ ' + (cfg.eventName || ss.en));
+  if (di.slogan1   && (cfg.slogan1   || ss.s1)) parts.push('▶ ' + (cfg.slogan1   || ss.s1));
+  if (di.slogan2   && (cfg.slogan2   || ss.s2)) parts.push('▶ ' + (cfg.slogan2   || ss.s2));
+  if (di.date      && (cfg.dt        || ss.dt)) parts.push('📅 ' + (cfg.dt        || ss.dt));
+  if (di.place     && (cfg.pl        || ss.pl)) parts.push('📍 ' + (cfg.pl        || ss.pl));
+  if (di.sponsor   && (cfg.sponsor   || ss.sp)) parts.push('🤝 ' + (cfg.sponsor   || ss.sp));
+  if (!parts.length) parts.push('SGP PLATFORM', '⚡ SENSOR GAME PLATFORM', '★ READY');
+  const t = parts.join('          ');
+  el.textContent = t + '          ' + t;
 }
 
 // 시계
@@ -527,6 +592,7 @@ window.addEventListener('storage', e => {
     if (cmd.type === 'timer_start') { document.getElementById('disp-timer').className = 'timer-big running'; }
     if (cmd.type === 'timer_stop')  { document.getElementById('disp-timer').className = 'timer-big stopped'; }
     if (cmd.type === 'timer_reset') { document.getElementById('disp-timer').textContent = '00:00.000'; document.getElementById('disp-timer').className = 'timer-big'; }
+    if (cmd.type === 'clear_rank')  { renderRank(); }
   }
   if (e.key === 'sgp_display_time') {
     document.getElementById('disp-timer').textContent = e.newValue || '00:00.000';
@@ -536,6 +602,10 @@ window.addEventListener('storage', e => {
   }
   if (e.key === 'sgp_display_lap') {
     document.getElementById('disp-lap-info').textContent = e.newValue || '';
+  }
+  // 설정 변경 시 실시간 반영
+  if (e.key === 'sgp_display_config') {
+    refreshDisplay();
   }
 });
 
