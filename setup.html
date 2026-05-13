@@ -1973,7 +1973,7 @@ function updatePv3(){
     view.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
     return;
   }
-  const layout=_bracketLayout||'A';
+  const layout=localStorage.getItem('sgp_layout')||_bracketLayout||'A';
   const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
 
   // 진행중 경기: 그룹레이블+ri+mi로 특정
