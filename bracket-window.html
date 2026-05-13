@@ -1238,7 +1238,8 @@ function _redrawBracketView(){
     hdrSp.style.cssText='flex:1;min-width:40px;';
     const hdrR=document.createElement('div');
     hdrR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
-    hdrR.appendChild(mkLabel('// 경기장 2','right'));
+    /* 경기장 2에 배정된 그룹이 있을 때만 헤더 표시 */
+    if(rGroups.length) hdrR.appendChild(mkLabel('// 경기장 2','right'));
     hdrRow.appendChild(hdrL); hdrRow.appendChild(hdrSp); hdrRow.appendChild(hdrR);
     outerWrap.appendChild(hdrRow);
 
@@ -2313,12 +2314,15 @@ function _renderPdfPreview(groups){
     hdrSp.style.cssText='flex:1;min-width:24px;';
     const hdrR=document.createElement('div');
     hdrR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
-    hdrR.appendChild(mkLabel('// 경기장 2','right'));
-    hdrRow.appendChild(hdrL); hdrRow.appendChild(hdrSp); hdrRow.appendChild(hdrR);
-    outerWrap.appendChild(hdrRow);
 
     const lGroups=groups.filter(g=>g.court===1);
     const rGroups=groups.filter(g=>g.court===2);
+
+    /* 경기장 2에 배정된 그룹이 있을 때만 헤더 표시 */
+    if(rGroups.length) hdrR.appendChild(mkLabel('// 경기장 2','right'));
+    hdrRow.appendChild(hdrL); hdrRow.appendChild(hdrSp); hdrRow.appendChild(hdrR);
+    outerWrap.appendChild(hdrRow);
+
     const rowCount=Math.max(lGroups.length, rGroups.length);
 
     const mkPdfSection=(g, reversed)=>{
