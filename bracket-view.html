@@ -287,6 +287,22 @@ function loadBracket(){
 function openPtsPopup(){}
 function closePtsPopup(){}
 
+// _refreshSvgLines: SVG 연결선 재렌더
+function _refreshSvgLines(){
+  renderBracketTabs();
+  _redraw();
+}
+
+// _stripInnerScroll: 내부 스크롤 제거 (bracket-window.html과 동일)
+function _stripInnerScroll(div){
+  div.querySelectorAll('*').forEach(el=>{
+    const s=el.style;
+    if(s.overflow==='auto'||s.overflow==='scroll'||s.overflowX==='auto'||s.overflowX==='scroll'){
+      s.overflow='visible'; s.overflowX='visible';
+    }
+  });
+}
+
 // 초기화
 window.addEventListener('load',()=>{
   _highlightLayout(_bracketLayout||'A');
