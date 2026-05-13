@@ -16,24 +16,26 @@
   --timer-color:#4cc9f0; /* 포인트 색상 - 타이머 텍스트 */
 }
 html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;user-select:none;}
-/* 스캔라인 완전 제거 - 성능 원인 */
 
-#screen-1,#screen-2,#screen-3{position:fixed;inset:0;contain:strict;}
+/* 각 화면: contain:layout paint 로 변경 (strict는 오히려 레이어 복잡도 증가) */
+#screen-1,#screen-2,#screen-3{position:fixed;inset:0;contain:layout paint;}
 #screen-2,#screen-3{display:none;}
 
-/* ══ 1번 전광판 — setup.html #pvc 와 동일 ══ */
+/* ══ 1번 전광판 ══ */
 #disp1{
   width:100%;height:100%;
   display:grid;grid-template-rows:auto 1fr auto auto;
   padding:28px;gap:16px;position:relative;background:var(--bg);
 }
-#disp1::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(230,57,70,.05) 0%,transparent 55%);pointer-events:none;}
+/* radial-gradient 배경 제거 - 전체화면 크기라 비용 큼 */
 
 /* 헤더 */
 #d1-hdr{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--red);padding-bottom:12px;position:relative;z-index:2;}
-#d1-ename{font-family:'Bebas Neue',cursive;font-size:clamp(32px,5vw,64px);letter-spacing:3px;line-height:1;flex:1;text-shadow:0 0 30px rgba(230,57,70,.25);}
+#d1-ename{font-family:'Bebas Neue',cursive;font-size:clamp(32px,5vw,64px);letter-spacing:3px;line-height:1;flex:1;}
 #d1-sub{font-size:14px;color:var(--text2);margin-top:3px;}
-#d1-live{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;color:var(--red);border:1px solid var(--red);padding:4px 11px;border-radius:3px;animation:lp 2s infinite;flex-shrink:0;}
+/* LIVE: 기본 정지, JS로 활성화 */
+#d1-live{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;color:var(--red);border:1px solid var(--red);padding:4px 11px;border-radius:3px;flex-shrink:0;animation:lp 2s infinite;animation-play-state:paused;transform:translateZ(0);}
+#d1-live.active{animation-play-state:running;}
 @keyframes lp{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* 메인 */
@@ -41,12 +43,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 /* 타이머 */
 #d1-timer{flex:1.3;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.018);border:1px solid rgba(76,201,240,.12);border-radius:9px;padding:18px;position:relative;overflow:hidden;contain:layout;}
-#d1-timer::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.04) 0%,transparent 70%);}
 .tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,13px);letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;}
 #d1-chal{font-family:'Bebas Neue',cursive;font-size:clamp(28px,4vw,52px);letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1;}
-#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--timer-color);text-shadow:0 0 30px var(--timer-color);transition:color .3s;position:relative;z-index:1;contain:layout style;}
-#d1-time.running{color:var(--timer-color);filter:brightness(1.2);}
-#d1-time.stopped{color:var(--red);text-shadow:0 0 30px var(--red);filter:none;}
+/* text-shadow 제거 - tick마다 repaint 유발 */
+#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--timer-color);transition:color .3s;position:relative;z-index:1;contain:layout style;}
+#d1-time.running{color:var(--timer-color);}
+#d1-time.stopped{color:var(--red);}
 #d1-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.4vw,18px);color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1;}
 
 /* 우측 패널 */
@@ -61,7 +63,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 /* 순위 */
 #d1-rank{flex:1;display:flex;flex-direction:column;gap:5px;min-height:0;overflow:hidden;position:relative;z-index:2;}
-.rrow{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.018);border-radius:6px;padding:clamp(5px,.8vw,10px) clamp(8px,1vw,14px);border:1px solid rgba(255,255,255,.035);transition:all .3s;}
+.rrow{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.018);border-radius:6px;padding:clamp(5px,.8vw,10px) clamp(8px,1vw,14px);border:1px solid rgba(255,255,255,.035);}
 .rrow.r1{border-color:rgba(255,214,10,.2);background:rgba(255,214,10,.04);}
 .rrow.r2{border-color:rgba(192,192,192,.2);background:rgba(192,192,192,.04);}
 .rrow.r3{border-color:rgba(205,127,50,.2);background:rgba(205,127,50,.04);}
@@ -80,9 +82,10 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #d1-gname{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,14px);letter-spacing:3px;color:var(--text3);}
 #d1-clk{font-family:'Share Tech Mono',monospace;font-size:clamp(11px,1.4vw,16px);color:var(--text2);}
 
-/* 티커 */
+/* 티커: 기본 정지, 1번 화면 표시 중일 때만 실행 */
 #d1-tk{overflow:hidden;border-top:1px solid rgba(255,255,255,.035);padding-top:5px;position:relative;z-index:2;}
-#d1-tki{display:inline-block;white-space:nowrap;font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,13px);letter-spacing:2px;color:var(--text3);animation:ticker 22s linear infinite;}
+#d1-tki{display:inline-block;white-space:nowrap;font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,13px);letter-spacing:2px;color:var(--text3);animation:ticker 22s linear infinite;animation-play-state:paused;transform:translateZ(0);}
+#screen-1.visible #d1-tki{animation-play-state:running;}
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* vs-off / rank-off */
@@ -94,7 +97,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #d1-main.rank-off:not(.vs-off) .d1vs-nm{font-size:clamp(28px,5vw,72px);}
 #d1-main.rank-off:not(.vs-off) .d1vs-vs{font-size:clamp(30px,5.5vw,80px);}
 
-/* ══ 2번 화면 — setup.html #pv2 와 동일 ══ */
+/* ══ 2번 화면 ══ */
 #disp2{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,40px);background:var(--bg);position:relative;}
 #d2-lbl{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2vw,22px);letter-spacing:4px;color:var(--text3);z-index:2;}
 #d2-row{display:flex;align-items:center;gap:clamp(30px,6vw,100px);z-index:2;width:80%;}
@@ -104,7 +107,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #d2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(50px,10vw,120px);color:var(--red);letter-spacing:5px;flex-shrink:0;}
 #d2-info{font-family:'Share Tech Mono',monospace;font-size:clamp(12px,1.5vw,18px);color:var(--text3);letter-spacing:3px;z-index:2;}
 
-/* ══ 3번 화면 — setup.html #pv3 와 동일 ══ */
+/* ══ 3번 화면 ══ */
 #disp3{width:100%;height:100%;display:flex;padding:40px;gap:24px;background:var(--bg);position:relative;overflow:hidden;}
 #d3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
 .d3-col{display:flex;flex-direction:column;gap:10px;min-width:200px;}
@@ -118,21 +121,23 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* 오버레이 */
 #countdown-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.9);display:none;flex-direction:column;align-items:center;justify-content:center;}
 #countdown-overlay.show{display:flex;}
-#countdown-num{font-family:'Bebas Neue',cursive;font-size:30vw;color:var(--red);line-height:1;animation:cntPulse .9s ease both;}
-#countdown-go{font-family:'Bebas Neue',cursive;font-size:20vw;color:var(--green);line-height:1;display:none;}
+#countdown-num{font-family:'Bebas Neue',cursive;font-size:30vw;color:var(--red);line-height:1;transform:translateZ(0);}
 @keyframes cntPulse{0%{transform:scale(1.3);opacity:0}60%{transform:scale(1);opacity:1}100%{transform:scale(.92);opacity:.7}}
+#countdown-go{font-family:'Bebas Neue',cursive;font-size:20vw;color:var(--green);line-height:1;display:none;}
 
 #winner-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
 #winner-overlay.show{display:flex;}
-.w-trophy{font-size:15vw;animation:tb 1s ease infinite alternate;}
+/* 트로피: 우승자 오버레이 표시될 때만 애니메이션 실행됨 */
+.w-trophy{font-size:15vw;transform:translateZ(0);}
+#winner-overlay.show .w-trophy{animation:tb 1s ease infinite alternate;}
 @keyframes tb{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-20px) rotate(5deg)}}
 .w-label{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2vw,22px);letter-spacing:6px;color:var(--yellow);margin:16px 0 8px;}
 .w-name{font-family:'Bebas Neue',cursive;font-size:clamp(48px,12vw,130px);letter-spacing:4px;}
 .w-time{font-family:'Share Tech Mono',monospace;font-size:clamp(20px,4vw,52px);color:var(--accent);margin-top:8px;}
 
-/* 화면 전환 버튼 그룹 */
-#screen-btns{position:fixed;bottom:20px;right:20px;z-index:900;display:flex;gap:6px;backdrop-filter:blur(8px);}
-.scr-btn{background:rgba(4,4,8,.85);border:1px solid var(--border);color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 14px;border-radius:7px;cursor:pointer;transition:all .2s;}
+/* 화면 전환 버튼 — backdrop-filter 제거 */
+#screen-btns{position:fixed;bottom:20px;right:20px;z-index:900;display:flex;gap:6px;}
+.scr-btn{background:rgba(4,4,8,.92);border:1px solid var(--border);color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 14px;border-radius:7px;cursor:pointer;transition:border-color .15s,color .15s;}
 .scr-btn:hover{border-color:var(--accent);color:var(--accent);}
 .scr-btn.active{border-color:var(--red);color:var(--red);background:rgba(230,57,70,.1);}
 </style>
@@ -461,6 +466,8 @@ function switchScreen(n){
   document.getElementById('screen-1').style.display=n===1?'block':'none';
   document.getElementById('screen-2').style.display=n===2?'block':'none';
   document.getElementById('screen-3').style.display=n===3?'block':'none';
+  // 1번 화면일 때만 티커 애니메이션 실행
+  document.getElementById('screen-1').classList.toggle('visible', n===1);
   [1,2,3].forEach(i=>{
     const b=document.getElementById('scr-btn-'+i);
     if(b) b.classList.toggle('active',i===n);
@@ -474,11 +481,18 @@ function handleCmd(cmd){
   if(!cmd)return;
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
-  if(cmd.type==='timer_start') document.getElementById('d1-time').className='running';
-  if(cmd.type==='timer_stop')  document.getElementById('d1-time').className='stopped';
+  if(cmd.type==='timer_start'){
+    document.getElementById('d1-time').className='running';
+    document.getElementById('d1-live').classList.add('active'); // LIVE 깜빡임 시작
+  }
+  if(cmd.type==='timer_stop'){
+    document.getElementById('d1-time').className='stopped';
+    document.getElementById('d1-live').classList.remove('active'); // LIVE 깜빡임 정지
+  }
   if(cmd.type==='timer_reset'){
     _set('d1-time','00:00.000');
     document.getElementById('d1-time').className='';
+    document.getElementById('d1-live').classList.remove('active');
   }
   if(cmd.type==='clear_rank')  scheduleRefresh();
   if(cmd.type==='screen_1')    switchScreen(1);
@@ -505,6 +519,8 @@ document.addEventListener('keydown',e=>{
 refreshVisible();
 startClock();
 startPolling();
+// 초기: 1번 화면 티커 활성화
+document.getElementById('screen-1').classList.add('visible');
 </script>
 </body>
 </html>
