@@ -270,6 +270,7 @@ function togglePtsSort(key){
 
 function renderList(){
   const list=document.getElementById('pts-popup-list');
+  if(!list) return;
   document.getElementById('win-title').textContent='참가자 명단 (총 '+S.pts.length+'명)';
   list.innerHTML='';
 
@@ -3900,7 +3901,7 @@ function clearSavedAndRestart(){
 }
 
 autoDetectSortKeys();
-renderList();
+// renderList(); // bracket-view에서는 Step1 DOM 없으므로 제거
 /* ── 줌(비율 보기): zoom-wrap 전체(격자+콘텐츠)를 화면 배율로 조정 ── */
 function _zoomSet(ratio){
   const zw=document.getElementById('zoom-wrap');
