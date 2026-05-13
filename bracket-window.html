@@ -2397,7 +2397,44 @@ function printAll(){
 function printSelected(){
   const sel=_getSelectedGroups();
   if(!sel.length){ toast('체급을 하나 이상 선택해주세요','error'); return; }
-  _doPrint(sel, false);
+
+  if(!S.groupBrackets?.length){
+    toast('대진표를 먼저 만들어주세요','error'); return;
+  }
+
+  // 선택된 그룹만 pdf-preview에 렌더 후 전체 PDF와 동일한 창으로 열기
+  const savedHide=window._hideNames;
+  window._hideNames=false;
+  _renderPdfPreview(sel);          // 선택 그룹만 렌더
+  window._hideNames=savedHide;
+
+  const win=window.open('','_blank','width=1200,height=900');
+  if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
+
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const previewEl=document.getElementById('pdf-preview');
+    if(!previewEl){ toast('미리보기 생성 실패','error'); win.close(); return; }
+    const clone=previewEl.cloneNode(true);
+    clone.querySelectorAll('*').forEach(el=>{
+      el.style.overflow='visible';
+      el.style.overflowX='visible';
+      el.style.overflowY='visible';
+    });
+    clone.querySelectorAll('svg').forEach(s=>{
+      s.setAttribute('overflow','visible');
+      s.style.overflow='visible';
+    });
+    const rawHTML=clone.innerHTML;
+    _writeFullPreviewWin(win, rawHTML);
+
+    // 팝업이 닫힌 후 메인 미리보기를 원래 전체 그룹으로 복원
+    const restoreInterval=setInterval(function(){
+      if(win.closed){
+        clearInterval(restoreInterval);
+        _renderPdfPreview(_getSelectedGroups());
+      }
+    }, 500);
+  }));
 }
 
 // ── 전체 PDF 미리보기 창 ──
@@ -3577,6 +3614,12 @@ html,body{background:var(--bg2);font-family:'Noto Sans KR',sans-serif;}
   box-shadow:0 2px 12px rgba(0,0,0,.3);
   overflow:visible;
   position:relative;
+  /* step4.js가 var(--card), var(--bg) 등으로 카드 배경을 설정하므로
+     .page 범위에서 CSS 변수를 라이트 테마로 재정의 */
+  --bg:#ffffff; --bg2:#f8f8f8; --card:#ffffff; --card2:#f4f4f4;
+  --border:#cccccc; --border2:#aaaaaa;
+  --text:#111111; --text2:#444444; --text3:#666666;
+  --red:#e63946; --accent:#2266cc; --green:#119955; --yellow:#cc8800;
 }
 .group-title{font-size:14px;font-weight:700;color:#111;font-family:'Share Tech Mono',monospace;margin-bottom:10px;letter-spacing:1px;border-left:4px solid #e63946;padding-left:10px;}
 .bracket-wrap{overflow:visible;}
