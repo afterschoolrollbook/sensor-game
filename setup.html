@@ -1124,6 +1124,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.theme)S.theme=a.settings.theme;
       if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
       if(a.settings.matches)S.matches=a.settings.matches;
+      if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
@@ -1736,6 +1737,7 @@ function saveAll(){
         theme:S.theme||null,
         pointColor:S.pointColor||null,
         matches:S.matches||null,
+        groupBrackets:S.groupBrackets||null,
       }
     });
     const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
@@ -2787,7 +2789,13 @@ function g6ConfirmWinner(){
 }
 
 function g6OpenBracket(){
-  try{localStorage.setItem('sgp_pts',JSON.stringify(S.pts));localStorage.setItem('sgp_bw_pts',JSON.stringify(S.pts));}catch(e){}
+  try{
+    localStorage.setItem('sgp_pts',JSON.stringify(S.pts));
+    localStorage.setItem('sgp_bw_pts',JSON.stringify(S.pts));
+    if(S.groupBrackets&&S.groupBrackets.length){
+      localStorage.setItem('sgp_groupBrackets',JSON.stringify(S.groupBrackets));
+    }
+  }catch(e){}
   window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no');
 }
 
