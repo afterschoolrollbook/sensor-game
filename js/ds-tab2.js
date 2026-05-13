@@ -17,10 +17,14 @@ function buildDs2FontPicker(){
       document.querySelectorAll('#ds2-fontpicker .ds-font').forEach(x=>x.classList.remove('on'));
       el.classList.add('on');
       // pv2 미리보기에 적용
-      ['pv2-p1','pv2-p2','pv2-vs'].forEach(id=>{
+      ['pv2-p1','pv2-p2'].forEach(id=>{
         const e=document.getElementById(id);
         if(e)e.style.fontFamily=f.css;
       });
+      const pv2vs=document.querySelector('#pv2 .pv2-vs');
+      if(pv2vs)pv2vs.style.fontFamily=f.css;
+      // config 저장 → display.html 즉시 반영
+      if(typeof saveCfgNow==='function') saveCfgNow();
     };
     w.appendChild(el);
   });
@@ -49,8 +53,6 @@ function setVsBg(style){
   S.vs2Bg=style;
   document.querySelectorAll('.ds2-bg-btn').forEach(b=>b.classList.toggle('on',b.dataset.style===style));
   const pv2=document.getElementById('pv2');
-  if(pv2){
-    pv2.dataset.bg=style;
-  }
-  saveDsCfg();
+  if(pv2) pv2.dataset.bg=style;
+  if(typeof saveCfgNow==='function') saveCfgNow();
 }

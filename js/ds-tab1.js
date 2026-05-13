@@ -31,6 +31,10 @@ function buildDsTheme(){
       el.classList.add('on');
       const pc=document.getElementById('ds-primary-color');
       if(pc)pc.value=t.primary;
+      // accent 색상도 함께 적용
+      document.documentElement.style.setProperty('--accent',t.accent);
+      // S state 동기화
+      if(typeof S!=='undefined'){S.theme=t.id;S.pointColor=null;}
       applyDsColor(t.primary);
       saveDsCfg();
     };
@@ -55,9 +59,14 @@ function applyDsColor(color){
   const val=color||document.getElementById('ds-primary-color')?.value;
   if(!val)return;
   document.documentElement.style.setProperty('--red',val);
-  try{
-    const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
-    cfg.primaryColor=val;cfg.theme=dsCurTheme;
-    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
-  }catch(e){}
+  // accent: 현재 테마에서 가져오기
+  const curT=DS_THEMES.find(t=>t.id===dsCurTheme);
+  if(curT) document.documentElement.style.setProperty('--accent',curT.accent);
+  // S state 동기화 → saveCfgNow()가 theme/pointColor를 config에 포함시킴
+  if(typeof S!=='undefined'){
+    S.pointColor=val;
+    S.theme=dsCurTheme||null;
+    S.accentColor=curT?.accent||null;
+  }
+  if(typeof saveCfgNow==='function') saveCfgNow();
 }

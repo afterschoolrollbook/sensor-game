@@ -26,6 +26,7 @@ function saveDst3Cfg(){
     cfg.bracketShowWaitList=document.getElementById('dst3-waitlist')?.checked;
     cfg.bracketShowBye=document.getElementById('dst3-bye')?.checked;
     cfg.bracketAutoScroll=document.getElementById('dst3-autoscroll')?.checked;
+    cfg.bracket3Font=S.bracket3Font||null;
     localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
   }catch(e){}
 }
@@ -41,7 +42,11 @@ function buildDs3FontPicker(){
       S.bracket3Font=f.id;
       document.querySelectorAll('#ds3-fontpicker .ds-font').forEach(x=>x.classList.remove('on'));
       el.classList.add('on');
+      // pv3 미리보기 적용
+      document.querySelectorAll('#pv3 .pv3-pl').forEach(x=>x.style.fontFamily=f.css);
       saveDst3Cfg();
+      // display.html에도 즉시 전달
+      if(typeof saveCfgNow==='function') saveCfgNow();
     };
     w.appendChild(el);
   });
