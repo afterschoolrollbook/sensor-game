@@ -2787,8 +2787,8 @@ function g6ConfirmWinner(){
 }
 
 function g6OpenBracket(){
-  try{localStorage.setItem('sgp_pts',JSON.stringify(S.pts));}catch(e){}
-  window.open('bracket-window.html','sgp_bracket','width=1000,height=720,resizable=yes,scrollbars=no');
+  try{localStorage.setItem('sgp_pts',JSON.stringify(S.pts));localStorage.setItem('sgp_bw_pts',JSON.stringify(S.pts));}catch(e){}
+  window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no');
 }
 
 function g6OpenDisplay(){
