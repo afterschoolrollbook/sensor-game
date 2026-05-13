@@ -563,9 +563,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv2-info{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--text3);letter-spacing:3px;z-index:2;}
 /* 3번 화면: 대진표 */
 #pv3-wrap{width:100%;aspect-ratio:16/9;flex-shrink:0;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
-#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;padding:40px;gap:24px;}
+#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;flex-direction:column;padding:16px;overflow:hidden;}
 #pv3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
-#pv3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
+#pv3-inner{flex:1;min-height:0;overflow:auto;z-index:2;}
 .pv3-col{display:flex;flex-direction:column;gap:10px;min-width:160px;}
 .pv3-ct{font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:3px;color:var(--text3);margin-bottom:6px;}
 .pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
@@ -1904,9 +1904,7 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
     return ri===curRi&&mi===curMi&&curGrp===curGroupLabel;
   };
   const saved=S.matches;
-  // S.pts 보존 확인
-  if(!S.pts) S.pts=[];
-  if(!S.matches) S.matches=[];
+  view.innerHTML='';
   view.style.overflow='auto';
   if(layout==='D'&&courtCount>=2){
     const lGroups=groups.filter(g=>g.court===1);
@@ -1954,21 +1952,17 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       S.matches=taggedMatches;
       try{
-        // renderBracketA/B/C는 내부에서 S.matches를 다시 읽으므로
-        // _renderBracketHTML에 taggedMatches를 직접 전달
-        if(layout==='B'||layout==='C'){
-          _renderBracketHoriz(groupWrap,taggedMatches,layout==='B'?'bottom-up':'top-down');
-        } else {
-          _renderBracketHTML(groupWrap,taggedMatches,'top');
-        }
+        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+        (fns[layout]||renderBracketA)(groupWrap);
         stripScroll(groupWrap);
-      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:10px;word-break:break-all;">'+e.message+'<br>'+e.stack+'</div>';}
+      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>';}
       outerWrap.appendChild(groupWrap);
     });
     view.appendChild(outerWrap);
   }
   S.matches=saved;
 }
+
 
 function updatePv3(){
   const view=document.getElementById('pv3-inner');if(!view)return;
