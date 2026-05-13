@@ -1188,6 +1188,7 @@ function buildBlkChips(){
       const t=document.getElementById(b.bid);
       if(t)t.classList.toggle('pv-hidden',!this.checked);
       updateRankLayout();
+      saveCfgNow(); // 실시간 전광판 반영
     };
     // 드래그
     item.addEventListener('dragstart',e=>{dragSrc=idx;item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
@@ -1201,6 +1202,7 @@ function buildBlkChips(){
       BLKITEMS.splice(idx,0,moved);
       dragSrc=null;
       buildBlkChips();
+      saveCfgNow(); // 순서 변경도 반영
       toast('순서 변경됨','success');
     });
     w.appendChild(item);
@@ -1212,14 +1214,31 @@ function buildFontPicker(){
     const el=document.createElement('div');
     el.className='ds-font'+(S.titleFont===f.id?' on':'');
     el.style.fontFamily=f.css;el.textContent=f.name;
-    el.onclick=()=>{S.titleFont=f.id;document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));el.classList.add('on');const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;};
+    el.onclick=()=>{S.titleFont=f.id;document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));el.classList.add('on');const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;saveCfgNow();};
     w.appendChild(el);
   });
 }
-function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();}
+function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveCfgNow();}
 function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
 function sendCmd(t){try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type:t,ts:Date.now()}));}catch(e){}toast('전송: '+t,'success');}
 function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
+
+/* ── 실시간 config 저장 (전광판 즉시 반영용) ── */
+function saveCfgNow(){
+  try{
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
+  }catch(e){}
+}
 
 /* ── CHIPS ── */
 function buildChips(){
@@ -1521,7 +1540,18 @@ function buildConfirm(){
 function saveAll(){
   try{
     App.setState({event:{name:S.en||'SGP 행사',subtitle:S.sub},gameType:S.selG,mode:S.proc.startsWith('team')?'team':'individual',participants:S.pts,settings:{laps:S.laps}});
-    localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));
+    // 기존 config 유지(autoSwitch 등)하면서 병합 저장
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
   }catch(e){}
 }
 
@@ -1540,7 +1570,20 @@ function updatePv(){
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
   updatePvVs();updatePv2();updatePv3();updateRankLayout();
-  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
+  // 기존 config 유지하면서 병합 저장 (autoSwitch 등 패널 설정 보존)
+  try{
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
+  }catch(e){}
 }
 function buildRanks(){
   const w=document.getElementById('pvr');w.innerHTML='';
