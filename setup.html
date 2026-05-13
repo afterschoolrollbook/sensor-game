@@ -2257,6 +2257,7 @@ function generateAllBrackets(){
   }));
   S.activeGroup=0;
   _assignMode=false;
+  try{localStorage.setItem('sgp_groupBrackets',JSON.stringify(S.groupBrackets));}catch(e){}
   document.getElementById('pts-step2').style.display='none';
   document.getElementById('pts-step3').style.display='flex';
   renderBracketTabs();
@@ -2847,6 +2848,7 @@ window.addEventListener('message',e=>{
     S.proc='ind-tour';
     S.matchPts=e.data.matchPts||'';
     S.curMatch=0;
+    if(e.data.groupBrackets&&e.data.groupBrackets.length){S.groupBrackets=e.data.groupBrackets;}
     try{if(typeof buildProc==='function')buildProc();}catch(err){}
     try{if(typeof updatePv==='function')updatePv();}catch(err){}
     toast((e.data.label||'대진표')+' 적용 완료!','success');
