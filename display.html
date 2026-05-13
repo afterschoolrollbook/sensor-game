@@ -13,10 +13,10 @@
   --red:#e63946;--accent:#4cc9f0;--green:#06d6a0;--yellow:#ffd60a;
   --text:#f0f0f8;--text2:#9090b0;--text3:#5a5a7a;
   --border:#2a2a40;
+  --timer-color:#4cc9f0; /* 포인트 색상 - 타이머 텍스트 */
 }
 html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden;user-select:none;}
-/* 스캔라인: will-change로 GPU 레이어 분리 → CPU repaint 제거 */
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:999;will-change:transform;transform:translateZ(0);}
+/* 스캔라인 완전 제거 - 성능 원인 */
 
 #screen-1,#screen-2,#screen-3{position:fixed;inset:0;contain:strict;}
 #screen-2,#screen-3{display:none;}
@@ -44,9 +44,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 #d1-timer::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.04) 0%,transparent 70%);}
 .tvlbl{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.2vw,13px);letter-spacing:3px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;}
 #d1-chal{font-family:'Bebas Neue',cursive;font-size:clamp(28px,4vw,52px);letter-spacing:2px;color:var(--text);margin-bottom:7px;min-height:.8em;position:relative;z-index:1;}
-#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--accent);text-shadow:0 0 30px rgba(76,201,240,.35);transition:color .3s;position:relative;z-index:1;contain:layout style;}
-#d1-time.running{color:var(--green);text-shadow:0 0 30px rgba(6,214,160,.35);}
-#d1-time.stopped{color:var(--red);text-shadow:0 0 30px rgba(230,57,70,.35);}
+#d1-time{font-family:'Share Tech Mono',monospace;font-size:clamp(60px,12vw,160px);line-height:1;letter-spacing:-1px;color:var(--timer-color);text-shadow:0 0 30px var(--timer-color);transition:color .3s;position:relative;z-index:1;contain:layout style;}
+#d1-time.running{color:var(--timer-color);filter:brightness(1.2);}
+#d1-time.stopped{color:var(--red);text-shadow:0 0 30px var(--red);filter:none;}
 #d1-lap{font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.4vw,18px);color:var(--text3);margin-top:5px;letter-spacing:2px;position:relative;z-index:1;}
 
 /* 우측 패널 */
@@ -96,7 +96,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 /* ══ 2번 화면 — setup.html #pv2 와 동일 ══ */
 #disp2{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,40px);background:var(--bg);position:relative;}
-#disp2::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;will-change:transform;transform:translateZ(0);}
 #d2-lbl{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2vw,22px);letter-spacing:4px;color:var(--text3);z-index:2;}
 #d2-row{display:flex;align-items:center;gap:clamp(30px,6vw,100px);z-index:2;width:80%;}
 .d2-pl{flex:1;text-align:center;}
@@ -107,7 +106,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 /* ══ 3번 화면 — setup.html #pv3 와 동일 ══ */
 #disp3{width:100%;height:100%;display:flex;padding:40px;gap:24px;background:var(--bg);position:relative;overflow:hidden;}
-#disp3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;will-change:transform;transform:translateZ(0);}
 #d3-inner{display:flex;gap:20px;z-index:2;overflow:hidden;}
 .d3-col{display:flex;flex-direction:column;gap:10px;min-width:200px;}
 .d3-ct{font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:3px;color:var(--text3);margin-bottom:6px;}
@@ -132,15 +130,20 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .w-name{font-family:'Bebas Neue',cursive;font-size:clamp(48px,12vw,130px);letter-spacing:4px;}
 .w-time{font-family:'Share Tech Mono',monospace;font-size:clamp(20px,4vw,52px);color:var(--accent);margin-top:8px;}
 
-/* 전환 버튼 */
-#switch-btn{position:fixed;bottom:20px;right:20px;z-index:900;background:rgba(4,4,8,.85);border:1px solid var(--border);color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;padding:10px 18px;border-radius:8px;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);}
-#switch-btn:hover{border-color:var(--accent);color:var(--accent);}
-#switch-btn.on-2{border-color:var(--red);color:var(--red);}
+/* 화면 전환 버튼 그룹 */
+#screen-btns{position:fixed;bottom:20px;right:20px;z-index:900;display:flex;gap:6px;backdrop-filter:blur(8px);}
+.scr-btn{background:rgba(4,4,8,.85);border:1px solid var(--border);color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;padding:9px 14px;border-radius:7px;cursor:pointer;transition:all .2s;}
+.scr-btn:hover{border-color:var(--accent);color:var(--accent);}
+.scr-btn.active{border-color:var(--red);color:var(--red);background:rgba(230,57,70,.1);}
 </style>
 </head>
 <body>
 
-<button id="switch-btn" onclick="switchScreen()">📺 2번 화면</button>
+<div id="screen-btns">
+  <button class="scr-btn active" id="scr-btn-1" onclick="switchScreen(1)">📺 1번</button>
+  <button class="scr-btn" id="scr-btn-2" onclick="switchScreen(2)">⚔️ 2번</button>
+  <button class="scr-btn" id="scr-btn-3" onclick="switchScreen(3)">🏆 3번</button>
+</div>
 
 <div id="countdown-overlay">
   <div id="countdown-num">3</div>
@@ -312,22 +315,24 @@ function refresh1(){
   const gn=(di.gamename&&(cfg.gameLabel||ss.gl))?(cfg.gameLabel||ss.gl):(state.gameType||'SGP').toUpperCase();
   _set('d1-gname', '// '+gn);
 
-  // 색상 적용 — cfg 우선, 없으면 state.event fallback
+  // ── 색상 적용 ──
+  // 테마 → 라인/헤더 색상(--red)만 변경
+  // 포인트 색상 → 타이머 텍스트 색(--timer-color) 별도 변수
   const THEME_MAP={
-    'dark-racing':  {red:'#e63946',accent:'#4cc9f0'},
-    'neon-blue':    {red:'#4361ee',accent:'#4cc9f0'},
-    'gold-black':   {red:'#ffd60a',accent:'#ffffff'},
-    'green-dark':   {red:'#06d6a0',accent:'#4cc9f0'},
-    'purple-dark':  {red:'#7b2fff',accent:'#f72585'},
-    'fire-red':     {red:'#ff6b35',accent:'#ffd60a'},
+    'dark-racing':  '#e63946',
+    'neon-blue':    '#4361ee',
+    'gold-black':   '#ffd60a',
+    'green-dark':   '#06d6a0',
+    'purple-dark':  '#7b2fff',
+    'fire-red':     '#ff6b35',
   };
-  const themeColors=cfg.theme&&THEME_MAP[cfg.theme]?THEME_MAP[cfg.theme]:null;
-  // pointColor(직접 선택) > primaryColor(ds-tab1 저장) > theme > event.primaryColor
-  const redColor=cfg.pointColor||cfg.primaryColor||themeColors?.red||ev.primaryColor||null;
-  const accentColor=cfg.accentColor||themeColors?.accent||ev.accentColor||null;
   const root=document.documentElement;
-  if(redColor)   root.style.setProperty('--red',   redColor);
-  if(accentColor)root.style.setProperty('--accent',accentColor);
+  // 테마: --red (헤더라인, VS, LIVE 테두리 등)
+  const lineColor=THEME_MAP[cfg.theme]||ev.primaryColor||'#e63946';
+  root.style.setProperty('--red', lineColor);
+  // 포인트 색상: 타이머 텍스트 전용 변수 --timer-color
+  const timerColor=cfg.pointColor||'#4cc9f0';
+  root.style.setProperty('--timer-color', timerColor);
 
   updateTicker(cfg,di,ss);
 }
@@ -452,16 +457,15 @@ function showWinner(name,time){
 
 let currentScreen=1;
 function switchScreen(n){
-  if(n===undefined) n=currentScreen===1?2:currentScreen===2?3:1;
   currentScreen=n;
   document.getElementById('screen-1').style.display=n===1?'block':'none';
   document.getElementById('screen-2').style.display=n===2?'block':'none';
   document.getElementById('screen-3').style.display=n===3?'block':'none';
-  const btn=document.getElementById('switch-btn');
-  btn.textContent=({1:'📺 2번 화면',2:'🏆 3번 대진표',3:'🔙 1번 전광판'})[n]||'📺 화면전환';
-  btn.classList.toggle('on-2',n!==1);
+  [1,2,3].forEach(i=>{
+    const b=document.getElementById('scr-btn-'+i);
+    if(b) b.classList.toggle('active',i===n);
+  });
   try{localStorage.setItem('sgp_screen',String(n));}catch(e){}
-  // 전환 즉시 해당 화면 갱신
   if(n===2) refresh2();
   if(n===3) refresh3();
 }
