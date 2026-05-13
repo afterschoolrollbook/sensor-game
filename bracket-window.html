@@ -3255,6 +3255,24 @@ async function _printFromGrid(){
 
     await new Promise(function(r){setTimeout(r,150);});
 
+    /* ── 캡처 전 카드 헤더 줄바꿈 방지 강제 주입 ──
+       html-to-image는 skipFonts:true 시 Share Tech Mono를 폴백 폰트(Courier New 등)로
+       대체하는데, 폴백 폰트가 더 넓어서 고정폭 카드 안의 헤더 텍스트가 줄바꿈될 수 있음.
+       CSS 선택자([style*="color:#555"])는 브라우저가 색상값을 rgb()로 정규화하면 매칭 실패.
+       → 캡처 직전에 inline style로 직접 white-space:nowrap을 강제 주입하고 캡처 후 복원 */
+    var _nowrapEls=[];
+    target.querySelectorAll('*').forEach(function(el){
+      var fs=window.getComputedStyle(el).fontSize;
+      var ff=window.getComputedStyle(el).fontFamily;
+      /* Share Tech Mono를 쓰는 요소(카드 헤더류)만 대상 */
+      if(ff && ff.indexOf('Share Tech Mono')!==-1){
+        _nowrapEls.push({el:el, prev:el.style.whiteSpace, prevFF:el.style.fontFamily});
+        el.style.whiteSpace='nowrap';
+        /* 폴백 폰트도 좁은 폰트로 강제: Arial은 Share Tech Mono보다 좁고 항상 사용 가능 */
+        el.style.fontFamily='"Share Tech Mono",Arial,sans-serif';
+      }
+    });
+
     /* html-to-image로 고품질 캡처
        skipFonts:true — 외부 폰트(Google Fonts 등) CSS 인라인 시도를 건너뜀
        → CORS SecurityError 방지. 폰트는 이미 브라우저에 로드된 상태라 출력 품질 무관 */
@@ -3273,6 +3291,8 @@ async function _printFromGrid(){
     target.style.overflow=prevOvf;
     ovfPrev.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
     grids.forEach(function(el){el.style.display='';});
+    /* 카드 헤더 nowrap 복원 */
+    _nowrapEls.forEach(function(o){o.el.style.whiteSpace=o.prev;o.el.style.fontFamily=o.prevFF;});;
 
     /* 이미지를 canvas에 그린 후 슬라이스 */
     var fullImg=new Image();
@@ -3398,6 +3418,16 @@ async function savePDF(){
     if(status)status.textContent='Capturing...';
     await new Promise(function(r){setTimeout(r,200);});
     var isW=document.body.classList.contains('white-mode');
+    /* 캡처 전 Share Tech Mono 요소 nowrap 강제 주입 */
+    var _nowrapEls2=[];
+    target.querySelectorAll('*').forEach(function(el){
+      var ff=window.getComputedStyle(el).fontFamily;
+      if(ff && ff.indexOf('Share Tech Mono')!==-1){
+        _nowrapEls2.push({el:el,prev:el.style.whiteSpace,prevFF:el.style.fontFamily});
+        el.style.whiteSpace='nowrap';
+        el.style.fontFamily='"Share Tech Mono",Arial,sans-serif';
+      }
+    });
     var H2C_SCALE=3;
     var fc=await html2canvas(target,{
       scale:H2C_SCALE,useCORS:true,logging:false,scrollX:0,scrollY:0,
@@ -3408,6 +3438,7 @@ async function savePDF(){
     if(sw2){sw2.style.transform=prevSwTransform2;sw2.style.marginLeft=prevSwMarginLeft2;}
     target.style.overflow=prevOvf2;
     ovfPrev2.forEach(function(s){s.el.style.overflow=s.ov;s.el.style.overflowX=s.ox;s.el.style.overflowY=s.oy;});
+    _nowrapEls2.forEach(function(o){o.el.style.whiteSpace=o.prev;o.el.style.fontFamily=o.prevFF;});
     grids.forEach(function(el){el.style.display='';});
     /* 슬라이스 크기: 용지 1장 = cellNatW2×cellNatH2 자연px 기준 */
     var sliceW=Math.round(cellNatW2*H2C_SCALE);
