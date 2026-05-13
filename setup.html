@@ -563,18 +563,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pv2-info{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--text3);letter-spacing:3px;z-index:2;}
 /* 3번 화면: 대진표 */
 #pv3-wrap{width:100%;aspect-ratio:16/9;flex-shrink:0;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,.5),0 0 0 1px var(--border);}
-#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;flex-direction:column;padding:24px;gap:16px;overflow:hidden;}
+#pv3{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left;background:#040408;display:flex;flex-direction:column;padding:16px;overflow:hidden;}
 #pv3::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;}
-#pv3-inner{display:flex;flex-wrap:wrap;gap:20px;z-index:2;overflow:hidden;}
-.pv3-grp{display:flex;flex-direction:column;gap:6px;}
-.pv3-grp-label{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--red);margin-bottom:4px;}
-.pv3-grp-rounds{display:flex;gap:8px;}
-.pv3-col{display:flex;flex-direction:column;gap:8px;min-width:130px;}
-.pv3-ct{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;color:var(--text3);margin-bottom:4px;}
-.pv3-match{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.pv3-match.cur-match{border-color:var(--red);box-shadow:0 0 10px rgba(230,57,70,.5);}
-.pv3-pl{padding:9px 13px;font-size:16px;font-weight:700;border-bottom:1px solid var(--border);}
-.pv3-pl:last-child{border-bottom:none;}
+#pv3-inner{flex:1;min-height:0;overflow:auto;z-index:2;}
 /* 순위 OFF시 타이머 전체 확장 */
 
 /* TOAST */
@@ -1897,50 +1888,59 @@ function updatePv2(){
   document.getElementById('pv2-info').textContent=matchInfo;
 }
 function updatePv3(){
-  const el=document.getElementById('pv3-inner');if(!el)return;
+  const view=document.getElementById('pv3-inner');if(!view)return;
   let groups=[];
-  // S.groupBrackets 우선 (메모리), 없으면 localStorage
   if(S.groupBrackets&&S.groupBrackets.length) groups=S.groupBrackets;
   else{ try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){} }
   if(!groups.length){
-    el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
+    view.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
     return;
   }
+  // 진행중 경기 강조
   let curP1='', curP2='';
   try{ const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}'); curP1=mv.p1||''; curP2=mv.p2||''; }catch(e){}
-  const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
-  const isCur=(n1,n2)=>curP1&&curP2&&_cn(n1)===curP1&&_cn(n2)===curP2;
-  el.innerHTML='';
-  groups.forEach(g=>{
-    if(!g.matches||!g.matches.length) return;
-    const rounds=g.matches;
-    const rn=['결승','준결승','8강','16강','32강'].slice(0,rounds.length).reverse();
-    const grpDiv=document.createElement('div'); grpDiv.className='pv3-grp';
-    grpDiv.innerHTML='<div class="pv3-grp-label">'+(g.label||'')+'</div>';
-    const roundsDiv=document.createElement('div'); roundsDiv.className='pv3-grp-rounds';
-    rounds.forEach((round,ri)=>{
-      const col=document.createElement('div'); col.className='pv3-col';
-      col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
-      (Array.isArray(round)?round:[]).forEach(m=>{
-        const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'BYE';
-        const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'BYE';
-        const wid=m.winner?(typeof m.winner==='object'?m.winner.id:m.winner):null;
-        const p1id=m.p1?(typeof m.p1==='object'?m.p1.id:m.p1):null;
-        const p2id=m.p2?(typeof m.p2==='object'?m.p2.id:m.p2):null;
-        const cur=isCur(p1n,p2n);
-        const p1cls=wid?(wid===p1id?'winner':'loser'):'';
-        const p2cls=wid?(wid===p2id?'winner':'loser'):'';
-        const mc=document.createElement('div'); mc.className='pv3-match'+(cur?' cur-match':'');
-        mc.innerHTML='<div class="pv3-pl '+p1cls+'">'+_cn(p1n)+'</div>'
-                    +'<div class="pv3-pl '+p2cls+'">'+_cn(p2n)+'</div>';
-        col.appendChild(mc);
-      });
-      roundsDiv.appendChild(col);
+  const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()\[\]]/g,'').trim()||n:'';
+  window.isCurrentMatchIdx=function(m){
+    if(!curP1||!curP2) return false;
+    const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+    const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+    return _cn(p1n)===curP1&&_cn(p2n)===curP2;
+  };
+  function stripScroll(div){
+    div.querySelectorAll('*').forEach(el=>{
+      if(el.style.overflow==='auto'||el.style.overflowX==='auto'||el.style.overflowY==='auto')
+        el.style.overflow='visible';
     });
-    grpDiv.appendChild(roundsDiv);
-    el.appendChild(grpDiv);
+  }
+  view.innerHTML='';
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='padding:4px;min-width:max-content;';
+  const savedMatches=S.matches;
+  groups.forEach(g=>{
+    const labelParts=g.label.split('/').map(s=>s.trim());
+    const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-size:8px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:3px;margin-top:6px;';
+    hdr.textContent=shortLabel;
+    outerWrap.appendChild(hdr);
+    const groupWrap=document.createElement('div');
+    groupWrap.style.cssText='margin-bottom:10px;position:relative;';
+    const taggedMatches=g.matches.map((round,ri)=>
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+    );
+    S.matches=taggedMatches;
+    try{
+      const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+      const fn=fns[_bracketLayout]||renderBracketA;
+      fn(groupWrap);
+      stripScroll(groupWrap);
+    }catch(e){ groupWrap.innerHTML='<div style="color:var(--text3);font-size:10px;">렌더링 오류</div>'; }
+    outerWrap.appendChild(groupWrap);
   });
+  S.matches=savedMatches;
+  view.appendChild(outerWrap);
 }
+
 
 
 /* ── PVC SCALE (TV 비율 축소) ── */
