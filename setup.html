@@ -2744,7 +2744,6 @@ function g6Init(){
 }
 
 function g6Refresh(){
-  if(!document.getElementById('g6-cname'))return;
   g6RenderQueue();
   g6RenderRank();
   g6SetParticipant(g6_idx);
@@ -2761,6 +2760,10 @@ function g6SetParticipant(idx){
   const p=S.pts[g6_idx];
   const el=document.getElementById('g6-cname');
   if(el)el.textContent=p?p.name:'—';
+  // 미리보기 도전자 이름 업데이트
+  const pvChal=document.getElementById('pv-chal');
+  if(pvChal)pvChal.textContent=p?p.name:'—';
+  try{localStorage.setItem('sgp_display_player',p?p.name:'');}catch(e){}
   g6_lapCount=0;
   g6UpdateLapInfo();
   const ll=document.getElementById('g6-laplist');
