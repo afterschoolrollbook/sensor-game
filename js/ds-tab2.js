@@ -3,6 +3,12 @@
 let _tab2Mode = 'court_1'; // 기본: 경기장 1
 
 function buildTab2(){
+  // ── [BUG FIX 2] 탭 전환 시 _tab2Mode가 항상 'court_1'로 리셋되는 버그 수정 ──
+  // 저장된 모드를 복원한 뒤 UI 빌드
+  try{
+    const saved=localStorage.getItem('sgp_d2_mode');
+    if(saved) _tab2Mode=saved;
+  }catch(e){}
   buildDs2FontPicker();
   buildTab2CourtBtns();
   buildDs2VsColor();

@@ -4110,5 +4110,27 @@ window.addEventListener('load', ()=>{
 <script>
 window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();}catch(e){} });
 </script>
+<script>
+// ── embed=1 모드: setup.html 탭3 iframe으로 임베드 시 UI 조정 ──
+(function applyEmbedMode(){
+  const params=new URLSearchParams(location.search);
+  if(params.get('embed')!=='1') return;
+
+  // 헤더(닫기 버튼 포함) 숨김
+  const hdr=document.getElementById('hdr');
+  if(hdr) hdr.style.display='none';
+
+  // ESC 키로 window.close() 하지 않도록 override
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') e.stopImmediatePropagation(); }, true);
+
+  // wrap 높이를 100vh → 100% 로 조정 (iframe 안에서 스크롤 안생기도록)
+  const wrap=document.getElementById('wrap');
+  if(wrap) wrap.style.height='100%';
+
+  // body overflow 해제
+  document.body.style.overflow='auto';
+  document.documentElement.style.overflow='auto';
+})();
+</script>
 </body>
 </html>

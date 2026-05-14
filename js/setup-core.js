@@ -159,6 +159,28 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
   }catch(e){}
+  // ── [BUG FIX 1] 탭2/탭3 설정값을 sgp_display_config에서 S로 복원 ──
+  // saveCfgNow()는 vs2Font/vs2Bg/bracket3Font를 sgp_display_config에 저장하지만
+  // DOMContentLoaded 시 이 값들을 S에 다시 읽어오는 코드가 없어서 탭 전환 시 항상 기본값으로 리셋됨
+  try{
+    const _dsCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    if(_dsCfg.vs2Font)      S.vs2Font=_dsCfg.vs2Font;
+    if(_dsCfg.vs2Bg)        S.vs2Bg=_dsCfg.vs2Bg;
+    if(_dsCfg.bracket3Font) S.bracket3Font=_dsCfg.bracket3Font;
+    if(_dsCfg.timerColor)   S.timerColor=_dsCfg.timerColor;
+    if(_dsCfg.theme)        S.theme=_dsCfg.theme;
+    if(_dsCfg.pointColor)   S.pointColor=_dsCfg.pointColor;
+    if(_dsCfg.accentColor)  S.accentColor=_dsCfg.accentColor;
+    if(_dsCfg.rankCount)    S.rankCount=_dsCfg.rankCount;
+    if(_dsCfg.titleFont)    S.titleFont=_dsCfg.titleFont;
+  }catch(e){}
+  // sgp_groupBrackets가 localStorage에 있으면 S에도 반영
+  if(!S.groupBrackets||!S.groupBrackets.length){
+    try{
+      const _gb=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]');
+      if(_gb.length) S.groupBrackets=_gb;
+    }catch(e){}
+  }
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
