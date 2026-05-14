@@ -514,6 +514,81 @@ function g6ShowWinner(){
   sendCmd('winner',{name,time});
 }
 
+// ══ 카운트다운 연출 ══
+let g6_cdirSrc=1, g6_cdirRunning=false, g6_cdirLoopTimer=null;
+
+function g6CdirSetSrc(n){
+  g6_cdirSrc=n;
+  [1,2].forEach(i=>{
+    document.getElementById('g6-cdir-src-'+i)?.classList.toggle('active',i===n);
+  });
+  const status=document.getElementById('g6-cdir-status');
+  if(status) status.textContent=n===1?'// 경기용 카운트다운 선택':'// 휴식시간 카운트다운 선택';
+}
+
+function g6CdirStart(){
+  if(g6_cdirRunning)return;
+  g6_cdirRunning=true;
+  document.getElementById('g6-cdir-start').disabled=true;
+  document.getElementById('g6-cdir-stop').disabled=false;
+  _g6CdirRun();
+}
+
+function _g6CdirRun(){
+  if(!g6_cdirRunning)return;
+  const sec=parseInt(document.getElementById(g6_cdirSrc===1?'g6-timer-sec':'g6-rt-sec')?.value||60);
+  const label=g6_cdirSrc===1?'경기용':'휴식시간';
+  const status=document.getElementById('g6-cdir-status');
+  if(status) status.textContent=`// ${label} ${sec}초 연출 중...`;
+  if(g6_cdirSrc===1) g6TimerStart();
+  else g6RtStart();
+  const loop=document.getElementById('g6-cdir-loop')?.checked;
+  if(loop){
+    // 3초(카운트다운) + sec초(타이머) + 1.5초(여유) 후 반복
+    g6_cdirLoopTimer=setTimeout(()=>{
+      if(!g6_cdirRunning)return;
+      if(status) status.textContent=`// 반복 중...`;
+      _g6CdirRun();
+    }, (3+sec)*1000+1500);
+  }
+}
+
+function g6CdirStop(){
+  g6_cdirRunning=false;
+  if(g6_cdirLoopTimer){clearTimeout(g6_cdirLoopTimer);g6_cdirLoopTimer=null;}
+  if(g6_cdirSrc===1) g6TimerStop();
+  else g6RtStop();
+  document.getElementById('g6-cdir-start').disabled=false;
+  document.getElementById('g6-cdir-stop').disabled=true;
+  const status=document.getElementById('g6-cdir-status');
+  if(status) status.textContent='// 정지됨';
+}
+
+function g6CdirFuse(){
+  // 퓨즈: 전광판에 카운트다운 연출 전송 후 선택된 타이머 시작
+  sendCmd('fuse');
+  const status=document.getElementById('g6-cdir-status');
+  if(status) status.textContent='// 💥 퓨즈 점화!';
+  _runCountdown(()=>{
+    if(g6_cdirSrc===1) g6TimerStart();
+    else g6RtStart();
+    setTimeout(()=>{
+      if(status) status.textContent='// 타이머 진행 중...';
+    },100);
+  });
+}
+
+function g6CdirReset(){
+  g6_cdirRunning=false;
+  if(g6_cdirLoopTimer){clearTimeout(g6_cdirLoopTimer);g6_cdirLoopTimer=null;}
+  if(g6_cdirSrc===1) g6TimerReset();
+  else g6RtReset();
+  document.getElementById('g6-cdir-start').disabled=false;
+  document.getElementById('g6-cdir-stop').disabled=true;
+  const status=document.getElementById('g6-cdir-status');
+  if(status) status.textContent='// 대기중';
+}
+
 function g6Start(){
   _runCountdown(()=>g6DoStart());
 }
