@@ -717,13 +717,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div class="sno">// STEP 06</div>
           <div class="stitle">게임 진행</div>
         </div>
-        <!-- 센서 상태 -->
-        <div class="g6-sensor-bar">
-          <div class="g6-sdot" id="g6-dot-a"></div><span>센서 A (출발)</span>
-          <div class="g6-sdot" style="margin-left:8px;" id="g6-dot-b"></div><span>센서 B (결승)</span>
-          <span style="flex:1;color:var(--text3);" id="g6-sensor-status">시뮬레이션 모드</span>
-          <button class="g6-btn stop" style="padding:5px 10px;font-size:11px;" onclick="g6ConnectSerial()">🔌 Arduino</button>
-        </div>
+
         <!-- 토너먼트 매치 박스 (토너먼트 시에만 표시) -->
         <div class="g6-match-box" id="g6-match-box" style="display:none;">
           <div class="g6-match-title">
@@ -973,6 +967,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       <div id="pv-countdown-ov" style="display:none;position:absolute;inset:0;z-index:100;background:rgba(0,0,0,.88);align-items:center;justify-content:center;flex-direction:column;">
         <div class="pv-cdn" style="font-family:'Bebas Neue',cursive;font-size:260px;line-height:1;color:var(--red);">3</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:16px;letter-spacing:4px;color:var(--text3);margin-top:8px;">// READY</div>
+      </div>
+      <div id="pv-winner-ov" style="display:none;position:absolute;inset:0;z-index:110;background:rgba(0,0,0,.92);align-items:center;justify-content:center;flex-direction:column;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:5px;color:var(--text3);margin-bottom:10px;">// WINNER</div>
+        <div style="font-size:60px;line-height:1;margin-bottom:8px;">🏆</div>
+        <div id="pv-winner-name" style="font-family:'Bebas Neue',cursive;font-size:80px;line-height:1;color:var(--yellow,#ffd60a);letter-spacing:4px;text-shadow:0 0 40px rgba(255,214,10,.5);text-align:center;padding:0 20px;"></div>
+        <div id="pv-winner-time" style="font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--accent);margin-top:10px;letter-spacing:2px;"></div>
       </div>
       <div id="pvh">
         <div><div id="pv-ename">SGP 행사</div><div id="pv-sub"></div></div>
@@ -1606,7 +1606,16 @@ function _pvHandleCmd(cmd){
     updatePv();
   }
   if(cmd.type==='winner'){
-    updatePv();
+    const ov=document.getElementById('pv-winner-ov');
+    const nm=document.getElementById('pv-winner-name');
+    const tm=document.getElementById('pv-winner-time');
+    if(ov&&nm){
+      nm.textContent=cmd.name||'—';
+      if(tm) tm.textContent=cmd.time?cmd.time:'';
+      ov.style.display='flex';
+      clearTimeout(ov._t);
+      ov._t=setTimeout(()=>{ ov.style.display='none'; },5000);
+    }
   }
 }
 function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
@@ -3382,14 +3391,6 @@ function g6ShowWinner(){
   const top=g6_swRecords.length?[...g6_swRecords].sort((a,b)=>a.time-b.time)[0]:null;
   const name=top?top.name:(S.pts[g6_idx]?.name||'—');
   const time=top?g6FmtTime(top.time):null;
-  const pvChal=document.getElementById('pv-chal');
-  if(pvChal){
-    const prev=pvChal.textContent;
-    pvChal.textContent='🏆 '+name;
-    pvChal.style.color='var(--yellow,#ffd60a)';
-    pvChal.style.fontSize='40px';
-    setTimeout(()=>{pvChal.textContent=prev;pvChal.style.color='';pvChal.style.fontSize='';},3000);
-  }
   sendCmd('winner',{name,time});
 }
 
