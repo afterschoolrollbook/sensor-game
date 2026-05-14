@@ -256,7 +256,7 @@ function _d2SwitchRandomCourt(){
 }
 
 function _d2ShowCourt(courtNum){
-  // 상단 경기장 레이블
+  // 상단 경기장 레이블 — 항상 표시
   const courtEl=document.getElementById('d2-court');
   if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
 

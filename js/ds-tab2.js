@@ -199,14 +199,45 @@ function _getDispWin(){
 function _updatePv2ForMode(mode){
   const courtLbl=document.getElementById('pv2-court-lbl');
   if(mode==='random'){
-    if(courtLbl) courtLbl.textContent='// 순환 중';
+    // 랜덤: 현재 첫 번째 경기장부터 표시
+    const courtLbl=document.getElementById('pv2-court-lbl');
+    if(courtLbl) courtLbl.textContent='// 경기장 1';
+    _updatePv2ForCourt(1);
+    updateDst2();
   } else if(mode.startsWith('court_')){
-    const c=mode.replace('court_','');
+    const c=parseInt(mode.replace('court_',''));
     if(courtLbl) courtLbl.textContent=`// 경기장 ${c}`;
+    _updatePv2ForCourt(c);
   } else {
     if(courtLbl) courtLbl.textContent='';
     updateDst2();
   }
+}
+
+// 해당 경기장의 선택된 경기를 미리보기(pv2)에 표시
+function _updatePv2ForCourt(courtNum){
+  const p1el=document.getElementById('pv2-p1');
+  const p2el=document.getElementById('pv2-p2');
+  const infoEl=document.getElementById('pv2-info');
+
+  // 수동 선택된 경기 확인
+  try{
+    const manualStr=localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
+    if(manualStr){
+      const mv=JSON.parse(manualStr);
+      if(mv&&mv.p1&&mv.p2){
+        if(p1el) p1el.textContent=mv.p1;
+        if(p2el) p2el.textContent=mv.p2;
+        if(infoEl) infoEl.textContent=mv.label||'';
+        return;
+      }
+    }
+  }catch(e){}
+
+  // 선택된 경기 없음 → 대기 상태
+  if(p1el) p1el.textContent='—';
+  if(p2el) p2el.textContent='—';
+  if(infoEl) infoEl.textContent='';
 }
 
 function updateDst2(){
