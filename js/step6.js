@@ -572,16 +572,23 @@ function _g6CdirRenderSeq() {
   const el = document.getElementById('g6-cdir-seq-list');
   if (!el) return;
   if (!g6_cdirSeq.length) {
+    el.style.display = '';
+    el.style.flexWrap = '';
+    el.style.gap = '';
     el.innerHTML = '<span style="color:var(--text3);font-size:11px;">아래 버튼으로 순서를 추가하세요</span>';
     return;
   }
   const items = g6_cdirSeq.map((s, i) => {
     const label = s === 1 ? '①경기' : s === 2 ? '②휴식' : '🔔종';
     const clr   = s === 1 ? 'var(--red)' : s === 2 ? 'var(--accent)' : 'var(--yellow)';
-    return `<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:var(--card);border:1px solid ${clr};border-radius:5px;font-size:11px;font-weight:700;color:${clr};">${label
-      }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:3px;">✕</span></div>`;
+    return `<div style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;background:var(--card);border:1px solid ${clr};border-radius:6px;font-size:12px;font-weight:700;color:${clr};flex-shrink:0;">${label
+      }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px;">✕</span></div>`;
   });
-  el.innerHTML = items.join('<span style="color:var(--text3);font-size:10px;padding:0 2px;">→</span>');
+  el.style.display = 'flex';
+  el.style.flexWrap = 'wrap';
+  el.style.gap = '5px';
+  el.style.alignItems = 'center';
+  el.innerHTML = items.join('<span style="color:var(--text3);font-size:11px;">→</span>');
 }
 
 // 상태 표시
@@ -607,6 +614,7 @@ function g6CdirStart() {
     loopCnt = Math.max(1, parseInt(document.getElementById('g6-cdir-r-cnt')?.value || 2));
   } else {
     seq = [...g6_cdirSeq];
+    if (document.getElementById('g6-cdir-c-bell-inline')?.checked) seq.push('bell');
     if (document.getElementById('g6-cdir-c-loop')?.checked)
       loopCnt = Math.max(1, parseInt(document.getElementById('g6-cdir-c-cnt')?.value || 2));
   }
@@ -646,8 +654,34 @@ function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
   const sec   = Math.max(1, parseInt(document.getElementById(step === 1 ? 'g6-timer-sec' : 'g6-rt-sec')?.value || 60));
   const label = step === 1 ? '⚔️경기①' : '💤휴식②';
   _g6CdirUpdateStatus(`// ${label} ${sec}초 (${seq.length - stepIdx}스텝 남음)`);
-  if (step === 1) g6TimerStart(); else g6RtStart();
-  g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, (3 + sec) * 1000 + 1500);
+  if (step === 1) {
+    // 경기용: 3초 카운트다운 포함
+    g6TimerStart();
+    g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, (3 + sec) * 1000 + 1500);
+  } else {
+    // 휴식시간: 카운트다운 없이 바로 시작
+    _g6RtStartDirect(sec);
+    g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, sec * 1000 + 800);
+  }
+}
+
+// 휴식시간 카운트다운 없이 바로 시작 (카운트다운 연출 전용)
+function _g6RtStartDirect(sec) {
+  g6_rtRunning = true;
+  _pvRtDur = sec * 1000;
+  _pvRtStart = performance.now();
+  sendCmd('timer_start', { duration: sec });
+  _pvStopCountdown();
+  const pvt = document.getElementById('pv-time');
+  if (pvt) pvt.className = 'running';
+  const s = document.getElementById('g6-rt-start');
+  const st = document.getElementById('g6-rt-stop');
+  const l = document.getElementById('g6-rt-lap');
+  if (s) s.disabled = true;
+  if (st) st.disabled = false;
+  if (l && (g6_rtMode === 2 || g6_rtMode === 3)) l.disabled = false;
+  if (_pvRtRaf) cancelAnimationFrame(_pvRtRaf);
+  _pvRtRaf = requestAnimationFrame(_pvRtTick);
 }
 
 // 종소리
@@ -683,7 +717,12 @@ function g6CdirFuse() {
   _g6CdirUpdateStatus('// 💥 퓨즈 점화!');
   _runCountdown(() => {
     const srcs = g6_cdirMode === 'repeat' ? g6_cdirSrcsR : new Set([1,2]);
-    [...srcs].sort().forEach(s => { if (s===1) g6TimerStart(); else g6RtStart(); });
+    const secCd = Math.max(1, parseInt(document.getElementById('g6-timer-sec')?.value || 60));
+    const secRt = Math.max(1, parseInt(document.getElementById('g6-rt-sec')?.value || 60));
+    [...srcs].sort().forEach(s => {
+      if (s === 1) g6TimerStart();         // 경기용: _runCountdown 포함(이미 호출됨)
+      else _g6RtStartDirect(secRt);        // 휴식: 카운트 없이 바로
+    });
     setTimeout(() => _g6CdirUpdateStatus('// 타이머 진행 중...'), 100);
   });
 }
