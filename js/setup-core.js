@@ -932,35 +932,58 @@ function togBlk(id,el){
 /* ── 2번/3번 화면 ── */
 const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
 function updatePv2(){
-  // bracket-view에서 수동 선택한 경기 우선 사용
-  try{
-    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
-    if(mv.p1){
-      document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
-      document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
-      document.getElementById('pv2-info').textContent=mv.label||'진행 중';
-      return;
-    }
-  }catch(e){}
-  let p1=null,p2=null,matchInfo='참가자를 등록해주세요';
+  const mode=typeof _tab2Mode!=='undefined'?_tab2Mode:'court_1';
+
+  // 경기장 N 모드: 해당 경기장의 수동 선택 경기만 표시
+  if(mode.startsWith('court_')){
+    const courtNum=parseInt(mode.replace('court_',''));
+    try{
+      const courtStr=localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
+      if(courtStr){
+        const mv=JSON.parse(courtStr);
+        if(mv&&mv.p1){
+          document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
+          document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
+          document.getElementById('pv2-info').textContent=mv.label||'';
+          return;
+        }
+      }
+    }catch(e){}
+    // 선택된 경기 없음 → 대기
+    document.getElementById('pv2-p1').textContent='—';
+    document.getElementById('pv2-p2').textContent='—';
+    document.getElementById('pv2-info').textContent='';
+    return;
+  }
+
+  // 랜덤 모드: 경기장 1 경기 표시
+  if(mode==='random'){
+    try{
+      const courtStr=localStorage.getItem('sgp_display_vs_court_1');
+      if(courtStr){
+        const mv=JSON.parse(courtStr);
+        if(mv&&mv.p1){
+          document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
+          document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
+          document.getElementById('pv2-info').textContent=mv.label||'';
+          return;
+        }
+      }
+    }catch(e){}
+  }
+
+  // fallback: 매치 자동 탐색 (경기장 모드 미설정 시)
+  let p1=null,p2=null,matchInfo='';
   if(S.matches&&S.matches.length){
     let found=null,totalM=0,completedM=0;
     for(let ri=0;ri<S.matches.length;ri++){
       for(let mi=0;mi<S.matches[ri].length;mi++){
         const m=S.matches[ri][mi];
-        if(m.p1&&m.p2){
-          totalM++;
-          if(m.winner)completedM++;
-          else if(!found&&m.p1&&m.p2)found=m;
-        }
+        if(m.p1&&m.p2){totalM++;if(m.winner)completedM++;else if(!found)found=m;}
       }
     }
-    if(found){p1=found.p1;p2=found.p2;matchInfo='경기 '+(completedM+1)+' / '+totalM;}
-    else if(totalM>0){matchInfo='모든 경기 완료';}
-    else{matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';}
-  } else if(S.pts.length>=2){
-    // Step 4 매칭 전 — 이름 표시 안 함
-    matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';
+    if(found){p1=found.p1;p2=found.p2;}
+    else if(!totalM){matchInfo='';}
   }
   document.getElementById('pv2-p1').textContent=p1?cleanName(p1.name):'—';
   document.getElementById('pv2-p2').textContent=p2?cleanName(p2.name):'—';
