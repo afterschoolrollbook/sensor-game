@@ -394,17 +394,74 @@ function buildFontPicker(){
       S.titleFont=f.id;
       document.querySelectorAll('#fontpicker .ds-font').forEach(x=>x.classList.remove('on'));
       el.classList.add('on');
-      // 1번 미리보기
-      const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;
-      // 2번 미리보기
-      const pv2p1=document.getElementById('pv2-p1');if(pv2p1)pv2p1.style.fontFamily=f.css;
-      const pv2p2=document.getElementById('pv2-p2');if(pv2p2)pv2p2.style.fontFamily=f.css;
-      const pv2vs=document.querySelector('#pv2 .pv2-vs');if(pv2vs)pv2vs.style.fontFamily=f.css;
-      // 3번 미리보기 (pv3-pl)
-      document.querySelectorAll('#pv3 .pv3-pl').forEach(x=>x.style.fontFamily=f.css);
+      // 1번 미리보기 초시계에만 적용
+      const pvTime=document.getElementById('pv-time');
+      if(pvTime) pvTime.style.fontFamily=f.css;
       saveCfgNow();
     };
     w.appendChild(el);
+  });
+}
+
+const TIMER_SIZES=[40,48,56,64,72,80,88,96,100,110,120,140,160];
+function chTimerSize(d){
+  const el=document.getElementById('ds-timersize-val');if(!el)return;
+  let cur=parseInt(el.textContent)||100;
+  let i=TIMER_SIZES.findIndex(s=>s>=cur);if(i<0)i=TIMER_SIZES.length-1;
+  const nv=TIMER_SIZES[Math.max(0,Math.min(TIMER_SIZES.length-1,i+d))];
+  el.textContent=nv;
+  const pvTime=document.getElementById('pv-time');
+  if(pvTime) pvTime.style.fontSize=nv+'px';
+  saveCfgNow();
+}
+
+const UI_SIZES=[8,9,10,11,12,13,14,15,16,17,18,20,22,24];
+function chFtrSize(d){
+  const el=document.getElementById('ds-ftrsize-val');if(!el)return;
+  let cur=parseInt(el.textContent)||13;
+  let i=UI_SIZES.findIndex(s=>s>=cur);if(i<0)i=UI_SIZES.length-1;
+  const nv=UI_SIZES[Math.max(0,Math.min(UI_SIZES.length-1,i+d))];
+  el.textContent=nv;
+  // 미리보기 즉시 반영
+  const pvFtr=document.getElementById('pv-gname');
+  if(pvFtr) pvFtr.style.fontSize=nv+'px';
+  saveCfgNow();
+}
+function chTkSize(d){
+  const el=document.getElementById('ds-tksize-val');if(!el)return;
+  let cur=parseInt(el.textContent)||12;
+  let i=UI_SIZES.findIndex(s=>s>=cur);if(i<0)i=UI_SIZES.length-1;
+  const nv=UI_SIZES[Math.max(0,Math.min(UI_SIZES.length-1,i+d))];
+  el.textContent=nv;
+  // 미리보기 즉시 반영
+  const pvTk=document.getElementById('pv-tk');
+  if(pvTk) pvTk.style.fontSize=nv+'px';
+  saveCfgNow();
+}
+
+function buildTimerColorPicker(){
+  const w=document.getElementById('ds1-timer-color-wrap');if(!w)return;
+  const COLORS=[
+    {n:'청록',v:'#4cc9f0'},{n:'흰색',v:'#f0f0f8'},{n:'노랑',v:'#ffd60a'},
+    {n:'초록',v:'#06d6a0'},{n:'빨강',v:'#e63946'},{n:'주황',v:'#ff9f1c'},
+    {n:'보라',v:'#7b2fff'},{n:'분홍',v:'#ff2d9f'},
+  ];
+  const saved=S.timerColor||'#4cc9f0';
+  w.innerHTML='';
+  COLORS.forEach(c=>{
+    const sw=document.createElement('div');
+    sw.className='ds-swatch'+(saved===c.v?' on':'');
+    sw.style.background=c.v;sw.title=c.n;
+    sw.onclick=()=>{
+      S.timerColor=c.v;
+      w.querySelectorAll('.ds-swatch').forEach(x=>x.classList.remove('on'));
+      sw.classList.add('on');
+      // 미리보기 즉시 반영
+      const pvTime=document.getElementById('pv-time');
+      if(pvTime) pvTime.style.color=c.v;
+      saveCfgNow();
+    };
+    w.appendChild(sw);
   });
 }
 function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveCfgNow();}
@@ -477,6 +534,10 @@ function saveCfgNow(){
       vs2Font:S.vs2Font||null,
       bracket3Font:S.bracket3Font||null,
       vs2Bg:S.vs2Bg||'dark',
+      timerSize:parseInt(document.getElementById('ds-timersize-val')?.textContent||'0')||null,
+      timerColor:S.timerColor||null,
+      ftrSize:parseInt(document.getElementById('ds-ftrsize-val')?.textContent||'0')||null,
+      tkSize:parseInt(document.getElementById('ds-tksize-val')?.textContent||'0')||null,
     });
     localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
   }catch(e){}
@@ -488,7 +549,14 @@ window.addEventListener('pagehide',()=>{ try{_bc&&_bc.close();}catch(e){} });
 
 /* ── CHIPS ── */
 function buildChips(){
-  buildBlkChips();buildFontPicker();
+  buildBlkChips();buildFontPicker();buildTimerColorPicker();
+  // 저장값 복원
+  const _cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+  const _sv=(id,val)=>{ if(val){ const e=document.getElementById(id);if(e)e.textContent=val; }};
+  _sv('ds-timersize-val', _cfg.timerSize);
+  _sv('ds-ftrsize-val', _cfg.ftrSize);
+  _sv('ds-tksize-val', _cfg.tkSize);
+  if(_cfg.timerColor){ S.timerColor=_cfg.timerColor; buildTimerColorPicker(); }
   document.getElementById('ds-rankval').textContent=S.rankCount||6;
   const w=document.getElementById('dtchips');w.innerHTML='';
   DITEMS.forEach(d=>{
@@ -838,13 +906,20 @@ function updatePv(){
   const _en=document.getElementById('pv-ename');
   _en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
   const _tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
-  _en.style.fontFamily=_tf.css;
-  // 2번 미리보기 폰트
-  const pv2p1=document.getElementById('pv2-p1');if(pv2p1)pv2p1.style.fontFamily=_tf.css;
-  const pv2p2=document.getElementById('pv2-p2');if(pv2p2)pv2p2.style.fontFamily=_tf.css;
-  const pv2vs=document.querySelector('#pv2 .pv2-vs');if(pv2vs)pv2vs.style.fontFamily=_tf.css;
-  // 3번 미리보기 폰트
-  document.querySelectorAll('#pv3 .pv3-pl').forEach(x=>x.style.fontFamily=_tf.css);
+  // 초시계 글씨체 → pv-time에만 적용
+  const pvTime=document.getElementById('pv-time');
+  if(pvTime) pvTime.style.fontFamily=_tf.css;
+  // 초시계 크기/색상 미리보기 반영
+  const timerSz=parseInt(document.getElementById('ds-timersize-val')?.textContent||'100');
+  if(pvTime && timerSz) pvTime.style.fontSize=timerSz+'px';
+  if(pvTime && S.timerColor) pvTime.style.color=S.timerColor;
+  // 하단정보/티커 크기 미리보기 반영
+  const ftrSz=parseInt(document.getElementById('ds-ftrsize-val')?.textContent||'0');
+  const tkSz=parseInt(document.getElementById('ds-tksize-val')?.textContent||'0');
+  const pvFtr=document.getElementById('pv-gname');
+  const pvTk=document.getElementById('pv-tk');
+  if(pvFtr && ftrSz) pvFtr.style.fontSize=ftrSz+'px';
+  if(pvTk && tkSz) pvTk.style.fontSize=tkSz+'px';
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
   document.getElementById('pv-chal').textContent=(S.matches&&S.matches.length&&S.pts.length)?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
@@ -853,7 +928,7 @@ function updatePv(){
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
   updatePvVs();updatePv2();updatePv3();updateRankLayout();
-  // 기존 config 유지하면서 병합 저장 (autoSwitch 등 패널 설정 보존)
+  // 기존 config 유지하면서 병합 저장
   try{
     const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
     const cfg=Object.assign(existingCfg,{
@@ -863,6 +938,8 @@ function updatePv(){
       displayItems:S.di,
       blk:S.blk,
       titleFont:S.titleFont,
+      timerSize:timerSz||null,
+      timerColor:S.timerColor||null,
       rankCount:S.rankCount,
       theme:S.theme||null,
       pointColor:S.pointColor||null,

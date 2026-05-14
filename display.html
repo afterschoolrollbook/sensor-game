@@ -447,12 +447,30 @@ function refresh1(){
     'fire-red':     '#ff6b35',
   };
   const root=document.documentElement;
-  // 테마: --red (헤더라인, VS, LIVE 테두리 등)
   const lineColor=THEME_MAP[cfg.theme]||ev.primaryColor||'#e63946';
   root.style.setProperty('--red', lineColor);
-  // 포인트 색상: 타이머 텍스트 전용 변수 --timer-color
-  const timerColor=cfg.pointColor||'#4cc9f0';
+  // 초시계 색상: timerColor 우선, fallback pointColor
+  const timerColor=cfg.timerColor||cfg.pointColor||'#4cc9f0';
   root.style.setProperty('--timer-color', timerColor);
+  // 초시계 폰트 (titleFont)
+  const fontMap2={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
+  const timerEl=document.getElementById('d1-time');
+  if(timerEl){
+    if(cfg.titleFont) timerEl.style.fontFamily=fontMap2[cfg.titleFont]||fontMap2.mono;
+    if(cfg.timerSize) timerEl.style.fontSize=cfg.timerSize+'px';
+  }
+  // 하단정보 크기
+  if(cfg.ftrSize){
+    const gnEl=document.getElementById('d1-gname');
+    const clkEl=document.getElementById('d1-clk');
+    if(gnEl) gnEl.style.fontSize=cfg.ftrSize+'px';
+    if(clkEl) clkEl.style.fontSize=cfg.ftrSize+'px';
+  }
+  // 티커 크기
+  if(cfg.tkSize){
+    const tkiEl=document.getElementById('d1-tki');
+    if(tkiEl) tkiEl.style.fontSize=cfg.tkSize+'px';
+  }
 
   updateTicker(cfg,di,ss);
 }
@@ -468,11 +486,14 @@ function refresh2(){
   }catch(e){}
   _set('d2-p1', p1); _set('d2-p2', p2);
   _set('d2-info', label);
-  // 경기장 표시: courtCount>1이고 court 값이 있을 때
-  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  // 경기장 레이블: _d2Mode가 court_N이면 모드 기준으로 항상 표시
   const courtEl=document.getElementById('d2-court');
   if(courtEl){
-    if(court>0 && courtCount>1){
+    if(_d2Mode&&_d2Mode.startsWith('court_')){
+      const c=parseInt(_d2Mode.replace('court_',''));
+      courtEl.textContent=`// 경기장 ${c}`;
+      courtEl.style.display='';
+    } else if(court>0){
       courtEl.textContent=`// 경기장 ${court}`;
       courtEl.style.display='';
     } else {

@@ -1130,8 +1130,39 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div class="blk-list" id="blkchips"></div>
       </div>
       <div class="dssec">
-        <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">타이틀 글씨체</span></div>
+        <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">초시계 글씨체</span></div>
         <div class="ds-fonts" id="fontpicker"></div>
+      </div>
+      <div class="dssec">
+        <div class="dssec-hd"><span>🔠</span><span class="dssec-ttl">초시계 크기</span></div>
+        <div class="ds-rcrow">
+          <button class="ds-rcbtn" onclick="chTimerSize(-1)">−</button>
+          <span class="ds-rcval" id="ds-timersize-val">100</span>
+          <button class="ds-rcbtn" onclick="chTimerSize(1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">px</span>
+        </div>
+      </div>
+      <div class="dssec">
+        <div class="dssec-hd"><span>🎨</span><span class="dssec-ttl">초시계 색상</span></div>
+        <div class="ds-color-row" id="ds1-timer-color-wrap"></div>
+      </div>
+      <div class="dssec">
+        <div class="dssec-hd"><span>📊</span><span class="dssec-ttl">하단 정보 크기</span></div>
+        <div class="ds-rcrow">
+          <button class="ds-rcbtn" onclick="chFtrSize(-1)">−</button>
+          <span class="ds-rcval" id="ds-ftrsize-val">13</span>
+          <button class="ds-rcbtn" onclick="chFtrSize(1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">px</span>
+        </div>
+      </div>
+      <div class="dssec">
+        <div class="dssec-hd"><span>📰</span><span class="dssec-ttl">티커 크기</span></div>
+        <div class="ds-rcrow">
+          <button class="ds-rcbtn" onclick="chTkSize(-1)">−</button>
+          <span class="ds-rcval" id="ds-tksize-val">12</span>
+          <button class="ds-rcbtn" onclick="chTkSize(1)">+</button>
+          <span style="font-size:11px;color:var(--text3)">px</span>
+        </div>
       </div>
       <div class="dssec">
         <div class="dssec-hd"><span>🎨</span><span class="dssec-ttl">테마</span></div>
@@ -1142,27 +1173,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div class="ds-color-row">
           <input type="color" id="ds-primary-color" style="width:36px;height:36px;border:none;background:none;cursor:pointer;border-radius:6px;" onchange="applyDsColor()">
           <div id="ds-preset-colors" class="ds-color-row"></div>
-        </div>
-      </div>
-      <div class="dssec">
-        <div class="dssec-hd"><span>👤</span><span class="dssec-ttl">도전자 설정</span></div>
-        <div style="display:flex;gap:6px">
-          <input class="fi" id="ds-cplayer" placeholder="도전자 이름 입력" style="flex:1;font-size:12px;padding:7px 11px">
-          <button class="pvbtn p" onclick="setDsPlayer()" style="padding:7px 13px">전송</button>
-        </div>
-      </div>
-      <div class="dssec">
-        <div class="dssec-hd">
-          <span>🔄</span><span class="dssec-ttl">화면 자동 전환</span>
-          <label class="ds-tog" style="margin-left:auto">
-            <input type="checkbox" id="ds-autoswitch" onchange="saveDsCfg()">
-            <span class="ds-sld"></span>
-          </label>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-          <span style="font-size:11px;color:var(--text3)">전환 간격</span>
-          <input class="fi" type="number" id="ds-interval" value="8" min="3" max="60" style="width:70px;padding:5px 9px;font-size:12px" onchange="saveDsCfg()">
-          <span style="font-size:11px;color:var(--text3)">초</span>
         </div>
       </div>
     </div>
