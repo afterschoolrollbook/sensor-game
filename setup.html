@@ -2956,6 +2956,7 @@ function g6StopwatchReset(){
   g6_elapsed=0;g6_lapCount=0;g6_laps=[];
   const pvt=document.getElementById('pv-time');
   if(pvt){pvt.textContent='00:00.000';pvt.className='';}
+  try{localStorage.setItem('sgp_display_time','00:00.000');}catch(e){}
   sendCmd('timer_reset');
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
@@ -3100,6 +3101,7 @@ function g6TimerReset(){
   _pvStopCountdown();
   const pvt=document.getElementById('pv-time');
   if(pvt){pvt.textContent='00:00.000';pvt.className='';}
+  try{localStorage.setItem('sgp_display_time','00:00.000');}catch(e){}
   sendCmd('timer_reset');
   const startBtn=document.getElementById('g6-cd-start');
   const stopBtn=document.getElementById('g6-cd-stop');
