@@ -227,6 +227,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .g6-ctrl-btn.primary:hover{background:#c1121f;}
 .g6-ctrl-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(76,201,240,.08);}
 .g6-ctrl-input{background:var(--card2);border:1px solid var(--border2);border-radius:7px;color:var(--text);padding:8px 10px;font-size:14px;font-family:'Share Tech Mono',monospace;text-align:center;width:72px;}
+.g6-sw-tab{flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--border2);background:var(--card2);color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:1px;}
+.g6-sw-tab.active{background:rgba(230,57,70,.15);border-color:var(--red);color:var(--red);}
 .g6-lapnum{font-family:'Share Tech Mono',monospace;color:var(--text3);width:44px;}
 .g6-laptime{font-family:'Share Tech Mono',monospace;flex:1;}
 .g6-lapbest{color:var(--green);}
@@ -737,17 +739,35 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
         <!-- ① 스톱워치 -->
         <div class="g6-ctrl-section">
-          <div class="g6-ctrl-label" style="justify-content:space-between;">
-            <span>스톱워치</span>
-            <span id="g6-sw-ptcount" style="font-size:10px;color:var(--accent);letter-spacing:1px;">참가자 0명</span>
+          <div class="g6-ctrl-label">스톱워치</div>
+          <!-- 모드 탭 -->
+          <div style="display:flex;gap:4px;margin-bottom:10px;">
+            <button class="g6-sw-tab active" id="g6-sw-tab-1" onclick="g6SwTab(1)">일반</button>
+            <button class="g6-sw-tab" id="g6-sw-tab-2" onclick="g6SwTab(2)">명단</button>
+            <button class="g6-sw-tab" id="g6-sw-tab-3" onclick="g6SwTab(3)">인원수</button>
           </div>
-          <div class="g6-ctrl-row" style="margin-bottom:6px;">
+          <!-- 탭 2: 명단 안내 -->
+          <div id="g6-sw-mode2" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--card2);border-radius:6px;">
+            <span id="g6-sw-ptcount">참가자 0명</span> — 정지 시 자동으로 다음 참가자로 이동
+          </div>
+          <!-- 탭 3: 인원수 입력 -->
+          <div id="g6-sw-mode3" style="display:none;margin-bottom:8px;">
+            <div class="g6-ctrl-row">
+              <span style="font-size:11px;color:var(--text3);white-space:nowrap;">인원</span>
+              <input id="g6-sw-count" class="g6-ctrl-input" type="number" min="1" max="999" value="10">
+              <span style="font-size:11px;color:var(--text3);white-space:nowrap;">명</span>
+              <span id="g6-sw-countinfo" style="font-size:11px;color:var(--accent);white-space:nowrap;">1번째</span>
+            </div>
+          </div>
+          <!-- 컨트롤 버튼 -->
+          <div class="g6-ctrl-row">
             <button class="g6-ctrl-btn primary" id="g6-start" onclick="g6Start()">▶ 출발</button>
             <button class="g6-ctrl-btn" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
             <button class="g6-ctrl-btn" onclick="g6StopwatchReset()">🔄 초기화</button>
-            <button class="g6-ctrl-btn" style="color:var(--red);border-color:var(--red);" onclick="g6RankReset()">🗑️ 순위초기화</button>
+            <button class="g6-ctrl-btn" id="g6-sw-rankreset-btn" style="display:none;color:var(--red);border-color:var(--red);" onclick="g6RankReset()">🗑️ 순위초기화</button>
           </div>
-          <div id="g6-sw-ranking" style="display:none;margin-top:6px;display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;"></div>
+          <!-- 기록 리스트 -->
+          <div id="g6-sw-ranking" style="display:none;margin-top:8px;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;"></div>
         </div>
 
         <!-- ② 카운트다운 타이머 -->
@@ -2887,12 +2907,38 @@ function _pvFmtCd(ms){
   return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}0`;
 }
 
+// ── 스톱워치 모드 (1:일반 2:명단 3:인원수) ──
+let g6_swMode=1;
+let g6_swNumIdx=1; // 인원수 모드 현재 순번
+
+function g6SwTab(n){
+  g6_swMode=n;
+  [1,2,3].forEach(i=>{
+    document.getElementById('g6-sw-tab-'+i)?.classList.toggle('active',i===n);
+  });
+  document.getElementById('g6-sw-mode2').style.display=n===2?'':'none';
+  document.getElementById('g6-sw-mode3').style.display=n===3?'':'none';
+  const rrBtn=document.getElementById('g6-sw-rankreset-btn');
+  if(rrBtn) rrBtn.style.display=(n===2||n===3)?'':'none';
+  g6_swNumIdx=1;
+  g6_swRecords=[];
+  g6SwUpdateUI();
+  g6StopwatchReset();
+}
+
+
+
 // ── 스톱워치 개인전 기록 ──
 let g6_swRecords=[];
 
 function g6SwUpdateUI(){
+  // 탭2: 명단
   const cnt=document.getElementById('g6-sw-ptcount');
-  if(cnt) cnt.textContent=S.pts.length?`참가자 ${S.pts.length}명 (${g6_idx+1}번째)`:'참가자 0명';
+  if(cnt) cnt.textContent=`참가자 ${S.pts.length}명 — ${g6_idx+1}번째`;
+  // 탭3: 인원수
+  const ci=document.getElementById('g6-sw-countinfo');
+  if(ci) ci.textContent=`${g6_swNumIdx}번째`;
+  // 기록 리스트
   const rk=document.getElementById('g6-sw-ranking');
   if(!rk) return;
   if(!g6_swRecords.length){rk.style.display='none';return;}
@@ -2909,11 +2955,11 @@ function g6SwUpdateUI(){
 }
 
 function g6RankReset(){
-  if(!confirm('스톱워치 기록을 모두 삭제할까요?'))return;
+  if(!confirm('기록을 모두 삭제할까요?'))return;
   g6_swRecords=[];
-  g6_idx=0;
+  g6_idx=0; g6_swNumIdx=1;
   g6SwUpdateUI();
-  if(S.pts.length) g6SetParticipant(0);
+  if(g6_swMode===2&&S.pts.length) g6SetParticipant(0);
   toast('기록 초기화','info');
 }
 
@@ -2957,7 +3003,12 @@ function g6Stop(){
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
   const lapBtn3=document.getElementById('g6-lap');if(lapBtn3)lapBtn3.disabled=true;
-  if(S.pts.length){
+
+  if(g6_swMode===1){
+    // 일반: 기록만 표시
+    toast(g6FmtTime(g6_elapsed),'success');
+  } else if(g6_swMode===2){
+    // 명단 모드
     const p=S.pts[g6_idx];
     if(p){
       g6_swRecords.push({name:p.name,time:g6_elapsed});
@@ -2971,8 +3022,23 @@ function g6Stop(){
         document.getElementById('g6-start').disabled=false;
       },1200);
     }
-  } else {
-    toast(g6FmtTime(g6_elapsed),'success');
+  } else if(g6_swMode===3){
+    // 인원수 모드
+    const total=parseInt(document.getElementById('g6-sw-count')?.value||10);
+    g6_swRecords.push({name:`${g6_swNumIdx}번`,time:g6_elapsed});
+    toast(`${g6_swNumIdx}번: ${g6FmtTime(g6_elapsed)}`,'success');
+    if(g6_swNumIdx<total){
+      g6_swNumIdx++;
+      setTimeout(()=>{
+        g6SwUpdateUI();
+        const te2=document.getElementById('g6-time');
+        if(te2){te2.textContent='00:00.000';te2.className='g6-time';}
+        document.getElementById('g6-start').disabled=false;
+      },1200);
+    } else {
+      toast('전원 기록 완료!','success');
+      g6SwUpdateUI();
+    }
   }
   try{if(typeof updatePv==='function')updatePv();}catch(e){}
 }
