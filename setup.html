@@ -782,23 +782,23 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
             <button class="g6-sw-tab" id="g6-cd-tab-2" onclick="g6CdTab(2)">등록명단</button>
             <button class="g6-sw-tab" id="g6-cd-tab-3" onclick="g6CdTab(3)">인원수</button>
           </div>
-          <!-- 초 설정 -->
+          <!-- 초 설정 + 탭별 설정 한 줄 -->
           <div class="g6-ctrl-row" style="margin-bottom:8px;">
             <input id="g6-timer-sec" class="g6-ctrl-input" type="number" min="1" max="9999" value="60">
             <span style="font-size:11px;color:var(--text3);white-space:nowrap;">초 설정</span>
-          </div>
-          <!-- 탭 2: 등록명단 -->
-          <div id="g6-cd-mode2" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--card2);border-radius:6px;">
-            <span id="g6-cd-ptcount">참가자 0명</span> — 랩 버튼으로 중간 기록
-          </div>
-          <!-- 탭 3: 인원수 -->
-          <div id="g6-cd-mode3" style="display:none;margin-bottom:8px;">
-            <div class="g6-ctrl-row">
-              <span style="font-size:11px;color:var(--text3);white-space:nowrap;">인원</span>
-              <input id="g6-cd-count" class="g6-ctrl-input" type="number" min="1" max="999" value="10">
+            <button class="g6-ctrl-btn" style="flex:0;padding:7px 12px;white-space:nowrap;" onclick="g6TimerSetPreview()">설정</button>
+            <!-- 탭 2: 등록명단 참가자수 -->
+            <span id="g6-cd-ptcount" style="display:none;font-size:11px;color:var(--accent);white-space:nowrap;margin-left:4px;">참가자 0명</span>
+            <!-- 탭 3: 인원수 입력 -->
+            <span id="g6-cd-mode3-inline" style="display:none;display:flex;align-items:center;gap:4px;margin-left:4px;">
+              <input id="g6-cd-count" class="g6-ctrl-input" type="number" min="1" max="999" value="10" style="width:60px;">
               <span style="font-size:11px;color:var(--text3);white-space:nowrap;">명</span>
               <span id="g6-cd-countinfo" style="font-size:11px;color:var(--accent);white-space:nowrap;">1번째</span>
-            </div>
+            </span>
+          </div>
+          <!-- 탭 2: 랩 안내 -->
+          <div id="g6-cd-mode2" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--card2);border-radius:6px;">
+            랩 버튼으로 중간 기록
           </div>
           <!-- 컨트롤 버튼 -->
           <div class="g6-ctrl-row">
@@ -2967,7 +2967,11 @@ function g6CdTab(n){
   g6_cdMode=n;
   [1,2,3].forEach(i=>document.getElementById('g6-cd-tab-'+i)?.classList.toggle('active',i===n));
   document.getElementById('g6-cd-mode2').style.display=n===2?'':'none';
-  document.getElementById('g6-cd-mode3').style.display=n===3?'':'none';
+  // 초 설정 옆 인라인 요소
+  const ptEl=document.getElementById('g6-cd-ptcount');
+  const cntEl=document.getElementById('g6-cd-mode3-inline');
+  if(ptEl) ptEl.style.display=n===2?'':'none';
+  if(cntEl) cntEl.style.display=n===3?'flex':'none';
   const lapBtn=document.getElementById('g6-cd-lap');
   if(lapBtn) lapBtn.style.display=(n===2||n===3)?'':'none';
   const rrBtn=document.getElementById('g6-cd-rankreset-btn');
@@ -3052,6 +3056,19 @@ function g6CdSaveExcelConfirm(){
     XLSX.writeFile(wb,fname);
     toast('저장 완료: '+fname,'success');
   }catch(e){toast('저장 실패: '+e.message,'error');}
+}
+
+function g6TimerSetPreview(){
+  const sec=parseInt(document.getElementById('g6-timer-sec')?.value||60);
+  // 미리보기 시간 표시
+  const pvt=document.getElementById('pv-time');
+  const m=Math.floor(sec/60), s=sec%60;
+  const formatted=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.000`;
+  if(pvt){pvt.textContent=formatted;pvt.className='';}
+  // 전광판에도 시간 세팅
+  try{localStorage.setItem('sgp_display_time',formatted);}catch(e){}
+  sendCmd('timer_set',{sec,formatted});
+  toast(`${sec}초 설정됨`,'success');
 }
 
 function g6TimerStart(){

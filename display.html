@@ -527,37 +527,6 @@ function startClock(){
   t();setInterval(t,1000);
 }
 
-// ── 설정 타이머 (카운트다운/업) ──
-let _cdTimer=null, _cdStart=null, _cdDuration=0, _cdUp=false;
-function _fmtTimer(ms){
-  if(ms<0)ms=0;
-  const total=Math.floor(ms/1000);
-  const m=Math.floor(total/60), s=total%60, ms2=Math.floor((ms%1000)/10);
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms2).padStart(2,'0')}0`;
-}
-function _startCountdownTimer(sec){
-  _stopCountdownTimer();
-  _cdDuration=sec*1000;
-  _cdStart=performance.now();
-  _cdUp=false;
-  function tick(){
-    const elapsed=performance.now()-_cdStart;
-    const remain=_cdDuration-elapsed;
-    const el=document.getElementById('d1-time');
-    if(remain<=0){
-      if(el){el.textContent='00:00.000';el.className='stopped';}
-      _cdTimer=null;
-      return;
-    }
-    if(el) el.textContent=_fmtTimer(remain);
-    _cdTimer=requestAnimationFrame(tick);
-  }
-  _cdTimer=requestAnimationFrame(tick);
-}
-function _stopCountdownTimer(){
-  if(_cdTimer){cancelAnimationFrame(_cdTimer);_cdTimer=null;}
-}
-
 function triggerCountdown(){
   const ov=document.getElementById('countdown-overlay'),nEl=document.getElementById('countdown-num'),gEl=document.getElementById('countdown-go');
   ov.classList.add('show');let n=3;nEl.style.display='block';gEl.style.display='none';nEl.textContent=n;
@@ -601,22 +570,22 @@ function handleCmd(cmd){
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
   if(cmd.type==='timer_start'){
     document.getElementById('d1-time').className='running';
-    document.getElementById('d1-live').classList.add('active');
-    // duration(초)이 있으면 카운트다운 타이머 시작
-    if(cmd.duration){
-      _startCountdownTimer(cmd.duration);
-    }
+    document.getElementById('d1-live').classList.add('active'); // LIVE 깜빡임 시작
   }
   if(cmd.type==='timer_stop'){
     document.getElementById('d1-time').className='stopped';
-    document.getElementById('d1-live').classList.remove('active');
-    _stopCountdownTimer();
+    document.getElementById('d1-live').classList.remove('active'); // LIVE 깜빡임 정지
   }
   if(cmd.type==='timer_reset'){
     _stopCountdownTimer();
     _set('d1-time','00:00.000');
     document.getElementById('d1-time').className='';
     document.getElementById('d1-live').classList.remove('active');
+  }
+  if(cmd.type==='timer_set'){
+    _stopCountdownTimer();
+    _set('d1-time', cmd.formatted||'00:00.000');
+    document.getElementById('d1-time').className='';
   }
   if(cmd.type==='clear_rank')  scheduleRefresh();
   if(cmd.type==='screen_1')    switchScreen(1);
