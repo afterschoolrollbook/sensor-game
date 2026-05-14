@@ -29,16 +29,26 @@ function initDsPanel(){
     }
   });
 
-  // 3번탭일 때 resizer2 드래그 시 pv3 scale 실시간 반영
+  // resizer2 드래그 시: 3번탭 iframe pointer-events:none으로 mousemove 가로채기 방지
+  // + 3번탭일 때 scalePvc 실시간 호출
   const resizer2=document.getElementById('resizer2');
   if(resizer2){
     resizer2.addEventListener('mousedown', function(){
-      function onMove(){ if(dsCurrentTab===3 && typeof scalePvc==='function') scalePvc(); }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', function cleanup(){
+      // iframe 이벤트 차단
+      const iframe=document.getElementById('dst3-bracket-iframe');
+      if(iframe) iframe.style.pointerEvents='none';
+
+      function onMove(){
+        if(dsCurrentTab===3 && typeof scalePvc==='function') scalePvc();
+      }
+      function onUp(){
+        // iframe 이벤트 복원
+        const iframe=document.getElementById('dst3-bracket-iframe');
+        if(iframe) iframe.style.pointerEvents='';
         document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', cleanup);
-      }, {once:true});
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp, {once:true});
     });
   }
 }

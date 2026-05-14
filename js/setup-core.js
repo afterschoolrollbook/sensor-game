@@ -161,6 +161,27 @@ window.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();initDsPanel();initPtsPopupDrag();
+  // pv3 또는 iframe 안 경기 박스 클릭 → bracket-view(새창/iframe) 하이라이트 연동
+  window.onMatchClick = function(ri, mi, matchObj){
+    if(!matchObj||(!matchObj.p1&&!matchObj.p2)) return;
+    const cleanN = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n : '—';
+    const p1 = cleanN(matchObj.p1?.name || String(matchObj.p1||''));
+    const p2 = cleanN(matchObj.p2?.name || String(matchObj.p2||''));
+    const grpObj = matchObj._groupObj || null;
+    const court = grpObj?.court || 1;
+    const label = matchObj._groupLabel || '';
+    const vsData = {p1, p2, label, court};
+    try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
+    try{ localStorage.setItem('sgp_display_vs_court_'+court, JSON.stringify(vsData)); }catch(e){}
+    const cmd = {type:'set_match', p1, p2, label, court, ts:Date.now()};
+    try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
+    try{
+      if(!window._pv3Bc) window._pv3Bc = new BroadcastChannel('sgp_cmd');
+      window._pv3Bc.postMessage(cmd);
+    }catch(e){}
+    try{ if(typeof updatePv2==='function') updatePv2(); }catch(e){}
+    try{ if(typeof updatePv3==='function') updatePv3(); }catch(e){}
+  };
   // scalePvc 지연 호출: DOMContentLoaded 시점엔 aspect-ratio 요소의 크기가 미확정
   // rAF 두 번 + setTimeout으로 브라우저 렌더링이 완전히 끝난 후 실행
   requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ setTimeout(scalePvc, 0); }); });
@@ -1318,40 +1339,11 @@ function updatePv3(){
     return w > 100 ? w : 440;
   };
 
-  // pv3 클릭 → bracket-view 하이라이트 연동
-  // step4.js의 박스 onclick이 onMatchClick(ri, mi, matchObj) 호출
-  const _origOnMatchClick = window.onMatchClick;
-  window.onMatchClick = function(ri, mi, matchObj){
-    if(!matchObj) return;
-    const cleanN = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n : '—';
-    const p1 = cleanN(matchObj.p1?.name || String(matchObj.p1||''));
-    const p2 = cleanN(matchObj.p2?.name || String(matchObj.p2||''));
-    const grpObj = matchObj._groupObj || null;
-    const court = grpObj?.court || 1;
-    const label = matchObj._groupLabel || '';
-    const vsData = {p1, p2, label, court};
-    // localStorage 저장 → bracket-view storage 이벤트 수신
-    try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
-    try{ localStorage.setItem('sgp_display_vs_court_'+court, JSON.stringify(vsData)); }catch(e){}
-    // BroadcastChannel → bracket-view 하이라이트 갱신
-    const cmd = {type:'set_match', p1, p2, label, court, ts:Date.now()};
-    try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
-    try{
-      if(!window._pv3Bc) window._pv3Bc = new BroadcastChannel('sgp_cmd');
-      window._pv3Bc.postMessage(cmd);
-    }catch(e){}
-    // pv2도 갱신
-    try{ if(typeof updatePv2==='function') updatePv2(); }catch(e){}
-  };
-
   view.id='pts-bracket-view';
   _d3DrawBracketPv3(view, groups, layout, courtCount);
   view.id='pv3-inner';
-  // override 복원
   if(_origGetAvailW) window._getAvailW=_origGetAvailW;
   else delete window._getAvailW;
-  if(_origOnMatchClick) window.onMatchClick=_origOnMatchClick;
-  else delete window.onMatchClick;
 }
 
 /* ── PVC SCALE (TV 비율 축소) ── */
