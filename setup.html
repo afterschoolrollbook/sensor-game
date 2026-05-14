@@ -865,46 +865,70 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div class="g6-ctrl-label collapsed" id="g6-cdir-header" onclick="g6ToggleSection('cdir')">카운트다운 연출<span class="g6-collapse-arrow">▾</span></div>
           <div class="g6-ctrl-body collapsed" id="g6-cdir-body">
 
-            <!-- 모드 탭 -->
+            <!-- 모드 탭 (반복 / 커스텀) -->
             <div style="display:flex;gap:4px;margin-bottom:12px;">
-              <button class="g6-sw-tab active" id="g6-cdir-tab-basic"  onclick="g6CdirTab('basic')" style="flex:1;">기본</button>
-              <button class="g6-sw-tab"        id="g6-cdir-tab-repeat" onclick="g6CdirTab('repeat')" style="flex:1;">반복</button>
-              <button class="g6-sw-tab"        id="g6-cdir-tab-custom" onclick="g6CdirTab('custom')" style="flex:1;">커스텀</button>
-            </div>
-
-            <!-- ── 기본 모드 ── -->
-            <div id="g6-cdir-mode-basic">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// 타이머 선택 (복수 가능)</div>
-              <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <button class="g6-sw-tab active" id="g6-cdir-b-src-1" onclick="g6CdirToggleSrc('b',1)" style="flex:1;">⚔️ 경기용 ①</button>
-                <button class="g6-sw-tab"        id="g6-cdir-b-src-2" onclick="g6CdirToggleSrc('b',2)" style="flex:1;">💤 휴식시간 ②</button>
-              </div>
-              <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);margin-bottom:10px;width:fit-content;">
-                <input type="checkbox" id="g6-cdir-b-bell" style="accent-color:var(--yellow);width:13px;height:13px;"> 🔔 종소리 (땡~)
-              </label>
+              <button class="g6-sw-tab active" id="g6-cdir-tab-repeat" onclick="g6CdirTab('repeat')" style="flex:1;">🔁 반복</button>
+              <button class="g6-sw-tab"        id="g6-cdir-tab-custom" onclick="g6CdirTab('custom')" style="flex:1;">⚙️ 커스텀</button>
             </div>
 
             <!-- ── 반복 모드 ── -->
-            <div id="g6-cdir-mode-repeat" style="display:none;">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// 타이머 선택 (복수 가능)</div>
-              <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <button class="g6-sw-tab active" id="g6-cdir-r-src-1" onclick="g6CdirToggleSrc('r',1)" style="flex:1;">⚔️ 경기용 ①</button>
-                <button class="g6-sw-tab"        id="g6-cdir-r-src-2" onclick="g6CdirToggleSrc('r',2)" style="flex:1;">💤 휴식시간 ②</button>
+            <div id="g6-cdir-mode-repeat">
+
+              <!-- 경기용 선택 + 시간 -->
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+                <button id="g6-cdir-r-src-1" onclick="g6CdirToggleSrc('r',1)"
+                  style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--red);background:rgba(230,57,70,.15);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;">
+                  ⚔️ 경기용 ①
+                </button>
+                <input id="g6-cdir-r-sec-1" type="number" min="1" max="9999" value="60"
+                  class="g6-ctrl-input" style="width:64px;" oninput="g6CdirSyncSec('r',1)">
+                <span style="font-size:11px;color:var(--text3);">초</span>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <span style="font-size:11px;color:var(--text3);">반복 횟수</span>
-                <input id="g6-cdir-r-cnt" type="number" min="1" max="99" value="2" class="g6-ctrl-input" style="width:60px;">
+
+              <!-- 휴식시간 선택 + 시간 -->
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+                <button id="g6-cdir-r-src-2" onclick="g6CdirToggleSrc('r',2)"
+                  style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--card2);color:var(--text3);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;">
+                  💤 휴식시간 ②
+                </button>
+                <input id="g6-cdir-r-sec-2" type="number" min="1" max="9999" value="60"
+                  class="g6-ctrl-input" style="width:64px;" oninput="g6CdirSyncSec('r',2)">
+                <span style="font-size:11px;color:var(--text3);">초</span>
+              </div>
+
+              <!-- 반복 횟수 + 종소리 -->
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:var(--text3);">반복</span>
+                <input id="g6-cdir-r-cnt" type="number" min="1" max="99" value="2"
+                  class="g6-ctrl-input" style="width:56px;">
                 <span style="font-size:11px;color:var(--text2);">회</span>
+                <label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);margin-left:4px;">
+                  <input type="checkbox" id="g6-cdir-r-bell" style="accent-color:var(--yellow);width:13px;height:13px;"> 🔔 종소리
+                </label>
               </div>
-              <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);margin-bottom:10px;width:fit-content;">
-                <input type="checkbox" id="g6-cdir-r-bell" style="accent-color:var(--yellow);width:13px;height:13px;"> 🔔 종소리 (땡~)
-              </label>
             </div>
 
             <!-- ── 커스텀 모드 ── -->
             <div id="g6-cdir-mode-custom" style="display:none;">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">// 순서 조립 (버튼으로 추가)</div>
+
+              <!-- 경기용 시간 -->
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+                <span style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--red);background:rgba(230,57,70,.08);color:var(--red);font-size:12px;font-weight:700;text-align:center;">⚔️ 경기용 ①</span>
+                <input id="g6-cdir-c-sec-1" type="number" min="1" max="9999" value="60"
+                  class="g6-ctrl-input" style="width:64px;" oninput="g6CdirSyncSec('c',1)">
+                <span style="font-size:11px;color:var(--text3);">초</span>
+              </div>
+
+              <!-- 휴식시간 시간 -->
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+                <span style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--accent);background:rgba(76,201,240,.08);color:var(--accent);font-size:12px;font-weight:700;text-align:center;">💤 휴식시간 ②</span>
+                <input id="g6-cdir-c-sec-2" type="number" min="1" max="9999" value="60"
+                  class="g6-ctrl-input" style="width:64px;" oninput="g6CdirSyncSec('c',2)">
+                <span style="font-size:11px;color:var(--text3);">초</span>
+              </div>
+
               <!-- 시퀀스 표시 -->
+              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// 순서 조립</div>
               <div id="g6-cdir-seq-list" style="display:flex;flex-wrap:wrap;gap:5px;min-height:34px;padding:7px 10px;background:var(--card2);border:1px solid var(--border);border-radius:7px;margin-bottom:8px;align-items:center;">
                 <span style="color:var(--text3);font-size:11px;">아래 버튼으로 순서를 추가하세요</span>
               </div>
@@ -915,10 +939,21 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
                 <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;border-color:rgba(255,214,10,.5);color:var(--yellow);" onclick="g6CdirSeqAdd('bell')">+ 🔔종</button>
                 <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;color:var(--text3);margin-left:auto;"                  onclick="g6CdirSeqClear()">✕ 초기화</button>
               </div>
+              <!-- 반복 -->
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);">
+                  <input type="checkbox" id="g6-cdir-c-loop" onchange="g6CdirToggleCLoop()" style="accent-color:var(--accent);width:13px;height:13px;"> 🔁 반복
+                </label>
+                <div id="g6-cdir-c-loop-wrap" style="display:none;align-items:center;gap:5px;">
+                  <input id="g6-cdir-c-cnt" type="number" min="1" max="99" value="2"
+                    class="g6-ctrl-input" style="width:56px;">
+                  <span style="font-size:11px;color:var(--text2);">회</span>
+                </div>
+              </div>
             </div>
 
             <!-- 상태 표시 -->
-            <div id="g6-cdir-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:10px;padding:5px 10px;background:var(--card2);border-radius:6px;letter-spacing:1px;">// 대기중</div>
+            <div id="g6-cdir-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);margin-top:10px;margin-bottom:10px;padding:5px 10px;background:var(--card2);border-radius:6px;letter-spacing:1px;">// 대기중</div>
 
             <!-- 컨트롤 버튼 -->
             <div class="g6-ctrl-row">

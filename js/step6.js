@@ -514,18 +514,17 @@ function g6ShowWinner(){
   sendCmd('winner',{name,time});
 }
 
-// ══ 카운트다운 연출 (기본 / 반복 / 커스텀) ══
-let g6_cdirMode = 'basic';
+// ══ 카운트다운 연출 (반복 / 커스텀) ══
+let g6_cdirMode = 'repeat';
 let g6_cdirRunning = false;
 let g6_cdirLoopTimer = null;
 let g6_cdirSeq = [];
-let g6_cdirSrcsB = new Set([1]); // 기본 모드 소스
-let g6_cdirSrcsR = new Set([1]); // 반복 모드 소스
+let g6_cdirSrcsR = new Set([1]); // 반복 모드 선택 소스
 
-// ── 탭 전환 ──
+// 탭 전환
 function g6CdirTab(mode) {
   g6_cdirMode = mode;
-  ['basic','repeat','custom'].forEach(m => {
+  ['repeat','custom'].forEach(m => {
     document.getElementById('g6-cdir-tab-' + m)?.classList.toggle('active', m === mode);
     const el = document.getElementById('g6-cdir-mode-' + m);
     if (el) el.style.display = m === mode ? 'block' : 'none';
@@ -533,28 +532,42 @@ function g6CdirTab(mode) {
   _g6CdirUpdateStatus();
 }
 
-// ── 소스 토글 (기본/반복 모드 각각) ──
+// 소스 토글 (반복 모드: 버튼 on/off 스타일)
 function g6CdirToggleSrc(mode, n) {
-  const srcs = mode === 'b' ? g6_cdirSrcsB : g6_cdirSrcsR;
-  const btn = document.getElementById(`g6-cdir-${mode}-src-${n}`);
-  if (srcs.has(n)) {
-    if (srcs.size <= 1) { toast('최소 1개는 선택해야 해요', 'error'); return; }
-    srcs.delete(n); btn?.classList.remove('active');
+  const srcs = g6_cdirSrcsR;
+  const btn  = document.getElementById(`g6-cdir-${mode}-src-${n}`);
+  const isOn = srcs.has(n);
+  if (isOn && srcs.size <= 1) { toast('최소 1개는 선택해야 해요', 'error'); return; }
+  if (isOn) {
+    srcs.delete(n);
+    if (btn) { btn.style.borderColor='var(--border2)'; btn.style.background='var(--card2)'; btn.style.color='var(--text3)'; }
   } else {
-    srcs.add(n); btn?.classList.add('active');
+    srcs.add(n);
+    const clr = n === 1 ? 'var(--red)' : 'var(--accent)';
+    const bg  = n === 1 ? 'rgba(230,57,70,.15)' : 'rgba(76,201,240,.1)';
+    if (btn) { btn.style.borderColor=clr; btn.style.background=bg; btn.style.color=clr; }
   }
   _g6CdirUpdateStatus();
 }
 
-// ── 커스텀 시퀀스 ──
-function g6CdirSeqAdd(type) {
-  g6_cdirSeq.push(type);
-  _g6CdirRenderSeq();
+// 시간 입력 → 메인 타이머 입력 동기화
+function g6CdirSyncSec(mode, n) {
+  const val = document.getElementById(`g6-cdir-${mode}-sec-${n}`)?.value;
+  if (!val) return;
+  const el = document.getElementById(n === 1 ? 'g6-timer-sec' : 'g6-rt-sec');
+  if (el) el.value = val;
 }
-function g6CdirSeqClear() {
-  g6_cdirSeq = [];
-  _g6CdirRenderSeq();
+
+// 커스텀 반복 토글
+function g6CdirToggleCLoop() {
+  const on = document.getElementById('g6-cdir-c-loop')?.checked;
+  const w  = document.getElementById('g6-cdir-c-loop-wrap');
+  if (w) w.style.display = on ? 'flex' : 'none';
 }
+
+// 커스텀 시퀀스
+function g6CdirSeqAdd(type) { g6_cdirSeq.push(type); _g6CdirRenderSeq(); }
+function g6CdirSeqClear()   { g6_cdirSeq = [];       _g6CdirRenderSeq(); }
 function _g6CdirRenderSeq() {
   const el = document.getElementById('g6-cdir-seq-list');
   if (!el) return;
@@ -571,50 +584,44 @@ function _g6CdirRenderSeq() {
   el.innerHTML = items.join('<span style="color:var(--text3);font-size:10px;padding:0 2px;">→</span>');
 }
 
-// ── 상태 표시 ──
+// 상태 표시
 function _g6CdirUpdateStatus(msg) {
   const el = document.getElementById('g6-cdir-status');
   if (!el) return;
   if (msg) { el.textContent = msg; return; }
-  const modeLabel = { basic: '기본', repeat: '반복', custom: '커스텀' }[g6_cdirMode];
-  el.textContent = `// [${modeLabel}] 대기중`;
+  el.textContent = g6_cdirMode === 'repeat' ? '// [반복] 대기중' : '// [커스텀] 대기중';
 }
 
-// ── 시작 ──
+// 시작
 function g6CdirStart() {
+  const pfx = g6_cdirMode === 'repeat' ? 'r' : 'c';
+  g6CdirSyncSec(pfx, 1);
+  g6CdirSyncSec(pfx, 2);
+
   let seq = [];
+  let loopCnt = 1;
 
-  if (g6_cdirMode === 'basic') {
-    [...g6_cdirSrcsB].sort().forEach(s => seq.push(s));
-    if (document.getElementById('g6-cdir-b-bell')?.checked) seq.push('bell');
-
-  } else if (g6_cdirMode === 'repeat') {
+  if (g6_cdirMode === 'repeat') {
     [...g6_cdirSrcsR].sort().forEach(s => seq.push(s));
     if (document.getElementById('g6-cdir-r-bell')?.checked) seq.push('bell');
-
+    loopCnt = Math.max(1, parseInt(document.getElementById('g6-cdir-r-cnt')?.value || 2));
   } else {
-    // 커스텀
     seq = [...g6_cdirSeq];
+    if (document.getElementById('g6-cdir-c-loop')?.checked)
+      loopCnt = Math.max(1, parseInt(document.getElementById('g6-cdir-c-cnt')?.value || 2));
   }
 
   if (!seq.length) { toast('시퀀스가 비어있어요', 'error'); return; }
 
-  const loopCnt = g6_cdirMode === 'repeat'
-    ? Math.max(1, parseInt(document.getElementById('g6-cdir-r-cnt')?.value || 2))
-    : 1;
-
   g6_cdirRunning = true;
   document.getElementById('g6-cdir-start').disabled = true;
   document.getElementById('g6-cdir-stop').disabled = false;
-
   _g6CdirRunSeq(seq, 0, loopCnt);
 }
 
-// ── 시퀀스 실행 엔진 ──
+// 시퀀스 실행 엔진
 function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
   if (!g6_cdirRunning) return;
-
-  // 한 사이클 완료
   if (stepIdx >= seq.length) {
     loopRemain--;
     if (loopRemain > 0) {
@@ -628,34 +635,22 @@ function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
     }
     return;
   }
-
   const step = seq[stepIdx];
   const next = () => _g6CdirRunSeq(seq, stepIdx + 1, loopRemain);
-
-  // 종소리 스텝
   if (step === 'bell') {
     _g6CdirRingBell();
     _g6CdirUpdateStatus('// 🔔 땡~');
     g6_cdirLoopTimer = setTimeout(next, 2000);
     return;
   }
-
-  // 타이머 스텝
   const sec   = Math.max(1, parseInt(document.getElementById(step === 1 ? 'g6-timer-sec' : 'g6-rt-sec')?.value || 60));
   const label = step === 1 ? '⚔️경기①' : '💤휴식②';
   _g6CdirUpdateStatus(`// ${label} ${sec}초 (${seq.length - stepIdx}스텝 남음)`);
-
-  if (step === 1) g6TimerStart();
-  else g6RtStart();
-
-  // 3초(카운트다운 연출) + sec초(타이머) + 1.5초(여유)
-  g6_cdirLoopTimer = setTimeout(() => {
-    if (!g6_cdirRunning) return;
-    next();
-  }, (3 + sec) * 1000 + 1500);
+  if (step === 1) g6TimerStart(); else g6RtStart();
+  g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, (3 + sec) * 1000 + 1500);
 }
 
-// ── 종소리 ──
+// 종소리
 function _g6CdirRingBell() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -670,39 +665,38 @@ function _g6CdirRingBell() {
   toast('🔔 땡~', 'success');
 }
 
-// ── 정지 ──
+// 정지
 function g6CdirStop() {
   g6_cdirRunning = false;
   if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
-  g6TimerStop();
-  g6RtStop();
+  g6TimerStop(); g6RtStop();
   document.getElementById('g6-cdir-start').disabled = false;
   document.getElementById('g6-cdir-stop').disabled = true;
   _g6CdirUpdateStatus('// 정지됨');
 }
 
-// ── 퓨즈 ──
+// 퓨즈
 function g6CdirFuse() {
+  const pfx = g6_cdirMode === 'repeat' ? 'r' : 'c';
+  g6CdirSyncSec(pfx, 1); g6CdirSyncSec(pfx, 2);
   sendCmd('fuse');
   _g6CdirUpdateStatus('// 💥 퓨즈 점화!');
-  const srcs = g6_cdirMode === 'repeat' ? g6_cdirSrcsR : g6_cdirSrcsB;
   _runCountdown(() => {
-    [...srcs].sort().forEach(s => { if (s === 1) g6TimerStart(); else g6RtStart(); });
+    const srcs = g6_cdirMode === 'repeat' ? g6_cdirSrcsR : new Set([1,2]);
+    [...srcs].sort().forEach(s => { if (s===1) g6TimerStart(); else g6RtStart(); });
     setTimeout(() => _g6CdirUpdateStatus('// 타이머 진행 중...'), 100);
   });
 }
 
-// ── 초기화 ──
+// 초기화
 function g6CdirReset() {
   g6_cdirRunning = false;
   if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
-  g6TimerReset();
-  g6RtReset();
+  g6TimerReset(); g6RtReset();
   document.getElementById('g6-cdir-start').disabled = false;
   document.getElementById('g6-cdir-stop').disabled = true;
   _g6CdirUpdateStatus();
 }
-
 
 function g6Start(){
   _runCountdown(()=>g6DoStart());
