@@ -160,7 +160,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
-  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
+  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();initDsPanel();initPtsPopupDrag();
+  // scalePvc를 rAF로 지연: DOMContentLoaded 시점엔 레이아웃 계산 전이라 offsetWidth가 0으로 잡히는 문제 방지
+  requestAnimationFrame(()=>{ scalePvc(); requestAnimationFrame(scalePvc); });
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
   const urlParams=new URLSearchParams(location.search);
   const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
@@ -1151,6 +1153,80 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
 }
 
 
+// pv3 전용 렌더러: 그룹 렌더 시 _pv3CurrentGroupLabel을 세팅해 isCurrentMatchIdx가 정확히 동작
+// (기존 _d3DrawBracket은 S.matches를 루프마다 덮어써서 마지막 그룹 label로 고정되는 버그 있음)
+function _d3DrawBracketPv3(view, groups, layout, courtCount){
+  function stripScroll(div){
+    div.querySelectorAll('*').forEach(el=>{
+      if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
+    });
+  }
+  const saved=S.matches;
+  view.innerHTML='';
+  view.style.overflow='auto';
+
+  // layout D: 경기장1 왼쪽 / 경기장2 오른쪽
+  if(layout==='D'&&courtCount>=2){
+    const lGroups=groups.filter(g=>g.court===1);
+    const rGroups=groups.filter(g=>g.court===2);
+    const rowCount=Math.max(lGroups.length,rGroups.length);
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:100%;padding:12px;';
+    const hdrRow=document.createElement('div');hdrRow.style.cssText='display:flex;flex-direction:row;gap:0;margin-bottom:6px;';
+    const mkLbl=(txt,align)=>{const d=document.createElement('div');d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;text-align:'+align+';';d.textContent=txt;return d;};
+    const hL=document.createElement('div');hL.style.cssText='padding-right:24px;flex-shrink:0;';hL.appendChild(mkLbl('// 경기장 1','left'));
+    const hSp=document.createElement('div');hSp.style.cssText='flex:1;min-width:40px;';
+    const hR=document.createElement('div');hR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
+    if(rGroups.length) hR.appendChild(mkLbl('// 경기장 2','right'));
+    hdrRow.appendChild(hL);hdrRow.appendChild(hSp);hdrRow.appendChild(hR);
+    outerWrap.appendChild(hdrRow);
+    const mkSection=(g, reversed)=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      window._pv3CurrentGroupLabel=shortLabel;
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
+      try{_renderBracketHTML(groupWrap,taggedMatches,'top',reversed);stripScroll(groupWrap);}catch(e){}
+      const sec=document.createElement('div');sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
+      const lbl=document.createElement('div');lbl.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
+      lbl.textContent=shortLabel;sec.appendChild(lbl);sec.appendChild(groupWrap);
+      return sec;
+    };
+    for(let i=0;i<rowCount;i++){
+      const row=document.createElement('div');row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;';
+      const cL=document.createElement('div');cL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;';
+      if(lGroups[i]) cL.appendChild(mkSection(lGroups[i],false));
+      const sp=document.createElement('div');sp.style.cssText='flex:1;min-width:40px;';
+      const cR=document.createElement('div');cR.style.cssText='padding-left:24px;flex-shrink:0;min-width:max-content;display:flex;flex-direction:column;align-items:flex-end;';
+      if(rGroups[i]) cR.appendChild(mkSection(rGroups[i],true));
+      row.appendChild(cL);row.appendChild(sp);row.appendChild(cR);
+      outerWrap.appendChild(row);
+    }
+    view.appendChild(outerWrap);
+  } else {
+    // layout A/B/C/E
+    const outerWrap=document.createElement('div');outerWrap.style.cssText='padding:8px;min-width:max-content;';
+    groups.forEach(g=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      window._pv3CurrentGroupLabel=shortLabel;
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+      hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+      try{
+        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+        (fns[layout]||renderBracketA)(groupWrap);
+        stripScroll(groupWrap);
+      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>';}
+      outerWrap.appendChild(groupWrap);
+    });
+    view.appendChild(outerWrap);
+  }
+  S.matches=saved;
+  window._pv3CurrentGroupLabel='';
+}
+
 function updatePv3(){
   const view=document.getElementById('pv3-inner');if(!view)return;
   let groups=[];
@@ -1212,17 +1288,17 @@ function updatePv3(){
     }
   }catch(e){}
 
-  // isCurrentMatchIdx: 경기장별 선택경기 중 하나라도 매칭되면 빨간색
-  // _linkSel을 null로 강제해 파란 테두리 제거
+  // _linkSel 강제 null → 파란 테두리 제거
   window._linkSel=null;
+  // 그룹별 렌더 시 _pv3CurrentGroupLabel을 세팅해 isCurrentMatchIdx가 정확히 비교
+  window._pv3CurrentGroupLabel='';
   window.isCurrentMatchIdx=function(ri,mi){
-    const curGrp=S.matches?.[0]?.[0]?._groupLabel||'';
-    return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===curGrp);
+    return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===window._pv3CurrentGroupLabel);
   };
 
   // step4.js _getAvailW가 pts-bracket-view ID를 사용 → 임시 변경 후 복원
   view.id='pts-bracket-view';
-  _d3DrawBracket(view, groups, layout, courtCount, '', -1, -1);
+  _d3DrawBracketPv3(view, groups, layout, courtCount);
   view.id='pv3-inner';
 }
 
