@@ -331,28 +331,63 @@ function g6RtSaveExcel(){
   const rows=[['순위','이름','남은시간'],...[...g6_rtRecords].sort((a,b)=>b.time-a.time).map((r,i)=>[i+1,r.name,g6RtFmt(r.time)])];
   try{const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:6},{wch:16},{wch:12}];XLSX.utils.book_append_sheet(wb,ws,'기록');XLSX.writeFile(wb,'휴식시간_기록.xlsx');toast('저장 완료','success');}catch(e){toast('저장 실패: '+e.message,'error');}
 }
-function g6RtSetPreview(){const sec=parseInt(document.getElementById('g6-rt-sec')?.value||60);toast(`휴식 ${sec}초 설정됨`,'success');g6RtReset();}
+function g6RtSetPreview(){
+  const sec=parseInt(document.getElementById('g6-rt-sec')?.value||60);
+  const m=Math.floor(sec/60),s=sec%60;
+  const formatted=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.000`;
+  const pvt=document.getElementById('pv-time');
+  if(pvt){pvt.textContent=formatted;pvt.className='';}
+  try{localStorage.setItem('sgp_display_time',formatted);}catch(e){}
+  sendCmd('timer_set',{sec,formatted});
+  toast(`휴식 ${sec}초 설정됨`,'success');
+}
 function _pvRtTick(){
   const remain=_pvRtDur-(performance.now()-_pvRtStart);
-  if(remain<=0){g6_rtRunning=false;const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');if(s)s.disabled=false;if(st)st.disabled=true;toast('휴식시간 종료!','info');_pvRtRaf=null;return;}
+  const pvt=document.getElementById('pv-time');
+  if(remain<=0){
+    g6_rtRunning=false;
+    if(pvt){pvt.textContent='00:00.000';pvt.className='stopped';}
+    try{localStorage.setItem('sgp_display_time','00:00.000');}catch(e){}
+    sendCmd('timer_stop');
+    const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');
+    const l=document.getElementById('g6-rt-lap');
+    if(s)s.disabled=false;if(st)st.disabled=true;if(l)l.disabled=true;
+    toast('휴식시간 종료!','info');_pvRtRaf=null;return;
+  }
+  const fmt=_pvFmtCd(remain);
+  if(pvt)pvt.textContent=fmt;
+  try{localStorage.setItem('sgp_display_time',fmt);}catch(e){}
   _pvRtRaf=requestAnimationFrame(_pvRtTick);
 }
 function g6RtStart(){
   const sec=parseInt(document.getElementById('g6-rt-sec')?.value||60);
-  g6_rtRunning=true;_pvRtDur=sec*1000;_pvRtStart=performance.now();
-  const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');const l=document.getElementById('g6-rt-lap');
-  if(s)s.disabled=true;if(st)st.disabled=false;if(l&&(g6_rtMode===2||g6_rtMode===3))l.disabled=false;
-  if(_pvRtRaf)cancelAnimationFrame(_pvRtRaf);
-  _pvRtRaf=requestAnimationFrame(_pvRtTick);
-  toast(`휴식 ${sec}초 시작!`,'success');
+  _runCountdown(()=>{
+    g6_rtRunning=true;_pvRtDur=sec*1000;_pvRtStart=performance.now();
+    sendCmd('timer_start',{duration:sec});
+    _pvStopCountdown(); // cd 카운트다운이 돌고 있으면 중지
+    const pvt=document.getElementById('pv-time');
+    if(pvt)pvt.className='running';
+    const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');const l=document.getElementById('g6-rt-lap');
+    if(s)s.disabled=true;if(st)st.disabled=false;if(l&&(g6_rtMode===2||g6_rtMode===3))l.disabled=false;
+    if(_pvRtRaf)cancelAnimationFrame(_pvRtRaf);
+    _pvRtRaf=requestAnimationFrame(_pvRtTick);
+    toast(`휴식 ${sec}초 시작!`,'success');
+  });
 }
 function g6RtStop(){
   g6_rtRunning=false;if(_pvRtRaf){cancelAnimationFrame(_pvRtRaf);_pvRtRaf=null;}
+  sendCmd('timer_stop');
+  const pvt=document.getElementById('pv-time');
+  if(pvt)pvt.className='stopped';
   const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');const l=document.getElementById('g6-rt-lap');
   if(s)s.disabled=false;if(st)st.disabled=true;if(l)l.disabled=true;
 }
 function g6RtReset(){
   g6_rtRunning=false;if(_pvRtRaf){cancelAnimationFrame(_pvRtRaf);_pvRtRaf=null;}
+  sendCmd('timer_reset');
+  const pvt=document.getElementById('pv-time');
+  if(pvt){pvt.textContent='00:00.000';pvt.className='';}
+  try{localStorage.setItem('sgp_display_time','00:00.000');}catch(e){}
   const s=document.getElementById('g6-rt-start');const st=document.getElementById('g6-rt-stop');const l=document.getElementById('g6-rt-lap');
   if(s)s.disabled=false;if(st)st.disabled=true;if(l)l.disabled=true;
 }
