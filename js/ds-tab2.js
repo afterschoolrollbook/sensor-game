@@ -5,7 +5,62 @@ let _tab2Mode = 'single'; // 'single' | 'random' | 'court_N'
 function buildTab2(){
   buildDs2FontPicker();
   buildTab2CourtBtns();
+  buildDs2VsColor();
+  buildDs2Labels();
   updateDst2();
+}
+
+function buildDs2VsColor(){
+  const w=document.getElementById('ds2-vs-color-wrap'); if(!w) return;
+  const COLORS=[
+    {n:'빨강',v:'#e63946'},{n:'흰색',v:'#f0f0f8'},{n:'노랑',v:'#ffd60a'},
+    {n:'청록',v:'#4cc9f0'},{n:'초록',v:'#06d6a0'},{n:'보라',v:'#7b2fff'},
+    {n:'주황',v:'#ff9f1c'},{n:'검정',v:'#000000'},
+  ];
+  const saved=localStorage.getItem('sgp_d2_vs_color')||'#e63946';
+  w.innerHTML='';
+  COLORS.forEach(c=>{
+    const sw=document.createElement('div');
+    sw.className='ds-swatch'+(saved===c.v?' on':'');
+    sw.style.background=c.v;
+    if(c.v==='#000000') sw.style.border='2px solid var(--border2)';
+    sw.title=c.n;
+    sw.onclick=()=>{
+      try{ localStorage.setItem('sgp_d2_vs_color',c.v); }catch(e){}
+      w.querySelectorAll('.ds-swatch').forEach(x=>x.classList.remove('on'));
+      sw.classList.add('on');
+      // 미리보기 반영
+      const pvVs=document.querySelector('#pv2 .pv2-vs');
+      if(pvVs) pvVs.style.color=c.v;
+      // broadcast
+      _broadcastD2Cfg({vs_color:c.v});
+    };
+    w.appendChild(sw);
+  });
+  // 미리보기 초기 반영
+  const pvVs=document.querySelector('#pv2 .pv2-vs');
+  if(pvVs) pvVs.style.color=saved;
+}
+
+function buildDs2Labels(){
+  // 저장값 복원
+  const courtShow=localStorage.getItem('sgp_d2_court_show')!=='false';
+  const courtSize=parseInt(localStorage.getItem('sgp_d2_court_size')||'16');
+  const infoShow=localStorage.getItem('sgp_d2_info_show')!=='false';
+  const infoSize=parseInt(localStorage.getItem('sgp_d2_info_size')||'16');
+
+  const cTog=document.getElementById('ds2-court-show');
+  const cSz=document.getElementById('ds2-court-size-val');
+  const iTog=document.getElementById('ds2-info-show');
+  const iSz=document.getElementById('ds2-info-size-val');
+
+  if(cTog) cTog.checked=courtShow;
+  if(cSz)  cSz.textContent=courtSize;
+  if(iTog) iTog.checked=infoShow;
+  if(iSz)  iSz.textContent=infoSize;
+
+  // 미리보기 초기 반영
+  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize});
 }
 
 function buildDs2FontPicker(){
@@ -36,37 +91,84 @@ function buildTab2CourtBtns(){
   if(!wrap) return;
 
   const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  const savedSec=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60');
 
   wrap.innerHTML='';
+  wrap.style.cssText='display:flex;flex-direction:column;gap:8px;';
 
-  // 랜덤 버튼 (경기장 2개 이상일 때만 의미 있지만 항상 표시)
+  // ── 버튼 행 ──
+  const btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+
+  // 랜덤 순환 버튼
   const randomBtn=document.createElement('button');
   randomBtn.className='ds-theme-card dst2-mode-btn'+(_tab2Mode==='random'?' on':'');
   randomBtn.dataset.mode='random';
-  randomBtn.innerHTML='🔀 랜덤 순환';
-  randomBtn.title='경기장을 순서대로 돌아가며 자동 표시';
+  randomBtn.textContent='🔀 랜덤';
+  randomBtn.title='경기장을 N초마다 번갈아가며 표시';
   randomBtn.onclick=()=>_setTab2Mode('random');
-  wrap.appendChild(randomBtn);
+  btnRow.appendChild(randomBtn);
 
   if(courtCount>=2){
-    // 경기장 N개 버튼 동적 생성
     for(let c=1;c<=courtCount;c++){
       const btn=document.createElement('button');
       btn.className='ds-theme-card dst2-mode-btn'+(_tab2Mode===`court_${c}`?' on':'');
       btn.dataset.mode=`court_${c}`;
-      btn.innerHTML=`🏟️ 경기장 ${c}`;
-      btn.title=`경기장 ${c}의 현재 경기만 표시`;
+      btn.textContent=`🏟️ ${c}번`;
+      btn.title=`경기장 ${c}의 선택된 경기 표시`;
       btn.onclick=(()=>{const cc=c;return()=>_setTab2Mode(`court_${cc}`);})(c);
-      wrap.appendChild(btn);
+      btnRow.appendChild(btn);
     }
+  } else {
+    const note=document.createElement('p');
+    note.style.cssText='font-size:10px;color:var(--text3);margin:2px 0 0;';
+    note.textContent='경기장 2개 이상이면 각 경기장 버튼이 표시됩니다.';
+    btnRow.appendChild(note);
+  }
+  wrap.appendChild(btnRow);
+
+  // ── 인터벌 행 (랜덤 모드일 때만 표시) ──
+  const ivRow=document.createElement('div');
+  ivRow.id='dst2-interval-row';
+  ivRow.style.cssText=`display:${_tab2Mode==='random'?'flex':'none'};align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 11px;`;
+
+  ivRow.innerHTML=`
+    <span style="font-size:11px;color:var(--text3);white-space:nowrap;">🕐 전환 간격</span>
+    <button id="dst2-iv-minus" style="width:24px;height:24px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
+    <div style="flex:1;text-align:center;">
+      <span id="dst2-iv-val" style="font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;color:var(--text);">${savedSec}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:2px;">초</span>
+    </div>
+    <button id="dst2-iv-plus" style="width:24px;height:24px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+  `;
+  wrap.appendChild(ivRow);
+
+  // ── 인터벌 버튼 이벤트 ──
+  const STEPS=[5,10,15,20,30,60,90,120,180,300];
+  function _getStepIdx(v){ let i=STEPS.findIndex(s=>s>=v); return i<0?STEPS.length-1:i; }
+  let _ivSec=savedSec;
+
+  function _applyIv(sec){
+    _ivSec=Math.max(5,Math.min(300,sec));
+    const el=document.getElementById('dst2-iv-val');
+    if(el) el.textContent=_ivSec;
+    try{ localStorage.setItem('sgp_d2_random_interval', String(_ivSec)); }catch(e){}
+    // 실행 중인 display.html에 즉시 반영
+    const payload={type:'sgp_d2_refresh_random'};
+    try{ if(typeof _bc!=='undefined'&&_bc) _bc.postMessage(payload); }catch(e){}
+    try{ const dw=_getDispWin(); if(dw&&!dw.closed) dw.postMessage(payload,'*'); }catch(e){}
   }
 
-  // 경기장 1개면 단일 버튼 표시
-  if(courtCount<2){
-    wrap.insertAdjacentHTML('afterbegin',
-      `<p style="font-size:11px;color:var(--text3);margin:0 0 6px;">경기장이 2개 이상일 때 각 경기장 버튼이 표시됩니다.</p>`
-    );
-  }
+  document.getElementById('dst2-iv-minus').onclick=()=>{
+    const idx=_getStepIdx(_ivSec);
+    _applyIv(STEPS[Math.max(0,idx-1)]);
+  };
+  document.getElementById('dst2-iv-plus').onclick=()=>{
+    const idx=_getStepIdx(_ivSec);
+    const next=STEPS[Math.min(STEPS.length-1, _ivSec===STEPS[idx]?idx+1:idx)];
+    _applyIv(next);
+  };
 }
 
 function _setTab2Mode(mode){
@@ -75,18 +177,19 @@ function _setTab2Mode(mode){
   document.querySelectorAll('.dst2-mode-btn').forEach(b=>{
     b.classList.toggle('on', b.dataset.mode===mode);
   });
-  // display.html에 모드 전달 (BroadcastChannel + localStorage)
+  // 인터벌 행 표시/숨김
+  const ivRow=document.getElementById('dst2-interval-row');
+  if(ivRow) ivRow.style.display=(mode==='random')?'flex':'none';
+  // display.html에 모드 전달
   const payload={type:'sgp_d2_mode', mode};
   try{ localStorage.setItem('sgp_d2_mode', mode); }catch(e){}
   try{
     const dispWin=_getDispWin();
     if(dispWin && !dispWin.closed) dispWin.postMessage(payload,'*');
   }catch(e){}
-  // BroadcastChannel으로도 전달
   try{
     if(typeof _bc!=='undefined' && _bc) _bc.postMessage(payload);
   }catch(e){}
-  // 미리보기 pv2도 업데이트
   _updatePv2ForMode(mode);
 }
 
@@ -129,14 +232,74 @@ function updateDst2(){
 
 // VS 화면 배경 스타일 설정
 function setVsBg(style){
+  const BG={
+    dark:'#040408',
+    gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',
+    blur:'rgba(10,10,20,0.95)',
+    solid:'#0d1b2a',
+  };
   S.vs2Bg=style;
   document.querySelectorAll('.ds2-bg-btn').forEach(b=>b.classList.toggle('on',b.dataset.style===style));
+  // 미리보기 반영
   const pv2=document.getElementById('pv2');
-  if(pv2) pv2.dataset.bg=style;
+  if(pv2) pv2.style.background=BG[style]||BG.dark;
   if(typeof saveCfgNow==='function') saveCfgNow();
+  // display.html에 즉시 broadcast
+  _broadcastD2Cfg({vs_bg:style});
 }
 
 // courtCount 변경 시 외부에서 호출 가능
 function tab2RefreshCourtBtns(){
   buildTab2CourtBtns();
+}
+
+// ── D2 설정 저장 + broadcast ──
+function _saveD2Cfg(){
+  const courtShow=document.getElementById('ds2-court-show')?.checked??true;
+  const courtSize=parseInt(document.getElementById('ds2-court-size-val')?.textContent||'16');
+  const infoShow=document.getElementById('ds2-info-show')?.checked??true;
+  const infoSize=parseInt(document.getElementById('ds2-info-size-val')?.textContent||'16');
+  try{ localStorage.setItem('sgp_d2_court_show',String(courtShow)); }catch(e){}
+  try{ localStorage.setItem('sgp_d2_court_size',String(courtSize)); }catch(e){}
+  try{ localStorage.setItem('sgp_d2_info_show',String(infoShow)); }catch(e){}
+  try{ localStorage.setItem('sgp_d2_info_size',String(infoSize)); }catch(e){}
+  const cfg={courtShow,courtSize,infoShow,infoSize};
+  _broadcastD2Cfg(cfg);
+  _applyD2CfgToPv2(cfg);
+}
+
+const _D2SIZES=[10,11,12,13,14,16,18,20,22,24,28,32,36,40];
+function _stepSize(cur,d){
+  let i=_D2SIZES.findIndex(s=>s>=cur); if(i<0)i=_D2SIZES.length-1;
+  return _D2SIZES[Math.max(0,Math.min(_D2SIZES.length-1,i+d))];
+}
+
+function _chD2LblSize(d){
+  const el=document.getElementById('ds2-court-size-val'); if(!el) return;
+  el.textContent=_stepSize(parseInt(el.textContent)||16,d);
+  _saveD2Cfg();
+}
+function _chD2InfoSize(d){
+  const el=document.getElementById('ds2-info-size-val'); if(!el) return;
+  el.textContent=_stepSize(parseInt(el.textContent)||16,d);
+  _saveD2Cfg();
+}
+
+function _broadcastD2Cfg(extra){
+  const msg=Object.assign({type:'d2_cfg'},extra);
+  try{ if(typeof _bc!=='undefined'&&_bc) _bc.postMessage(msg); }catch(e){}
+  try{ const dw=_getDispWin(); if(dw&&!dw.closed) dw.postMessage(msg,'*'); }catch(e){}
+}
+
+function _applyD2CfgToPv2(cfg){
+  const pvLbl=document.querySelector('#pv2 .pv2-lbl');
+  const pvInfo=document.getElementById('pv2-info');
+  if(pvLbl){
+    if(cfg.courtShow!==undefined) pvLbl.style.display=cfg.courtShow?'':'none';
+    if(cfg.courtSize) pvLbl.style.fontSize=cfg.courtSize+'px';
+  }
+  if(pvInfo){
+    if(cfg.infoShow!==undefined) pvInfo.style.display=cfg.infoShow?'':'none';
+    if(cfg.infoSize) pvInfo.style.fontSize=cfg.infoSize+'px';
+  }
 }

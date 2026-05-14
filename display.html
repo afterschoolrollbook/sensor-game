@@ -238,7 +238,7 @@ function _d2ApplyMode(mode){
     // 경기장을 순서대로 돌아가며 표시
     _d2RandomCourt=1;
     _d2SwitchRandomCourt();
-    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'5')*1000;
+    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60')*1000;
     _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
   } else if(mode.startsWith('court_')){
     const c=parseInt(mode.replace('court_',''));
@@ -257,7 +257,21 @@ function _d2SwitchRandomCourt(){
 }
 
 function _d2ShowCourt(courtNum){
-  // groupBrackets에서 해당 court의 현재 진행 중 경기 찾기
+  // 1) 수동으로 선택된 경기 확인 (bracket-view에서 클릭한 경기)
+  try{
+    const manualStr = localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
+    if(manualStr){
+      const mv = JSON.parse(manualStr);
+      if(mv && mv.p1 && mv.p2){
+        _set('d2-p1', mv.p1); _set('d2-p2', mv.p2); _set('d2-info', mv.label||'');
+        const courtEl=document.getElementById('d2-court');
+        if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
+        return;
+      }
+    }
+  }catch(e){}
+
+  // 2) 수동 선택 없으면 진행 중인 첫 경기 자동 탐색
   try{
     const groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]');
     const courtGroups=groups.filter(g=>(g.court||1)===courtNum);
@@ -280,7 +294,6 @@ function _d2ShowCourt(courtNum){
       const courtEl=document.getElementById('d2-court');
       if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
     } else {
-      // 해당 경기장 경기 없음
       _set('d2-p1','—'); _set('d2-p2','—'); _set('d2-info',`경기장 ${courtNum} 대기 중`);
       const courtEl=document.getElementById('d2-court');
       if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
@@ -292,7 +305,7 @@ window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='sgp_d2_mode'){ _d2ApplyMode(e.data.mode); }
   if(e.data&&e.data.type==='sgp_d2_refresh_random' && _d2Mode==='random'){
     if(_d2RandomIv){ clearInterval(_d2RandomIv); _d2RandomIv=null; }
-    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'5')*1000;
+    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60')*1000;
     _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
   }
 });
@@ -304,6 +317,48 @@ try{
   _dispBc.onmessage=e=>{handleCmd(e.data);};
 }catch(e){}
 window.addEventListener('pagehide',()=>{ try{_dispBc&&_dispBc.close();}catch(e){} });
+
+// d2 설정 즉시 적용
+function _applyD2Cfg(cfg){
+  const BG={dark:'var(--bg)',gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',blur:'rgba(10,10,20,0.95)',solid:'#0d1b2a'};
+  if(cfg.vs_bg!==undefined){
+    const disp2=document.getElementById('disp2');
+    if(disp2) disp2.style.background=BG[cfg.vs_bg]||BG.dark;
+    try{ localStorage.setItem('sgp_d2_vs_bg_override',cfg.vs_bg); }catch(e){}
+  }
+  if(cfg.vs_color!==undefined){
+    const vsEl=document.getElementById('d2-vs');
+    if(vsEl) vsEl.style.color=cfg.vs_color;
+    try{ localStorage.setItem('sgp_d2_vs_color',cfg.vs_color); }catch(e){}
+  }
+  const lblEls=[document.getElementById('d2-court'),document.getElementById('d2-lbl')];
+  if(cfg.courtShow!==undefined){
+    lblEls.forEach(el=>{if(el) el.style.setProperty('--d2-court-hidden', cfg.courtShow?'':'1');});
+    // d2-lbl 은 항상 토글
+    const lb=document.getElementById('d2-lbl');
+    if(lb) lb.style.display=cfg.courtShow?'':'none';
+    // d2-court 는 기존 court 로직 유지하되 숨김이면 무조건 hide
+    if(!cfg.courtShow){
+      const ct=document.getElementById('d2-court');
+      if(ct) ct.style.display='none';
+    }
+    try{ localStorage.setItem('sgp_d2_court_show',String(cfg.courtShow)); }catch(e){}
+  }
+  if(cfg.courtSize!==undefined){
+    lblEls.forEach(el=>{ if(el) el.style.fontSize=cfg.courtSize+'px'; });
+    try{ localStorage.setItem('sgp_d2_court_size',String(cfg.courtSize)); }catch(e){}
+  }
+  if(cfg.infoShow!==undefined){
+    const infoEl=document.getElementById('d2-info');
+    if(infoEl) infoEl.style.display=cfg.infoShow?'':'none';
+    try{ localStorage.setItem('sgp_d2_info_show',String(cfg.infoShow)); }catch(e){}
+  }
+  if(cfg.infoSize!==undefined){
+    const infoEl=document.getElementById('d2-info');
+    if(infoEl) infoEl.style.fontSize=cfg.infoSize+'px';
+    try{ localStorage.setItem('sgp_d2_info_size',String(cfg.infoSize)); }catch(e){}
+  }
+}
 
 function scheduleRefresh(){
   if(_raf)return; _raf=true;
@@ -445,6 +500,38 @@ function refresh2(){
       solid:'#0d1b2a',
     };
     disp2.style.background=BG[cfg.vs2Bg||'dark']||BG.dark;
+  }
+
+  // ── 저장된 D2 커스텀 설정 적용 ──
+  // VS 색상
+  const vsColor=localStorage.getItem('sgp_d2_vs_color');
+  const vsEl=document.getElementById('d2-vs');
+  if(vsEl && vsColor) vsEl.style.color=vsColor;
+
+  // 상단 레이블 (d2-lbl + d2-court)
+  const courtShow=localStorage.getItem('sgp_d2_court_show')!=='false';
+  const courtSize=parseInt(localStorage.getItem('sgp_d2_court_size')||'0');
+  const lblEl=document.getElementById('d2-lbl');
+  if(lblEl){
+    lblEl.style.display=courtShow?'':'none';
+    if(courtSize) lblEl.style.fontSize=courtSize+'px';
+  }
+  // d2-court는 courtShow=false면 무조건 숨김, true면 기존 로직 유지
+  if(!courtShow){
+    const ct2=document.getElementById('d2-court');
+    if(ct2) ct2.style.display='none';
+  } else if(courtSize){
+    const ct2=document.getElementById('d2-court');
+    if(ct2) ct2.style.fontSize=courtSize+'px';
+  }
+
+  // 하단 경기 정보
+  const infoShow=localStorage.getItem('sgp_d2_info_show')!=='false';
+  const infoSize=parseInt(localStorage.getItem('sgp_d2_info_size')||'0');
+  const infoEl2=document.getElementById('d2-info');
+  if(infoEl2){
+    infoEl2.style.display=infoShow?'':'none';
+    if(infoSize) infoEl2.style.fontSize=infoSize+'px';
   }
 }
 
@@ -650,21 +737,33 @@ function handleCmd(cmd){
   if(!cmd)return;
   if(cmd.type==='set_match'){
     const p1=cleanName(cmd.p1||'—'), p2=cleanName(cmd.p2||'—');
-    _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
-    _set('d2-p1',    p1); _set('d2-p2',    p2);
-    _set('d2-info',  cmd.label||'진행 중');
-    // 경기장 표시
-    const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
-    const courtEl=document.getElementById('d2-court');
-    if(courtEl){
-      if(cmd.court>0 && courtCount>1){
-        courtEl.textContent=`// 경기장 ${cmd.court}`;
-        courtEl.style.display='';
-      } else {
-        courtEl.textContent='';
-        courtEl.style.display='none';
+
+    // 경기장별 localStorage 저장 (수동 선택 기록)
+    if(cmd.court){
+      try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',court:cmd.court})); }catch(e){}
+    }
+
+    // court_N 모드이면 해당 경기장만 갱신
+    if(_d2Mode===`court_${cmd.court}`){
+      _d2ShowCourt(cmd.court);
+    } else if(_d2Mode==='single' || !_d2Mode || _d2Mode===''){
+      // single 모드: 들어오는 모든 경기 표시
+      _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
+      _set('d2-p1',    p1); _set('d2-p2',    p2);
+      _set('d2-info',  cmd.label||'진행 중');
+      const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+      const courtEl=document.getElementById('d2-court');
+      if(courtEl){
+        if(cmd.court>0 && courtCount>1){
+          courtEl.textContent=`// 경기장 ${cmd.court}`;
+          courtEl.style.display='';
+        } else {
+          courtEl.textContent='';
+          courtEl.style.display='none';
+        }
       }
     }
+    // random 모드이면 현재 순환에서 갱신 안 함 (자동 타이머가 처리)
   }
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
@@ -694,6 +793,8 @@ function handleCmd(cmd){
   if(cmd.type==='screen_2')    switchScreen(2);
   if(cmd.type==='screen_3')    switchScreen(3);
   if(cmd.type==='sgp_d2_mode') _d2ApplyMode(cmd.mode);
+  if(cmd.type==='refresh_2')   refresh2();
+  if(cmd.type==='d2_cfg')      _applyD2Cfg(cmd);
 }
 
 window.addEventListener('storage',e=>{
