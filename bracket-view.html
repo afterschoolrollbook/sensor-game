@@ -3823,12 +3823,15 @@ function onMatchClick(ri, mi, matchObj, event){
     if(el){ el.style.outline='2px solid var(--red)'; el.style.boxShadow='0 0 12px rgba(230,57,70,.5)'; }
   }
 
+  // court 정보 추출 (groupBrackets의 g.court 필드)
+  const court = grpObj?.court || (matchObj?._groupObj?.court) || 0;
+
   // localStorage 저장 → setup.html / display.html 수신
-  const vsData = { p1, p2, label };
+  const vsData = { p1, p2, label, court };
   try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
 
   // BroadcastChannel + storage cmd → display.html 즉시 반영
-  const cmd = { type:'set_match', p1, p2, label, ts:Date.now() };
+  const cmd = { type:'set_match', p1, p2, label, court, ts:Date.now() };
   try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
   try{
     if(!window._bvBc) window._bvBc = new BroadcastChannel('sgp_cmd');

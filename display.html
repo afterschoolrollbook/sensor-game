@@ -106,6 +106,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .d2-sub{font-size:clamp(12px,1.5vw,20px);color:var(--text3);margin-top:8px;font-family:'Share Tech Mono',monospace;letter-spacing:3px;}
 #d2-vs{font-family:'Bebas Neue',cursive;font-size:clamp(50px,10vw,120px);color:var(--red);letter-spacing:5px;flex-shrink:0;}
 #d2-info{font-family:'Share Tech Mono',monospace;font-size:clamp(12px,1.5vw,18px);color:var(--text3);letter-spacing:3px;z-index:2;}
+#d2-court{font-family:'Share Tech Mono',monospace;font-size:clamp(11px,1.5vw,16px);letter-spacing:4px;color:var(--accent,#4cc9f0);z-index:2;min-height:1.2em;}
 
 /* ══ 3번 화면 ══ */
 #disp3{width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;}
@@ -200,6 +201,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <!-- 2번 화면 -->
 <div id="screen-2">
 <div id="disp2">
+  <div id="d2-court"><!-- 경기장 표시 --></div>
   <div id="d2-lbl">// 현재 경기</div>
   <div id="d2-row">
     <div class="d2-pl"><div class="d2-nm" id="d2-p1">—</div><div class="d2-sub">선수 1</div></div>
@@ -223,6 +225,77 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <script src="js/app.js"></script>
 <script>
 let _raf=false;
+/* ── 2번 화면 경기장 모드 ── */
+let _d2Mode='single'; // 'single' | 'random' | 'court_N'
+let _d2RandomIv=null;
+let _d2RandomCourt=1;
+let _d2CourtList=[];
+
+function _d2ApplyMode(mode){
+  _d2Mode=mode;
+  if(_d2RandomIv){ clearInterval(_d2RandomIv); _d2RandomIv=null; }
+  if(mode==='random'){
+    // 경기장을 순서대로 돌아가며 표시
+    _d2RandomCourt=1;
+    _d2SwitchRandomCourt();
+    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'5')*1000;
+    _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
+  } else if(mode.startsWith('court_')){
+    const c=parseInt(mode.replace('court_',''));
+    _d2ShowCourt(c);
+  } else {
+    // single: 마지막 선택 경기 그대로
+    refresh2();
+  }
+}
+
+function _d2SwitchRandomCourt(){
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  if(courtCount<2){ refresh2(); return; }
+  _d2ShowCourt(_d2RandomCourt);
+  _d2RandomCourt=(_d2RandomCourt%courtCount)+1;
+}
+
+function _d2ShowCourt(courtNum){
+  // groupBrackets에서 해당 court의 현재 진행 중 경기 찾기
+  try{
+    const groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]');
+    const courtGroups=groups.filter(g=>(g.court||1)===courtNum);
+    let found=null;
+    outer: for(const g of courtGroups){
+      if(!g.matches) continue;
+      for(const round of g.matches){
+        for(const m of round){
+          if(!m.winner && m.p1 && m.p2 && !m.bye){
+            const p1n=typeof m.p1==='object'?m.p1.name:m.p1;
+            const p2n=typeof m.p2==='object'?m.p2.name:m.p2;
+            found={p1:p1n,p2:p2n,label:g.label,court:courtNum};
+            break outer;
+          }
+        }
+      }
+    }
+    if(found){
+      _set('d2-p1',found.p1); _set('d2-p2',found.p2); _set('d2-info',found.label);
+      const courtEl=document.getElementById('d2-court');
+      if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
+    } else {
+      // 해당 경기장 경기 없음
+      _set('d2-p1','—'); _set('d2-p2','—'); _set('d2-info',`경기장 ${courtNum} 대기 중`);
+      const courtEl=document.getElementById('d2-court');
+      if(courtEl){ courtEl.textContent=`// 경기장 ${courtNum}`; courtEl.style.display=''; }
+    }
+  }catch(e){ refresh2(); }
+}
+
+window.addEventListener('message', e=>{
+  if(e.data&&e.data.type==='sgp_d2_mode'){ _d2ApplyMode(e.data.mode); }
+  if(e.data&&e.data.type==='sgp_d2_refresh_random' && _d2Mode==='random'){
+    if(_d2RandomIv){ clearInterval(_d2RandomIv); _d2RandomIv=null; }
+    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'5')*1000;
+    _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
+  }
+});
 
 /* ── BroadcastChannel 수신 ── */
 let _dispBc=null;
@@ -331,13 +404,26 @@ function refresh1(){
 // ── 2번 ──
 function refresh2(){
   const cfg=getCfg();
-  let p1='—', p2='—', label='참가자를 등록해주세요';
+  let p1='—', p2='—', label='참가자를 등록해주세요', court=0;
   try{
     const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
     if(mv.p1){p1=mv.p1; p2=mv.p2||'—'; label=mv.label||'진행 중';}
+    if(mv.court) court=mv.court;
   }catch(e){}
   _set('d2-p1', p1); _set('d2-p2', p2);
   _set('d2-info', label);
+  // 경기장 표시: courtCount>1 이거나 court 값이 있을 때만
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  const courtEl=document.getElementById('d2-court');
+  if(courtEl){
+    if(court>0 && courtCount>1){
+      courtEl.textContent=`// 경기장 ${court}`;
+      courtEl.style.display='';
+    } else {
+      courtEl.textContent='';
+      courtEl.style.display='none';
+    }
+  }
 
   // 폰트 — vs2Font 없으면 titleFont fallback
   const fontMap={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
@@ -567,6 +653,18 @@ function handleCmd(cmd){
     _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
     _set('d2-p1',    p1); _set('d2-p2',    p2);
     _set('d2-info',  cmd.label||'진행 중');
+    // 경기장 표시
+    const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+    const courtEl=document.getElementById('d2-court');
+    if(courtEl){
+      if(cmd.court>0 && courtCount>1){
+        courtEl.textContent=`// 경기장 ${cmd.court}`;
+        courtEl.style.display='';
+      } else {
+        courtEl.textContent='';
+        courtEl.style.display='none';
+      }
+    }
   }
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
@@ -595,6 +693,7 @@ function handleCmd(cmd){
   if(cmd.type==='screen_1')    switchScreen(1);
   if(cmd.type==='screen_2')    switchScreen(2);
   if(cmd.type==='screen_3')    switchScreen(3);
+  if(cmd.type==='sgp_d2_mode') _d2ApplyMode(cmd.mode);
 }
 
 window.addEventListener('storage',e=>{
@@ -611,11 +710,18 @@ window.addEventListener('storage',e=>{
       _set('d1-vs-p1', p1); _set('d1-vs-p2', p2);
       _set('d2-p1',    p1); _set('d2-p2',    p2);
       _set('d2-info',  vs.label||'진행 중');
+      const courtCount2=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+      const courtEl2=document.getElementById('d2-court');
+      if(courtEl2){
+        if(vs.court>0 && courtCount2>1){ courtEl2.textContent=`// 경기장 ${vs.court}`; courtEl2.style.display=''; }
+        else { courtEl2.textContent=''; courtEl2.style.display='none'; }
+      }
     }catch(err){}
   }
   if(e.key==='sgp_state'||e.key==='sgp_display_config') scheduleRefresh();
   if(e.key==='sgp_groupBrackets') refresh3();
   if(e.key==='sgp_display_vs'&&currentScreen===3) refresh3();
+  if(e.key==='sgp_d2_mode'){ _d2ApplyMode(e.newValue||'single'); }
 });
 
 document.addEventListener('keydown',e=>{
@@ -629,6 +735,8 @@ refreshVisible();
 startClock();
 // 초기: 1번 화면 티커 활성화
 document.getElementById('screen-1').classList.add('visible');
+// 저장된 2번 모드 복원
+try{ const m=localStorage.getItem('sgp_d2_mode'); if(m&&m!=='single') _d2ApplyMode(m); }catch(e){}
 </script>
 </body>
 </html>

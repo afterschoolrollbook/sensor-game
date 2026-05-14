@@ -14,4 +14,16 @@ function dstab(n){
 
 function initDsPanel(){
   buildTab1(); // 기본 1번 탭
+
+  // courtCount 변경 감지 → 2번 탭 경기장 버튼 갱신
+  let _prevCourtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  window.addEventListener('storage', e=>{
+    if(e.key==='sgp_courtCount'){
+      const newCount=parseInt(e.newValue||'1');
+      if(newCount!==_prevCourtCount){
+        _prevCourtCount=newCount;
+        if(dsCurrentTab===2 && typeof buildTab2CourtBtns==='function') buildTab2CourtBtns();
+      }
+    }
+  });
 }

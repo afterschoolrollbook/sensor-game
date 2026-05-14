@@ -534,7 +534,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
 
 /* dspanel 탭 */
-.ds-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.ds-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;position:sticky;top:0;z-index:10;}
 .ds-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .2s;}
 .ds-tab.on{color:var(--text);border-bottom-color:var(--red);}
 .ds-tab-content{display:none;flex-direction:column;}
@@ -1174,6 +1174,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div style="font-family:'Bebas Neue',cursive;font-size:22px;" id="dst2-match">— VS —</div>
         </div>
         <p style="font-size:11px;color:var(--text3);">진행방식에서 매치 생성 후 자동 표시됩니다.</p>
+      </div>
+      <div class="dssec">
+        <div class="dssec-hd"><span>🏟️</span><span class="dssec-ttl">경기장 표시 모드</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="dst2-court-wrap">
+          <!-- buildTab2CourtBtns()가 동적으로 채움 -->
+        </div>
       </div>
       <div class="dssec">
         <div class="dssec-hd"><span>🔤</span><span class="dssec-ttl">VS 화면 글씨체</span></div>
