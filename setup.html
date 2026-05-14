@@ -737,13 +737,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
         <!-- ① 스톱워치 -->
         <div class="g6-ctrl-section">
-          <div class="g6-ctrl-label">스톱워치</div>
-          <div class="g6-ctrl-row">
+          <div class="g6-ctrl-label" style="justify-content:space-between;">
+            <span>스톱워치</span>
+            <span id="g6-sw-ptcount" style="font-size:10px;color:var(--accent);letter-spacing:1px;">참가자 0명</span>
+          </div>
+          <div class="g6-ctrl-row" style="margin-bottom:6px;">
             <button class="g6-ctrl-btn primary" id="g6-start" onclick="g6Start()">▶ 출발</button>
             <button class="g6-ctrl-btn" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
             <button class="g6-ctrl-btn" onclick="g6StopwatchReset()">🔄 초기화</button>
+            <button class="g6-ctrl-btn" style="color:var(--red);border-color:var(--red);" onclick="g6RankReset()">🗑️ 순위초기화</button>
           </div>
-          <div style="margin-top:8px;display:none;" id="g6-laplist"></div>
+          <div id="g6-sw-ranking" style="display:none;margin-top:6px;display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;"></div>
         </div>
 
         <!-- ② 카운트다운 타이머 -->
@@ -763,8 +767,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div class="g6-ctrl-label">연출</div>
           <div class="g6-ctrl-row">
             <button class="g6-ctrl-btn" onclick="sendCmd('countdown')">3️⃣ 카운트다운</button>
-            <button class="g6-ctrl-btn" onclick="sendCmd('winner')">🏆 우승자</button>
-            <button class="g6-ctrl-btn" style="color:var(--red);border-color:var(--red);" onclick="sendCmd('clear_rank')">🗑️ 순위초기화</button>
+            <button class="g6-ctrl-btn" onclick="g6ShowWinner()">🏆 우승자</button>
           </div>
         </div>
         <!-- 하단 버튼 -->
@@ -2748,6 +2751,7 @@ function g6Refresh(){
   g6RenderQueue();
   g6RenderRank();
   g6SetParticipant(g6_idx);
+  g6SwUpdateUI();
   // 토너먼트 대진 표시
   const hasTour=S.matches&&S.matches.length;
   const mb=document.getElementById('g6-match-box');
@@ -2888,13 +2892,57 @@ function _pvFmtCd(ms){
   return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}0`;
 }
 
+// ── 스톱워치 개인전 기록 ──
+let g6_swRecords=[];
+
+function g6SwUpdateUI(){
+  const cnt=document.getElementById('g6-sw-ptcount');
+  if(cnt) cnt.textContent=S.pts.length?`참가자 ${S.pts.length}명 (${g6_idx+1}번째)`:'참가자 0명';
+  const rk=document.getElementById('g6-sw-ranking');
+  if(!rk) return;
+  if(!g6_swRecords.length){rk.style.display='none';return;}
+  rk.style.display='flex';
+  const sorted=[...g6_swRecords].sort((a,b)=>a.time-b.time);
+  rk.innerHTML=sorted.map((r,i)=>{
+    const medal=['🥇','🥈','🥉'][i]||(i+1)+'위';
+    return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:var(--card2);font-size:12px;">
+      <span style="width:28px;text-align:center;">${medal}</span>
+      <span style="flex:1;font-weight:700;">${r.name}</span>
+      <span style="font-family:'Share Tech Mono',monospace;color:var(--accent);">${g6FmtTime(r.time)}</span>
+    </div>`;
+  }).join('');
+}
+
+function g6RankReset(){
+  if(!confirm('스톱워치 기록을 모두 삭제할까요?'))return;
+  g6_swRecords=[];
+  g6_idx=0;
+  g6SwUpdateUI();
+  if(S.pts.length) g6SetParticipant(0);
+  toast('기록 초기화','info');
+}
+
+function g6ShowWinner(){
+  const top=g6_swRecords.length?[...g6_swRecords].sort((a,b)=>a.time-b.time)[0]:null;
+  const name=top?top.name:(S.pts[g6_idx]?.name||'—');
+  const time=top?g6FmtTime(top.time):null;
+  const pvChal=document.getElementById('pv-chal');
+  if(pvChal){
+    const prev=pvChal.textContent;
+    pvChal.textContent='🏆 '+name;
+    pvChal.style.color='var(--yellow,#ffd60a)';
+    pvChal.style.fontSize='40px';
+    setTimeout(()=>{pvChal.textContent=prev;pvChal.style.color='';pvChal.style.fontSize='';},3000);
+  }
+  sendCmd('winner',{name,time});
+}
+
 function g6Start(){
-  if(!S.pts.length){toast('참가자를 먼저 등록해주세요','error');return;}
   _runCountdown(()=>g6DoStart());
 }
 
 function g6DoStart(){
-  g6_lapCount=0; g6_laps=[];
+  g6_lapCount=0;g6_laps=[];
   g6UpdateLapInfo();
   const ll=document.getElementById('g6-laplist');if(ll)ll.innerHTML='';
   const te=document.getElementById('g6-time');
@@ -2904,7 +2952,7 @@ function g6DoStart(){
   document.getElementById('g6-start').disabled=true;
   document.getElementById('g6-stop').disabled=false;
   const lapBtn=document.getElementById('g6-lap');
-  if(lapBtn) lapBtn.disabled=(g6_targetLaps<=1);
+  if(lapBtn)lapBtn.disabled=(g6_targetLaps<=1);
 }
 
 function g6Stop(){
@@ -2914,28 +2962,23 @@ function g6Stop(){
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
   const lapBtn3=document.getElementById('g6-lap');if(lapBtn3)lapBtn3.disabled=true;
-  const p=S.pts[g6_idx];
-  if(p){
-    // App state에 기록 저장
-    try{
-      const st=App.getState();
-      const recs=st.records||{};
-      if(!recs[p.id])recs[p.id]=[];
-      recs[p.id].push({time:g6_elapsed,ts:Date.now()});
-      App.setState({records:recs});
-    }catch(e){}
-    toast(`${p.name}: ${g6FmtTime(g6_elapsed)}`,'success');
-    g6RenderRank();
-    const next=(g6_idx+1)%S.pts.length;
-    setTimeout(()=>{
-      g6SetParticipant(next);
-      const te2=document.getElementById('g6-time');
-      if(te2){te2.textContent='00:00.000';te2.className='g6-time';}
-      document.getElementById('g6-start').disabled=false;
-      g6RenderQueue();
-    },1500);
+  if(S.pts.length){
+    const p=S.pts[g6_idx];
+    if(p){
+      g6_swRecords.push({name:p.name,time:g6_elapsed});
+      toast(`${p.name}: ${g6FmtTime(g6_elapsed)}`,'success');
+      const next=(g6_idx+1)%S.pts.length;
+      setTimeout(()=>{
+        g6SetParticipant(next);
+        g6SwUpdateUI();
+        const te2=document.getElementById('g6-time');
+        if(te2){te2.textContent='00:00.000';te2.className='g6-time';}
+        document.getElementById('g6-start').disabled=false;
+      },1200);
+    }
+  } else {
+    toast(g6FmtTime(g6_elapsed),'success');
   }
-  // 전광판 갱신
   try{if(typeof updatePv==='function')updatePv();}catch(e){}
 }
 
