@@ -1404,6 +1404,50 @@ function sendCmd(t,extra){
   try{localStorage.setItem('sgp_display_cmd',JSON.stringify(payload));}catch(e){}
   try{if(_bc)_bc.postMessage(payload);}catch(e){}
   toast('전송: '+t,'success');
+  // 미리보기 동기화
+  _pvHandleCmd(payload);
+}
+
+function _pvHandleCmd(cmd){
+  if(!cmd) return;
+  const pvTime=document.getElementById('pv-time');
+
+  if(cmd.type==='timer_start'){
+    if(cmd.duration){
+      _pvStartCountdown(cmd.duration);
+    } else {
+      // 출발형 타이머 — g6Tick이 이미 처리
+    }
+    if(pvTime) pvTime.className='running';
+  }
+  if(cmd.type==='timer_stop'){
+    _pvStopCountdown();
+    if(pvTime) pvTime.className='stopped';
+  }
+  if(cmd.type==='timer_reset'){
+    _pvStopCountdown();
+    if(pvTime){pvTime.textContent='00:00.000';pvTime.className='';}
+  }
+  if(cmd.type==='countdown'){
+    // 기존 g6-countdown 오버레이 재사용
+    let n=3;
+    const ov=document.getElementById('g6-countdown');
+    const nm=document.getElementById('g6-cdnum');
+    if(ov&&nm){
+      ov.classList.add('show'); nm.textContent=n;
+      const iv=setInterval(()=>{
+        n--;
+        if(n>0){nm.textContent=n;}
+        else{clearInterval(iv);ov.classList.remove('show');}
+      },900);
+    }
+  }
+  if(cmd.type==='clear_rank'){
+    updatePv();
+  }
+  if(cmd.type==='winner'){
+    updatePv();
+  }
 }
 function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
 
@@ -2744,6 +2788,8 @@ function g6Tick(){
   g6_elapsed=performance.now()-g6_startTs;
   const el=document.getElementById('g6-time');
   if(el)el.textContent=g6FmtTime(g6_elapsed);
+  const pvt=document.getElementById('pv-time');
+  if(pvt)pvt.textContent=g6FmtTime(g6_elapsed);
   try{localStorage.setItem('sgp_display_time',g6FmtTime(g6_elapsed));}catch(e){}
   g6_rafId=requestAnimationFrame(g6Tick);
 }
@@ -2759,9 +2805,37 @@ function pvcSwitchScreen(n){
 function g6TimerStart(){
   const sec=parseInt(document.getElementById('g6-timer-sec')?.value||60);
   sendCmd('timer_start', {duration: sec});
+  // 미리보기도 카운트다운
+  _pvStartCountdown(sec);
 }
 function g6TimerStop(){
   sendCmd('timer_stop');
+  _pvStopCountdown();
+}
+
+let _pvCdRaf=null, _pvCdStart=null, _pvCdDur=0;
+function _pvStartCountdown(sec){
+  _pvStopCountdown();
+  _pvCdDur=sec*1000; _pvCdStart=performance.now();
+  function tick(){
+    const remain=_pvCdDur-(performance.now()-_pvCdStart);
+    const pvt=document.getElementById('pv-time');
+    if(remain<=0){
+      if(pvt)pvt.textContent='00:00.000';
+      _pvCdRaf=null; return;
+    }
+    if(pvt) pvt.textContent=_pvFmtCountdown(remain);
+    _pvCdRaf=requestAnimationFrame(tick);
+  }
+  _pvCdRaf=requestAnimationFrame(tick);
+}
+function _pvStopCountdown(){
+  if(_pvCdRaf){cancelAnimationFrame(_pvCdRaf);_pvCdRaf=null;}
+}
+function _pvFmtCountdown(ms){
+  const total=Math.floor(ms/1000);
+  const m=Math.floor(total/60),s=total%60,cs=Math.floor((ms%1000)/10);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}0`;
 }
 
 function g6Start(){
