@@ -1,6 +1,6 @@
 // ══ DS TAB 2: 현재경기 VS 화면 설정 ══
 
-let _tab2Mode = 'single'; // 'single' | 'random' | 'court_N'
+let _tab2Mode = 'court_1'; // 기본: 경기장 1
 
 function buildTab2(){
   buildDs2FontPicker();
