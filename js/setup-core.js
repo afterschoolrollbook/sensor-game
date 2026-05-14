@@ -314,7 +314,7 @@ function saveCurrentStep(){
 
 /* ── RESIZER ── */
 function initResizer(){
-  function bind(rId,getEl,minW,maxRatio){
+  function bind(rId,getEl,minW,maxRatio,onMove){
     const bar=document.getElementById(rId);
     if(!bar)return;
     bar.addEventListener('mousedown',function(e){
@@ -330,6 +330,7 @@ function initResizer(){
         const w=Math.min(Math.max(startW+(e.clientX-startX),minW),total*maxRatio);
         el.style.flex='0 0 '+w+'px';
         el.style.width=w+'px';
+        if(onMove) onMove();
       }
       function up(){
         bar.classList.remove('drag');
@@ -337,13 +338,15 @@ function initResizer(){
         document.body.style.userSelect='';
         document.removeEventListener('mousemove',move);
         document.removeEventListener('mouseup',up);
+        if(onMove) onMove();
       }
       document.addEventListener('mousemove',move);
       document.addEventListener('mouseup',up);
     });
   }
-  bind('resizer', ()=>document.getElementById('left'), 220, 0.5);
-  bind('resizer2', ()=>document.getElementById('pvcw'), 180, 0.55);
+  bind('resizer', ()=>document.getElementById('left'), 220, 0.6);
+  // pvcw: 드래그 중 scalePvc 실시간 호출, maxRatio 0.75로 오른쪽 더 넓게
+  bind('resizer2', ()=>document.getElementById('pvcw'), 180, 0.75, ()=>{ if(typeof scalePvc==='function') scalePvc(); });
 }
 
 /* ── DSPANEL ── */
@@ -1234,8 +1237,9 @@ function _d3DrawBracketPv3(view, groups, layout, courtCount){
 function updatePv3(){
   const view=document.getElementById('pv3-inner');if(!view)return;
   let groups=[];
-  if(S.groupBrackets&&S.groupBrackets.length) groups=S.groupBrackets;
-  else{ try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){} }
+  // 항상 localStorage 최신값 우선 로드 (bracket-view 별도창에서 변경 시 S가 stale할 수 있음)
+  try{ const gb=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); if(gb.length){ groups=gb; S.groupBrackets=gb; } }catch(e){}
+  if(!groups.length && S.groupBrackets&&S.groupBrackets.length) groups=S.groupBrackets;
   if(!groups.length){
     view.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
     return;
@@ -1297,13 +1301,57 @@ function updatePv3(){
   // 그룹별 렌더 시 _pv3CurrentGroupLabel을 세팅해 isCurrentMatchIdx가 정확히 비교
   window._pv3CurrentGroupLabel='';
   window.isCurrentMatchIdx=function(ri,mi){
+    // groupLabel 비교 없이 ri/mi만으로 비교 (같은 그룹 내에서 렌더되므로)
     return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===window._pv3CurrentGroupLabel);
   };
+  // 콘솔 디버그: 선택경기 확인
+  if(selectedMatches.length) console.log('[pv3] selectedMatches:', JSON.stringify(selectedMatches));
+  else console.log('[pv3] selectedMatches 없음 - court storage 값:', 
+    localStorage.getItem('sgp_display_vs_court_1'),
+    localStorage.getItem('sgp_display_vs_court_2'));
 
-  // step4.js _getAvailW가 pts-bracket-view ID를 사용 → 임시 변경 후 복원
+  // _getAvailW override: pvcw 실제 너비 기준으로 박스 크기 계산
+  const _origGetAvailW = window._getAvailW;
+  window._getAvailW = function(wrap){
+    const pvcw = document.getElementById('pvcw');
+    const w = pvcw ? pvcw.offsetWidth - 40 : 440;
+    return w > 100 ? w : 440;
+  };
+
+  // pv3 클릭 → bracket-view 하이라이트 연동
+  // step4.js의 박스 onclick이 onMatchClick(ri, mi, matchObj) 호출
+  const _origOnMatchClick = window.onMatchClick;
+  window.onMatchClick = function(ri, mi, matchObj){
+    if(!matchObj) return;
+    const cleanN = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n : '—';
+    const p1 = cleanN(matchObj.p1?.name || String(matchObj.p1||''));
+    const p2 = cleanN(matchObj.p2?.name || String(matchObj.p2||''));
+    const grpObj = matchObj._groupObj || null;
+    const court = grpObj?.court || 1;
+    const label = matchObj._groupLabel || '';
+    const vsData = {p1, p2, label, court};
+    // localStorage 저장 → bracket-view storage 이벤트 수신
+    try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
+    try{ localStorage.setItem('sgp_display_vs_court_'+court, JSON.stringify(vsData)); }catch(e){}
+    // BroadcastChannel → bracket-view 하이라이트 갱신
+    const cmd = {type:'set_match', p1, p2, label, court, ts:Date.now()};
+    try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
+    try{
+      if(!window._pv3Bc) window._pv3Bc = new BroadcastChannel('sgp_cmd');
+      window._pv3Bc.postMessage(cmd);
+    }catch(e){}
+    // pv2도 갱신
+    try{ if(typeof updatePv2==='function') updatePv2(); }catch(e){}
+  };
+
   view.id='pts-bracket-view';
   _d3DrawBracketPv3(view, groups, layout, courtCount);
   view.id='pv3-inner';
+  // override 복원
+  if(_origGetAvailW) window._getAvailW=_origGetAvailW;
+  else delete window._getAvailW;
+  if(_origOnMatchClick) window.onMatchClick=_origOnMatchClick;
+  else delete window.onMatchClick;
 }
 
 /* ── PVC SCALE (TV 비율 축소) ── */
