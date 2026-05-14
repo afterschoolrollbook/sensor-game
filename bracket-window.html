@@ -2218,6 +2218,7 @@ function _showShuffleAnimation(type, names, onDone){
     }));
 
     let frame=0; let animId;
+    ov.addEventListener('click',()=>{ cancelAnimationFrame(animId); ov.remove(); },{ once:true });
     const animate=()=>{
       ctx.clearRect(0,0,W,H);
       balls.forEach(b=>{
@@ -2289,6 +2290,7 @@ function _showShuffleAnimation(type, names, onDone){
     let speed=0.35;
     const totalRot=Math.PI*2*6+Math.random()*Math.PI*2; // 6바퀴+랜덤
     let rotated=0; let animId2;
+    ov.addEventListener('click',()=>{ cancelAnimationFrame(animId2); ov.remove(); },{ once:true });
 
     const drawWheel=(ang)=>{
       ctx.clearRect(0,0,300,300);

@@ -484,6 +484,7 @@ function saveCfgNow(){
 /* ── BroadcastChannel: storage 이벤트 보완 ── */
 let _bc=null;
 try{_bc=new BroadcastChannel('sgp_cmd');}catch(e){}
+window.addEventListener('pagehide',()=>{ try{_bc&&_bc.close();}catch(e){} });
 
 /* ── CHIPS ── */
 function buildChips(){
