@@ -43,24 +43,22 @@ function buildDs2VsColor(){
 }
 
 function buildDs2Labels(){
-  // 저장값 복원
   const courtShow=localStorage.getItem('sgp_d2_court_show')!=='false';
   const courtSize=parseInt(localStorage.getItem('sgp_d2_court_size')||'16');
   const infoShow=localStorage.getItem('sgp_d2_info_show')!=='false';
   const infoSize=parseInt(localStorage.getItem('sgp_d2_info_size')||'16');
+  const nameShow=localStorage.getItem('sgp_d2_name_show')!=='false';
+  const nameSize=parseInt(localStorage.getItem('sgp_d2_name_size')||'80');
 
-  const cTog=document.getElementById('ds2-court-show');
-  const cSz=document.getElementById('ds2-court-size-val');
-  const iTog=document.getElementById('ds2-info-show');
-  const iSz=document.getElementById('ds2-info-size-val');
+  const el=(id,val)=>{ const e=document.getElementById(id); if(e) e[typeof val==='boolean'?'checked':'textContent']=val; };
+  el('ds2-court-show',courtShow);
+  el('ds2-court-size-val',courtSize);
+  el('ds2-info-show',infoShow);
+  el('ds2-info-size-val',infoSize);
+  el('ds2-name-show',nameShow);
+  el('ds2-name-size-val',nameSize);
 
-  if(cTog) cTog.checked=courtShow;
-  if(cSz)  cSz.textContent=courtSize;
-  if(iTog) iTog.checked=infoShow;
-  if(iSz)  iSz.textContent=infoSize;
-
-  // 미리보기 초기 반영
-  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize});
+  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize});
 }
 
 function buildDs2FontPicker(){
@@ -199,16 +197,15 @@ function _getDispWin(){
 }
 
 function _updatePv2ForMode(mode){
-  // 미리보기(pv2)에 모드 힌트 표시
-  const pv2info=document.getElementById('pv2-info');
-  if(!pv2info) return;
+  const courtLbl=document.getElementById('pv2-court-lbl');
   if(mode==='random'){
-    pv2info.textContent='🔀 경기장 순환 중...';
+    if(courtLbl) courtLbl.textContent='// 순환 중';
   } else if(mode.startsWith('court_')){
     const c=mode.replace('court_','');
-    pv2info.textContent=`🏟️ 경기장 ${c} 고정`;
+    if(courtLbl) courtLbl.textContent=`// 경기장 ${c}`;
   } else {
-    updateDst2(); // 원래 상태로
+    if(courtLbl) courtLbl.textContent='';
+    updateDst2();
   }
 }
 
@@ -259,11 +256,15 @@ function _saveD2Cfg(){
   const courtSize=parseInt(document.getElementById('ds2-court-size-val')?.textContent||'16');
   const infoShow=document.getElementById('ds2-info-show')?.checked??true;
   const infoSize=parseInt(document.getElementById('ds2-info-size-val')?.textContent||'16');
+  const nameShow=document.getElementById('ds2-name-show')?.checked??true;
+  const nameSize=parseInt(document.getElementById('ds2-name-size-val')?.textContent||'80');
   try{ localStorage.setItem('sgp_d2_court_show',String(courtShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_court_size',String(courtSize)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_info_show',String(infoShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_info_size',String(infoSize)); }catch(e){}
-  const cfg={courtShow,courtSize,infoShow,infoSize};
+  try{ localStorage.setItem('sgp_d2_name_show',String(nameShow)); }catch(e){}
+  try{ localStorage.setItem('sgp_d2_name_size',String(nameSize)); }catch(e){}
+  const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize};
   _broadcastD2Cfg(cfg);
   _applyD2CfgToPv2(cfg);
 }
@@ -284,6 +285,14 @@ function _chD2InfoSize(d){
   el.textContent=_stepSize(parseInt(el.textContent)||16,d);
   _saveD2Cfg();
 }
+function _chD2NameSize(d){
+  const el=document.getElementById('ds2-name-size-val'); if(!el) return;
+  const NAME_SIZES=[20,24,28,32,36,40,48,56,64,72,80,88,96,110,120];
+  let cur=parseInt(el.textContent)||80;
+  let i=NAME_SIZES.findIndex(s=>s>=cur); if(i<0)i=NAME_SIZES.length-1;
+  el.textContent=NAME_SIZES[Math.max(0,Math.min(NAME_SIZES.length-1,i+d))];
+  _saveD2Cfg();
+}
 
 function _broadcastD2Cfg(extra){
   const msg=Object.assign({type:'d2_cfg'},extra);
@@ -292,14 +301,24 @@ function _broadcastD2Cfg(extra){
 }
 
 function _applyD2CfgToPv2(cfg){
-  const pvLbl=document.querySelector('#pv2 .pv2-lbl');
+  const pvCourtLbl=document.getElementById('pv2-court-lbl');
   const pvInfo=document.getElementById('pv2-info');
-  if(pvLbl){
-    if(cfg.courtShow!==undefined) pvLbl.style.display=cfg.courtShow?'':'none';
-    if(cfg.courtSize) pvLbl.style.fontSize=cfg.courtSize+'px';
+  // 상단 경기장 레이블
+  if(pvCourtLbl){
+    if(cfg.courtShow!==undefined) pvCourtLbl.style.display=cfg.courtShow?'':'none';
+    if(cfg.courtSize) pvCourtLbl.style.fontSize=cfg.courtSize+'px';
   }
+  // 하단 경기 정보
   if(pvInfo){
     if(cfg.infoShow!==undefined) pvInfo.style.display=cfg.infoShow?'':'none';
     if(cfg.infoSize) pvInfo.style.fontSize=cfg.infoSize+'px';
   }
+  // 선수 이름
+  document.querySelectorAll('#pv2 .pv2-pl').forEach(pl=>{
+    if(cfg.nameShow!==undefined) pl.style.display=cfg.nameShow?'':'none';
+  });
+  ['pv2-p1','pv2-p2'].forEach(id=>{
+    const nm=document.getElementById(id);
+    if(nm && cfg.nameSize) nm.style.fontSize=cfg.nameSize+'px';
+  });
 }
