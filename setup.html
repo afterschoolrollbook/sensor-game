@@ -787,11 +787,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
             <input id="g6-timer-sec" class="g6-ctrl-input" type="number" min="1" max="9999" value="60">
             <span style="font-size:11px;color:var(--text3);white-space:nowrap;">초 설정</span>
           </div>
-          <!-- 탭 2: 명단 안내 -->
+          <!-- 탭 2: 등록명단 -->
           <div id="g6-cd-mode2" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--card2);border-radius:6px;">
             <span id="g6-cd-ptcount">참가자 0명</span> — 랩 버튼으로 중간 기록
           </div>
-          <!-- 탭 3: 인원수 입력 -->
+          <!-- 탭 3: 인원수 -->
           <div id="g6-cd-mode3" style="display:none;margin-bottom:8px;">
             <div class="g6-ctrl-row">
               <span style="font-size:11px;color:var(--text3);white-space:nowrap;">인원</span>
@@ -836,6 +836,37 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     <!-- 카운트다운 오버레이 -->
     <div id="g6-countdown"><div id="g6-cdnum">3</div><div id="g6-cdlbl">// READY</div></div>
 
+    <!-- 순위초기화 확인 모달 -->
+    <div id="g6-modal-reset" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;min-width:280px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:10px;">🗑️</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">기록 초기화</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">스톱워치 기록을 모두 삭제할까요?</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="document.getElementById('g6-modal-reset').style.display='none'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;">취소</button>
+          <button onclick="g6RankResetConfirm()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기록 저장 모달 -->
+    <div id="g6-modal-save" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;min-width:300px;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">📊 기록 저장</div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;color:var(--text3);letter-spacing:2px;display:block;margin-bottom:6px;">파일명</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="g6-save-filename" type="text" value="스톱워치_기록" style="flex:1;background:var(--card2);border:1px solid var(--border2);border-radius:7px;color:var(--text);padding:8px 10px;font-size:13px;">
+            <span style="font-size:12px;color:var(--text3);">.xlsx</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px;">
+          <button onclick="document.getElementById('g6-modal-save').style.display='none'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;">취소</button>
+          <button onclick="g6SaveExcelConfirm()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#000;font-size:13px;font-weight:700;cursor:pointer;">💾 저장</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 순위초기화 확인 모달 (카운트다운) -->
     <div id="g6-modal-cd-reset" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;min-width:280px;text-align:center;">
@@ -863,34 +894,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div style="display:flex;gap:8px;margin-top:18px;">
           <button onclick="document.getElementById('g6-modal-cd-save').style.display='none'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;">취소</button>
           <button onclick="g6CdSaveExcelConfirm()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#000;font-size:13px;font-weight:700;cursor:pointer;">💾 저장</button>
-        </div>
-      </div>
-    </div> style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;min-width:280px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:10px;">🗑️</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">기록 초기화</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:20px;">스톱워치 기록을 모두 삭제할까요?</div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="document.getElementById('g6-modal-reset').style.display='none'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;">취소</button>
-          <button onclick="g6RankResetConfirm()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">삭제</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 기록 저장 모달 -->
-    <div id="g6-modal-save" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;min-width:300px;">
-        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">📊 기록 저장</div>
-        <div style="margin-bottom:12px;">
-          <label style="font-size:11px;color:var(--text3);letter-spacing:2px;display:block;margin-bottom:6px;">파일명</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <input id="g6-save-filename" type="text" value="스톱워치_기록" style="flex:1;background:var(--card2);border:1px solid var(--border2);border-radius:7px;color:var(--text);padding:8px 10px;font-size:13px;">
-            <span style="font-size:12px;color:var(--text3);">.xlsx</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:18px;">
-          <button onclick="document.getElementById('g6-modal-save').style.display='none'" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;">취소</button>
-          <button onclick="g6SaveExcelConfirm()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#000;font-size:13px;font-weight:700;cursor:pointer;">💾 저장</button>
         </div>
       </div>
     </div>
@@ -2980,8 +2983,8 @@ function g6CdUpdateUI(){
   const ci=document.getElementById('g6-cd-countinfo');
   if(ci) ci.textContent=`${g6_cdNumIdx}번째`;
   const rk=document.getElementById('g6-cd-ranking');
-  if(!rk) return;
   const sb=document.getElementById('g6-cd-save-btn');
+  if(!rk) return;
   if(!g6_cdRecords.length){
     rk.style.display='none';
     if(sb) sb.style.display='none';
@@ -2989,7 +2992,7 @@ function g6CdUpdateUI(){
   }
   rk.style.display='flex';
   if(sb) sb.style.display='';
-  const sorted=[...g6_cdRecords].sort((a,b)=>a.time-b.time);
+  const sorted=[...g6_cdRecords].sort((a,b)=>b.time-a.time); // 남은시간 많을수록 빠름
   rk.innerHTML=sorted.map((r,i)=>{
     const medal=['🥇','🥈','🥉'][i]||(i+1)+'위';
     return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:var(--card2);font-size:12px;">
@@ -3002,7 +3005,6 @@ function g6CdUpdateUI(){
 
 function g6CdLap(){
   if(!g6_cdRunning) return;
-  // 남은 시간 = 전체 - 경과
   const elapsed=performance.now()-_pvCdStart;
   const remain=Math.max(0,_pvCdDur-elapsed);
   if(g6_cdMode===2){
@@ -3010,16 +3012,14 @@ function g6CdLap(){
     if(p){
       g6_cdRecords.push({name:p.name,time:remain});
       toast(`${p.name}: ${g6FmtTime(remain)}`,'success');
-      const next=(g6_idx+1)%S.pts.length;
-      g6SetParticipant(next);
+      g6SetParticipant((g6_idx+1)%S.pts.length);
       g6CdUpdateUI();
     }
   } else if(g6_cdMode===3){
     const total=parseInt(document.getElementById('g6-cd-count')?.value||10);
     g6_cdRecords.push({name:`${g6_cdNumIdx}번`,time:remain});
     toast(`${g6_cdNumIdx}번: ${g6FmtTime(remain)}`,'success');
-    if(g6_cdNumIdx<total){ g6_cdNumIdx++; }
-    else { toast('전원 기록 완료!','success'); }
+    if(g6_cdNumIdx<total){ g6_cdNumIdx++; } else { toast('전원 기록 완료!','success'); }
     g6CdUpdateUI();
   }
 }
@@ -3042,7 +3042,7 @@ function g6CdSaveExcel(){
 function g6CdSaveExcelConfirm(){
   document.getElementById('g6-modal-cd-save').style.display='none';
   const fname=(document.getElementById('g6-cd-save-filename')?.value.trim()||'카운트다운_기록')+'.xlsx';
-  const sorted=[...g6_cdRecords].sort((a,b)=>a.time-b.time);
+  const sorted=[...g6_cdRecords].sort((a,b)=>b.time-a.time);
   const rows=[['순위','이름','남은시간'],...sorted.map((r,i)=>[i+1,r.name,g6FmtTime(r.time)])];
   try{
     const wb=XLSX.utils.book_new();
@@ -3081,9 +3081,11 @@ function g6TimerReset(){
   const pvt=document.getElementById('pv-time');
   if(pvt){pvt.textContent='00:00.000';pvt.className='';}
   sendCmd('timer_reset');
-  document.getElementById('g6-cd-start').disabled=false;
-  document.getElementById('g6-cd-stop').disabled=true;
+  const startBtn=document.getElementById('g6-cd-start');
+  const stopBtn=document.getElementById('g6-cd-stop');
   const lapBtn=document.getElementById('g6-cd-lap');
+  if(startBtn) startBtn.disabled=false;
+  if(stopBtn) stopBtn.disabled=true;
   if(lapBtn) lapBtn.disabled=true;
 }
 
