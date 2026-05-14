@@ -514,80 +514,195 @@ function g6ShowWinner(){
   sendCmd('winner',{name,time});
 }
 
-// ══ 카운트다운 연출 ══
-let g6_cdirSrc=1, g6_cdirRunning=false, g6_cdirLoopTimer=null;
+// ══ 카운트다운 연출 (기본 / 반복 / 커스텀) ══
+let g6_cdirMode = 'basic';
+let g6_cdirRunning = false;
+let g6_cdirLoopTimer = null;
+let g6_cdirSeq = [];
+let g6_cdirSrcsB = new Set([1]); // 기본 모드 소스
+let g6_cdirSrcsR = new Set([1]); // 반복 모드 소스
 
-function g6CdirSetSrc(n){
-  g6_cdirSrc=n;
-  [1,2].forEach(i=>{
-    document.getElementById('g6-cdir-src-'+i)?.classList.toggle('active',i===n);
+// ── 탭 전환 ──
+function g6CdirTab(mode) {
+  g6_cdirMode = mode;
+  ['basic','repeat','custom'].forEach(m => {
+    document.getElementById('g6-cdir-tab-' + m)?.classList.toggle('active', m === mode);
+    const el = document.getElementById('g6-cdir-mode-' + m);
+    if (el) el.style.display = m === mode ? 'block' : 'none';
   });
-  const status=document.getElementById('g6-cdir-status');
-  if(status) status.textContent=n===1?'// 경기용 카운트다운 선택':'// 휴식시간 카운트다운 선택';
+  _g6CdirUpdateStatus();
 }
 
-function g6CdirStart(){
-  if(g6_cdirRunning)return;
-  g6_cdirRunning=true;
-  document.getElementById('g6-cdir-start').disabled=true;
-  document.getElementById('g6-cdir-stop').disabled=false;
-  _g6CdirRun();
-}
-
-function _g6CdirRun(){
-  if(!g6_cdirRunning)return;
-  const sec=parseInt(document.getElementById(g6_cdirSrc===1?'g6-timer-sec':'g6-rt-sec')?.value||60);
-  const label=g6_cdirSrc===1?'경기용':'휴식시간';
-  const status=document.getElementById('g6-cdir-status');
-  if(status) status.textContent=`// ${label} ${sec}초 연출 중...`;
-  if(g6_cdirSrc===1) g6TimerStart();
-  else g6RtStart();
-  const loop=document.getElementById('g6-cdir-loop')?.checked;
-  if(loop){
-    // 3초(카운트다운) + sec초(타이머) + 1.5초(여유) 후 반복
-    g6_cdirLoopTimer=setTimeout(()=>{
-      if(!g6_cdirRunning)return;
-      if(status) status.textContent=`// 반복 중...`;
-      _g6CdirRun();
-    }, (3+sec)*1000+1500);
+// ── 소스 토글 (기본/반복 모드 각각) ──
+function g6CdirToggleSrc(mode, n) {
+  const srcs = mode === 'b' ? g6_cdirSrcsB : g6_cdirSrcsR;
+  const btn = document.getElementById(`g6-cdir-${mode}-src-${n}`);
+  if (srcs.has(n)) {
+    if (srcs.size <= 1) { toast('최소 1개는 선택해야 해요', 'error'); return; }
+    srcs.delete(n); btn?.classList.remove('active');
+  } else {
+    srcs.add(n); btn?.classList.add('active');
   }
+  _g6CdirUpdateStatus();
 }
 
-function g6CdirStop(){
-  g6_cdirRunning=false;
-  if(g6_cdirLoopTimer){clearTimeout(g6_cdirLoopTimer);g6_cdirLoopTimer=null;}
-  if(g6_cdirSrc===1) g6TimerStop();
-  else g6RtStop();
-  document.getElementById('g6-cdir-start').disabled=false;
-  document.getElementById('g6-cdir-stop').disabled=true;
-  const status=document.getElementById('g6-cdir-status');
-  if(status) status.textContent='// 정지됨';
+// ── 커스텀 시퀀스 ──
+function g6CdirSeqAdd(type) {
+  g6_cdirSeq.push(type);
+  _g6CdirRenderSeq();
+}
+function g6CdirSeqClear() {
+  g6_cdirSeq = [];
+  _g6CdirRenderSeq();
+}
+function _g6CdirRenderSeq() {
+  const el = document.getElementById('g6-cdir-seq-list');
+  if (!el) return;
+  if (!g6_cdirSeq.length) {
+    el.innerHTML = '<span style="color:var(--text3);font-size:11px;">아래 버튼으로 순서를 추가하세요</span>';
+    return;
+  }
+  const items = g6_cdirSeq.map((s, i) => {
+    const label = s === 1 ? '①경기' : s === 2 ? '②휴식' : '🔔종';
+    const clr   = s === 1 ? 'var(--red)' : s === 2 ? 'var(--accent)' : 'var(--yellow)';
+    return `<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:var(--card);border:1px solid ${clr};border-radius:5px;font-size:11px;font-weight:700;color:${clr};">${label
+      }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:3px;">✕</span></div>`;
+  });
+  el.innerHTML = items.join('<span style="color:var(--text3);font-size:10px;padding:0 2px;">→</span>');
 }
 
-function g6CdirFuse(){
-  // 퓨즈: 전광판에 카운트다운 연출 전송 후 선택된 타이머 시작
+// ── 상태 표시 ──
+function _g6CdirUpdateStatus(msg) {
+  const el = document.getElementById('g6-cdir-status');
+  if (!el) return;
+  if (msg) { el.textContent = msg; return; }
+  const modeLabel = { basic: '기본', repeat: '반복', custom: '커스텀' }[g6_cdirMode];
+  el.textContent = `// [${modeLabel}] 대기중`;
+}
+
+// ── 시작 ──
+function g6CdirStart() {
+  let seq = [];
+
+  if (g6_cdirMode === 'basic') {
+    [...g6_cdirSrcsB].sort().forEach(s => seq.push(s));
+    if (document.getElementById('g6-cdir-b-bell')?.checked) seq.push('bell');
+
+  } else if (g6_cdirMode === 'repeat') {
+    [...g6_cdirSrcsR].sort().forEach(s => seq.push(s));
+    if (document.getElementById('g6-cdir-r-bell')?.checked) seq.push('bell');
+
+  } else {
+    // 커스텀
+    seq = [...g6_cdirSeq];
+  }
+
+  if (!seq.length) { toast('시퀀스가 비어있어요', 'error'); return; }
+
+  const loopCnt = g6_cdirMode === 'repeat'
+    ? Math.max(1, parseInt(document.getElementById('g6-cdir-r-cnt')?.value || 2))
+    : 1;
+
+  g6_cdirRunning = true;
+  document.getElementById('g6-cdir-start').disabled = true;
+  document.getElementById('g6-cdir-stop').disabled = false;
+
+  _g6CdirRunSeq(seq, 0, loopCnt);
+}
+
+// ── 시퀀스 실행 엔진 ──
+function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
+  if (!g6_cdirRunning) return;
+
+  // 한 사이클 완료
+  if (stepIdx >= seq.length) {
+    loopRemain--;
+    if (loopRemain > 0) {
+      _g6CdirUpdateStatus(`// 반복 중... 남은 ${loopRemain}회`);
+      g6_cdirLoopTimer = setTimeout(() => _g6CdirRunSeq(seq, 0, loopRemain), 1000);
+    } else {
+      g6_cdirRunning = false;
+      document.getElementById('g6-cdir-start').disabled = false;
+      document.getElementById('g6-cdir-stop').disabled = true;
+      _g6CdirUpdateStatus('// ✅ 완료!');
+    }
+    return;
+  }
+
+  const step = seq[stepIdx];
+  const next = () => _g6CdirRunSeq(seq, stepIdx + 1, loopRemain);
+
+  // 종소리 스텝
+  if (step === 'bell') {
+    _g6CdirRingBell();
+    _g6CdirUpdateStatus('// 🔔 땡~');
+    g6_cdirLoopTimer = setTimeout(next, 2000);
+    return;
+  }
+
+  // 타이머 스텝
+  const sec   = Math.max(1, parseInt(document.getElementById(step === 1 ? 'g6-timer-sec' : 'g6-rt-sec')?.value || 60));
+  const label = step === 1 ? '⚔️경기①' : '💤휴식②';
+  _g6CdirUpdateStatus(`// ${label} ${sec}초 (${seq.length - stepIdx}스텝 남음)`);
+
+  if (step === 1) g6TimerStart();
+  else g6RtStart();
+
+  // 3초(카운트다운 연출) + sec초(타이머) + 1.5초(여유)
+  g6_cdirLoopTimer = setTimeout(() => {
+    if (!g6_cdirRunning) return;
+    next();
+  }, (3 + sec) * 1000 + 1500);
+}
+
+// ── 종소리 ──
+function _g6CdirRingBell() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine'; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.7, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 1.5);
+  } catch(e) {}
+  sendCmd('bell');
+  toast('🔔 땡~', 'success');
+}
+
+// ── 정지 ──
+function g6CdirStop() {
+  g6_cdirRunning = false;
+  if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
+  g6TimerStop();
+  g6RtStop();
+  document.getElementById('g6-cdir-start').disabled = false;
+  document.getElementById('g6-cdir-stop').disabled = true;
+  _g6CdirUpdateStatus('// 정지됨');
+}
+
+// ── 퓨즈 ──
+function g6CdirFuse() {
   sendCmd('fuse');
-  const status=document.getElementById('g6-cdir-status');
-  if(status) status.textContent='// 💥 퓨즈 점화!';
-  _runCountdown(()=>{
-    if(g6_cdirSrc===1) g6TimerStart();
-    else g6RtStart();
-    setTimeout(()=>{
-      if(status) status.textContent='// 타이머 진행 중...';
-    },100);
+  _g6CdirUpdateStatus('// 💥 퓨즈 점화!');
+  const srcs = g6_cdirMode === 'repeat' ? g6_cdirSrcsR : g6_cdirSrcsB;
+  _runCountdown(() => {
+    [...srcs].sort().forEach(s => { if (s === 1) g6TimerStart(); else g6RtStart(); });
+    setTimeout(() => _g6CdirUpdateStatus('// 타이머 진행 중...'), 100);
   });
 }
 
-function g6CdirReset(){
-  g6_cdirRunning=false;
-  if(g6_cdirLoopTimer){clearTimeout(g6_cdirLoopTimer);g6_cdirLoopTimer=null;}
-  if(g6_cdirSrc===1) g6TimerReset();
-  else g6RtReset();
-  document.getElementById('g6-cdir-start').disabled=false;
-  document.getElementById('g6-cdir-stop').disabled=true;
-  const status=document.getElementById('g6-cdir-status');
-  if(status) status.textContent='// 대기중';
+// ── 초기화 ──
+function g6CdirReset() {
+  g6_cdirRunning = false;
+  if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
+  g6TimerReset();
+  g6RtReset();
+  document.getElementById('g6-cdir-start').disabled = false;
+  document.getElementById('g6-cdir-stop').disabled = true;
+  _g6CdirUpdateStatus();
 }
+
 
 function g6Start(){
   _runCountdown(()=>g6DoStart());
