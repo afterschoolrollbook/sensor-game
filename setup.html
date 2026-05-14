@@ -743,12 +743,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <!-- 모드 탭 -->
           <div style="display:flex;gap:4px;margin-bottom:10px;">
             <button class="g6-sw-tab active" id="g6-sw-tab-1" onclick="g6SwTab(1)">일반</button>
-            <button class="g6-sw-tab" id="g6-sw-tab-2" onclick="g6SwTab(2)">명단</button>
+            <button class="g6-sw-tab" id="g6-sw-tab-2" onclick="g6SwTab(2)">등록명단</button>
             <button class="g6-sw-tab" id="g6-sw-tab-3" onclick="g6SwTab(3)">인원수</button>
           </div>
           <!-- 탭 2: 명단 안내 -->
           <div id="g6-sw-mode2" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:var(--card2);border-radius:6px;">
-            <span id="g6-sw-ptcount">참가자 0명</span> — 정지 시 자동으로 다음 참가자로 이동
+            <span id="g6-sw-ptcount">참가자 0명</span> — 랩 버튼으로 중간 기록
           </div>
           <!-- 탭 3: 인원수 입력 -->
           <div id="g6-sw-mode3" style="display:none;margin-bottom:8px;">
@@ -762,6 +762,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <!-- 컨트롤 버튼 -->
           <div class="g6-ctrl-row">
             <button class="g6-ctrl-btn primary" id="g6-start" onclick="g6Start()">▶ 출발</button>
+            <button class="g6-ctrl-btn" id="g6-sw-lap" style="display:none;" onclick="g6SwLap()" disabled>🔵 랩</button>
             <button class="g6-ctrl-btn" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
             <button class="g6-ctrl-btn" onclick="g6StopwatchReset()">🔄 초기화</button>
             <button class="g6-ctrl-btn" id="g6-sw-rankreset-btn" style="display:none;color:var(--red);border-color:var(--red);" onclick="g6RankReset()">🗑️ 순위초기화</button>
@@ -2862,6 +2863,8 @@ function g6StopwatchReset(){
   sendCmd('timer_reset');
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
+  const lapBtn=document.getElementById('g6-sw-lap');
+  if(lapBtn) lapBtn.disabled=true;
 }
 
 function g6TimerStart(){
@@ -2918,12 +2921,40 @@ function g6SwTab(n){
   });
   document.getElementById('g6-sw-mode2').style.display=n===2?'':'none';
   document.getElementById('g6-sw-mode3').style.display=n===3?'':'none';
+  const lapBtn=document.getElementById('g6-sw-lap');
+  if(lapBtn) lapBtn.style.display=(n===2||n===3)?'':'none';
   const rrBtn=document.getElementById('g6-sw-rankreset-btn');
   if(rrBtn) rrBtn.style.display=(n===2||n===3)?'':'none';
   g6_swNumIdx=1;
   g6_swRecords=[];
   g6SwUpdateUI();
   g6StopwatchReset();
+}
+
+function g6SwLap(){
+  if(!g6_running)return;
+  const lapTime=g6_elapsed;
+  if(g6_swMode===2){
+    const p=S.pts[g6_idx];
+    if(p){
+      g6_swRecords.push({name:p.name,time:lapTime});
+      toast(`${p.name}: ${g6FmtTime(lapTime)}`,'success');
+      const next=(g6_idx+1)%S.pts.length;
+      g6SetParticipant(next);
+      g6SwUpdateUI();
+    }
+  } else if(g6_swMode===3){
+    const total=parseInt(document.getElementById('g6-sw-count')?.value||10);
+    g6_swRecords.push({name:`${g6_swNumIdx}번`,time:lapTime});
+    toast(`${g6_swNumIdx}번: ${g6FmtTime(lapTime)}`,'success');
+    if(g6_swNumIdx<total){
+      g6_swNumIdx++;
+      g6SwUpdateUI();
+    } else {
+      toast('전원 기록 완료!','success');
+      g6SwUpdateUI();
+    }
+  }
 }
 
 
@@ -2992,8 +3023,10 @@ function g6DoStart(){
   cancelAnimationFrame(g6_rafId);g6_rafId=requestAnimationFrame(g6Tick);
   document.getElementById('g6-start').disabled=true;
   document.getElementById('g6-stop').disabled=false;
-  const lapBtn=document.getElementById('g6-lap');
-  if(lapBtn)lapBtn.disabled=(g6_targetLaps<=1);
+  const lapBtn=document.getElementById('g6-sw-lap');
+  if(lapBtn&&(g6_swMode===2||g6_swMode===3)) lapBtn.disabled=false;
+  const oldLap=document.getElementById('g6-lap');
+  if(oldLap) oldLap.disabled=(g6_targetLaps<=1);
 }
 
 function g6Stop(){
@@ -3002,6 +3035,8 @@ function g6Stop(){
   const te=document.getElementById('g6-time');if(te)te.className='g6-time stopped';
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
+  const lapBtn=document.getElementById('g6-sw-lap');
+  if(lapBtn) lapBtn.disabled=true;
   const lapBtn3=document.getElementById('g6-lap');if(lapBtn3)lapBtn3.disabled=true;
 
   if(g6_swMode===1){
