@@ -315,12 +315,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 }
 #pvc-previews::-webkit-scrollbar{width:3px}
 #pvc-previews::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-/* 실시간 조작 고정 */
-#pvc-bottom{
-  flex-shrink:0;
-  border-top:1px solid var(--border);
-  background:var(--bg);
-}
 /* pvc 래퍼: 비율 유지 컨테이너 */
 #pvc-wrap{
   width:100%;aspect-ratio:16/9;flex-shrink:0;
@@ -715,17 +709,36 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           </div>
         </div>
         <!-- 타이머 -->
-        <div class="g6-timer-box">
-          <div class="g6-cplayer">// 현재 도전자</div>
-          <div class="g6-cname" id="g6-cname">—</div>
-          <div class="g6-time" id="g6-time">00:00.000</div>
-          <div class="g6-lapinfo" id="g6-lapinfo">바퀴 0 / 1</div>
-          <div class="g6-btns">
-            <button class="g6-btn start" id="g6-start" onclick="g6Start()">▶ 출발</button>
-            <button class="g6-btn lap" id="g6-lap" onclick="g6Lap()" disabled>🔁 랩</button>
-            <button class="g6-btn stop" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
+        <div class=\"g6-timer-box\">
+          <div class=\"g6-lapinfo\" id=\"g6-lapinfo\">바퀴 0 / 1</div>
+          <div class=\"g6-btns\">
+            <button class=\"g6-btn start\" id=\"g6-start\" onclick=\"g6Start()\">▶ 출발</button>
+            <button class=\"g6-btn lap\" id=\"g6-lap\" onclick=\"g6Lap()\" disabled>🔁 랩</button>
+            <button class=\"g6-btn stop\" id=\"g6-stop\" onclick=\"g6Stop()\" disabled>⏹ 정지</button>
           </div>
-          <div class="g6-laplist" id="g6-laplist"></div>
+          <div class=\"g6-laplist\" id=\"g6-laplist\"></div>
+        </div>
+        <!-- 실시간 조작 -->
+        <div class=\"g6-timer-box\" style=\"margin-top:0;\">
+          <div class=\"g6-cplayer\" style=\"margin-bottom:8px;\">🎮 실시간 조작</div>
+          <!-- 타이머 설정 -->
+          <div style=\"display:flex;align-items:center;gap:6px;margin-bottom:8px;\">
+            <span style=\"font-size:11px;color:var(--text3);white-space:nowrap;\">타이머</span>
+            <input id=\"g6-timer-sec\" type=\"number\" min=\"1\" max=\"9999\" value=\"60\" style=\"width:70px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-size:13px;text-align:center;\">
+            <span style=\"font-size:11px;color:var(--text3);\">초</span>
+            <button class=\"g6-btn start\" style=\"flex:1;padding:6px;font-size:12px;\" onclick=\"g6TimerStart()\">▶ 시작</button>
+            <button class=\"g6-btn stop\" style=\"flex:1;padding:6px;font-size:12px;\" onclick=\"g6TimerStop()\">⏹ 정지</button>
+          </div>
+          <!-- 기타 조작 -->
+          <div class=\"ds-cgrid\" style=\"grid-template-columns:repeat(3,1fr);\">
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('countdown')\"><span>3️⃣</span><span>카운트다운</span></button>
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('timer_reset')\"><span>🔄</span><span>초기화</span></button>
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('winner')\"><span>🏆</span><span>우승자</span></button>
+            <button class=\"ds-cbtn dang\" onclick=\"sendCmd('clear_rank')\"><span>🗑️</span><span>순위초기화</span></button>
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_1')\"><span>📺</span><span style=\"font-size:9px\">1번 전광판</span></button>
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_2')\"><span>⚔️</span><span style=\"font-size:9px\">2번 경기</span></button>
+            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_3')\"><span>🏆</span><span style=\"font-size:9px\">3번 대진표</span></button>
+          </div>
         </div>
         <!-- 실시간 순위 -->
         <div class="g6-rank-box">
@@ -804,25 +817,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     <div class="pv-slabel"><span class="pv-snum">03</span> 대진표</div>
     <div id="pv3-wrap"><div id="pv3"><div id="pv3-inner"></div></div></div><!-- /pv3-wrap -->
     </div><!-- /pvc-previews -->
-    <!-- 미리보기 아래: 실시간 조작 (항상 고정) -->
-    <div id="pvc-bottom">
-      <div class="dssec" style="border-top:1px solid var(--border)">
-        <div class="dssec-hd"><span>🎮</span><span class="dssec-ttl">실시간 조작</span></div>
-        <div class="ds-cgrid">
-          <button class="ds-cbtn" onclick="sendCmd('countdown')"><span>3️⃣</span><span>카운트다운</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_start')"><span>▶️</span><span>타이머 시작</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_stop')"><span>⏹️</span><span>타이머 정지</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('timer_reset')"><span>🔄</span><span>초기화</span></button>
-          <button class="ds-cbtn" onclick="sendCmd('winner')"><span>🏆</span><span>우승자</span></button>
-          <button class="ds-cbtn dang" onclick="sendCmd('clear_rank')"><span>🗑️</span><span>순위초기화</span></button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;">
-          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_1')"><span>📺</span><span style="font-size:9px">1번 전광판</span></button>
-          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_2')"><span>⚔️</span><span style="font-size:9px">2번 현재경기</span></button>
-          <button class="ds-cbtn" style="flex-direction:row;gap:5px;padding:9px;" onclick="sendCmd('screen_3')"><span>🏆</span><span style="font-size:9px">3번 대진표</span></button>
-        </div>
-      </div>
-    </div>
   </div>
   <div id="resizer2"></div>
   <div id="dspanel">
@@ -2725,6 +2719,14 @@ function g6Tick(){
   if(el)el.textContent=g6FmtTime(g6_elapsed);
   try{localStorage.setItem('sgp_display_time',g6FmtTime(g6_elapsed));}catch(e){}
   g6_rafId=requestAnimationFrame(g6Tick);
+}
+
+function g6TimerStart(){
+  const sec=parseInt(document.getElementById('g6-timer-sec')?.value||60);
+  sendCmd('timer_start', {duration: sec});
+}
+function g6TimerStop(){
+  sendCmd('timer_stop');
 }
 
 function g6Start(){
