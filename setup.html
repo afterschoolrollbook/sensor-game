@@ -2933,8 +2933,10 @@ function _runCountdown(cb){
   const pvOv=document.getElementById('pv-countdown-ov');
   const pvNm=pvOv?pvOv.querySelector('.pv-cdn'):null;
   if(pvOv){pvOv.style.display='flex';if(pvNm)pvNm.textContent=n;}
-  // 전광판에도 카운트다운 전송
-  sendCmd('countdown');
+  // 전광판에만 직접 전송 (sendCmd 통하면 _pvHandleCmd 루프 발생)
+  const cdPayload={type:'countdown',ts:Date.now()};
+  try{localStorage.setItem('sgp_display_cmd',JSON.stringify(cdPayload));}catch(e){}
+  try{if(_bc)_bc.postMessage(cdPayload);}catch(e){}
   _beep(660,0.12,0.5);
   const iv=setInterval(()=>{
     n--;
@@ -2949,7 +2951,6 @@ function _runCountdown(cb){
     }
   },900);
 }
-
 function g6StopwatchReset(){
   g6_running=false;cancelAnimationFrame(g6_rafId);
   g6_elapsed=0;g6_lapCount=0;g6_laps=[];
