@@ -3830,12 +3830,12 @@ function onMatchClick(ri, mi, matchObj, event){
   }
 
   // 전역 + 경기장별 localStorage 저장 (ri/mi 포함해서 상대방이 정확히 하이라이트)
-  const vsData = { p1, p2, label, court, ri:origRi, mi:origMi };
+  const vsData = { p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId };
   try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
   try{ localStorage.setItem(`sgp_display_vs_court_${court}`, JSON.stringify(vsData)); }catch(e){}
 
   // BroadcastChannel + storage cmd → display.html + 상대방 bracket-view 즉시 반영
-  const cmd = { type:'set_match', p1, p2, label, court, ri:origRi, mi:origMi, ts:Date.now() };
+  const cmd = { type:'set_match', p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, ts:Date.now() };
   try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
   try{
     if(!window._bvBc) window._bvBc = new BroadcastChannel('sgp_cmd');
@@ -4114,16 +4114,37 @@ window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();
 
 // 새창/iframe 양방향 하이라이트 연동
 // 공통 하이라이트 함수: ri/mi로 박스 찾기 (텍스트 검색보다 정확)
-function _applyMatchHighlight(ri, mi, court){
+function _applyMatchHighlight(ri, mi, court, domId){
   try{
     const courtStr = String(court || 1);
-    // 이전 하이라이트 제거
     const prev = _selectedMatchByCourt[courtStr];
-    if(prev){ const el=document.querySelector('[data-match-id="'+prev+'"]'); if(el){el.style.outline='';el.style.boxShadow='';} }
-    // court 그룹 안에서 data-ri, data-mi로 찾기
-    const courtWrap = document.querySelector('[data-court="'+courtStr+'"]');
-    const scope = courtWrap || document;
-    const box = scope.querySelector('[data-ri="'+ri+'"][data-mi="'+mi+'"]');
+
+    // ── 자가 수신 방지 ──
+    // onMatchClick이 이미 domId로 직접 하이라이트를 적용했고
+    // BroadcastChannel이 같은 프레임에 재전달된 경우 → 이미 처리됐으므로 스킵
+    if(domId && prev === domId){
+      const alreadyEl = document.querySelector('[data-match-id="'+domId+'"]');
+      if(alreadyEl && alreadyEl.style.outline) return;
+    }
+
+    // 이전 하이라이트 제거 (새 domId와 다를 때만)
+    if(prev && prev !== domId){
+      const el=document.querySelector('[data-match-id="'+prev+'"]');
+      if(el){el.style.outline='';el.style.boxShadow='';}
+    }
+
+    // ── 요소 찾기 ──
+    // 1순위: domId 직접 사용 (정확하고 빠름)
+    let box = domId ? document.querySelector('[data-match-id="'+domId+'"]') : null;
+
+    // 2순위: querySelectorAll로 모든 court 래퍼 검색 (다른 창/iframe에서 온 경우)
+    // 버그 수정: 기존 querySelector → querySelectorAll (첫 번째 그룹 래퍼만 검색하던 문제 해결)
+    if(!box){
+      document.querySelectorAll('[data-court="'+courtStr+'"]').forEach(wrap=>{
+        if(!box) box=wrap.querySelector('[data-ri="'+ri+'"][data-mi="'+mi+'"]');
+      });
+    }
+
     if(box){
       _selectedMatchByCourt[courtStr] = box.dataset.matchId;
       box.style.outline='2px solid var(--red)';
@@ -4138,7 +4159,7 @@ window.addEventListener('storage', function(e){
   try{
     const court = parseInt(e.key.replace('sgp_display_vs_court_',''));
     const vs = JSON.parse(e.newValue||'{}');
-    if(vs.ri!=null && vs.mi!=null) _applyMatchHighlight(vs.ri, vs.mi, court);
+    if(vs.ri!=null && vs.mi!=null) _applyMatchHighlight(vs.ri, vs.mi, court, vs.domId);
   }catch(err){}
 });
 
@@ -4149,7 +4170,7 @@ window.addEventListener('storage', function(e){
     bc.onmessage = function(e){
       const cmd = e.data;
       if(!cmd || cmd.type !== 'set_match') return;
-      if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, cmd.court);
+      if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, cmd.court, cmd.domId);
     };
   }catch(e){}
 })();
