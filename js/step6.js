@@ -688,7 +688,12 @@ function _g6CdirStartTimer(sec, onDone) {
     if (_pvCdRaf) cancelAnimationFrame(_pvCdRaf);
     function tick() {
       if (!g6_cdirRunning) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
-      if (g6_cdirPaused) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
+      if (g6_cdirPaused) {
+        cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null;
+        _fuseRemainCd = Math.max(0, _pvCdDur - (performance.now() - _pvCdStart));
+        _fuseIsRt = false;
+        return;
+      }
       const remain = _pvCdDur - (performance.now() - _pvCdStart);
       if (remain <= 0) {
         if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
@@ -721,7 +726,12 @@ function _g6CdirStartRest(sec, onDone) {
   if (_pvRtRaf) cancelAnimationFrame(_pvRtRaf);
   function tick() {
     if (!g6_cdirRunning) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; g6_rtRunning = false; return; }
-    if (g6_cdirPaused) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; return; }
+    if (g6_cdirPaused) {
+      cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null;
+      _fuseRemainRt = Math.max(0, _pvRtDur - (performance.now() - _pvRtStart));
+      _fuseIsRt = true;
+      return;
+    }
     const remain = _pvRtDur - (performance.now() - _pvRtStart);
     if (remain <= 0) {
       if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
@@ -777,84 +787,113 @@ let g6_cdirPaused = false;
 let _fuseRemainCd = 0;   // 경기 타이머 남은 ms
 let _fuseRemainRt = 0;   // 휴식 타이머 남은 ms
 let _fusePendingNext = null; // 일시정지 당시 next 콜백
+let _fuseIsRt = false;   // 재개 시 어느 타이머인지 구분
+
+// 일시정지 공통 처리
+function _g6FusePause() {
+  g6_cdirPaused = true;
+  _cancelCountdown();
+  if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
+  // 현재 돌고있는 RAF 중단 + 남은 시간 저장
+  if (_pvCdRaf) {
+    cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null;
+    _fuseRemainCd = Math.max(0, _pvCdDur - (performance.now() - _pvCdStart));
+    _fuseIsRt = false;
+  }
+  if (_pvRtRaf) {
+    cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null;
+    _fuseRemainRt = Math.max(0, _pvRtDur - (performance.now() - _pvRtStart));
+    _fuseIsRt = true;
+  }
+  sendCmd('timer_stop');
+  const pvt = document.getElementById('pv-time');
+  if (pvt) pvt.className = '';
+  _g6CdirUpdateStatus('// ⏸ 일시정지');
+  const fb = document.getElementById('g6-cdir-fuse');
+  if (fb) { fb.textContent = '▶ 재개'; fb.style.borderColor = 'var(--green)'; fb.style.color = 'var(--green)'; }
+}
+
+// 재개 공통 처리 - 남은시간 RAF 재시작, 재일시정지 지원
+function _g6FuseResume() {
+  g6_cdirPaused = false;
+  const pvt = document.getElementById('pv-time');
+  const fb = document.getElementById('g6-cdir-fuse');
+  if (fb) { fb.textContent = '💥 퓨즈'; fb.style.borderColor = 'rgba(255,214,10,.5)'; fb.style.color = 'var(--yellow)'; }
+
+  const remain0 = _fuseIsRt ? _fuseRemainRt : _fuseRemainCd;
+  if (remain0 <= 0) { _g6CdirUpdateStatus('// ▶ 재개됨'); return; }
+
+  if (!_fuseIsRt) {
+    // 경기 타이머 재개
+    _pvCdDur = remain0; _pvCdStart = performance.now();
+    _fuseRemainCd = 0;
+    if (pvt) pvt.className = 'running';
+    sendCmd('timer_start', { duration: Math.ceil(remain0 / 1000) });
+    g6_cdRunning = true;
+    function tickCd() {
+      // 재일시정지: 남은 시간 저장 후 중단
+      if (g6_cdirPaused) {
+        cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null;
+        _fuseRemainCd = Math.max(0, _pvCdDur - (performance.now() - _pvCdStart));
+        _fuseIsRt = false;
+        return;
+      }
+      if (!g6_cdirRunning) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
+      const remain = _pvCdDur - (performance.now() - _pvCdStart);
+      if (remain <= 0) {
+        if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+        try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+        _pvCdRaf = null; g6_cdRunning = false;
+        sendCmd('timer_stop');
+        if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
+        return;
+      }
+      const fmt = _pvFmtCd(remain);
+      if (pvt) pvt.textContent = fmt;
+      try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+      _pvCdRaf = requestAnimationFrame(tickCd);
+    }
+    _pvCdRaf = requestAnimationFrame(tickCd);
+  } else {
+    // 휴식 타이머 재개
+    _pvRtDur = remain0; _pvRtStart = performance.now();
+    _fuseRemainRt = 0;
+    if (pvt) pvt.className = 'running';
+    sendCmd('timer_start', { duration: Math.ceil(remain0 / 1000) });
+    g6_rtRunning = true;
+    function tickRt() {
+      // 재일시정지: 남은 시간 저장 후 중단
+      if (g6_cdirPaused) {
+        cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null;
+        _fuseRemainRt = Math.max(0, _pvRtDur - (performance.now() - _pvRtStart));
+        _fuseIsRt = true;
+        return;
+      }
+      if (!g6_cdirRunning) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; return; }
+      const remain = _pvRtDur - (performance.now() - _pvRtStart);
+      if (remain <= 0) {
+        if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+        try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+        _pvRtRaf = null; g6_rtRunning = false;
+        sendCmd('timer_stop');
+        if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
+        return;
+      }
+      const fmt = _pvFmtCd(remain);
+      if (pvt) pvt.textContent = fmt;
+      try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+      _pvRtRaf = requestAnimationFrame(tickRt);
+    }
+    _pvRtRaf = requestAnimationFrame(tickRt);
+  }
+  _g6CdirUpdateStatus('// ▶ 재개됨');
+}
 
 function g6CdirFuse() {
   if (!g6_cdirPaused) {
-    // ── 일시정지 ──
-    g6_cdirPaused = true;
-    _cancelCountdown(); // 3,2,1 카운트 중이면 취소
-    if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
-    // RAF 멈추고 남은 시간 저장
-    if (_pvCdRaf) {
-      cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null;
-      _fuseRemainCd = Math.max(0, _pvCdDur - (performance.now() - _pvCdStart));
-    }
-    if (_pvRtRaf) {
-      cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null;
-      _fuseRemainRt = Math.max(0, _pvRtDur - (performance.now() - _pvRtStart));
-    }
-    sendCmd('timer_stop');
-    const pvt = document.getElementById('pv-time');
-    if (pvt) pvt.className = '';
-    _g6CdirUpdateStatus('// ⏸ 일시정지');
-    // 퓨즈 버튼 표시 변경
-    const fb = document.getElementById('g6-cdir-fuse');
-    if (fb) { fb.textContent = '▶ 재개'; fb.style.borderColor = 'var(--green)'; fb.style.color = 'var(--green)'; }
+    _g6FusePause();
   } else {
-    // ── 재개 ──
-    g6_cdirPaused = false;
-    const pvt = document.getElementById('pv-time');
-    const fb = document.getElementById('g6-cdir-fuse');
-    if (fb) { fb.textContent = '💥 퓨즈'; fb.style.borderColor = 'rgba(255,214,10,.5)'; fb.style.color = 'var(--yellow)'; }
-    // 남은 시간으로 RAF 재시작
-    if (_fuseRemainCd > 0) {
-      _pvCdDur = _fuseRemainCd; _pvCdStart = performance.now();
-      if (pvt) pvt.className = 'running';
-      sendCmd('timer_start', { duration: Math.ceil(_fuseRemainCd / 1000) });
-      g6_cdRunning = true;
-      function tickCd() {
-        if (!g6_cdirRunning || g6_cdirPaused) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
-        const remain = _pvCdDur - (performance.now() - _pvCdStart);
-        if (remain <= 0) {
-          if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
-          try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
-          _pvCdRaf = null; g6_cdRunning = false; _fuseRemainCd = 0;
-          sendCmd('timer_stop');
-          if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
-          return;
-        }
-        const fmt = _pvFmtCd(remain);
-        if (pvt) pvt.textContent = fmt;
-        try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
-        _pvCdRaf = requestAnimationFrame(tickCd);
-      }
-      _pvCdRaf = requestAnimationFrame(tickCd);
-      _fuseRemainCd = 0;
-    } else if (_fuseRemainRt > 0) {
-      _pvRtDur = _fuseRemainRt; _pvRtStart = performance.now();
-      if (pvt) pvt.className = 'running';
-      sendCmd('timer_start', { duration: Math.ceil(_fuseRemainRt / 1000) });
-      g6_rtRunning = true;
-      function tickRt() {
-        if (!g6_cdirRunning || g6_cdirPaused) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; return; }
-        const remain = _pvRtDur - (performance.now() - _pvRtStart);
-        if (remain <= 0) {
-          if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
-          try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
-          _pvRtRaf = null; g6_rtRunning = false; _fuseRemainRt = 0;
-          sendCmd('timer_stop');
-          if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
-          return;
-        }
-        const fmt = _pvFmtCd(remain);
-        if (pvt) pvt.textContent = fmt;
-        try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
-        _pvRtRaf = requestAnimationFrame(tickRt);
-      }
-      _pvRtRaf = requestAnimationFrame(tickRt);
-      _fuseRemainRt = 0;
-    }
-    _g6CdirUpdateStatus('// ▶ 재개됨');
+    _g6FuseResume();
   }
 }
 
@@ -862,7 +901,7 @@ function g6CdirFuse() {
 function g6CdirReset() {
   g6_cdirRunning = false;
   g6_cdirPaused = false;
-  _fuseRemainCd = 0; _fuseRemainRt = 0; _fusePendingNext = null;
+  _fuseRemainCd = 0; _fuseRemainRt = 0; _fusePendingNext = null; _fuseIsRt = false;
   _cancelCountdown();
   if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
   if (_pvCdRaf) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; }
