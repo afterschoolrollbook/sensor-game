@@ -74,23 +74,29 @@ function _beep(freq,dur,vol){
 }
 
 // ── 공용 3,2,1 카운트다운 (미리보기 안에서만 + 소리) ──
+let _cdIv = null; // 전역 핸들 → 언제든 즉시 취소 가능
+function _cancelCountdown() {
+  if (_cdIv) { clearInterval(_cdIv); _cdIv = null; }
+  const pvOv = document.getElementById('pv-countdown-ov');
+  if (pvOv) pvOv.style.display = 'none';
+}
 function _runCountdown(cb){
+  _cancelCountdown();
   let n=3;
   const pvOv=document.getElementById('pv-countdown-ov');
   const pvNm=pvOv?pvOv.querySelector('.pv-cdn'):null;
   if(pvOv){pvOv.style.display='flex';if(pvNm)pvNm.textContent=n;}
-  // 전광판에만 직접 전송 (sendCmd 통하면 _pvHandleCmd 루프 발생)
   const cdPayload={type:'countdown',ts:Date.now()};
   try{localStorage.setItem('sgp_display_cmd',JSON.stringify(cdPayload));}catch(e){}
   try{if(_bc)_bc.postMessage(cdPayload);}catch(e){}
   _beep(660,0.12,0.5);
-  const iv=setInterval(()=>{
+  _cdIv=setInterval(()=>{
     n--;
     if(n>0){
       if(pvNm)pvNm.textContent=n;
       _beep(660,0.12,0.5);
     } else {
-      clearInterval(iv);
+      clearInterval(_cdIv); _cdIv=null;
       if(pvOv)pvOv.style.display='none';
       _beep(880,0.5,0.7);
       if(cb)cb();
@@ -572,23 +578,16 @@ function _g6CdirRenderSeq() {
   const el = document.getElementById('g6-cdir-seq-list');
   if (!el) return;
   if (!g6_cdirSeq.length) {
-    el.style.display = '';
-    el.style.flexWrap = '';
-    el.style.gap = '';
     el.innerHTML = '<span style="color:var(--text3);font-size:11px;">아래 버튼으로 순서를 추가하세요</span>';
     return;
   }
   const items = g6_cdirSeq.map((s, i) => {
     const label = s === 1 ? '①경기' : s === 2 ? '②휴식' : '🔔종';
     const clr   = s === 1 ? 'var(--red)' : s === 2 ? 'var(--accent)' : 'var(--yellow)';
-    return `<div style="display:inline-flex;align-items:center;gap:3px;padding:4px 10px;background:var(--card);border:1px solid ${clr};border-radius:6px;font-size:12px;font-weight:700;color:${clr};flex-shrink:0;">${label
-      }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px;">✕</span></div>`;
+    return `<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:var(--card);border:1px solid ${clr};border-radius:5px;font-size:11px;font-weight:700;color:${clr};">${label
+      }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:3px;">✕</span></div>`;
   });
-  el.style.display = 'flex';
-  el.style.flexWrap = 'wrap';
-  el.style.gap = '5px';
-  el.style.alignItems = 'center';
-  el.innerHTML = items.join('<span style="color:var(--text3);font-size:11px;">→</span>');
+  el.innerHTML = items.join('<span style="color:var(--text3);font-size:10px;padding:0 2px;">→</span>');
 }
 
 // 상태 표시
@@ -622,19 +621,22 @@ function g6CdirStart() {
   if (!seq.length) { toast('시퀀스가 비어있어요', 'error'); return; }
 
   g6_cdirRunning = true;
+  g6_cdirPaused = false;
   document.getElementById('g6-cdir-start').disabled = true;
   document.getElementById('g6-cdir-stop').disabled = false;
   _g6CdirRunSeq(seq, 0, loopCnt);
 }
 
-// 시퀀스 실행 엔진
+// ── 시퀀스 실행 엔진 ──
+// setTimeout 오차 누적 제거: 각 타이머가 자연종료 시 onDone() 콜백으로 다음 스텝 진입
 function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
   if (!g6_cdirRunning) return;
+
   if (stepIdx >= seq.length) {
     loopRemain--;
     if (loopRemain > 0) {
       _g6CdirUpdateStatus(`// 반복 중... 남은 ${loopRemain}회`);
-      g6_cdirLoopTimer = setTimeout(() => _g6CdirRunSeq(seq, 0, loopRemain), 1000);
+      g6_cdirLoopTimer = setTimeout(() => _g6CdirRunSeq(seq, 0, loopRemain), 500);
     } else {
       g6_cdirRunning = false;
       document.getElementById('g6-cdir-start').disabled = false;
@@ -643,45 +645,92 @@ function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
     }
     return;
   }
+
   const step = seq[stepIdx];
-  const next = () => _g6CdirRunSeq(seq, stepIdx + 1, loopRemain);
+  const next = () => { if (g6_cdirRunning) _g6CdirRunSeq(seq, stepIdx + 1, loopRemain); };
+
   if (step === 'bell') {
     _g6CdirRingBell();
     _g6CdirUpdateStatus('// 🔔 땡~');
-    g6_cdirLoopTimer = setTimeout(next, 2000);
+    g6_cdirLoopTimer = setTimeout(next, 1500);
     return;
   }
+
   const sec   = Math.max(1, parseInt(document.getElementById(step === 1 ? 'g6-timer-sec' : 'g6-rt-sec')?.value || 60));
   const label = step === 1 ? '⚔️경기①' : '💤휴식②';
-  _g6CdirUpdateStatus(`// ${label} ${sec}초 (${seq.length - stepIdx}스텝 남음)`);
+  _g6CdirUpdateStatus(`// ${label} ${sec}초`);
+
   if (step === 1) {
-    // 경기용: 3초 카운트다운 포함
-    g6TimerStart();
-    g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, (3 + sec) * 1000 + 1500);
+    _g6CdirStartTimer(sec, next);   // 경기: 3초 카운트 포함, 종료 시 next()
   } else {
-    // 휴식시간: 카운트다운 없이 바로 시작
-    _g6RtStartDirect(sec);
-    g6_cdirLoopTimer = setTimeout(() => { if (!g6_cdirRunning) return; next(); }, sec * 1000 + 800);
+    _g6CdirStartRest(sec, next);    // 휴식: 카운트 없이 즉시, 종료 시 next()
   }
 }
 
-// 휴식시간 카운트다운 없이 바로 시작 (카운트다운 연출 전용)
-function _g6RtStartDirect(sec) {
+// 경기용 타이머 — 3초 카운트 + 자연종료 시 onDone() 호출
+function _g6CdirStartTimer(sec, onDone) {
+  _fusePendingNext = onDone; // 퓨즈 일시정지 대비 저장
+  _runCountdown(() => {
+    if (!g6_cdirRunning) return;
+    g6_cdRunning = true;
+    sendCmd('timer_start', { duration: sec });
+    _pvStopCountdown();
+    _pvCdDur = sec * 1000; _pvCdStart = performance.now();
+    const pvt = document.getElementById('pv-time');
+    if (pvt) pvt.className = 'running';
+    if (_pvCdRaf) cancelAnimationFrame(_pvCdRaf);
+    function tick() {
+      if (!g6_cdirRunning) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
+      if (g6_cdirPaused) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
+      const remain = _pvCdDur - (performance.now() - _pvCdStart);
+      if (remain <= 0) {
+        if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+        try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+        _pvCdRaf = null; g6_cdRunning = false;
+        sendCmd('timer_stop');
+        _fusePendingNext = null;
+        setTimeout(onDone, 300);
+        return;
+      }
+      const fmt = _pvFmtCd(remain);
+      if (pvt) pvt.textContent = fmt;
+      try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+      _pvCdRaf = requestAnimationFrame(tick);
+    }
+    _pvCdRaf = requestAnimationFrame(tick);
+  });
+}
+
+// 휴식시간 타이머 — 카운트 없이 즉시, 자연종료 시 onDone() 호출
+function _g6CdirStartRest(sec, onDone) {
+  if (!g6_cdirRunning) return;
+  _fusePendingNext = onDone; // 퓨즈 일시정지 대비 저장
   g6_rtRunning = true;
-  _pvRtDur = sec * 1000;
-  _pvRtStart = performance.now();
+  _pvRtDur = sec * 1000; _pvRtStart = performance.now();
   sendCmd('timer_start', { duration: sec });
   _pvStopCountdown();
   const pvt = document.getElementById('pv-time');
   if (pvt) pvt.className = 'running';
-  const s = document.getElementById('g6-rt-start');
-  const st = document.getElementById('g6-rt-stop');
-  const l = document.getElementById('g6-rt-lap');
-  if (s) s.disabled = true;
-  if (st) st.disabled = false;
-  if (l && (g6_rtMode === 2 || g6_rtMode === 3)) l.disabled = false;
   if (_pvRtRaf) cancelAnimationFrame(_pvRtRaf);
-  _pvRtRaf = requestAnimationFrame(_pvRtTick);
+  function tick() {
+    if (!g6_cdirRunning) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; g6_rtRunning = false; return; }
+    if (g6_cdirPaused) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; return; }
+    const remain = _pvRtDur - (performance.now() - _pvRtStart);
+    if (remain <= 0) {
+      if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+      try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+      _pvRtRaf = null; g6_rtRunning = false;
+      sendCmd('timer_stop');
+      _fusePendingNext = null;
+      setTimeout(onDone, 300);
+      return;
+    }
+    const fmt = _pvFmtCd(remain);
+    if (pvt) pvt.textContent = fmt;
+    try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+    _pvRtRaf = requestAnimationFrame(tick);
+  }
+  _pvRtRaf = requestAnimationFrame(tick);
 }
 
 // 종소리
@@ -699,39 +748,126 @@ function _g6CdirRingBell() {
   toast('🔔 땡~', 'success');
 }
 
-// 정지
+// 정지 — 완전 종료 (카운트다운 중이어도 즉시)
 function g6CdirStop() {
   g6_cdirRunning = false;
+  g6_cdirPaused = false;
+  _cancelCountdown();
   if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
-  g6TimerStop(); g6RtStop();
+  if (_pvCdRaf) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; }
+  if (_pvRtRaf) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; }
+  g6_cdRunning = false; g6_rtRunning = false;
+  sendCmd('timer_stop');
+  const pvt = document.getElementById('pv-time');
+  if (pvt) pvt.className = 'stopped';
   document.getElementById('g6-cdir-start').disabled = false;
   document.getElementById('g6-cdir-stop').disabled = true;
   _g6CdirUpdateStatus('// 정지됨');
 }
 
-// 퓨즈
+// 퓨즈 — 일시정지 / 재개 토글
+let g6_cdirPaused = false;
+let _fuseRemainCd = 0;   // 경기 타이머 남은 ms
+let _fuseRemainRt = 0;   // 휴식 타이머 남은 ms
+let _fusePendingNext = null; // 일시정지 당시 next 콜백
+
 function g6CdirFuse() {
-  const pfx = g6_cdirMode === 'repeat' ? 'r' : 'c';
-  g6CdirSyncSec(pfx, 1); g6CdirSyncSec(pfx, 2);
-  sendCmd('fuse');
-  _g6CdirUpdateStatus('// 💥 퓨즈 점화!');
-  _runCountdown(() => {
-    const srcs = g6_cdirMode === 'repeat' ? g6_cdirSrcsR : new Set([1,2]);
-    const secCd = Math.max(1, parseInt(document.getElementById('g6-timer-sec')?.value || 60));
-    const secRt = Math.max(1, parseInt(document.getElementById('g6-rt-sec')?.value || 60));
-    [...srcs].sort().forEach(s => {
-      if (s === 1) g6TimerStart();         // 경기용: _runCountdown 포함(이미 호출됨)
-      else _g6RtStartDirect(secRt);        // 휴식: 카운트 없이 바로
-    });
-    setTimeout(() => _g6CdirUpdateStatus('// 타이머 진행 중...'), 100);
-  });
+  if (!g6_cdirPaused) {
+    // ── 일시정지 ──
+    g6_cdirPaused = true;
+    _cancelCountdown(); // 3,2,1 카운트 중이면 취소
+    if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
+    // RAF 멈추고 남은 시간 저장
+    if (_pvCdRaf) {
+      cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null;
+      _fuseRemainCd = Math.max(0, _pvCdDur - (performance.now() - _pvCdStart));
+    }
+    if (_pvRtRaf) {
+      cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null;
+      _fuseRemainRt = Math.max(0, _pvRtDur - (performance.now() - _pvRtStart));
+    }
+    sendCmd('timer_stop');
+    const pvt = document.getElementById('pv-time');
+    if (pvt) pvt.className = '';
+    _g6CdirUpdateStatus('// ⏸ 일시정지');
+    // 퓨즈 버튼 표시 변경
+    const fb = document.getElementById('g6-cdir-fuse');
+    if (fb) { fb.textContent = '▶ 재개'; fb.style.borderColor = 'var(--green)'; fb.style.color = 'var(--green)'; }
+  } else {
+    // ── 재개 ──
+    g6_cdirPaused = false;
+    const pvt = document.getElementById('pv-time');
+    const fb = document.getElementById('g6-cdir-fuse');
+    if (fb) { fb.textContent = '💥 퓨즈'; fb.style.borderColor = 'rgba(255,214,10,.5)'; fb.style.color = 'var(--yellow)'; }
+    // 남은 시간으로 RAF 재시작
+    if (_fuseRemainCd > 0) {
+      _pvCdDur = _fuseRemainCd; _pvCdStart = performance.now();
+      if (pvt) pvt.className = 'running';
+      sendCmd('timer_start', { duration: Math.ceil(_fuseRemainCd / 1000) });
+      g6_cdRunning = true;
+      function tickCd() {
+        if (!g6_cdirRunning || g6_cdirPaused) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; return; }
+        const remain = _pvCdDur - (performance.now() - _pvCdStart);
+        if (remain <= 0) {
+          if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+          try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+          _pvCdRaf = null; g6_cdRunning = false; _fuseRemainCd = 0;
+          sendCmd('timer_stop');
+          if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
+          return;
+        }
+        const fmt = _pvFmtCd(remain);
+        if (pvt) pvt.textContent = fmt;
+        try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+        _pvCdRaf = requestAnimationFrame(tickCd);
+      }
+      _pvCdRaf = requestAnimationFrame(tickCd);
+      _fuseRemainCd = 0;
+    } else if (_fuseRemainRt > 0) {
+      _pvRtDur = _fuseRemainRt; _pvRtStart = performance.now();
+      if (pvt) pvt.className = 'running';
+      sendCmd('timer_start', { duration: Math.ceil(_fuseRemainRt / 1000) });
+      g6_rtRunning = true;
+      function tickRt() {
+        if (!g6_cdirRunning || g6_cdirPaused) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; return; }
+        const remain = _pvRtDur - (performance.now() - _pvRtStart);
+        if (remain <= 0) {
+          if (pvt) { pvt.textContent = '00:00.000'; pvt.className = 'stopped'; }
+          try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+          _pvRtRaf = null; g6_rtRunning = false; _fuseRemainRt = 0;
+          sendCmd('timer_stop');
+          if (_fusePendingNext) { const fn = _fusePendingNext; _fusePendingNext = null; setTimeout(fn, 300); }
+          return;
+        }
+        const fmt = _pvFmtCd(remain);
+        if (pvt) pvt.textContent = fmt;
+        try { localStorage.setItem('sgp_display_time', fmt); } catch(e) {}
+        _pvRtRaf = requestAnimationFrame(tickRt);
+      }
+      _pvRtRaf = requestAnimationFrame(tickRt);
+      _fuseRemainRt = 0;
+    }
+    _g6CdirUpdateStatus('// ▶ 재개됨');
+  }
 }
 
 // 초기화
 function g6CdirReset() {
   g6_cdirRunning = false;
+  g6_cdirPaused = false;
+  _fuseRemainCd = 0; _fuseRemainRt = 0; _fusePendingNext = null;
+  _cancelCountdown();
   if (g6_cdirLoopTimer) { clearTimeout(g6_cdirLoopTimer); g6_cdirLoopTimer = null; }
-  g6TimerReset(); g6RtReset();
+  if (_pvCdRaf) { cancelAnimationFrame(_pvCdRaf); _pvCdRaf = null; }
+  if (_pvRtRaf) { cancelAnimationFrame(_pvRtRaf); _pvRtRaf = null; }
+  g6_cdRunning = false; g6_rtRunning = false;
+  sendCmd('timer_reset');
+  const pvt = document.getElementById('pv-time');
+  if (pvt) { pvt.textContent = '00:00.000'; pvt.className = ''; }
+  try { localStorage.setItem('sgp_display_time', '00:00.000'); } catch(e) {}
+  // 퓨즈 버튼 원상복구
+  const fb = document.getElementById('g6-cdir-fuse');
+  if (fb) { fb.textContent = '💥 퓨즈'; fb.style.borderColor = 'rgba(255,214,10,.5)'; fb.style.color = 'var(--yellow)'; }
   document.getElementById('g6-cdir-start').disabled = false;
   document.getElementById('g6-cdir-stop').disabled = true;
   _g6CdirUpdateStatus();
