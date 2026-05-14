@@ -2813,27 +2813,22 @@ function _beep(freq,dur,vol){
   }catch(e){}
 }
 
-// ── 공용 3,2,1 카운트다운 (오버레이+소리+미리보기) ──
+// ── 공용 3,2,1 카운트다운 (미리보기 안에서만 + 소리) ──
 function _runCountdown(cb){
   let n=3;
-  const ov=document.getElementById('g6-countdown');
-  const nm=document.getElementById('g6-cdnum');
   const pvOv=document.getElementById('pv-countdown-ov');
   const pvNm=pvOv?pvOv.querySelector('.pv-cdn'):null;
-  if(ov&&nm){ov.classList.add('show');nm.textContent=n;}
   if(pvOv){pvOv.style.display='flex';if(pvNm)pvNm.textContent=n;}
-  _beep(440,0.12);
+  _beep(660,0.12,0.5);
   const iv=setInterval(()=>{
     n--;
     if(n>0){
-      if(nm)nm.textContent=n;
       if(pvNm)pvNm.textContent=n;
-      _beep(440,0.12);
+      _beep(660,0.12,0.5);
     } else {
       clearInterval(iv);
-      if(ov)ov.classList.remove('show');
       if(pvOv)pvOv.style.display='none';
-      _beep(880,0.3,0.6);
+      _beep(880,0.5,0.7);
       if(cb)cb();
     }
   },900);
