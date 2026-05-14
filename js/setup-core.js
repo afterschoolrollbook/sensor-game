@@ -1,4 +1,3 @@
-// ⚠️ 리사이즈 구조 포함 — 수정 금지
 /* ── DATA ── */
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},
@@ -97,12 +96,13 @@ const PGAMES=[
 ];
 const ALLG=[...SGAMES,...PGAMES];
 const BLKITEMS=[
-  {k:'header', icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',   bid:'pvh'},
-  {k:'timer',  icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',   bid:'pvt'},
-  {k:'vs',     icon:'⚔️', name:'현재경기 VS',   desc:'선수1 VS 선수2 표시',  bid:'pvvs'},
-  {k:'rank',   icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',   bid:'pvr'},
-  {k:'footer', icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',        bid:'pvf'},
-  {k:'ticker', icon:'📢', name:'티커',          desc:'하단 흐르는 텍스트',   bid:'pvtk'},
+  {k:'header',     icon:'🏷️', name:'행사 헤더',    desc:'행사명 + LIVE 표시',      bid:'pvh'},
+  {k:'timer',      icon:'⏱️', name:'타이머',        desc:'현재 도전자 + 시간',      bid:'pvt'},
+  {k:'challenger', icon:'🧑', name:'도전자 이름',   desc:'개인전 시 도전자 표시',   bid:'pv-chal'},
+  {k:'vs',         icon:'⚔️', name:'현재경기 VS',   desc:'선수1 VS 선수2 표시',     bid:'pvvs'},
+  {k:'rank',       icon:'🏆', name:'실시간 순위판', desc:'상위 N명 순위 표시',      bid:'pvr'},
+  {k:'footer',     icon:'📌', name:'하단 정보',     desc:'게임명 + 시계',           bid:'pvf'},
+  {k:'ticker',     icon:'📢', name:'티커',          desc:'하단 흐르는 텍스트',      bid:'pvtk'},
 ];
 const TITLE_FONTS=[
   {id:'bebas',   name:'Bebas Neue',     css:"'Bebas Neue',cursive"},
@@ -115,24 +115,57 @@ const TC=['#e63946','#4cc9f0','#06d6a0','#ffd60a','#7b2fff','#ff6b35','#f72585',
 
 /* ── STATE ── */
 let cs=1;
-const SL=['기본정보','게임모드','참가자','진행방식','확인/시작'];
+const SL=['기본정보','게임모드','참가자','진행방식','확인/시작','게임 진행'];
 let S={
   en:'',sub:'',gl:'',dt:'',pl:'',sp:'',s1:'',s2:'',
   di:{eventname:true},
-  blk:{header:true,timer:true,vs:true,rank:true,footer:true,ticker:true},
+  blk:{header:true,timer:true,challenger:true,vs:true,rank:true,footer:true,ticker:true},
   titleFont:'bebas',rankCount:6,
+  theme:null,pointColor:null,accentColor:null,
+  vs2Font:'bebas',vs2Bg:'dark',
+  bracket3Font:'bebas',
   gtab:'sensor',selG:'timelap',cat:'all',laps:1,
   rm:'ind',pts:[],proc:'ind-rec',
-  matches:null,matchProc:null,matchPts:null,curMatch:0,curOrderIdx:0,
 };
 
 /* ── INIT ── */
 window.addEventListener('DOMContentLoaded',()=>{
-  try{const a=App.getState();if(a.event?.name)S.en=a.event.name;if(a.participants?.length)S.pts=[...a.participants];if(a.settings?.laps)S.laps=a.settings.laps;}catch(e){}
-  // 매치는 항상 초기화 — 진행방식 선택 후에만 생성
-  S.matches=null;S.matchProc=null;S.matchPts=null;S.curMatch=0;
+  try{
+    const a=App.getState();
+    if(a.event?.name&&a.event.name!=='게임 행사'){
+      S.en=a.event.name;
+      S.sub=a.event.subtitle||'';
+    }
+    if(a.participants?.length)S.pts=[...a.participants];
+    if(a.gameType)S.selG=a.gameType;
+    if(a.mode){const modeMap={'individual':'ind','team':'team'};S.rm=modeMap[a.mode]||a.mode;}
+    if(a.settings){
+      if(a.settings.laps)S.laps=a.settings.laps;
+      if(a.settings.proc)S.proc=a.settings.proc;
+      if(a.settings.rm)S.rm=a.settings.rm;
+      if(a.settings.gl)S.gl=a.settings.gl;
+      if(a.settings.dt)S.dt=a.settings.dt;
+      if(a.settings.pl)S.pl=a.settings.pl;
+      if(a.settings.sp)S.sp=a.settings.sp;
+      if(a.settings.s1)S.s1=a.settings.s1;
+      if(a.settings.s2)S.s2=a.settings.s2;
+      if(a.settings.di)S.di={...S.di,...a.settings.di};
+      if(a.settings.blk)S.blk={...S.blk,...a.settings.blk};
+      if(a.settings.titleFont)S.titleFont=a.settings.titleFont;
+      if(a.settings.rankCount)S.rankCount=a.settings.rankCount;
+      if(a.settings.theme)S.theme=a.settings.theme;
+      if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
+      if(a.settings.matches)S.matches=a.settings.matches;
+      if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
+    }
+  }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
-  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();
+  buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
+  // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
+  const urlParams=new URLSearchParams(location.search);
+  const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
+  if(targetStep>1)goS(targetStep);
+  if(targetStep===6)try{g6Init();}catch(e){}
   // pvcw 크기 바뀔 때마다 scale 재계산
   ['pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
   // restore
@@ -149,33 +182,129 @@ window.addEventListener('DOMContentLoaded',()=>{
 /* ── NAV ── */
 function buildNav(){
   const w=document.getElementById('navsteps');w.innerHTML='';
-  for(let i=1;i<=5;i++){
+  const maxStep=cs===6?6:5;
+  for(let i=1;i<=maxStep;i++){
     if(i>1){const sep=document.createElement('span');sep.className='nsi-sep';sep.textContent='›';w.appendChild(sep);}
     const d=document.createElement('div');
     d.className='nsi'+(i===cs?' active':i<cs?' done':'');
-    d.onclick=()=>goS(i);
+    if(i!==cs)d.onclick=()=>goS(i);
     d.innerHTML=`<span class="nsi-num">${String(i).padStart(2,'0')}</span><span class="nsi-label">${SL[i-1]}</span>`;
     w.appendChild(d);
   }
 }
 function goS(n){
   document.getElementById('s'+cs).classList.remove('active');
-  cs=Math.max(1,Math.min(5,n));
+  cs=Math.max(1,Math.min(6,n));
   document.getElementById('s'+cs).classList.add('active');
   buildNav();updateNav();
+  if(cs===3)buildMG();
+  if(cs===4)buildProc();
   if(cs===5)buildConfirm();
+  if(cs===6)g6Refresh();
   updatePv();
 }
-function nextS(){if(cs<5)goS(cs+1);}
+function saveAndNext(){
+  saveCurrentStep();
+  if(cs<5)goS(cs+1);
+}
 function prevS(){if(cs>1)goS(cs-1);}
 function updateNav(){
   buildStepSummary(cs);
-  document.getElementById('bprev').style.display=cs===1?'none':'';
+  document.getElementById('bprev').style.display=(cs===1)?'none':'';
   const bn=document.getElementById('bnext');
-  if(cs===5){bn.style.display='none';}
-  else{bn.style.display='';const lb=['','다음 → 게임 모드','다음 → 참가자','다음 → 진행방식','다음 → 확인&시작'];bn.textContent=lb[cs]||'다음 →';}
+  const badge=document.getElementById('saved-badge');
+  const bstart=document.querySelector('.bstart');
+  if(cs===6){
+    bn.style.display='none';
+    if(badge)badge.style.display='none';
+    if(bstart)bstart.style.display='none';
+  } else if(cs===5){
+    bn.style.display='none';
+    if(badge)badge.style.display='none';
+    if(bstart)bstart.style.display='';
+  } else {
+    bn.style.display='';
+    if(bstart)bstart.style.display='none';
+    const lb=['','💾 저장 후 다음 (게임 모드)','💾 저장 후 다음 (참가자)','💾 저장 후 다음 (진행방식)','💾 저장 후 다음 (확인&시작)'];
+    bn.textContent=lb[cs]||'💾 저장 후 다음';
+    const saved=App.getState();
+    const isSaved=saved.event?.name&&saved.event.name!=='게임 행사';
+    if(badge){badge.style.display=isSaved?'flex':'none';}
+  }
 }
 
+
+
+/* ── 스텝 저장 ── */
+function saveCurrentStep(){
+  // 스텝1 입력값 동기화
+  const enEl=document.getElementById('f-en');
+  if(enEl)S.en=enEl.value;
+  const subEl=document.getElementById('f-sub');
+  if(subEl)S.sub=subEl.value;
+  const glEl=document.getElementById('f-gl');
+  if(glEl)S.gl=glEl.value;
+  const dtEl=document.getElementById('f-dt');
+  if(dtEl)S.dt=dtEl.value;
+  const plEl=document.getElementById('f-pl');
+  if(plEl)S.pl=plEl.value;
+  const spEl=document.getElementById('f-sp');
+  if(spEl)S.sp=spEl.value;
+  const s1El=document.getElementById('f-s1');
+  if(s1El)S.s1=s1El.value;
+  const s2El=document.getElementById('f-s2');
+  if(s2El)S.s2=s2El.value;
+
+  // 전체 저장
+  App.setState({
+    eventId: S.eventId||null,
+    event:{
+      name:S.en||'',
+      subtitle:S.sub||'',
+      logo:null,
+      theme:'dark-racing',
+      primaryColor:'#e63946',
+      accentColor:'#4cc9f0',
+      sound:true,
+    },
+    gameType:S.selG,
+    mode:S.rm,
+    participants:S.pts,
+    settings:{
+      laps:S.laps||1,
+      proc:S.proc,
+      rm:S.rm,
+      gl:S.gl,
+      dt:S.dt,
+      pl:S.pl,
+      sp:S.sp,
+      s1:S.s1,
+      s2:S.s2,
+      di:S.di,
+    }
+  });
+
+  // 저장 뱃지 표시
+  const badge=document.getElementById('saved-badge');
+  if(badge){
+    badge.style.display='flex';
+    badge.textContent='✓ 저장됨';
+  }
+  // sgp_history 동기화
+  if(S.en&&S.en!=='게임 행사'){
+    try{
+      const history=JSON.parse(localStorage.getItem('sgp_history')||'[]');
+      if(!S.eventId)S.eventId='ev_'+Date.now();
+      const entry={id:S.eventId,name:S.en,date:S.dt||new Date().toLocaleDateString('ko-KR'),game:S.selG||'',mode:S.rm||'ind',participants:S.pts.length};
+      const idx=history.findIndex(h=>h.id===S.eventId);
+      if(idx>=0)history[idx]=entry;else history.push(entry);
+      localStorage.setItem('sgp_history',JSON.stringify(history));
+    }catch(e){}
+  }
+  // 마지막 저장 스텝 기록 — 다음 스텝으로, 뒤로 가도 덮어쓰지 않음
+  try{const next=Math.min(cs+1,6);const cur=parseInt(localStorage.getItem('sgp_last_step')||'1');if(next>cur)localStorage.setItem('sgp_last_step',String(next));}catch(e){}
+  toast('저장 완료!','success',1500);
+}
 
 /* ── RESIZER ── */
 function initResizer(){
@@ -235,6 +364,7 @@ function buildBlkChips(){
       const t=document.getElementById(b.bid);
       if(t)t.classList.toggle('pv-hidden',!this.checked);
       updateRankLayout();
+      saveCfgNow(); // 실시간 전광판 반영
     };
     // 드래그
     item.addEventListener('dragstart',e=>{dragSrc=idx;item.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
@@ -248,6 +378,7 @@ function buildBlkChips(){
       BLKITEMS.splice(idx,0,moved);
       dragSrc=null;
       buildBlkChips();
+      saveCfgNow(); // 순서 변경도 반영
       toast('순서 변경됨','success');
     });
     w.appendChild(item);
@@ -259,14 +390,100 @@ function buildFontPicker(){
     const el=document.createElement('div');
     el.className='ds-font'+(S.titleFont===f.id?' on':'');
     el.style.fontFamily=f.css;el.textContent=f.name;
-    el.onclick=()=>{S.titleFont=f.id;document.querySelectorAll('.ds-font').forEach(x=>x.classList.remove('on'));el.classList.add('on');const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;};
+    el.onclick=()=>{
+      S.titleFont=f.id;
+      document.querySelectorAll('#fontpicker .ds-font').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      // 1번 미리보기
+      const en=document.getElementById('pv-ename');if(en)en.style.fontFamily=f.css;
+      // 2번 미리보기
+      const pv2p1=document.getElementById('pv2-p1');if(pv2p1)pv2p1.style.fontFamily=f.css;
+      const pv2p2=document.getElementById('pv2-p2');if(pv2p2)pv2p2.style.fontFamily=f.css;
+      const pv2vs=document.querySelector('#pv2 .pv2-vs');if(pv2vs)pv2vs.style.fontFamily=f.css;
+      // 3번 미리보기 (pv3-pl)
+      document.querySelectorAll('#pv3 .pv3-pl').forEach(x=>x.style.fontFamily=f.css);
+      saveCfgNow();
+    };
     w.appendChild(el);
   });
 }
-function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();}
+function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveCfgNow();}
 function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
-function sendCmd(t){try{localStorage.setItem('sgp_display_cmd',JSON.stringify({type:t,ts:Date.now()}));}catch(e){}toast('전송: '+t,'success');}
+function sendCmd(t,extra){
+  const payload={type:t,ts:Date.now(),...(extra||{})};
+  try{localStorage.setItem('sgp_display_cmd',JSON.stringify(payload));}catch(e){}
+  try{if(_bc)_bc.postMessage(payload);}catch(e){}
+  toast('전송: '+t,'success');
+  // 미리보기 동기화
+  _pvHandleCmd(payload);
+}
+
+function _pvHandleCmd(cmd){
+  if(!cmd) return;
+  const pvTime=document.getElementById('pv-time');
+
+  if(cmd.type==='timer_start'){
+    if(cmd.duration){
+      _pvStartCountdown(cmd.duration);
+    } else {
+      // 출발형 타이머 — g6Tick이 이미 처리
+    }
+    if(pvTime) pvTime.className='running';
+  }
+  if(cmd.type==='timer_stop'){
+    _pvStopCountdown();
+    if(pvTime) pvTime.className='stopped';
+  }
+  if(cmd.type==='timer_reset'){
+    _pvStopCountdown();
+    if(pvTime){pvTime.textContent='00:00.000';pvTime.className='';}
+  }
+  if(cmd.type==='countdown'){
+    _runCountdown(null);
+  }
+  if(cmd.type==='clear_rank'){
+    updatePv();
+  }
+  if(cmd.type==='winner'){
+    const ov=document.getElementById('pv-winner-ov');
+    const nm=document.getElementById('pv-winner-name');
+    const tm=document.getElementById('pv-winner-time');
+    if(ov&&nm){
+      nm.textContent=cmd.name||'—';
+      if(tm) tm.textContent=cmd.time?cmd.time:'';
+      ov.style.display='flex';
+      clearTimeout(ov._t);
+      ov._t=setTimeout(()=>{ ov.style.display='none'; },5000);
+    }
+  }
+}
 function saveDsCfg(){try{const cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');cfg.autoSwitch=document.getElementById('ds-autoswitch')?.checked;cfg.switchInterval=parseInt(document.getElementById('ds-interval')?.value||8);localStorage.setItem('sgp_display_config',JSON.stringify(cfg));}catch(e){}}
+
+/* ── 실시간 config 저장 (전광판 즉시 반영용) ── */
+function saveCfgNow(){
+  try{
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+      theme:S.theme||null,
+      pointColor:S.pointColor||null,
+      accentColor:S.accentColor||null,
+      vs2Font:S.vs2Font||null,
+      bracket3Font:S.bracket3Font||null,
+      vs2Bg:S.vs2Bg||'dark',
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
+  }catch(e){}
+}
+/* ── BroadcastChannel: storage 이벤트 보완 ── */
+let _bc=null;
+try{_bc=new BroadcastChannel('sgp_cmd');}catch(e){}
 
 /* ── CHIPS ── */
 function buildChips(){
@@ -294,6 +511,326 @@ function fc(){
 }
 
 
+/* ── STEP3 요약 ── */
+
+function buildStepSummary(step){
+  const g=ALLG.find(x=>x.id===S.selG);
+  const rm=REGMODES.find(x=>x.id===S.rm);
+  const allItems=[
+    {k:'행사명', v:S.en, icon:'📋'},
+    {k:'종목',   v:S.gl, icon:'🏅'},
+    {k:'게임',   v:g?g.name:'', icon:'🎮'},
+    {k:'일시',   v:S.dt, icon:'📅'},
+    {k:'장소',   v:S.pl, icon:'📍'},
+  ].filter(x=>x.v);
+
+  // 스텝2: 기본정보 요약
+  const s2el=document.getElementById('s2-summary');
+  if(s2el&&step===2){
+    const items=allItems.filter(x=>['행사명','일시','장소'].includes(x.k));
+    s2el.innerHTML=items.length?`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 기본 정보</div>
+        <div class="s3sum-row">${items.map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`:'';
+  }
+
+  // 스텝3: 기본정보 + 게임모드 요약
+  const s3el=document.getElementById('s3-summary');
+  if(s3el&&step===3){
+    s3el.innerHTML=allItems.length?`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 이전 설정 요약</div>
+        <div class="s3sum-row">${allItems.map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`:'';
+    buildS3Sample();
+  }
+
+  // 스텝4: 기본정보 + 게임 + 참가방식 요약
+  const s4el=document.getElementById('s4-summary');
+  if(s4el&&step===4){
+    const items=[...allItems];
+    if(rm)items.push({k:'참가방식',v:rm.name,icon:'👥'});
+    items.push({k:'참가자',v:S.pts.length+'명',icon:'🧑'});
+    s4el.innerHTML=`
+      <div class="s3-sum-box">
+        <div class="s3sum-title">📌 이전 설정 요약</div>
+        <div class="s3sum-row">${items.filter(x=>x.v).map(x=>`<div class="s3sum-tag"><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}</div>
+      </div>`;
+  }
+}
+
+function buildS3Summary(){
+  const el=document.getElementById('s3-summary');if(!el)return;
+  const g=ALLG.find(x=>x.id===S.selG);
+  const items=[
+    {k:'행사명', v:S.en||'—', icon:'📋'},
+    {k:'종목',   v:S.gl||(g?g.name:'—'), icon:'🏅'},
+    {k:'게임',   v:g?g.name:'—', icon:'🎮'},
+    {k:'일시',   v:S.dt||'—', icon:'📅'},
+    {k:'장소',   v:S.pl||'—', icon:'📍'},
+  ].filter(x=>x.v&&x.v!=='—');
+  el.innerHTML=`
+    <div class="s3sum-title">📌 이전 설정 요약</div>
+    <div class="s3sum-row">
+      ${items.map(x=>`<div class="s3sum-tag"><span>${x.icon}</span><span class="s3k">${x.k}</span><span class="s3v">${x.v}</span></div>`).join('')}
+    </div>`;
+}
+
+/* ── STEP3 샘플 다운로드 ── */
+const SAMPLE_COLS={
+  ind:    ['이름'],
+  weight: ['이름','체급'],
+  divind: ['이름','부문','체급'],
+  team:   ['팀명','이름'],
+  teamwt: ['팀명','이름','체급'],
+  divteam:['팀명','이름','부문','체급'],
+};
+function buildS3Sample(){
+  const el=document.getElementById('s3-sample');if(!el)return;
+  const rm=REGMODES.find(x=>x.id===S.rm)||REGMODES[0];
+  const cols=SAMPLE_COLS[S.rm]||['이름'];
+  el.innerHTML=`
+    <div class="s3sample-title">📥 엑셀 샘플 다운로드</div>
+    <button class="s3sample-btn" onclick="dlSample()">⬇️ ${rm.name} 샘플 (.xlsx)</button>
+    <span style="font-size:10px;color:var(--text3)">컬럼: ${cols.join(', ')}</span>`;
+}
+function dlSample(){
+  const rm=S.rm||'ind';
+  const rm_obj=REGMODES.find(x=>x.id===rm)||{name:'샘플'};
+  const fileMap={
+    ind:     'samples/SGP_개인전_샘플.xlsx',
+    weight:  'samples/SGP_체급개인전_샘플.xlsx',
+    divind:  'samples/SGP_부문체급개인전_샘플.xlsx',
+    team:    'samples/SGP_팀전_샘플.xlsx',
+    teamwt:  'samples/SGP_체급팀전_샘플.xlsx',
+    divteam: 'samples/SGP_부문체급팀전_샘플.xlsx',
+  };
+  const url=fileMap[rm]||fileMap['ind'];
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=url.split('/').pop();
+  a.click();
+  toast(rm_obj.name+' 샘플 다운로드!','success');
+}
+
+/* 엑셀 업로드 (CSV/xlsx 파싱) */
+function impXlsNew(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='.csv,.xlsx,.xls';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      let rows=[];
+      const isCsv=file.name.endsWith('.csv');
+      if(isCsv){
+        // CSV 파싱
+        const text=ev.target.result.replace(/^\uFEFF/,'');
+        const lines=text.split('\n').filter(l=>l.trim());
+        rows=lines.map(l=>l.split(',').map(v=>v.replace(/"/g,'').trim()));
+      } else {
+        // XLSX 파싱
+        const data=new Uint8Array(ev.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      }
+      if(!rows.length)return;
+      const headers=rows[0].map(h=>String(h).trim().toLowerCase());
+      const nameIdx=headers.findIndex(h=>h==='이름'||h==='name');
+      const teamIdx=headers.findIndex(h=>h==='팀명'||h==='team');
+      const weightIdx=headers.findIndex(h=>h==='체급'||h==='weight');
+      const divIdx=headers.findIndex(h=>h==='부문'||h==='division');
+      const genderIdx=headers.findIndex(h=>h==='성별'||h==='gender');
+      if(nameIdx<0){toast('이름 컬럼을 찾을 수 없어요','error');return;}
+      let added=0;
+      rows.slice(1).forEach((cols,i)=>{
+        const name=String(cols[nameIdx]||'').trim();
+        if(!name)return;
+        S.pts.push({
+          id:'p_'+Date.now()+'_'+i,
+          name,
+          team:teamIdx>=0?String(cols[teamIdx]||'').trim():'',
+          weight:weightIdx>=0?String(cols[weightIdx]||'').trim():'',
+          division:divIdx>=0?String(cols[divIdx]||'').trim():'',
+          gender:genderIdx>=0?String(cols[genderIdx]||'').trim():'',
+          color:TC[S.pts.length%TC.length]
+        });
+        added++;
+      });
+      renderPL();updatePv();
+      try{App.setState({participants:S.pts});}catch(e2){}
+      toast(added+'명 불러오기 완료!','success');
+    };
+    if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
+    else reader.readAsArrayBuffer(file);
+  };
+  input.click();
+}
+
+/* ── GAME GRID ── */
+function buildGG(){
+  const games=S.gtab==='sensor'?SGAMES:PGAMES;
+  const cats=[...new Set(games.map(g=>g.cat))];
+  const cl={speed:'속도/시간',power:'힘/순간',target:'정확도',field:'육상',aqua:'수상',cycle:'사이클',martial:'무술'};
+  const fw=document.getElementById('gfilters');fw.innerHTML='';
+  const a=document.createElement('span');a.className='gfb'+(S.cat==='all'?' active':'');a.textContent='전체';a.onclick=()=>{S.cat='all';buildGG();};fw.appendChild(a);
+  cats.forEach(c=>{const b=document.createElement('span');b.className='gfb'+(S.cat===c?' active':'');b.textContent=cl[c]||c;b.onclick=()=>{S.cat=c;buildGG();};fw.appendChild(b);});
+  const gw=document.getElementById('ggrid');gw.innerHTML='';
+  const filtered=S.cat==='all'?games:games.filter(g=>g.cat===S.cat);
+  filtered.forEach(g=>{
+    const d=document.createElement('div');
+    d.className='gc'+(S.selG===g.id?' sel':'');
+    if(S.selG===g.id)d.style.setProperty('--red',g.ac);
+    d.innerHTML=`<div class="gc-icon">${g.icon}</div><div class="gc-name">${g.name}</div><div class="gc-desc">${g.desc}</div><div class="gc-tag">${g.tag}</div>`;
+    d.onclick=()=>{S.selG=g.id;buildGG();updatePv();};
+    gw.appendChild(d);
+  });
+  if(document.getElementById('lapv'))document.getElementById('lapv').textContent=S.laps;
+}
+function switchTab(t){S.gtab=t;S.cat='all';document.getElementById('tab-s').classList.toggle('active',t==='sensor');document.getElementById('tab-p').classList.toggle('active',t==='sport');buildGG();}
+function chLaps(d){S.laps=Math.max(1,Math.min(20,S.laps+d));if(document.getElementById('lapv'))document.getElementById('lapv').textContent=S.laps;updatePv();}
+
+/* ── MODE GRID ── */
+function buildMG(){
+  buildS3Summary();buildS3Sample();
+  const w=document.getElementById('mgrid');w.innerHTML='';
+  REGMODES.forEach(m=>{
+    const d=document.createElement('div');
+    d.className='mc'+(S.rm===m.id?' sel':'');
+    d.innerHTML=`<div class="mc-icon">${m.icon}</div><div class="mc-name">${m.name}</div><div class="mc-sub">${m.sub}</div>`;
+    d.onclick=()=>{S.rm=m.id;buildMG();renderPA();try{const a=App.getState();App.setState(Object.assign({},a,{mode:S.rm,settings:Object.assign({},a.settings||{},{rm:S.rm})}));}catch(e){}};
+    w.appendChild(d);
+  });
+}
+
+/* ── PARTICIPANT AREA ── */
+function renderPA(){
+  const isT=S.rm.startsWith('team')||S.rm==='divteam';
+  document.getElementById('ptarea').innerHTML=`
+    <div class="pa">
+      <div class="par">
+        <input class="fi" id="pti" placeholder="${isT?'팀 이름':'참가자 이름'} 입력" onkeydown="if(event.key==='Enter')addPt()">
+        <select id="ptg" style="padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;cursor:pointer;">
+          <option value="">성별</option>
+          <option value="남">남</option>
+          <option value="여">여</option>
+        </select>
+        <button class="badd" onclick="addPt()">+ 추가</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;" id="pt-count"></span>
+        <button onclick="clearAllPts()" style="font-size:11px;color:#e63946;background:transparent;border:1px solid #e63946;border-radius:4px;padding:2px 8px;cursor:pointer;">전체 삭제</button>
+      </div>
+      <div class="plist" id="plist"></div>
+      <button class="bxls" onclick="impXlsNew()">📂 CSV/엑셀에서 불러오기</button>
+    </div>`;
+  renderPL();
+}
+function renderPL(){
+  const l=document.getElementById('plist');if(!l)return;l.innerHTML='';
+  const cnt=document.getElementById('pt-count');if(cnt)cnt.textContent=S.pts.length?S.pts.length+'명':'';
+  S.pts.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='ptag';
+    const tags=[];
+    if(p.gender&&p.gender.trim())tags.push(`<span style="font-size:10px;background:${p.gender==='남'?'rgba(76,201,240,0.2)':'rgba(255,100,150,0.2)'};border-radius:3px;padding:1px 5px;color:${p.gender==='남'?'var(--accent)':'#ff6496'}">${p.gender}</span>`);
+    if(p.weight&&p.weight.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.weight}</span>`);
+    if(p.division&&p.division.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.1);border-radius:3px;padding:1px 5px;color:var(--text2)">${p.division}</span>`);
+    if(p.team&&p.team.trim())tags.push(`<span style="font-size:10px;background:rgba(255,255,255,.07);border-radius:3px;padding:1px 5px;color:var(--text3)">${p.team}</span>`);
+    d.innerHTML=`<div class="pt-clr" style="background:${p.color||TC[i%TC.length]}"></div><div class="pt-nm">${p.name}</div>${tags.join('')}<div class="pt-x" onclick="delPt('${p.id}')">×</div>`;
+    l.appendChild(d);
+  });
+}
+function addPt(){
+  const inp=document.getElementById('pti');if(!inp)return;
+  const nm=inp.value.trim();if(!nm){toast('이름을 입력해주세요.','error');return;}
+  const gender=(document.getElementById('ptg')||{value:''}).value;
+  S.pts.push({id:'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),name:nm,gender,color:TC[S.pts.length%TC.length]});
+  inp.value='';inp.focus();renderPL();updatePv();
+  try{App.setState({participants:S.pts});}catch(e){}
+}
+function delPt(id){S.pts=S.pts.filter(p=>p.id!==id);renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}}
+function clearAllPts(){if(!S.pts.length)return;if(!confirm('참가자 전체를 삭제할까요?'))return;S.pts=[];renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}}
+function impXls(){
+  try{if(typeof ExcelIO!=='undefined'&&ExcelIO.importExcel){ExcelIO.importExcel(rows=>{rows.forEach((r,i)=>{if(r.name)S.pts.push({id:'p_'+Date.now()+'_'+i,name:r.name,color:TC[S.pts.length%TC.length]});});renderPL();updatePv();try{App.setState({participants:S.pts});}catch(e){}});}else toast('엑셀 기능 준비 중','info');}
+  catch(e){toast('엑셀 오류','error');}
+}
+
+/* ── PROC ── */
+// buildProc은 step4.js에서 정의됨
+
+/* ── CONFIRM ── */
+function buildConfirm(){
+  const g=ALLG.find(x=>x.id===S.selG)||{name:S.selG};
+  const pr=PROCS.find(x=>x.id===S.proc)||{name:S.proc};
+  const modeIdMap={'individual':'ind','team':'team'};
+  const rmId=modeIdMap[S.rm]||S.rm;
+  const rm=REGMODES.find(x=>x.id===rmId)||REGMODES[0];
+  const items=[
+    {k:'행사명',v:S.en||'—'},{k:'종목명',v:S.gl||g.name||'—'},
+    {k:'일시',v:S.dt||'—'},{k:'장소',v:S.pl||'—'},
+    {k:'게임',v:g.name||'—'},
+    {k:'참가방식',v:rm.name},
+  ];
+  const cg=document.getElementById('cgrid');cg.innerHTML='';
+  items.forEach(x=>{const d=document.createElement('div');d.className='cbox';d.innerHTML=`<div class="ck">${x.k}</div><div class="cv${x.v==='—'?' empty':''}">${x.v}</div>`;cg.appendChild(d);});
+  const pb=document.getElementById('ptbadges');pb.innerHTML='';
+  if(!S.pts.length){pb.innerHTML='<div style="color:var(--text3);font-size:13px">참가자 없음</div>';}
+  else{try{buildParticipantGroups(pb);}catch(e){S.pts.slice(0,20).forEach(p=>{const d=document.createElement('div');d.className='ptbadge';d.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${p.color}"></div>${p.name}`;pb.appendChild(d);});if(S.pts.length>20){const m=document.createElement('div');m.className='ptbadge';m.textContent=`+${S.pts.length-20}명`;pb.appendChild(m);}}}
+  // start button
+  const nav=document.getElementById('snav');
+  if(!nav.querySelector('.bstart')){
+    const a=document.createElement('button');a.className='bstart';
+    a.onclick=()=>{saveCurrentStep();saveAll();localStorage.setItem('sgp_last_step','6');goS(6);g6Init();};
+    a.innerHTML='🚀 게임 시작';nav.appendChild(a);
+  }
+}
+function saveAll(){
+  try{
+    const prev=App.getState();
+    App.setState({
+      event:{name:S.en||'SGP 행사',subtitle:S.sub,primaryColor:S.pointColor||'#e63946',accentColor:'#4cc9f0'},
+      gameType:S.selG,
+      mode:S.rm,
+      participants:S.pts,
+      settings:{
+        ...((prev&&prev.settings)||{}),
+        laps:S.laps||1,
+        proc:S.proc,
+        rm:S.rm,
+        gl:S.gl||'',
+        dt:S.dt||'',
+        pl:S.pl||'',
+        sp:S.sp||'',
+        s1:S.s1||'',
+        s2:S.s2||'',
+        di:S.di,
+        blk:S.blk,
+        titleFont:S.titleFont,
+        rankCount:S.rankCount,
+        theme:S.theme||null,
+        pointColor:S.pointColor||null,
+        matches:S.matches||null,
+        groupBrackets:S.groupBrackets||null,
+      }
+    });
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+      theme:S.theme||null,
+      pointColor:S.pointColor||null,
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
+  }catch(e){}
+}
+
 /* ── PREVIEW UPDATE ── */
 function updatePv(){
   const sh=k=>S.di[k];
@@ -301,24 +838,47 @@ function updatePv(){
   _en.textContent=(sh('eventname')&&S.en)||'SGP 행사';
   const _tf=TITLE_FONTS.find(f=>f.id===S.titleFont)||TITLE_FONTS[0];
   _en.style.fontFamily=_tf.css;
+  // 2번 미리보기 폰트
+  const pv2p1=document.getElementById('pv2-p1');if(pv2p1)pv2p1.style.fontFamily=_tf.css;
+  const pv2p2=document.getElementById('pv2-p2');if(pv2p2)pv2p2.style.fontFamily=_tf.css;
+  const pv2vs=document.querySelector('#pv2 .pv2-vs');if(pv2vs)pv2vs.style.fontFamily=_tf.css;
+  // 3번 미리보기 폰트
+  document.querySelectorAll('#pv3 .pv3-pl').forEach(x=>x.style.fontFamily=_tf.css);
   document.getElementById('pv-sub').textContent=(sh('subtitle')&&S.sub)||'';
-  document.getElementById('pv-chal').textContent=S.pts.length?S.pts[0].name:'—';
+  document.getElementById('pv-chal').textContent=(S.matches&&S.matches.length&&S.pts.length)?S.pts[0].name:'—';
   document.getElementById('pv-lap').textContent=`LAP 1 / ${S.laps}`;
   buildRanks();
   const g=ALLG.find(x=>x.id===S.selG);
   document.getElementById('pv-gname').textContent=(sh('gamename')&&(S.gl||g?.name))||g?.name||'SGP PLATFORM';
   buildTicker();
-  // 스텝4 이전엔 2번/3번 화면 비움
-  if(typeof cs!=='undefined'&&cs<4){clearPv23();}else{updatePvVs();updatePv2();updatePv3();}
-  updateRankLayout();
-  try{localStorage.setItem('sgp_display_config',JSON.stringify({eventName:S.en,subtitle:S.sub,gameLabel:S.gl,slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,displayItems:S.di}));}catch(e){}
+  updatePvVs();updatePv2();updatePv3();updateRankLayout();
+  // 기존 config 유지하면서 병합 저장 (autoSwitch 등 패널 설정 보존)
+  try{
+    const existingCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    const cfg=Object.assign(existingCfg,{
+      eventName:S.en,subtitle:S.sub,gameLabel:S.gl,
+      dt:S.dt,pl:S.pl,
+      slogan1:S.s1,slogan2:S.s2,sponsor:S.sp,
+      displayItems:S.di,
+      blk:S.blk,
+      titleFont:S.titleFont,
+      rankCount:S.rankCount,
+      theme:S.theme||null,
+      pointColor:S.pointColor||null,
+      accentColor:S.accentColor||null,
+      vs2Font:S.vs2Font||null,
+      bracket3Font:S.bracket3Font||null,
+      vs2Bg:S.vs2Bg||'dark',
+    });
+    localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
+  }catch(e){}
 }
 function buildRanks(){
   const w=document.getElementById('pvr');w.innerHTML='';
   const medals=['🥇','🥈','🥉'];
   const cnt=S.rankCount||6;
   for(let i=0;i<cnt;i++){
-    const p=S.pts[i];
+    const p=(S.matches&&S.matches.length)?S.pts[i]:null;
     const d=document.createElement('div');
     d.className='rrow'+(i===0?' r1':'')+(p?'':' empty');
     const rn=i<3?medals[i]:`<span style="color:var(--text3)">${i+1}</span>`;
@@ -329,7 +889,8 @@ function buildRanks(){
 }
 
 function updatePvVs(){
-  const p1=S.pts[0],p2=S.pts[1];
+  const hasMatches=S.matches&&S.matches.length>0;
+  const p1=hasMatches?S.pts[0]:null,p2=hasMatches?S.pts[1]:null;
   const e1=document.getElementById('pvvs-p1');
   const e2=document.getElementById('pvvs-p2');
   if(e1)e1.textContent=p1?p1.name:'—';
@@ -340,6 +901,11 @@ function updateRankLayout(){
   if(!pvm)return;
   pvm.classList.toggle('rank-off',!S.blk.rank);
   pvm.classList.toggle('vs-off',!S.blk.vs);
+  // 도전자 이름 표시/숨김 (개인전 토글)
+  const chalEl=document.getElementById('pv-chal');
+  const chalLbl=chalEl?chalEl.previousElementSibling:null;
+  if(chalEl) chalEl.style.display=S.blk.challenger!==false?'':'none';
+  if(chalLbl&&chalLbl.classList.contains('tvlbl')) chalLbl.style.display=S.blk.challenger!==false?'':'none';
 }
 function buildTicker(){
   const sh=k=>S.di[k];
@@ -363,52 +929,152 @@ function togBlk(id,el){
 
 
 /* ── 2번/3번 화면 ── */
-
-function clearPv23(){
-  const e1=document.getElementById('pv2-p1');if(e1)e1.textContent='—';
-  const e2=document.getElementById('pv2-p2');if(e2)e2.textContent='—';
-  const ei=document.getElementById('pv2-info');if(ei)ei.textContent='진행방식을 선택해주세요';
-  const e3=document.getElementById('pv3-inner');
-  if(e3)e3.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">진행방식을 선택해주세요</div>';
-}
+const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
 function updatePv2(){
-  const hasMatch=S.matches&&S.matches.length>0;
-  let p1=null,p2=null;
-  if(hasMatch){
-    // 현재 진행중인 매치 찾기
+  // bracket-view에서 수동 선택한 경기 우선 사용
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    if(mv.p1){
+      document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
+      document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
+      document.getElementById('pv2-info').textContent=mv.label||'진행 중';
+      return;
+    }
+  }catch(e){}
+  let p1=null,p2=null,matchInfo='참가자를 등록해주세요';
+  if(S.matches&&S.matches.length){
+    let found=null,totalM=0,completedM=0;
     for(let ri=0;ri<S.matches.length;ri++){
       for(let mi=0;mi<S.matches[ri].length;mi++){
         const m=S.matches[ri][mi];
-        if(!m.winner&&m.p1&&m.p2){p1=m.p1;p2=m.p2;break;}
+        if(m.p1&&m.p2){
+          totalM++;
+          if(m.winner)completedM++;
+          else if(!found&&m.p1&&m.p2)found=m;
+        }
       }
-      if(p1)break;
     }
+    if(found){p1=found.p1;p2=found.p2;matchInfo='경기 '+(completedM+1)+' / '+totalM;}
+    else if(totalM>0){matchInfo='모든 경기 완료';}
+    else{matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';}
+  } else if(S.pts.length>=2){
+    // Step 4 매칭 전 — 이름 표시 안 함
+    matchInfo='진행방식(Step 4)에서 대진 설정 후 표시됩니다';
   }
-  document.getElementById('pv2-p1').textContent=p1?p1.name:'—';
-  document.getElementById('pv2-p2').textContent=p2?p2.name:'—';
-  document.getElementById('pv2-info').textContent=hasMatch&&p1&&p2?'경기 진행중':'진행방식을 선택해주세요';
+  document.getElementById('pv2-p1').textContent=p1?cleanName(p1.name):'—';
+  document.getElementById('pv2-p2').textContent=p2?cleanName(p2.name):'—';
+  document.getElementById('pv2-info').textContent=matchInfo;
 }
-function updatePv3(){
-  const el=document.getElementById('pv3-inner');if(!el)return;el.innerHTML='';
-  if(!S.matches||!S.matches.length){
-    el.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">진행방식을 선택해주세요</div>';
-    return;
-  }
-  const rn=['결승','준결승','8강','16강','32강'].slice(0,S.matches.length).reverse();
-  S.matches.forEach((matches,ri)=>{
-    const col=document.createElement('div');col.className='pv3-col';
-    col.innerHTML='<div class="pv3-ct">'+(rn[ri]||ri+1+'R')+'</div>';
-    matches.forEach(m=>{
-      const p1=m.p1,p2=m.p2;
-      const el2=document.createElement('div');el2.className='pv3-match';
-      el2.innerHTML='<div class="pv3-pl" style="color:'+(p1?p1.color:'var(--text3)')+'">'+( p1?p1.name:'BYE')+'</div>'
-               +'<div class="pv3-pl" style="color:'+(p2?p2.color:'var(--text3)')+'">'+( p2?p2.name:'BYE')+'</div>';
-      col.appendChild(el2);
+function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi){
+  function stripScroll(div){
+    div.querySelectorAll('*').forEach(el=>{
+      if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
     });
-    el.appendChild(col);
-  });
+  }
+  window.isCurrentMatchIdx=function(ri,mi){
+    if(curRi<0||curMi<0) return false;
+    const curGrp=S.matches?.[0]?.[0]?._groupLabel||'';
+    return ri===curRi&&mi===curMi&&curGrp===curGroupLabel;
+  };
+  const saved=S.matches;
+  view.innerHTML='';
+  view.style.overflow='auto';
+  if(layout==='D'&&courtCount>=2){
+    const lGroups=groups.filter(g=>g.court===1);
+    const rGroups=groups.filter(g=>g.court===2);
+    const rowCount=Math.max(lGroups.length,rGroups.length);
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:100%;padding:12px;';
+    const hdrRow=document.createElement('div');hdrRow.style.cssText='display:flex;flex-direction:row;gap:0;margin-bottom:6px;';
+    const mkLbl=(txt,align)=>{const d=document.createElement('div');d.style.cssText=`font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;text-align:${align};`;d.textContent=txt;return d;};
+    const hL=document.createElement('div');hL.style.cssText='padding-right:24px;flex-shrink:0;';hL.appendChild(mkLbl('// 경기장 1','left'));
+    const hSp=document.createElement('div');hSp.style.cssText='flex:1;min-width:40px;';
+    const hR=document.createElement('div');hR.style.cssText='padding-left:24px;flex-shrink:0;display:flex;justify-content:flex-end;';
+    if(rGroups.length) hR.appendChild(mkLbl('// 경기장 2','right'));
+    hdrRow.appendChild(hL);hdrRow.appendChild(hSp);hdrRow.appendChild(hR);
+    outerWrap.appendChild(hdrRow);
+    const mkSection=(g,reversed)=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      const sec=document.createElement('div');sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
+      hdr.textContent=shortLabel;sec.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      try{_renderBracketHTML(groupWrap,taggedMatches,'top',reversed);stripScroll(groupWrap);}catch(e){}
+      sec.appendChild(groupWrap);return sec;
+    };
+    for(let i=0;i<rowCount;i++){
+      const row=document.createElement('div');row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;';
+      const cL=document.createElement('div');cL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;';
+      if(lGroups[i]) cL.appendChild(mkSection(lGroups[i],false));
+      const sp=document.createElement('div');sp.style.cssText='flex:1;min-width:40px;';
+      const cR=document.createElement('div');cR.style.cssText='padding-left:24px;flex-shrink:0;min-width:max-content;display:flex;flex-direction:column;align-items:flex-end;';
+      if(rGroups[i]) cR.appendChild(mkSection(rGroups[i],true));
+      row.appendChild(cL);row.appendChild(sp);row.appendChild(cR);
+      outerWrap.appendChild(row);
+    }
+    view.appendChild(outerWrap);
+  } else {
+    const outerWrap=document.createElement('div');outerWrap.style.cssText='padding:8px;min-width:max-content;';
+    groups.forEach(g=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
+      hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      S.matches=taggedMatches;
+      try{
+        const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
+        (fns[layout]||renderBracketA)(groupWrap);
+        stripScroll(groupWrap);
+      }catch(e){groupWrap.innerHTML='<div style="color:red;font-size:11px;">오류:'+e.message+'</div>';}
+      outerWrap.appendChild(groupWrap);
+    });
+    view.appendChild(outerWrap);
+  }
+  S.matches=saved;
 }
 
+
+function updatePv3(){
+  const view=document.getElementById('pv3-inner');if(!view)return;
+  let groups=[];
+  if(S.groupBrackets&&S.groupBrackets.length) groups=S.groupBrackets;
+  else{ try{ groups=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]'); }catch(e){} }
+  if(!groups.length){
+    view.innerHTML='<div style="color:var(--text3);font-family:Share Tech Mono,monospace;font-size:10px;padding:16px">대진표 없음 (bracket-view에서 설정 후 표시됩니다)</div>';
+    return;
+  }
+  const layout=localStorage.getItem('sgp_layout')||_bracketLayout||'A';
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+
+  // 진행중 경기: 그룹레이블+ri+mi로 특정
+  let curGroupLabel='',curRi=-1,curMi=-1;
+  try{
+    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
+    const curP1=mv.p1||'',curP2=mv.p2||'';
+    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
+    if(curP1&&curP2){
+      outer: for(const g of groups){
+        const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        for(let ri=0;ri<g.matches.length;ri++){
+          for(let mi=0;mi<g.matches[ri].length;mi++){
+            const m=g.matches[ri][mi];
+            const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
+          }
+        }
+      }
+    }
+  }catch(e){}
+
+  // step4.js _getAvailW가 pts-bracket-view ID를 사용 → 임시 변경 후 복원
+  view.id='pts-bracket-view';
+  _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi);
+  view.id='pv3-inner';
+}
 
 /* ── PVC SCALE (TV 비율 축소) ── */
 function scaleEl(wrapId, elId){
@@ -434,7 +1100,9 @@ function startClk(){
 function openDisp(){saveAll();window.open('display.html','sgp_disp','width=1280,height=720');}
 function resetPv(){S.pts=[];renderPL();updatePv();toast('미리보기 초기화','info');}
 
-/* ── MOBILE ── */
+/* ── dspanel fallback: 외부 js 파일이 없을 경우에만 동작 ── */
+/* dspanel.js, ds-tab1~3.js가 있으면 그쪽에서 모두 처리함 */
+
 let mobOpen=false;
 function togMob(){
   const fab=document.getElementById('fab');
