@@ -169,7 +169,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(targetStep>1)goS(targetStep);
   if(targetStep===6)try{g6Init();}catch(e){}
   // pvcw 크기 바뀔 때마다 scale 재계산
-  ['pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
+  // pvcw도 감시: buildTab2 등으로 dspanel flex 재계산 시 pvcw 너비 변화를 즉시 반영
+  ['pvcw','pvc-wrap','pv2-wrap','pv3-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)new ResizeObserver(scalePvc).observe(el);});
   // restore
   document.getElementById('f-en').value=S.en;
   document.getElementById('f-sub').value=S.sub;
