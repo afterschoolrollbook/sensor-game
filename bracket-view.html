@@ -1042,6 +1042,7 @@ function _redrawBracketView(){
       const groupWrap=document.createElement('div');
       groupWrap.style.cssText='min-width:max-content;';
       groupWrap.dataset.court=String(g.court||1);
+      groupWrap.dataset.groupLabel=shortLabel;
       const taggedMatches=g.matches.map((round,ri)=>
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
       );
@@ -1096,6 +1097,7 @@ function _redrawBracketView(){
       const groupWrap=document.createElement('div');
       groupWrap.style.cssText='margin-bottom:16px;position:relative;';
       groupWrap.dataset.court=String(g.court||1);
+      groupWrap.dataset.groupLabel=shortLabel;
 
       const taggedMatches=g.matches.map((round,ri)=>
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
@@ -3829,13 +3831,13 @@ function onMatchClick(ri, mi, matchObj, event){
     if(el){ el.style.outline='2px solid var(--red)'; el.style.boxShadow='0 0 12px rgba(230,57,70,.5)'; }
   }
 
-  // 전역 + 경기장별 localStorage 저장 (ri/mi 포함해서 상대방이 정확히 하이라이트)
-  const vsData = { p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId };
+  // 전역 + 경기장별 localStorage 저장 (ri/mi/groupLabel 포함해서 상대방이 정확히 하이라이트)
+  const vsData = { p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, groupLabel: grpLbl };
   try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
   try{ localStorage.setItem(`sgp_display_vs_court_${court}`, JSON.stringify(vsData)); }catch(e){}
 
   // BroadcastChannel + storage cmd → display.html + 상대방 bracket-view 즉시 반영
-  const cmd = { type:'set_match', p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, ts:Date.now() };
+  const cmd = { type:'set_match', p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, groupLabel: grpLbl, ts:Date.now() };
   try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
   try{
     if(!window._bvBc) window._bvBc = new BroadcastChannel('sgp_cmd');
@@ -4114,34 +4116,37 @@ window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();
 
 // 새창/iframe 양방향 하이라이트 연동
 // 공통 하이라이트 함수: ri/mi로 박스 찾기 (텍스트 검색보다 정확)
-function _applyMatchHighlight(ri, mi, court, domId){
+function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
   try{
     const courtStr = String(court || 1);
     const prev = _selectedMatchByCourt[courtStr];
 
     // ── 자가 수신 방지 ──
-    // onMatchClick이 이미 domId로 직접 하이라이트를 적용했고
-    // BroadcastChannel이 같은 프레임에 재전달된 경우 → 이미 처리됐으므로 스킵
     if(domId && prev === domId){
       const alreadyEl = document.querySelector('[data-match-id="'+domId+'"]');
       if(alreadyEl && alreadyEl.style.outline) return;
     }
 
-    // 이전 하이라이트 제거 (새 domId와 다를 때만)
+    // 이전 하이라이트 제거
     if(prev && prev !== domId){
       const el=document.querySelector('[data-match-id="'+prev+'"]');
       if(el){el.style.outline='';el.style.boxShadow='';}
     }
 
     // ── 요소 찾기 ──
-    // 1순위: domId 직접 사용 (정확하고 빠름)
+    // 1순위: domId 직접 사용 (같은 창에서 온 경우)
     let box = domId ? document.querySelector('[data-match-id="'+domId+'"]') : null;
 
-    // 2순위: querySelectorAll로 모든 court 래퍼 검색 (다른 창/iframe에서 온 경우)
-    // 버그 수정: 기존 querySelector → querySelectorAll (첫 번째 그룹 래퍼만 검색하던 문제 해결)
+    // 2순위: groupLabel + ri/mi로 정확한 체급 특정 (다른 창에서 온 경우)
+    // groupLabel이 있으면 해당 체급 래퍼만 검색 → ri/mi 중복 방지
     if(!box){
-      document.querySelectorAll('[data-court="'+courtStr+'"]').forEach(wrap=>{
-        if(!box) box=wrap.querySelector('[data-ri="'+ri+'"][data-mi="'+mi+'"]');
+      const courtWraps = document.querySelectorAll('[data-court="'+courtStr+'"]');
+      courtWraps.forEach(wrap=>{
+        if(box) return;
+        // groupLabel이 있으면 해당 체급 래퍼인지 확인
+        if(groupLabel && wrap.dataset.groupLabel && wrap.dataset.groupLabel !== groupLabel) return;
+        const found = wrap.querySelector('[data-ri="'+ri+'"][data-mi="'+mi+'"]');
+        if(found) box = found;
       });
     }
 
@@ -4159,7 +4164,7 @@ window.addEventListener('storage', function(e){
   try{
     const court = parseInt(e.key.replace('sgp_display_vs_court_',''));
     const vs = JSON.parse(e.newValue||'{}');
-    if(vs.ri!=null && vs.mi!=null) _applyMatchHighlight(vs.ri, vs.mi, court, vs.domId);
+    if(vs.ri!=null && vs.mi!=null) _applyMatchHighlight(vs.ri, vs.mi, court, vs.domId, vs.groupLabel);
   }catch(err){}
 });
 
@@ -4170,7 +4175,7 @@ window.addEventListener('storage', function(e){
     bc.onmessage = function(e){
       const cmd = e.data;
       if(!cmd || cmd.type !== 'set_match') return;
-      if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, cmd.court, cmd.domId);
+      if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, cmd.court, cmd.domId, cmd.groupLabel);
     };
   }catch(e){}
 })();
