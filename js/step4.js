@@ -436,6 +436,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
   const outerWrap=document.createElement('div');
   outerWrap.style.cssText='position:relative;overflow:auto;padding-bottom:8px;';
+  outerWrap.classList.add('sgp-scroll-root'); // _stripInnerScroll 제외 대상
 
   const container=document.createElement('div');
   // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이

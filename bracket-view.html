@@ -133,6 +133,8 @@ function _generateBracketKeepNames(players){
 // renderBracketD/E 오버라이드 — 내부 overflow 제거, 외부 하나만 스크롤
 function _stripInnerScroll(div){
   div.querySelectorAll('*').forEach(el=>{
+    // sgp-scroll-root 클래스가 있는 요소는 건드리지 않음 (클릭 영역 보존)
+    if(el.classList&&el.classList.contains('sgp-scroll-root')) return;
     if(el.style.overflow==='auto'||el.style.overflowX==='auto'||el.style.overflowY==='auto'){
       el.style.overflow='visible';
     }
