@@ -216,6 +216,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .g6-btn.stop:disabled{opacity:.4;cursor:default;}
 .g6-laplist{display:flex;flex-direction:column;gap:4px;margin-top:10px;max-height:100px;overflow-y:auto;}
 .g6-lapitem{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:5px;background:var(--card2);font-size:12px;}
+/* 실시간 조작 섹션 */
+.g6-ctrl-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 14px 10px;margin-bottom:11px;}
+.g6-ctrl-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.g6-ctrl-label::before{content:'';display:inline-block;width:3px;height:10px;background:var(--red);border-radius:2px;}
+.g6-ctrl-row{display:flex;align-items:center;gap:8px;}
+.g6-ctrl-btn{flex:1;padding:9px 6px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700;transition:all .2s;background:var(--card2);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;gap:5px;}
+.g6-ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
+.g6-ctrl-btn.primary{background:var(--red);border-color:var(--red);color:#fff;}
+.g6-ctrl-btn.primary:hover{background:#c1121f;}
+.g6-ctrl-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(76,201,240,.08);}
+.g6-ctrl-input{background:var(--card2);border:1px solid var(--border2);border-radius:7px;color:var(--text);padding:8px 10px;font-size:14px;font-family:'Share Tech Mono',monospace;text-align:center;width:72px;}
 .g6-lapnum{font-family:'Share Tech Mono',monospace;color:var(--text3);width:44px;}
 .g6-laptime{font-family:'Share Tech Mono',monospace;flex:1;}
 .g6-lapbest{color:var(--green);}
@@ -301,6 +312,21 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .pvbtn.p{background:var(--red);border-color:var(--red);color:#fff}
 .pvbtn.p:hover{background:#c62835}
 
+/* 화면 전환 플로팅 바 */
+#pvc-screen-bar{
+  flex-shrink:0;
+  display:flex;gap:6px;padding:10px 14px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+}
+.pvc-scr-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 6px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--card);color:var(--text2);font-size:12px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.pvc-scr-btn:hover{border-color:var(--accent);color:var(--accent);}
+.pvc-scr-btn.active{background:rgba(230,57,70,.12);border-color:var(--red);color:var(--red);}
 #pvcw{
   width:480px;flex-shrink:0;
   display:flex;flex-direction:column;align-items:stretch;
@@ -708,36 +734,31 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
             <button class="g6-btn start" style="flex:1;" onclick="g6ConfirmWinner()">승자 확정 →</button>
           </div>
         </div>
-        <!-- 타이머 -->
-        <div class=\"g6-timer-box\">
-          <div class=\"g6-lapinfo\" id=\"g6-lapinfo\">바퀴 0 / 1</div>
-          <div class=\"g6-btns\">
-            <button class=\"g6-btn start\" id=\"g6-start\" onclick=\"g6Start()\">▶ 출발</button>
-            <button class=\"g6-btn lap\" id=\"g6-lap\" onclick=\"g6Lap()\" disabled>🔁 랩</button>
-            <button class=\"g6-btn stop\" id=\"g6-stop\" onclick=\"g6Stop()\" disabled>⏹ 정지</button>
+
+        <!-- ① 타이머 -->
+        <div class="g6-ctrl-section">
+          <div class="g6-ctrl-label">타이머</div>
+          <div class="g6-ctrl-row" style="margin-bottom:8px;">
+            <button class="g6-ctrl-btn primary" id="g6-start" onclick="g6Start()">▶ 출발</button>
+            <button class="g6-ctrl-btn" id="g6-stop" onclick="g6Stop()" disabled>⏹ 정지</button>
+            <button class="g6-ctrl-btn" onclick="sendCmd('timer_reset')">🔄 초기화</button>
           </div>
-          <div class=\"g6-laplist\" id=\"g6-laplist\"></div>
+          <div class="g6-ctrl-row">
+            <input id="g6-timer-sec" class="g6-ctrl-input" type="number" min="1" max="9999" value="60">
+            <span style="font-size:11px;color:var(--text3);">초 설정</span>
+            <button class="g6-ctrl-btn primary" style="flex:1;" onclick="g6TimerStart()">▶ 시작</button>
+            <button class="g6-ctrl-btn" onclick="g6TimerStop()">⏹ 정지</button>
+          </div>
+          <div style="margin-top:8px;display:none;" id="g6-laplist"></div>
         </div>
-        <!-- 실시간 조작 -->
-        <div class=\"g6-timer-box\" style=\"margin-top:0;\">
-          <div class=\"g6-cplayer\" style=\"margin-bottom:8px;\">🎮 실시간 조작</div>
-          <!-- 타이머 설정 -->
-          <div style=\"display:flex;align-items:center;gap:6px;margin-bottom:8px;\">
-            <span style=\"font-size:11px;color:var(--text3);white-space:nowrap;\">타이머</span>
-            <input id=\"g6-timer-sec\" type=\"number\" min=\"1\" max=\"9999\" value=\"60\" style=\"width:70px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-size:13px;text-align:center;\">
-            <span style=\"font-size:11px;color:var(--text3);\">초</span>
-            <button class=\"g6-btn start\" style=\"flex:1;padding:6px;font-size:12px;\" onclick=\"g6TimerStart()\">▶ 시작</button>
-            <button class=\"g6-btn stop\" style=\"flex:1;padding:6px;font-size:12px;\" onclick=\"g6TimerStop()\">⏹ 정지</button>
-          </div>
-          <!-- 기타 조작 -->
-          <div class=\"ds-cgrid\" style=\"grid-template-columns:repeat(3,1fr);\">
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('countdown')\"><span>3️⃣</span><span>카운트다운</span></button>
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('timer_reset')\"><span>🔄</span><span>초기화</span></button>
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('winner')\"><span>🏆</span><span>우승자</span></button>
-            <button class=\"ds-cbtn dang\" onclick=\"sendCmd('clear_rank')\"><span>🗑️</span><span>순위초기화</span></button>
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_1')\"><span>📺</span><span style=\"font-size:9px\">1번 전광판</span></button>
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_2')\"><span>⚔️</span><span style=\"font-size:9px\">2번 경기</span></button>
-            <button class=\"ds-cbtn\" onclick=\"sendCmd('screen_3')\"><span>🏆</span><span style=\"font-size:9px\">3번 대진표</span></button>
+
+        <!-- ② 카운트다운 / 우승자 -->
+        <div class="g6-ctrl-section">
+          <div class="g6-ctrl-label">연출</div>
+          <div class="g6-ctrl-row">
+            <button class="g6-ctrl-btn" onclick="sendCmd('countdown')">3️⃣ 카운트다운</button>
+            <button class="g6-ctrl-btn" onclick="sendCmd('winner')">🏆 우승자</button>
+            <button class="g6-ctrl-btn" style="color:var(--red);border-color:var(--red);" onclick="sendCmd('clear_rank')">🗑️ 순위초기화</button>
           </div>
         </div>
         <!-- 실시간 순위 -->
@@ -772,6 +793,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <!-- 3단: left | resizer | pvcw | resizer2 | dspanel -->
   <div id="resizer"></div>
   <div id="pvcw">
+    <!-- 화면 전환 바 (항상 고정) -->
+    <div id="pvc-screen-bar">
+      <button class="pvc-scr-btn active" id="pvc-scr-1" onclick="pvcSwitchScreen(1)"><span>📺</span><span>1번 전광판</span></button>
+      <button class="pvc-scr-btn" id="pvc-scr-2" onclick="pvcSwitchScreen(2)"><span>⚔️</span><span>2번 현재경기</span></button>
+      <button class="pvc-scr-btn" id="pvc-scr-3" onclick="pvcSwitchScreen(3)"><span>🏆</span><span>3번 대진표</span></button>
+    </div>
     <div id="pvc-previews">
     <!-- ① 1번 전광판 -->
     <div class="pv-slabel"><span class="pv-snum">01</span> 전광판</div>
@@ -2721,6 +2748,14 @@ function g6Tick(){
   g6_rafId=requestAnimationFrame(g6Tick);
 }
 
+function pvcSwitchScreen(n){
+  [1,2,3].forEach(i=>{
+    const b=document.getElementById('pvc-scr-'+i);
+    if(b) b.classList.toggle('active', i===n);
+  });
+  sendCmd('screen_'+n);
+}
+
 function g6TimerStart(){
   const sec=parseInt(document.getElementById('g6-timer-sec')?.value||60);
   sendCmd('timer_start', {duration: sec});
@@ -2754,7 +2789,8 @@ function g6DoStart(){
   cancelAnimationFrame(g6_rafId);g6_rafId=requestAnimationFrame(g6Tick);
   document.getElementById('g6-start').disabled=true;
   document.getElementById('g6-stop').disabled=false;
-  document.getElementById('g6-lap').disabled=(g6_targetLaps<=1);
+  const lapBtn=document.getElementById('g6-lap');
+  if(lapBtn) lapBtn.disabled=(g6_targetLaps<=1);
 }
 
 function g6Stop(){
@@ -2763,7 +2799,7 @@ function g6Stop(){
   const te=document.getElementById('g6-time');if(te)te.className='g6-time stopped';
   document.getElementById('g6-start').disabled=false;
   document.getElementById('g6-stop').disabled=true;
-  document.getElementById('g6-lap').disabled=true;
+  const lapBtn3=document.getElementById('g6-lap');if(lapBtn3)lapBtn3.disabled=true;
   const p=S.pts[g6_idx];
   if(p){
     // App state에 기록 저장
