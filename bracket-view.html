@@ -4111,7 +4111,6 @@ window.addEventListener('load', ()=>{
 window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();}catch(e){} });
 
 // 새창/iframe 양방향 하이라이트 연동
-// setup.html 3번탭 또는 다른 bracket-view 인스턴스에서 클릭 시 이 창도 하이라이트 갱신
 (function(){
   try{
     const bc = new BroadcastChannel('sgp_cmd');
@@ -4120,38 +4119,24 @@ window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();
       if(!cmd || cmd.type !== 'set_match') return;
       try{
         const court = cmd.court || 1;
-        // data-ri, data-mi로 해당 경기 박스 찾기
-        // 같은 그룹(court) 안에서 ri/mi가 일치하는 박스
-        // 먼저 p1/p2 이름으로 ri/mi 찾기
-        if(!S.groupBrackets) return;
-        const cleanN = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n : '—';
-        let foundRi=-1, foundMi=-1;
-        for(const g of S.groupBrackets){
-          if((g.court||1) !== court) continue;
-          for(let ri=0; ri<g.matches.length; ri++){
-            for(let mi=0; mi<g.matches[ri].length; mi++){
-              const m = g.matches[ri][mi];
-              const p1n = cleanN(m.p1?.name || String(m.p1||''));
-              const p2n = cleanN(m.p2?.name || String(m.p2||''));
-              if(p1n===cmd.p1 && p2n===cmd.p2){ foundRi=ri; foundMi=mi; break; }
-            }
-            if(foundRi>=0) break;
-          }
-          if(foundRi>=0) break;
-        }
-        if(foundRi<0) return;
-
         // 이전 하이라이트 제거
         const prev = _selectedMatchByCourt[court];
         if(prev){ const el=document.querySelector('[data-match-id="'+prev+'"]'); if(el){el.style.outline='';el.style.boxShadow='';} }
 
-        // data-ri, data-mi로 박스 찾아서 하이라이트
-        const box = document.querySelector('[data-ri="'+foundRi+'"][data-mi="'+foundMi+'"]');
-        if(box){
-          const domId = box.dataset.matchId;
+        // data-match-id 있는 모든 박스에서 p1/p2 텍스트로 찾기 (step4.js 수정 불필요)
+        let found = null;
+        const allBoxes = document.querySelectorAll('[data-match-id]');
+        for(const box of allBoxes){
+          const text = box.innerText || box.textContent || '';
+          if(cmd.p1 && cmd.p2 && text.includes(cmd.p1) && text.includes(cmd.p2)){
+            found = box; break;
+          }
+        }
+        if(found){
+          const domId = found.dataset.matchId;
           _selectedMatchByCourt[court] = domId;
-          box.style.outline='2px solid var(--red)';
-          box.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
+          found.style.outline='2px solid var(--red)';
+          found.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
         }
       }catch(err){}
     };
