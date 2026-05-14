@@ -4115,40 +4115,46 @@ window.addEventListener('load', ()=>{
 window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();}catch(e){} });
 
 // 새창/iframe 양방향 하이라이트 연동
+// 공통 하이라이트 함수
+function _applyMatchHighlight(p1, p2, court){
+  try{
+    const courtStr = String(court || 1);
+    const prev = _selectedMatchByCourt[courtStr];
+    if(prev){ const el=document.querySelector('[data-match-id="'+prev+'"]'); if(el){el.style.outline='';el.style.boxShadow='';} }
+    if(!p1 || !p2) return;
+    const courtWrap = document.querySelector('[data-court="'+courtStr+'"]');
+    const scope = courtWrap || document;
+    let found = null;
+    for(const box of scope.querySelectorAll('[data-match-id]')){
+      const text = box.innerText || box.textContent || '';
+      if(text.includes(p1) && text.includes(p2)){ found = box; break; }
+    }
+    if(found){
+      _selectedMatchByCourt[courtStr] = found.dataset.matchId;
+      found.style.outline='2px solid var(--red)';
+      found.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
+    }
+  }catch(e){}
+}
+
+// storage 이벤트: iframe/다른창에서 경기 선택 시 이 창도 하이라이트
+window.addEventListener('storage', function(e){
+  if(!e.key || !e.key.startsWith('sgp_display_vs_court_')) return;
+  try{
+    const court = parseInt(e.key.replace('sgp_display_vs_court_',''));
+    const vs = JSON.parse(e.newValue||'{}');
+    if(vs.p1 && vs.p2) _applyMatchHighlight(vs.p1, vs.p2, court);
+  }catch(err){}
+});
+
+// BroadcastChannel: 보완용
 (function(){
   try{
     const bc = new BroadcastChannel('sgp_cmd');
     bc.onmessage = function(e){
       const cmd = e.data;
       if(!cmd || cmd.type !== 'set_match') return;
-      try{
-        const court = cmd.court || 1;
-        // 이전 하이라이트 제거
-        const prev = _selectedMatchByCourt[court];
-        if(prev){ const el=document.querySelector('[data-match-id="'+prev+'"]'); if(el){el.style.outline='';el.style.boxShadow='';} }
-
-        // 해당 court 그룹 안에서만 찾아서 ri/mi 중복 문제 방지
-        let found = null;
-        const courtStr = String(cmd.court || 1);
-        // court 그룹 컨테이너 안의 박스로 범위 한정
-        const courtWrap = document.querySelector('[data-court="'+courtStr+'"]');
-        const scope = courtWrap || document;
-        const scopeBoxes = scope.querySelectorAll('[data-match-id]');
-        if(cmd.p1 && cmd.p2){
-          for(const box of scopeBoxes){
-            const text = box.innerText || box.textContent || '';
-            if(text.includes(cmd.p1) && text.includes(cmd.p2)){
-              found = box; break;
-            }
-          }
-        }
-        if(found){
-          const domId = found.dataset.matchId;
-          _selectedMatchByCourt[court] = domId;
-          found.style.outline='2px solid var(--red)';
-          found.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
-        }
-      }catch(err){}
+      _applyMatchHighlight(cmd.p1, cmd.p2, cmd.court);
     };
   }catch(e){}
 })();
