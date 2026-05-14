@@ -2933,6 +2933,8 @@ function _runCountdown(cb){
   const pvOv=document.getElementById('pv-countdown-ov');
   const pvNm=pvOv?pvOv.querySelector('.pv-cdn'):null;
   if(pvOv){pvOv.style.display='flex';if(pvNm)pvNm.textContent=n;}
+  // 전광판에도 카운트다운 전송
+  sendCmd('countdown');
   _beep(660,0.12,0.5);
   const iv=setInterval(()=>{
     n--;
@@ -3116,9 +3118,12 @@ function _pvStartCountdown(sec){
     const remain=_pvCdDur-(performance.now()-_pvCdStart);
     if(remain<=0){
       if(pvt){pvt.textContent='00:00.000';pvt.className='stopped';}
+      try{localStorage.setItem('sgp_display_time','00:00.000');}catch(e){}
       _pvCdRaf=null;return;
     }
-    if(pvt)pvt.textContent=_pvFmtCd(remain);
+    const fmt=_pvFmtCd(remain);
+    if(pvt)pvt.textContent=fmt;
+    try{localStorage.setItem('sgp_display_time',fmt);}catch(e){}
     _pvCdRaf=requestAnimationFrame(tick);
   }
   _pvCdRaf=requestAnimationFrame(tick);

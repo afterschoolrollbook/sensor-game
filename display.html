@@ -570,11 +570,13 @@ function handleCmd(cmd){
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
   if(cmd.type==='timer_start'){
     document.getElementById('d1-time').className='running';
-    document.getElementById('d1-live').classList.add('active'); // LIVE 깜빡임 시작
+    document.getElementById('d1-live').classList.add('active');
+    if(cmd.duration) _startCountdownTimer(cmd.duration);
   }
   if(cmd.type==='timer_stop'){
     document.getElementById('d1-time').className='stopped';
-    document.getElementById('d1-live').classList.remove('active'); // LIVE 깜빡임 정지
+    document.getElementById('d1-live').classList.remove('active');
+    _stopCountdownTimer();
   }
   if(cmd.type==='timer_reset'){
     _stopCountdownTimer();
