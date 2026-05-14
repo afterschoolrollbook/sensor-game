@@ -161,8 +161,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();initDsPanel();initPtsPopupDrag();
-  // scalePvc를 rAF로 지연: DOMContentLoaded 시점엔 레이아웃 계산 전이라 offsetWidth가 0으로 잡히는 문제 방지
-  requestAnimationFrame(()=>{ scalePvc(); requestAnimationFrame(scalePvc); });
+  // scalePvc 지연 호출: DOMContentLoaded 시점엔 aspect-ratio 요소의 크기가 미확정
+  // rAF 두 번 + setTimeout으로 브라우저 렌더링이 완전히 끝난 후 실행
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ setTimeout(scalePvc, 0); }); });
+  // window load(폰트/이미지 포함) 후 한 번 더 보정
+  window.addEventListener('load', ()=>{ requestAnimationFrame(scalePvc); }, {once:true});
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
   const urlParams=new URLSearchParams(location.search);
   const targetStep=parseInt(urlParams.get('step')||localStorage.getItem('sgp_last_step')||'1');
