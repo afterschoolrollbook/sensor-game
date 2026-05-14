@@ -582,8 +582,8 @@ function _g6CdirRenderSeq() {
     return;
   }
   const items = g6_cdirSeq.map((s, i) => {
-    const label = s === 1 ? '①경기' : s === 2 ? '②휴식' : '🔔종';
-    const clr   = s === 1 ? 'var(--red)' : s === 2 ? 'var(--accent)' : 'var(--yellow)';
+    const label = s === 1 ? '①경기' : s === 2 ? '②휴식' : s === 'bell' ? '🔔종' : '🔁반복';
+    const clr   = s === 1 ? 'var(--red)' : s === 2 ? 'var(--accent)' : s === 'bell' ? 'var(--yellow)' : 'var(--green)';
     return `<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;background:var(--card);border:1px solid ${clr};border-radius:5px;font-size:11px;font-weight:700;color:${clr};">${label
       }<span onclick="g6_cdirSeq.splice(${i},1);_g6CdirRenderSeq();" style="cursor:pointer;color:var(--text3);margin-left:3px;">✕</span></div>`;
   });
@@ -653,6 +653,13 @@ function _g6CdirRunSeq(seq, stepIdx, loopRemain) {
     _g6CdirRingBell();
     _g6CdirUpdateStatus('// 🔔 땡~');
     g6_cdirLoopTimer = setTimeout(next, 1500);
+    return;
+  }
+
+  if (step === 'repeat') {
+    // 현재 시퀀스를 처음부터 다시 실행 (loopRemain 유지)
+    _g6CdirUpdateStatus('// 🔁 반복...');
+    g6_cdirLoopTimer = setTimeout(() => { if (g6_cdirRunning) _g6CdirRunSeq(seq, 0, loopRemain); }, 300);
     return;
   }
 

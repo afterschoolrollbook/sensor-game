@@ -913,11 +913,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
               <div id="g6-cdir-seq-list" style="display:flex;flex-wrap:wrap;gap:5px;min-height:34px;padding:7px 10px;background:var(--card2);border:1px solid var(--border);border-radius:7px;margin-bottom:8px;align-items:center;">
                 <span style="color:var(--text3);font-size:11px;">아래 버튼으로 순서를 추가하세요</span>
               </div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
-                <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;border-color:rgba(230,57,70,.5);color:var(--red);" onclick="g6CdirSeqAdd(1)">+ ①경기</button>
-                <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;border-color:rgba(76,201,240,.5);color:var(--accent);" onclick="g6CdirSeqAdd(2)">+ ②휴식</button>
-                <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;border-color:rgba(255,214,10,.5);color:var(--yellow);" onclick="g6CdirSeqAdd('bell')">+ 🔔종</button>
-                <button class="g6-ctrl-btn" style="flex:0;padding:5px 12px;font-size:11px;color:var(--text3);margin-left:auto;" onclick="g6CdirSeqClear()">✕ 초기화</button>
+              <div style="display:flex;gap:5px;flex-wrap:nowrap;margin-bottom:10px;align-items:center;">
+                <button class="g6-ctrl-btn" style="flex:1;padding:5px 8px;font-size:11px;border-color:rgba(230,57,70,.5);color:var(--red);" onclick="g6CdirSeqAdd(1)">+ ①경기</button>
+                <button class="g6-ctrl-btn" style="flex:1;padding:5px 8px;font-size:11px;border-color:rgba(76,201,240,.5);color:var(--accent);" onclick="g6CdirSeqAdd(2)">+ ②휴식</button>
+                <button class="g6-ctrl-btn" style="flex:1;padding:5px 8px;font-size:11px;border-color:rgba(255,214,10,.5);color:var(--yellow);" onclick="g6CdirSeqAdd('bell')">+ 🔔종</button>
+                <button class="g6-ctrl-btn" style="flex:1;padding:5px 8px;font-size:11px;border-color:rgba(106,201,100,.5);color:var(--green);" onclick="g6CdirSeqAdd('repeat')">+ 🔁반복</button>
+                <button class="g6-ctrl-btn" style="flex:0;padding:5px 10px;font-size:11px;color:var(--text3);" onclick="g6CdirSeqClear()">✕</button>
               </div>
             </div>
 
