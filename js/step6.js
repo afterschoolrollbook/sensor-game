@@ -1159,15 +1159,13 @@ window.addEventListener('message',e=>{
 
 // bracket-view 경기 선택 → 2번 + 3번 미리보기 즉시 업데이트
 window.addEventListener('storage', e=>{
-  if(e.key!=='sgp_display_vs') return;
-  try{
-    const vs=JSON.parse(e.newValue||'{}');
-    const p1el=document.getElementById('pv2-p1');
-    const p2el=document.getElementById('pv2-p2');
-    const infoEl=document.getElementById('pv2-info');
-    if(p1el) p1el.textContent=cleanName(vs.p1||'—');
-    if(p2el) p2el.textContent=cleanName(vs.p2||'—');
-    if(infoEl) infoEl.textContent=vs.label||'진행 중';
-  }catch(err){}
+  // sgp_display_vs_court_N 변경 시 pv2 + pv3 갱신
+  const isCourtVs = e.key && e.key.startsWith('sgp_display_vs_court_');
+  const isVs = e.key === 'sgp_display_vs';
+  if(!isVs && !isCourtVs) return;
+
+  // pv2: 현재 _tab2Mode에 해당하는 경기장 데이터로 갱신
+  try{ if(typeof updatePv2==='function') updatePv2(); }catch(err){}
+  // pv3: 경기장별 선택경기 모두 반영
   try{ updatePv3(); }catch(err){}
 });

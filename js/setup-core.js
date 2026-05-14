@@ -159,28 +159,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
   }catch(e){}
-  // ── [BUG FIX 1] 탭2/탭3 설정값을 sgp_display_config에서 S로 복원 ──
-  // saveCfgNow()는 vs2Font/vs2Bg/bracket3Font를 sgp_display_config에 저장하지만
-  // DOMContentLoaded 시 이 값들을 S에 다시 읽어오는 코드가 없어서 탭 전환 시 항상 기본값으로 리셋됨
-  try{
-    const _dsCfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
-    if(_dsCfg.vs2Font)      S.vs2Font=_dsCfg.vs2Font;
-    if(_dsCfg.vs2Bg)        S.vs2Bg=_dsCfg.vs2Bg;
-    if(_dsCfg.bracket3Font) S.bracket3Font=_dsCfg.bracket3Font;
-    if(_dsCfg.timerColor)   S.timerColor=_dsCfg.timerColor;
-    if(_dsCfg.theme)        S.theme=_dsCfg.theme;
-    if(_dsCfg.pointColor)   S.pointColor=_dsCfg.pointColor;
-    if(_dsCfg.accentColor)  S.accentColor=_dsCfg.accentColor;
-    if(_dsCfg.rankCount)    S.rankCount=_dsCfg.rankCount;
-    if(_dsCfg.titleFont)    S.titleFont=_dsCfg.titleFont;
-  }catch(e){}
-  // sgp_groupBrackets가 localStorage에 있으면 S에도 반영
-  if(!S.groupBrackets||!S.groupBrackets.length){
-    try{
-      const _gb=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]');
-      if(_gb.length) S.groupBrackets=_gb;
-    }catch(e){}
-  }
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();scalePvc();initDsPanel();initPtsPopupDrag();
   // URL 파라미터로 스텝 지정 or 마지막 저장 스텝으로 이동
@@ -1033,6 +1011,19 @@ const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n
 function updatePv2(){
   const mode=typeof _tab2Mode!=='undefined'?_tab2Mode:'court_1';
 
+  // pv2-court-lbl 세팅
+  const courtLbl=document.getElementById('pv2-court-lbl');
+  if(courtLbl){
+    if(mode.startsWith('court_')){
+      const n=parseInt(mode.replace('court_',''));
+      courtLbl.textContent=`// 경기장 ${n}`;
+    } else if(mode==='random'){
+      courtLbl.textContent='// 랜덤';
+    } else {
+      courtLbl.textContent='';
+    }
+  }
+
   // 경기장 N 모드: 해당 경기장의 수동 선택 경기만 표시
   if(mode.startsWith('court_')){
     const courtNum=parseInt(mode.replace('court_',''));
@@ -1193,9 +1184,45 @@ function updatePv3(){
     }
   }catch(e){}
 
+  // 경기장별 선택된 경기 전부 수집 (court_1, court_2 각각)
+  const selectedMatches=[]; // [{groupLabel, ri, mi}]
+  try{
+    const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
+    for(let c=1;c<=Math.max(courtCount,2);c++){
+      const courtStr=localStorage.getItem(`sgp_display_vs_court_${c}`);
+      if(!courtStr) continue;
+      const mv=JSON.parse(courtStr);
+      const curP1=_cn(mv.p1||''), curP2=_cn(mv.p2||'');
+      if(!curP1||!curP2) continue;
+      outer2: for(const g of groups){
+        const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        for(let ri=0;ri<g.matches.length;ri++){
+          for(let mi=0;mi<g.matches[ri].length;mi++){
+            const m=g.matches[ri][mi];
+            const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){
+              selectedMatches.push({groupLabel:sl,ri,mi});
+              break outer2;
+            }
+          }
+        }
+      }
+    }
+  }catch(e){}
+
+  // isCurrentMatchIdx: 경기장별 선택경기 중 하나라도 매칭되면 빨간색
+  // _linkSel을 null로 강제해 파란 테두리 제거
+  window._linkSel=null;
+  window.isCurrentMatchIdx=function(ri,mi){
+    const curGrp=S.matches?.[0]?.[0]?._groupLabel||'';
+    return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===curGrp);
+  };
+
   // step4.js _getAvailW가 pts-bracket-view ID를 사용 → 임시 변경 후 복원
   view.id='pts-bracket-view';
-  _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi);
+  _d3DrawBracket(view, groups, layout, courtCount, '', -1, -1);
   view.id='pv3-inner';
 }
 
