@@ -269,7 +269,8 @@ function _d2ShowCourt(courtNum){
       if(mv&&mv.p1&&mv.p2){
         _set('d2-p1',cleanName(mv.p1)); _set('d2-p2',cleanName(mv.p2));
         {
-          const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
+          const _ml = mv.matchLabel||(mv.ri!=null&&mv.mi!=null?`${courtNum}-${mv.ri+1}-${mv.mi+1}`:'');
+          const _seq = _ml ? _ml.split('-').pop() : '';
           const _hasSeq = mv.label && mv.label.includes('경기');
           _set('d2-info', (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||''));
         }
