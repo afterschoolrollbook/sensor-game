@@ -309,13 +309,13 @@ function toggleHideNames(){
 }
 
 // ── 이름 보존 브라켓 생성 (slots의 player.name을 번호+이름으로 표시) ──
-function _generateBracketKeepNames(players, courtNum){
+function _generateBracketKeepNames(players, courtNum, startNum){
   const cNum=courtNum||1;
   const n=players.length;
   if(!n)return[[]];
   const round1=[];
   const isOdd=n%2===1;
-  let slotNum=1;
+  let slotNum=startNum||1;
   if(isOdd){
     const p=players[0];
     round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
@@ -1120,14 +1120,14 @@ function shuffleAllGroups(){
   renderOrderArea(); toast('무작위로 섞었어요','success');
 }
 
-function generateBracketWithNames(pts, courtNum){
+function generateBracketWithNames(pts, courtNum, startNum){
   const cNum=courtNum||1;
   const players=[...pts];
   const n=players.length;
   if(!n)return[[]];
   const round1=[];
   const isOdd=n%2===1;
-  let slotNum=1;
+  let slotNum=startNum||1;
   if(isOdd){
     const p=players[0];
     round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
@@ -1160,15 +1160,28 @@ function generateAllBrackets(){
   });
   courtSlots.sort((a,b)=>a.court-b.court);
 
-  // groupBrackets 생성 (탭용 — 빈 matches)
-  // court 번호를 미리 계산해서 generateBracketWithNames에 전달
+  // groupBrackets 생성 — 경기장별 통합 순번 (체급 상관없이 이어서)
   const courtForGroup=(gname)=>courtSlots.findIndex(c=>c.groups.includes(gname))+1;
-  S.groupBrackets=entries.map(([gname,members])=>({
-    label:gname,
-    matches:generateBracketWithNames([...members], courtForGroup(gname)),
-    slots:members.map((p,i)=>({num:i+1,player:p})),
-    court:courtForGroup(gname)
-  }));
+  // 경기장별 시작 번호 사전 계산 (entries 순서대로 누적)
+  const _courtCounters={};
+  const _groupStartNums={};
+  entries.forEach(([gname,members])=>{
+    const c=courtForGroup(gname);
+    if(!_courtCounters[c]) _courtCounters[c]=1;
+    _groupStartNums[gname]=_courtCounters[c];
+    _courtCounters[c]+=members.length;
+  });
+  S.groupBrackets=entries.map(([gname,members])=>{
+    const c=courtForGroup(gname);
+    const sn=_groupStartNums[gname];
+    return {
+      label:gname,
+      matches:generateBracketWithNames([...members], c, sn),
+      slots:members.map((p,i)=>({num:sn+i,player:p})),
+      court:c,
+      _startNum:sn
+    };
+  });
 
   S.activeGroup=0; _assignMode=false; _linkSel=null;
   try{
@@ -1583,7 +1596,7 @@ function shuffleGroupBracket(){
   g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
   if(hasNames){
     // 이름이 있으면 이름도 함께 섞어서 재배정
-    g.matches=_generateBracketKeepNames(g.slots.map(s=>s.player), g.court||1);
+    g.matches=_generateBracketKeepNames(g.slots.map(s=>s.player), g.court||1, g._startNum||1);
   } else {
     g.matches=generateBracket(g.slots.map(s=>s.player));
   }
@@ -4127,32 +4140,45 @@ document.addEventListener('keydown', e=>{
 // 저장된 대진표의 승자 이름을 새 형식(경기장-라운드-번경기)으로 자동 변환
 // "1-2 승자" → "1-1-3 승자" 처럼 seqMi 기반으로 재계산
 function _migrateSlotNumbers(){
-  // 구 형식 "N번" 슬롯 번호를 새 형식 "경기장-N"으로 자동 변환
+  // 구 형식 "N번"을 새 형식 "경기장-N"으로 변환 (경기장 내 체급 상관없이 통합 순번)
   if(!S.groupBrackets||!S.groupBrackets.length) return;
-  let changed=0;
+  const needsMigration=S.groupBrackets.some(g=>
+    g.matches&&g.matches[0]&&g.matches[0].some(m=>
+      (m.p1&&/^\d+번/.test(m.p1.name))||(m.p2&&/^\d+번/.test(m.p2.name))
+    )
+  );
+  if(!needsMigration) return;
+  // 경기장별 통합 순번 계산 (groupBrackets 순서대로)
+  const courtCounters={};
   S.groupBrackets.forEach(g=>{
     const court=g.court||1;
-    g.matches.forEach(round=>{
-      round.forEach(m=>{
-        [m.p1,m.p2].forEach(p=>{
-          if(!p||!p.name) return;
-          // "N번" 또는 "N번 (이름)" 패턴 감지
-          const matched=p.name.match(/^(\d+)번(.*)/);
-          if(matched){
-            p.name=`${court}-${matched[1]}${matched[2]}`;
-            changed++;
-          }
-        });
+    if(!courtCounters[court]) courtCounters[court]=1;
+    const startNum=courtCounters[court];
+    g._startNum=startNum;
+    // 1라운드 슬롯 수 계산 (BYE=1, 일반=2)
+    let slotCount=0;
+    if(g.matches&&g.matches[0]){
+      g.matches[0].forEach(m=>{ slotCount+=m.bye?1:2; });
+    }
+    courtCounters[court]+=slotCount;
+    // 1라운드 이름 순서대로 순번 재할당
+    let cur=startNum;
+    if(g.matches&&g.matches[0]){
+      g.matches[0].forEach(m=>{
+        if(m.p1&&/^\d+번/.test(m.p1.name)){
+          m.p1.name=m.p1.name.replace(/^\d+번/,`${court}-${cur++}`);
+        }
+        if(!m.bye&&m.p2&&/^\d+번/.test(m.p2.name)){
+          m.p2.name=m.p2.name.replace(/^\d+번/,`${court}-${cur++}`);
+        }
       });
-    });
+    }
   });
-  if(changed>0){
-    try{
-      const clean=S.groupBrackets.map(g=>({...g,matches:g.matches.map(r=>r.map(m=>{const {_groupObj,...rest}=m;return rest;}))}));
-      localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
-      localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
-    }catch(e){}
-  }
+  try{
+    const clean=S.groupBrackets.map(g=>({...g,matches:g.matches.map(r=>r.map(m=>{const {_groupObj,...rest}=m;return rest;}))}));
+    localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
+    localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
+  }catch(e){}
 }
 
 function _migrateWinnerNames(){
