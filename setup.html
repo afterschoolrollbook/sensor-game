@@ -543,7 +543,13 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* dspanel 탭 */
 .ds-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;position:sticky;top:0;z-index:10;}
 .ds-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .2s;}
-.ds-tab.on{color:var(--text);border-bottom-color:var(--red);}
+.ds-tab:nth-child(1){color:#60a5fa;}
+.ds-tab:nth-child(2){color:#f87171;}
+.ds-tab:nth-child(3){color:#fbbf24;}
+.ds-tab:nth-child(1).on{background:rgba(59,130,246,0.18);color:#93c5fd;border-bottom-color:#3b82f6;}
+.ds-tab:nth-child(2).on{background:rgba(239,68,68,0.18);color:#fca5a5;border-bottom-color:#ef4444;}
+.ds-tab:nth-child(3).on{background:rgba(251,191,36,0.18);color:#fde68a;border-bottom-color:#f59e0b;}
+.ds-tab.on{color:var(--text);}
 .ds-tab-content{display:none;flex-direction:column;}
 .ds-tab-content.on{display:flex;}
 /* 커스터마이징 */
