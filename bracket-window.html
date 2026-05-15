@@ -1635,21 +1635,11 @@ function applyBracket(){
       groupBrackets:S.groupBrackets, activeGroup:S.activeGroup
     },'*');
   }
-  // localStorage에 step4 저장 — 새로고침해도 이어서 진행 (1라운드 이름 제거)
+  // localStorage에 step4 저장 — 새로고침해도 이어서 진행
   try{
     const cleanGB=S.groupBrackets.map(g=>({
       ...g,
-      matches:g.matches.map((round,ri)=>round.map(m=>{
-        const {_groupObj,...rest}=m;
-        if(ri===0){
-          return {
-            ...rest,
-            p1:rest.p1?{...rest.p1,name:rest.p1.name.replace(/\s*\(.+\)$/,'')}:rest.p1,
-            p2:rest.p2?{...rest.p2,name:rest.p2.name.replace(/\s*\(.+\)$/,'')}:rest.p2,
-          };
-        }
-        return rest;
-      }))
+      matches:g.matches.map(round=>round.map(m=>{const {_groupObj,...rest}=m;return rest;}))
     }));
     localStorage.setItem('sgp_step','4');
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(cleanGB));
@@ -4260,18 +4250,7 @@ function _migrateWinnerNames(){
       setTimeout(()=>{
         if(savedStep==='4'){
           const savedGB=localStorage.getItem('sgp_groupBrackets');
-          if(savedGB){
-            S.groupBrackets=JSON.parse(savedGB);
-            // 1라운드 선수 이름 제거 — 슬롯 번호만 유지
-            S.groupBrackets.forEach(g=>{
-              if(g.matches&&g.matches[0]){
-                g.matches[0].forEach(m=>{
-                  if(m.p1) m.p1.name=m.p1.name.replace(/\s*\(.+\)$/,'');
-                  if(m.p2) m.p2.name=m.p2.name.replace(/\s*\(.+\)$/,'');
-                });
-              }
-            });
-          }
+          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
           _migrateSlotNumbers();
           _migrateWinnerNames();
           show('pts-step3');
@@ -4281,18 +4260,7 @@ function _migrateWinnerNames(){
           toast('이전 설정 불러왔어요','info');
         } else if(savedStep==='3'){
           const savedGB=localStorage.getItem('sgp_groupBrackets');
-          if(savedGB){
-            S.groupBrackets=JSON.parse(savedGB);
-            // 1라운드 선수 이름 제거 — 슬롯 번호만 유지 (이름은 명단 설정에서 배정)
-            S.groupBrackets.forEach(g=>{
-              if(g.matches&&g.matches[0]){
-                g.matches[0].forEach(m=>{
-                  if(m.p1) m.p1.name=m.p1.name.replace(/\s*\(.+\)$/,'');
-                  if(m.p2) m.p2.name=m.p2.name.replace(/\s*\(.+\)$/,'');
-                });
-              }
-            });
-          }
+          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
           _migrateSlotNumbers();
           _migrateWinnerNames();
           show('pts-step3');
