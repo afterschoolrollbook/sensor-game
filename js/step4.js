@@ -27,19 +27,10 @@ function buildProc(){
   treeWrap.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:16px;';
   w.appendChild(treeWrap);
 
-  if(S.matches&&S.matches.length){
-    // 대진표가 있으면 항상 토너먼트/리그 트리 표시
-    buildTournamentTree(treeWrap);
-  } else if(S.proc==='ind-rec'){
+  if(S.proc==='ind-rec'){
     buildOrderList(treeWrap);
   } else if(S.proc==='team-rec'||S.proc==='team-ind'){
     buildTeamList(treeWrap);
-  } else {
-    // 대진표 없음 안내
-    const msg=document.createElement('div');
-    msg.style.cssText='color:var(--text3);font-size:13px;text-align:center;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:10px;';
-    msg.innerHTML='위 <b style="color:var(--text2)">👥 참가자 보기</b> 버튼을 눌러 대진표를 만들어주세요';
-    treeWrap.appendChild(msg);
   }
 }
 
