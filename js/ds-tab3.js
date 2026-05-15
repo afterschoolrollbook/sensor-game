@@ -63,7 +63,7 @@ function _t3ComputeOffsets(){
   });
 }
 
-// ── 메인 렌더 ──
+// ── 메인 렌더 (2열 경기장 레이아웃) ──
 function _t3Render(){
   const wrap = document.getElementById('dst3-list');
   if(!wrap) return;
@@ -85,19 +85,32 @@ function _t3Render(){
   });
 
   const roundNames = ['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
+  const courtNums = Object.keys(courts).map(Number).sort();
+  const totalCourts = courtNums.length;
 
-  Object.keys(courts).map(Number).sort().forEach(courtNum => {
+  // 경기장이 1개면 100%, 2개면 50%씩, 3개 이상은 균등분할
+  const colWidth = totalCourts === 1 ? '100%' : `${(100 / totalCourts).toFixed(2)}%`;
+
+  // 전체 2열 그리드 컨테이너
+  const grid = document.createElement('div');
+  grid.style.cssText = `display:flex;gap:0;align-items:flex-start;width:100%;`;
+
+  courtNums.forEach((courtNum, colIdx) => {
     const groups = courts[courtNum];
     const maxRi = Math.max(...groups.map(({g}) => g.matches ? g.matches.length : 0));
 
-    // 경기장 헤더
-    const courtSec = document.createElement('div');
-    courtSec.style.cssText = 'margin-bottom:20px;';
+    // 경기장 컬럼
+    const col = document.createElement('div');
+    col.style.cssText = `flex:0 0 ${colWidth};width:${colWidth};min-width:0;box-sizing:border-box;${colIdx > 0 ? 'border-left:1px solid var(--border);' : ''}`;
 
+    // 경기장 헤더
     const courtHdr = document.createElement('div');
-    courtHdr.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:10px;background:linear-gradient(90deg,rgba(76,201,240,.1) 0%,transparent 100%);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;';
-    courtHdr.innerHTML = `<span style="font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:2px;">경기장 ${courtNum}</span>`;
-    courtSec.appendChild(courtHdr);
+    courtHdr.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;background:linear-gradient(90deg,rgba(76,201,240,.12) 0%,transparent 100%);border-left:3px solid var(--accent);border-bottom:1px solid var(--border);margin-bottom:6px;position:sticky;top:0;z-index:5;background-color:var(--bg2);';
+    courtHdr.innerHTML = `<span style="font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);letter-spacing:2px;">경기장 ${courtNum}</span>`;
+    col.appendChild(courtHdr);
+
+    const courtBody = document.createElement('div');
+    courtBody.style.cssText = 'padding:0 6px 12px;';
 
     // 라운드별 렌더
     for(let ri = 0; ri < maxRi; ri++){
@@ -113,28 +126,31 @@ function _t3Render(){
 
       // 라운드 헤더
       const roundHdr = document.createElement('div');
-      roundHdr.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;margin-bottom:6px;border-bottom:1px solid var(--border);';
+      roundHdr.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 4px 4px;margin-top:8px;border-bottom:1px solid var(--border);margin-bottom:4px;';
       roundHdr.innerHTML = `<span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:2px;">${rName.toUpperCase()}</span><span style="font-size:9px;color:var(--border2);font-family:'Share Tech Mono',monospace;">${courtNum}-${ri+1}-*</span>`;
-      courtSec.appendChild(roundHdr);
+      courtBody.appendChild(roundHdr);
 
-      // 경기 행들
+      // 경기 카드들 (2줄 구조)
       groups.forEach(({g, gi}) => {
         if(!g.matches || !g.matches[ri]) return;
         g.matches[ri].forEach((m, mi) => {
           const seqNum = ((g._t3Offset && g._t3Offset[ri] != null) ? g._t3Offset[ri] : 0) + mi + 1;
           const label = `${courtNum}-${ri+1}-${seqNum}`;
           const shortLabel = g.label.split('/').map(s => s.trim()).map((p,pi) => pi===0 ? p : p.replace('부','')).join('·');
-          courtSec.appendChild(_t3BuildRow(g, gi, ri, mi, m, label, shortLabel, courtNum));
+          courtBody.appendChild(_t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum));
         });
       });
     }
 
-    wrap.appendChild(courtSec);
+    col.appendChild(courtBody);
+    grid.appendChild(col);
   });
+
+  wrap.appendChild(grid);
 }
 
-// ── 경기 행 ──
-function _t3BuildRow(g, gi, ri, mi, m, label, shortLabel, courtNum){
+// ── 2줄 경기 카드 ──
+function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const isCur = _t3CurrentMatch &&
     _t3CurrentMatch.gi === gi &&
     _t3CurrentMatch.ri === ri &&
@@ -148,64 +164,79 @@ function _t3BuildRow(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const p1n = (m.p1 && m.p1.name) || '?';
   const p2n = (m.p2 && m.p2.name) || '?';
 
-  const row = document.createElement('div');
-  row.style.cssText = `
-    display:flex;align-items:center;gap:8px;padding:7px 10px;
-    border-radius:7px;margin-bottom:4px;cursor:pointer;
-    border:1px solid ${isCur ? 'var(--red)' : isDone ? 'rgba(6,214,160,.4)' : isPending ? 'var(--border)' : 'var(--border)'};
-    background:${isCur ? 'rgba(230,57,70,.1)' : isDone ? 'rgba(6,214,160,.05)' : 'var(--card)'};
+  const card = document.createElement('div');
+  card.style.cssText = `
+    padding:6px 8px;border-radius:7px;margin-bottom:3px;cursor:pointer;
+    border:1px solid ${isCur ? 'var(--red)' : isDone ? 'rgba(6,214,160,.35)' : 'var(--border)'};
+    background:${isCur ? 'rgba(230,57,70,.1)' : isDone ? 'rgba(6,214,160,.04)' : 'var(--card)'};
     ${isCur ? 'box-shadow:0 0 0 1px var(--red);' : ''}
-    ${isPending ? 'opacity:.6;' : ''}
+    ${isPending ? 'opacity:.55;' : ''}
     transition:background .1s;
   `;
-  row.onmouseover = () => { if(!isCur) row.style.background = 'var(--card2)'; };
-  row.onmouseout = () => { row.style.background = isCur ? 'rgba(230,57,70,.1)' : isDone ? 'rgba(6,214,160,.05)' : 'var(--card)'; };
+  card.onmouseover = () => { if(!isCur) card.style.background = 'var(--card2)'; };
+  card.onmouseout  = () => { card.style.background = isCur ? 'rgba(230,57,70,.1)' : isDone ? 'rgba(6,214,160,.04)' : 'var(--card)'; };
 
-  // 경기번호
+  // ── 1줄: 경기명 / 체급 / 상태뱃지 ──
+  const row1 = document.createElement('div');
+  row1.style.cssText = 'display:flex;align-items:center;gap:5px;margin-bottom:3px;';
+
   const lbl = document.createElement('span');
-  lbl.style.cssText = `font-size:10px;font-weight:700;color:${isCur ? 'var(--red)' : isPending ? 'var(--text3)' : 'var(--accent)'};font-family:'Share Tech Mono',monospace;min-width:54px;flex-shrink:0;`;
+  lbl.style.cssText = `font-size:10px;font-weight:700;color:${isCur ? 'var(--red)' : isPending ? 'var(--text3)' : 'var(--accent)'};font-family:'Share Tech Mono',monospace;flex-shrink:0;`;
   lbl.textContent = label;
-  row.appendChild(lbl);
+  row1.appendChild(lbl);
 
-  // 체급
-  const catLbl = document.createElement('span');
-  catLbl.style.cssText = 'font-size:9px;color:var(--text3);min-width:70px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-  catLbl.textContent = shortLabel;
-  row.appendChild(catLbl);
+  const sep = document.createElement('span');
+  sep.style.cssText = 'font-size:9px;color:var(--border2);flex-shrink:0;';
+  sep.textContent = '/';
+  row1.appendChild(sep);
 
-  // 선수
-  const players = document.createElement('span');
-  players.style.cssText = 'font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-  if(isBye){
-    players.innerHTML = `<span style="color:#d0d0d0;">${p1n}</span> <span style="font-size:9px;color:var(--accent);">BYE</span>`;
-  } else {
-    const c1 = winnerN ? (winnerN === p1n ? 'var(--green)' : '#444') : (p1tbd ? 'var(--text3)' : '#d0d0d0');
-    const c2 = winnerN ? (winnerN === p2n ? 'var(--green)' : '#444') : (p2tbd ? 'var(--text3)' : '#d0d0d0');
-    players.innerHTML = `<span style="color:${c1};">${p1tbd ? '<span style="font-size:8px;margin-right:2px;color:var(--text3);">대기</span>' : ''}${p1n}</span><span style="color:var(--red);font-size:10px;margin:0 5px;font-family:'Bebas Neue',cursive;">VS</span><span style="color:${c2};">${p2tbd ? '<span style="font-size:8px;margin-right:2px;color:var(--text3);">대기</span>' : ''}${p2n}</span>`;
-  }
-  row.appendChild(players);
+  const cat = document.createElement('span');
+  cat.style.cssText = 'font-size:9px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  cat.textContent = shortLabel;
+  row1.appendChild(cat);
 
   // 상태 뱃지
   if(isCur){
     const b = document.createElement('span');
-    b.style.cssText = 'font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
+    b.style.cssText = 'font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 4px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
     b.textContent = 'LIVE';
-    row.appendChild(b);
+    row1.appendChild(b);
   } else if(isDone){
     const b = document.createElement('span');
     b.style.cssText = 'font-size:10px;color:var(--green);flex-shrink:0;font-weight:700;';
     b.textContent = '✓';
-    row.appendChild(b);
+    row1.appendChild(b);
   } else if(isPending){
     const b = document.createElement('span');
-    b.style.cssText = 'font-size:8px;color:var(--text3);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
+    b.style.cssText = 'font-size:8px;color:var(--text3);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
     b.textContent = '대기';
-    row.appendChild(b);
+    row1.appendChild(b);
   }
 
-  row.onclick = (e) => _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum);
-  return row;
+  card.appendChild(row1);
+
+  // ── 2줄: 선수 이름 ──
+  const row2 = document.createElement('div');
+  row2.style.cssText = 'display:flex;align-items:center;gap:4px;padding-left:2px;';
+
+  if(isBye){
+    row2.innerHTML = `<span style="font-size:11px;font-weight:600;color:#d0d0d0;">${p1n}</span><span style="font-size:9px;color:var(--accent);margin-left:3px;">BYE</span>`;
+  } else {
+    const c1 = winnerN ? (winnerN===p1n ? 'var(--green)' : '#555') : (p1tbd ? 'var(--text3)' : '#d0d0d0');
+    const c2 = winnerN ? (winnerN===p2n ? 'var(--green)' : '#555') : (p2tbd ? 'var(--text3)' : '#d0d0d0');
+    row2.innerHTML = `
+      <span style="font-size:11px;font-weight:600;color:${c1};">${p1tbd?'<span style="font-size:8px;color:var(--text3);">대기 </span>':''}${p1n}</span>
+      <span style="font-size:9px;color:var(--red);font-family:'Bebas Neue',cursive;margin:0 3px;flex-shrink:0;">VS</span>
+      <span style="font-size:11px;font-weight:600;color:${c2};">${p2tbd?'<span style="font-size:8px;color:var(--text3);">대기 </span>':''}${p2n}</span>
+    `;
+  }
+
+  card.appendChild(row2);
+  card.onclick = (e) => _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum);
+  return card;
 }
+
+
 
 // ── 모달 ──
 function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
