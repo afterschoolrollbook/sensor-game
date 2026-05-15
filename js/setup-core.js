@@ -1289,7 +1289,7 @@ function updatePv3(){
     const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
     const curP1=mv.p1||'',curP2=mv.p2||'';
     const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
-    if(curP1&&curP2){
+    if(curP1){
       outer: for(const g of groups){
         const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
         for(let ri=0;ri<g.matches.length;ri++){
@@ -1297,7 +1297,8 @@ function updatePv3(){
             const m=g.matches[ri][mi];
             const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
+            const p2match=curP2?(_cn(p2n)===curP2):(!m.p2); // BYE: p2 없으면 매칭
+            if(_cn(p1n)===curP1&&p2match){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
           }
         }
       }
@@ -1313,8 +1314,23 @@ function updatePv3(){
       const courtStr=localStorage.getItem(`sgp_display_vs_court_${c}`);
       if(!courtStr) continue;
       const mv=JSON.parse(courtStr);
+      // ri/mi가 저장돼 있으면 그걸 우선 사용 (BYE 포함 정확히 특정)
+      if(mv.ri!=null && mv.mi!=null && mv.groupLabel){
+        const sl_target = mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        // groupLabel 정규화 비교
+        const matched = groups.find(g=>{
+          const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+          return sl===sl_target || g.label===mv.groupLabel;
+        });
+        if(matched){
+          const sl=matched.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+          selectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
+          continue;
+        }
+      }
+      // fallback: 이름 매칭
       const curP1=_cn(mv.p1||''), curP2=_cn(mv.p2||'');
-      if(!curP1||!curP2) continue;
+      if(!curP1) continue;
       outer2: for(const g of groups){
         const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
         for(let ri=0;ri<g.matches.length;ri++){
@@ -1322,7 +1338,8 @@ function updatePv3(){
             const m=g.matches[ri][mi];
             const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){
+            const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
+            if(_cn(p1n)===curP1&&p2match){
               selectedMatches.push({groupLabel:sl,ri,mi});
               break outer2;
             }
