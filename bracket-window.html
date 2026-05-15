@@ -1649,7 +1649,12 @@ function applyBracket(){
 function goStep4(){
   show('pts-step4');
   _renderPdfCheckboxes();
-  _renderPdfPreview([]); // 초기엔 아무것도 표시 안 함
+  // 전체 선택 자동 적용
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.pdf-chk').forEach(b=>{ b.dataset.checked='1'; });
+    _syncCheckStyles();
+    _renderPdfPreview(_getSelectedGroups());
+  });
 }
 
 /* ── 완성 버튼 — 전광판에서 불러올 수 있도록 전체 데이터 저장 ── */
