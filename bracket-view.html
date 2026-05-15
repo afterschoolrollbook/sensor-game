@@ -198,6 +198,32 @@ function _redrawBracketView(){
   }
 }
 
+// tbd 슬롯에 대해 이전 라운드 winner를 역추적해서 실제 이름 반환
+function _getResolvedName(g,ri,mi,m,slot){
+  const p=m[slot];
+  if(!p||!p.tbd) return null;
+  const fromKey=slot==='p1'?m.fromA:m.fromB;
+  if(fromKey){
+    const parts=fromKey.split('-');
+    if(parts.length>=2){
+      const prevRi=parseInt(parts[0]),prevMi=parseInt(parts[1]);
+      if(!isNaN(prevRi)&&!isNaN(prevMi)){
+        const prev=g.matches[prevRi]?.[prevMi];
+        if(prev?.winner) return prev.winner.name;
+      }
+    }
+  }
+  // fromA/fromB 없으면 표준 수학 폴백
+  if(ri>0){
+    const prevRound=g.matches[ri-1];
+    if(prevRound){
+      if(slot==='p1'&&prevRound[mi*2]?.winner) return prevRound[mi*2].winner.name;
+      if(slot==='p2'&&prevRound[mi*2+1]?.winner) return prevRound[mi*2+1].winner.name;
+    }
+  }
+  return null;
+}
+
 function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
   const courtNum = g.court || 1;
   const _bvCur = _bvCurrentMatch[courtNum];
@@ -206,10 +232,14 @@ function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
   const isBye=m.p1&&!m.p2;
   const p1tbd=m.p1?.tbd;
   const p2tbd=m.p2?.tbd;
-  const p1n=m.p1?.name||'?';
-  const p2n=m.p2?.name||'?';
+  // tbd 슬롯은 이전 라운드 winner 이름으로 대체 (데이터가 아직 안 업데이트된 경우 방어)
+  const p1resolved=p1tbd?_getResolvedName(g,ri,mi,m,'p1'):null;
+  const p2resolved=p2tbd?_getResolvedName(g,ri,mi,m,'p2'):null;
+  const p1n=p1resolved||m.p1?.name||'?';
+  const p2n=p2resolved||m.p2?.name||'?';
   const winnerN=m.winner?.name;
-  const isPending=!isDone&&(p1tbd||p2tbd);
+  // winner가 실제로 없을 때만 pending (이름 resolve됐으면 선택 가능)
+  const isPending=!isDone&&((p1tbd&&!p1resolved)||(p2tbd&&!p2resolved));
 
   let borderColor=isCur?'var(--red)':isDone?'rgba(6,214,160,.5)':isPending?'rgba(70,70,100,.5)':'var(--border)';
   let bgColor=isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':isPending?'rgba(20,20,38,.8)':'var(--card)';
@@ -256,20 +286,62 @@ function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
   }
   row.appendChild(topRow);
 
-  // 아랫줄: 선수 이름
+  // 아랫줄: 선수 이름 (클릭하면 복장 색상 순환)
   const nameRow=document.createElement('div');
   nameRow.style.cssText='display:flex;align-items:center;gap:5px;padding-left:2px;';
 
+  const BV_COLORS=['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const BV_COLOR_BG=['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
+  const BV_COLOR_LABELS=['','빨','파','금'];
+
+  // 이름 span 생성 (클릭 → 색상 순환)
+  const mkNameSpan=(pObj,slot,forceColor,forceWeight,prefix='')=>{
+    const span=document.createElement('span');
+    const idx=m[slot+'ColorIdx']||0;
+    // winner/loser 색상이 우선, 없으면 복장 색상
+    const baseColor=forceColor||(idx>0?BV_COLORS[idx]:'#d0d0d0');
+    span.style.cssText=`font-size:12px;font-weight:${forceWeight||'500'};color:${baseColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-radius:3px;padding:0 3px;transition:background .15s;`;
+    if(!forceColor&&idx>0) span.style.background=BV_COLOR_BG[idx];
+    const colorDot=idx>0?`<span style="font-size:8px;opacity:.8;margin-right:2px;">[${BV_COLOR_LABELS[idx]}]</span>`:'';
+    span.innerHTML=`${prefix}${colorDot}${pObj?pObj.name:'?'}`;
+    span.title='클릭: 복장 색상 변경 (흰→빨→파→금)';
+    span.onclick=(ev)=>{
+      ev.stopPropagation();
+      m[slot+'ColorIdx']=((m[slot+'ColorIdx']||0)+1)%4;
+      _bvSave();
+      _redrawBracketView();
+    };
+    return span;
+  };
+
   if(isBye){
-    nameRow.innerHTML=`<span style="font-size:12px;font-weight:600;color:#d0d0d0;">${p1n}</span><span style="font-size:9px;color:var(--accent);margin-left:2px;">BYE</span>`;
+    const sp=mkNameSpan(m.p1,'p1',isDone?'var(--green)':null,isDone?'700':'600');
+    nameRow.appendChild(sp);
+    const byeBadge=document.createElement('span');
+    byeBadge.style.cssText='font-size:9px;color:var(--accent);margin-left:2px;flex-shrink:0;';
+    byeBadge.textContent='BYE';
+    nameRow.appendChild(byeBadge);
+    if(isDone){
+      const doneTag=document.createElement('span');
+      doneTag.style.cssText='font-size:9px;color:var(--green);margin-left:4px;flex-shrink:0;';
+      doneTag.textContent='✓ 진출';
+      nameRow.appendChild(doneTag);
+    }
   } else {
-    const c1=winnerN?(winnerN===p1n?'var(--green)':'#444'):(p1tbd?'var(--text3)':'#d0d0d0');
-    const c2=winnerN?(winnerN===p2n?'var(--green)':'#444'):(p2tbd?'var(--text3)':'#d0d0d0');
-    const w1=winnerN===p1n?'700':'500';
-    const w2=winnerN===p2n?'700':'500';
-    const t1=winnerN===p1n?'🏆 ':'';
-    const t2=winnerN===p2n?'🏆 ':'';
-    nameRow.innerHTML=`<span style="font-size:12px;font-weight:${w1};color:${c1};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t1}${p1n}</span><span style="font-family:'Bebas Neue',cursive;font-size:11px;color:var(--red);flex-shrink:0;">VS</span><span style="font-size:12px;font-weight:${w2};color:${c2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t2}${p2n}</span>`;
+    const isW1=winnerN&&winnerN===p1n;
+    const isW2=winnerN&&winnerN===p2n;
+    const c1=winnerN?(isW1?'var(--green)':'#444'):(p1tbd&&!p1resolved?'var(--text3)':null);
+    const c2=winnerN?(isW2?'var(--green)':'#444'):(p2tbd&&!p2resolved?'var(--text3)':null);
+    const w1=isW1?'700':'500';
+    const w2=isW2?'700':'500';
+    const sp1=mkNameSpan({name:p1n},'p1',c1,w1,isW1?'🏆 ':'');
+    const vsSpan=document.createElement('span');
+    vsSpan.style.cssText="font-family:'Bebas Neue',cursive;font-size:11px;color:var(--red);flex-shrink:0;";
+    vsSpan.textContent='VS';
+    const sp2=mkNameSpan({name:p2n},'p2',c2,w2,isW2?'🏆 ':'');
+    nameRow.appendChild(sp1);
+    nameRow.appendChild(vsSpan);
+    nameRow.appendChild(sp2);
   }
   row.appendChild(nameRow);
 
@@ -323,6 +395,34 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
     },'미리보기 · 전광판 하이라이트'));
   }
 
+  // ── BYE 부전승 진출 버튼 ──
+  if(isBye&&!isDone){
+    const divBye=document.createElement('div');
+    divBye.style.cssText='border-top:1px solid var(--border);margin:4px 0;';
+    modal.appendChild(divBye);
+    modal.innerHTML+=`<div style="padding:4px 12px 2px;font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px;">// 부전승 · 자동 진출</div>`;
+    modal.appendChild(mkBtn('⏩',`${m.p1.name} 다음 라운드 진출`,'var(--accent)',()=>_bvAdvanceBye(g,gi,ri,mi),'상대 없음 · 부전승 처리'));
+  }
+
+  // ── BYE 진출 취소 ──
+  if(isBye&&isDone){
+    modal.appendChild(mkBtn('↩','진출 취소','var(--red)',()=>{
+      delete g.matches[ri][mi].winner;
+      const _crt=g.court||1;
+      if(_bvCurrentMatch[_crt]?.gi===gi&&_bvCurrentMatch[_crt]?.ri===ri&&_bvCurrentMatch[_crt]?.mi===mi) delete _bvCurrentMatch[_crt];
+      const key=`${ri}-${mi}`, courtN=g.court||1;
+      if(g.matches[ri+1]){
+        let rev=false;
+        g.matches[ri+1].forEach(nm=>{
+          if(nm.fromA===key&&nm.p1){ nm.p1.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd=true; rev=true; }
+          if(nm.fromB===key&&nm.p2){ nm.p2.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd=true; rev=true; }
+        });
+        if(!rev){ const nm2=g.matches[ri+1][Math.floor(mi/2)]; if(nm2){ if(mi%2===0&&nm2.p1){nm2.p1.name=`${courtN}-${ri+1}-${mi+1} 승자`;nm2.p1.tbd=true;} else if(nm2.p2){nm2.p2.name=`${courtN}-${ri+1}-${mi+1} 승자`;nm2.p2.tbd=true;} } }
+      }
+      _bvSave(); _redrawBracketView();
+    }));
+  }
+
   // ── 승자 선택 (BYE 아니고 미완료, 선수 확정됐을 때) ──
   if(!isBye&&!isDone&&!isPending){
     const divider=document.createElement('div');
@@ -346,11 +446,22 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
       }
       // 다음 라운드 tbd 복원
       const key=`${ri}-${mi}`;
+      const courtN=g.court||1;
       if(g.matches[ri+1]){
+        let reverted=false;
         g.matches[ri+1].forEach(nm=>{
-          if(nm.fromA===key&&nm.p1){ nm.p1.name=`${ri+1}-${mi+1} 승자`; nm.p1.tbd=true; }
-          if(nm.fromB===key&&nm.p2){ nm.p2.name=`${ri+1}-${mi+1} 승자`; nm.p2.tbd=true; }
+          if(nm.fromA===key&&nm.p1){ nm.p1.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd=true; reverted=true; }
+          if(nm.fromB===key&&nm.p2){ nm.p2.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd=true; reverted=true; }
         });
+        // fromA/fromB 없으면 표준 수학 폴백
+        if(!reverted){
+          const nextMi=Math.floor(mi/2);
+          const nextMatch=g.matches[ri+1][nextMi];
+          if(nextMatch){
+            if(mi%2===0&&nextMatch.p1){ nextMatch.p1.name=`${courtN}-${ri+1}-${mi+1} 승자`; nextMatch.p1.tbd=true; }
+            else if(mi%2===1&&nextMatch.p2){ nextMatch.p2.name=`${courtN}-${ri+1}-${mi+1} 승자`; nextMatch.p2.tbd=true; }
+          }
+        }
       }
       _bvSave();
       _redrawBracketView();
@@ -398,10 +509,20 @@ function _bvRecordWinner(g,gi,ri,mi,which){
   // 다음 라운드 선수 이름 업데이트 (fromA/fromB key로 매칭)
   const key=`${ri}-${mi}`;
   if(g.matches[ri+1]){
+    let updated=false;
     g.matches[ri+1].forEach(nm=>{
-      if(nm.fromA===key&&nm.p1){ nm.p1.name=winner.name; nm.p1.tbd=false; }
-      if(nm.fromB===key&&nm.p2){ nm.p2.name=winner.name; nm.p2.tbd=false; }
+      if(nm.fromA===key&&nm.p1){ nm.p1.name=winner.name; nm.p1.tbd=false; updated=true; }
+      if(nm.fromB===key&&nm.p2){ nm.p2.name=winner.name; nm.p2.tbd=false; updated=true; }
     });
+    // fromA/fromB 키 매칭 실패 시 표준 토너먼트 수학으로 폴백
+    if(!updated){
+      const nextMi=Math.floor(mi/2);
+      const nextMatch=g.matches[ri+1][nextMi];
+      if(nextMatch){
+        if(mi%2===0&&nextMatch.p1){ nextMatch.p1.name=winner.name; nextMatch.p1.tbd=false; }
+        else if(mi%2===1&&nextMatch.p2){ nextMatch.p2.name=winner.name; nextMatch.p2.tbd=false; }
+      }
+    }
   }
 
   // 현재경기 해제
@@ -418,6 +539,47 @@ function _bvRecordWinner(g,gi,ri,mi,which){
   try{
     const bc=new BroadcastChannel('sgp_cmd');
     bc.postMessage({type:'winner',name:winner.name});
+    bc.close();
+  }catch(ex){}
+}
+
+// 부전승 진출 처리
+function _bvAdvanceBye(g,gi,ri,mi){
+  const m=g.matches[ri][mi];
+  if(!m.p1) return;
+  m.winner=m.p1;
+
+  // 다음 라운드 이름 업데이트 (fromA/fromB 우선, 폴백 수학)
+  const key=`${ri}-${mi}`;
+  if(g.matches[ri+1]){
+    let updated=false;
+    g.matches[ri+1].forEach(nm=>{
+      if(nm.fromA===key&&nm.p1){ nm.p1.name=m.p1.name; nm.p1.tbd=false; updated=true; }
+      if(nm.fromB===key&&nm.p2){ nm.p2.name=m.p1.name; nm.p2.tbd=false; updated=true; }
+    });
+    if(!updated){
+      const nextMi=Math.floor(mi/2);
+      const nextMatch=g.matches[ri+1][nextMi];
+      if(nextMatch){
+        if(mi%2===0&&nextMatch.p1){ nextMatch.p1.name=m.p1.name; nextMatch.p1.tbd=false; }
+        else if(nextMatch.p2){ nextMatch.p2.name=m.p1.name; nextMatch.p2.tbd=false; }
+      }
+    }
+  }
+
+  // 현재경기 해제
+  const _crt=g.court||1;
+  if(_bvCurrentMatch[_crt]?.gi===gi&&_bvCurrentMatch[_crt]?.ri===ri&&_bvCurrentMatch[_crt]?.mi===mi){
+    delete _bvCurrentMatch[_crt];
+  }
+
+  _bvSave();
+  _redrawBracketView();
+
+  // 전광판에 진출 알림
+  try{
+    const bc=new BroadcastChannel('sgp_cmd');
+    bc.postMessage({type:'winner',name:m.p1.name});
     bc.close();
   }catch(ex){}
 }
