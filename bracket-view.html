@@ -109,7 +109,6 @@ function _computeSeqOffsets(){
 function _redrawBracketView(){
   if(!_IS_EMBED){ _redrawBracketViewTree(); return; }
 
-  // ── embed 모드: 리스트뷰 ──
   const tabs=document.getElementById('pts-bracket-tabs');
   if(tabs) tabs.style.display='none';
   const subhdr=document.querySelector('.subhdr');
@@ -118,7 +117,7 @@ function _redrawBracketView(){
   const view=document.getElementById('pts-bracket-view');
   if(!view) return;
   view.innerHTML='';
-  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:14px 16px;display:block;background:var(--bg);';
+  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:10px 12px;display:block;background:var(--bg);';
 
   if(!S.groupBrackets||!S.groupBrackets.length){
     view.innerHTML='<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px;">저장된 대진표가 없습니다</div>';
@@ -127,7 +126,6 @@ function _redrawBracketView(){
 
   _computeSeqOffsets();
 
-  // 경기장별 그룹핑
   const courts={};
   S.groupBrackets.forEach((g,gi)=>{
     const c=g.court||1;
@@ -135,47 +133,69 @@ function _redrawBracketView(){
     courts[c].push({g,gi});
   });
 
-  const roundNames=['1라운드','2라운드','3라운드','4라운드','준결승','결승'];
+  const courtNums=Object.keys(courts).map(Number).sort();
+  const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
+  const globalMaxRi=Math.max(...courtNums.map(c=>Math.max(...courts[c].map(({g})=>g.matches.length))));
+  const cols=courtNums.length;
 
-  Object.keys(courts).map(Number).sort().forEach(courtNum=>{
-    const groups=courts[courtNum];
-    const maxRi=Math.max(...groups.map(({g})=>g.matches.length));
+  for(let ri=0;ri<globalMaxRi;ri++){
+    const hasAny=courtNums.some(c=>courts[c].some(({g})=>g.matches[ri]&&g.matches[ri].length));
+    if(!hasAny) continue;
 
-    // 경기장 헤더
-    const courtDiv=document.createElement('div');
-    courtDiv.style.cssText='margin-bottom:16px;';
-    const courtHdr=document.createElement('div');
-    courtHdr.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;padding:5px 0 8px;border-bottom:1px solid rgba(76,201,240,.3);margin-bottom:8px;';
-    courtHdr.textContent=`// 경기장 ${courtNum}`;
-    courtDiv.appendChild(courtHdr);
+    let rName;
+    if(ri===globalMaxRi-1&&globalMaxRi>1) rName='결승';
+    else if(ri===globalMaxRi-2&&globalMaxRi>2) rName='준결승';
+    else rName=roundNames[ri]||`${ri+1}라운드`;
 
-    // 라운드별 경기 나열
-    for(let ri=0;ri<maxRi;ri++){
-      // 이 라운드에 경기가 있는지 확인
-      const hasMatches=groups.some(({g})=>g.matches[ri]&&g.matches[ri].length);
-      if(!hasMatches) continue;
+    const roundSection=document.createElement('div');
+    roundSection.style.cssText='margin-bottom:20px;';
 
-      const maxRiTotal=Math.max(...groups.map(({g})=>g.matches.length));
-      const rName=ri===maxRiTotal-1&&maxRiTotal>1?'결승':roundNames[ri]||`${ri+1}라운드`;
+    // ── 라운드 + 경기장 헤더 한 줄 ──
+    const hdrRow=document.createElement('div');
+    hdrRow.style.cssText=`display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--border);`;
 
-      const roundHdr=document.createElement('div');
-      roundHdr.style.cssText='font-size:9px;color:#aaaaaa;font-family:"Share Tech Mono",monospace;letter-spacing:1px;padding:6px 2px 4px;margin-top:4px;';
-      roundHdr.textContent=rName;
-      courtDiv.appendChild(roundHdr);
+    courtNums.forEach(c=>{
+      const ch=document.createElement('div');
+      ch.style.cssText='display:flex;align-items:center;gap:8px;';
+      ch.innerHTML=`
+        <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);font-weight:700;">경기장 ${c}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1px;">${rName.toUpperCase()}</span>
+      `;
+      hdrRow.appendChild(ch);
+    });
+    roundSection.appendChild(hdrRow);
 
-      groups.forEach(({g,gi})=>{
+    // ── 경기장별 경기 수집 ──
+    const courtMatches={};
+    courtNums.forEach(c=>{
+      courtMatches[c]=[];
+      courts[c].forEach(({g,gi})=>{
         if(!g.matches[ri]) return;
         g.matches[ri].forEach((m,mi)=>{
           const seqNum=((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1;
-          const label=`${courtNum}-${ri+1}-${seqNum}`;
+          const label=`${c}-${ri+1}-${seqNum}`;
           const shortLabel=g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-          courtDiv.appendChild(_bvBuildRow(g,gi,ri,mi,m,label,shortLabel));
+          courtMatches[c].push({g,gi,m,mi,label,shortLabel});
         });
       });
-    }
+    });
 
-    view.appendChild(courtDiv);
-  });
+    // ── 경기장 열을 나란히 ──
+    const colsWrap=document.createElement('div');
+    colsWrap.style.cssText=`display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px;align-items:start;`;
+
+    courtNums.forEach(c=>{
+      const col=document.createElement('div');
+      col.style.cssText='display:flex;flex-direction:column;gap:3px;';
+      courtMatches[c].forEach(({g,gi,m,mi,label,shortLabel})=>{
+        col.appendChild(_bvBuildRow(g,gi,ri,mi,m,label,shortLabel));
+      });
+      colsWrap.appendChild(col);
+    });
+
+    roundSection.appendChild(colsWrap);
+    view.appendChild(roundSection);
+  }
 }
 
 function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
@@ -187,63 +207,69 @@ function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
   const p1n=m.p1?.name||'?';
   const p2n=m.p2?.name||'?';
   const winnerN=m.winner?.name;
-  // 아직 선수 미확정 (둘 다 tbd) → 대기 상태
   const isPending=!isDone&&(p1tbd||p2tbd);
 
+  let borderColor=isCur?'var(--red)':isDone?'rgba(6,214,160,.5)':isPending?'rgba(70,70,100,.5)':'var(--border)';
+  let bgColor=isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':isPending?'rgba(20,20,38,.8)':'var(--card)';
+
   const row=document.createElement('div');
-  row.style.cssText=`
-    display:flex;align-items:center;gap:8px;padding:6px 10px;
-    border-radius:6px;margin-bottom:3px;cursor:pointer;
-    border:1px solid ${isCur?'var(--red)':isDone?'rgba(6,214,160,.4)':isPending?'rgba(90,90,122,.5)':'var(--border)'};
-    background:${isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':isPending?'rgba(30,30,50,.6)':'var(--card)'};
-    transition:background .1s;${isPending?'opacity:.7;':''}
-  `;
-  row.onmouseover=()=>{ row.style.background=isCur?'rgba(230,57,70,.12)':isDone?'rgba(6,214,160,.08)':'var(--card2)'; };
-  row.onmouseout=()=>{ row.style.background=isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':isPending?'rgba(30,30,50,.6)':'var(--card)'; };
+  row.style.cssText=`border:1px solid ${borderColor};background:${bgColor};border-radius:7px;padding:7px 10px;cursor:pointer;transition:background .1s;${isPending?'opacity:.65;':''}${isCur?'box-shadow:0 0 0 1px var(--red);':''}`;
+  row.onmouseover=()=>row.style.background=isCur?'rgba(230,57,70,.13)':'var(--card2)';
+  row.onmouseout=()=>row.style.background=bgColor;
 
-  // 경기 번호
+  // 윗줄: 경기명 / 체급 / 상태뱃지
+  const topRow=document.createElement('div');
+  topRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+
   const lbl=document.createElement('span');
-  lbl.style.cssText=`font-size:10px;font-weight:700;color:${isCur?'var(--red)':isPending?'var(--text3)':'var(--accent)'};font-family:"Share Tech Mono",monospace;min-width:52px;flex-shrink:0;`;
+  lbl.style.cssText=`font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:700;color:${isCur?'var(--red)':isPending?'var(--text3)':'var(--accent)'};flex-shrink:0;`;
   lbl.textContent=label;
-  row.appendChild(lbl);
+  topRow.appendChild(lbl);
 
-  // 체급
-  const grpLbl=document.createElement('span');
-  grpLbl.style.cssText='font-size:9px;color:var(--text3);min-width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-  grpLbl.textContent=shortLabel;
-  row.appendChild(grpLbl);
+  const sep=document.createElement('span');
+  sep.style.cssText='color:var(--border2);font-size:10px;flex-shrink:0;';
+  sep.textContent='/';
+  topRow.appendChild(sep);
 
-  // 선수
-  const players=document.createElement('span');
-  players.style.cssText='font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-  if(isBye){
-    players.innerHTML=`<span style="color:#d0d0d0;">${p1n}</span> <span style="font-size:9px;color:var(--accent);">BYE</span>`;
-  } else {
-    const c1=winnerN?(winnerN===p1n?'#06d6a0':'#555'):(p1tbd?'var(--text3)':'#d0d0d0');
-    const c2=winnerN?(winnerN===p2n?'#06d6a0':'#555'):(p2tbd?'var(--text3)':'#d0d0d0');
-    const n1=p1tbd?`<span style="font-size:8px;color:var(--text3);margin-right:2px;">대기</span>${p1n}`:p1n;
-    const n2=p2tbd?`<span style="font-size:8px;color:var(--text3);margin-right:2px;">대기</span>${p2n}`:p2n;
-    players.innerHTML=`<span style="color:${c1};">${n1}</span><span style="color:var(--red);font-size:10px;margin:0 4px;font-family:'Bebas Neue',cursive;">VS</span><span style="color:${c2};">${n2}</span>`;
-  }
-  row.appendChild(players);
+  const cat=document.createElement('span');
+  cat.style.cssText='font-size:10px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  cat.textContent=shortLabel;
+  topRow.appendChild(cat);
 
-  // 상태 뱃지
   if(isCur){
-    const badge=document.createElement('span');
-    badge.style.cssText='font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;animation:livepulse 1.2s ease-in-out infinite;';
-    badge.textContent='LIVE';
-    row.appendChild(badge);
+    const b=document.createElement('span');
+    b.style.cssText='font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 4px;font-family:"Share Tech Mono",monospace;flex-shrink:0;animation:livepulse 1.2s ease-in-out infinite;';
+    b.textContent='LIVE';
+    topRow.appendChild(b);
   } else if(isDone){
-    const badge=document.createElement('span');
-    badge.style.cssText='font-size:9px;color:var(--green);flex-shrink:0;';
-    badge.textContent='✓';
-    row.appendChild(badge);
+    const b=document.createElement('span');
+    b.style.cssText='font-size:10px;color:var(--green);flex-shrink:0;';
+    b.textContent='✓';
+    topRow.appendChild(b);
   } else if(isPending){
-    const badge=document.createElement('span');
-    badge.style.cssText='font-size:8px;color:var(--text3);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
-    badge.textContent='대기';
-    row.appendChild(badge);
+    const b=document.createElement('span');
+    b.style.cssText='font-size:8px;color:var(--text3);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
+    b.textContent='대기';
+    topRow.appendChild(b);
   }
+  row.appendChild(topRow);
+
+  // 아랫줄: 선수 이름
+  const nameRow=document.createElement('div');
+  nameRow.style.cssText='display:flex;align-items:center;gap:5px;padding-left:2px;';
+
+  if(isBye){
+    nameRow.innerHTML=`<span style="font-size:12px;font-weight:600;color:#d0d0d0;">${p1n}</span><span style="font-size:9px;color:var(--accent);margin-left:2px;">BYE</span>`;
+  } else {
+    const c1=winnerN?(winnerN===p1n?'var(--green)':'#444'):(p1tbd?'var(--text3)':'#d0d0d0');
+    const c2=winnerN?(winnerN===p2n?'var(--green)':'#444'):(p2tbd?'var(--text3)':'#d0d0d0');
+    const w1=winnerN===p1n?'700':'500';
+    const w2=winnerN===p2n?'700':'500';
+    const t1=winnerN===p1n?'🏆 ':'';
+    const t2=winnerN===p2n?'🏆 ':'';
+    nameRow.innerHTML=`<span style="font-size:12px;font-weight:${w1};color:${c1};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t1}${p1n}</span><span style="font-family:'Bebas Neue',cursive;font-size:11px;color:var(--red);flex-shrink:0;">VS</span><span style="font-size:12px;font-weight:${w2};color:${c2};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t2}${p2n}</span>`;
+  }
+  row.appendChild(nameRow);
 
   row.onclick=(e)=>_bvShowModal(e,g,gi,ri,mi,m,label,shortLabel);
   return row;
@@ -425,20 +451,19 @@ window.addEventListener('storage',e=>{
 });
 
 
-// ── _renderBracketHTML 연결선 오버라이드 ──
-// step4.js의 getBoundingClientRect 방식은 iframe 환경에서 좌표가 틀어지므로
-// bracket-view.html에서만 순수 수학 계산으로 덮어씀 (step4.js는 건드리지 않음)
+// ── _renderBracketHTML 오버라이드 ──
+// ① SVG 연결선: 순수 수학 계산으로 재작성 (iframe 좌표 문제 방지)
+// ② 박스 DOM:  winner 강조 시각화 (승자 행 녹색 배경+배지, 패자 흐리게, 승자→다음칸 연결선 녹색)
 (function(){
   const _orig = _renderBracketHTML;
   _renderBracketHTML = function(wrap, rounds, direction, reversed){
-    // 1) 원본 함수로 카드/박스 DOM 먼저 렌더
+    // 1) 원본으로 박스 DOM 먼저 렌더
     _orig(wrap, rounds, direction, reversed);
 
-    // 2) 원본이 그린 SVG 연결선 제거 후 수학 계산으로 재작성
+    // 2) rAF에서 SVG 선 재계산 + winner 박스 강화
     requestAnimationFrame(()=>{
-      // 원본 rAF가 그린 SVG 제거
+      // 원본 SVG 제거
       wrap.querySelectorAll('svg[data-bv-lines]').forEach(s=>s.remove());
-      // 원본이 붙인 첫 번째 SVG도 제거 (position:absolute, top:0, left:0)
       const outerWrap=wrap.querySelector('[style*="position:relative"]');
       if(!outerWrap) return;
       const container=outerWrap.querySelector('[style*="position:relative"]') || outerWrap.firstElementChild;
@@ -446,6 +471,50 @@ window.addEventListener('storage',e=>{
       container.querySelectorAll('svg').forEach(s=>s.remove());
       outerWrap.querySelectorAll(':scope>svg').forEach(s=>s.remove());
 
+      // ── ② winner 박스 시각 강화 ──
+      rounds.forEach((matches, ri)=>{
+        matches.forEach((m, mi)=>{
+          if(!m.winner) return;
+          // 박스 요소 찾기 (data-ri, data-mi)
+          const box = container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+          if(!box) return;
+
+          // 박스 테두리 녹색 강화
+          box.style.borderColor='#06d6a0';
+          box.style.borderWidth='2px';
+          box.style.boxShadow='0 0 10px rgba(6,214,160,.35)';
+
+          // 내부 이름 행 찾아서 승자/패자 구분 강화
+          const nameRow = box.querySelector('[style*="align-items:center"][style*="padding"]');
+          if(nameRow){
+            // 행 전체 순회하며 span 텍스트 비교
+            const spans = nameRow.querySelectorAll('span');
+            spans.forEach(span=>{
+              const txt=(span.textContent||'').trim();
+              if(!txt) return;
+              if(txt===m.winner.name){
+                // 승자: 밝게 + 굵게 + 녹색
+                span.style.color='#06d6a0';
+                span.style.fontWeight='700';
+                // 🏆 배지 추가 (중복 방지)
+                if(!span.querySelector('.bv-win-badge')){
+                  const badge=document.createElement('span');
+                  badge.className='bv-win-badge';
+                  badge.style.cssText='font-size:9px;margin-left:4px;vertical-align:middle;';
+                  badge.textContent='🏆';
+                  span.appendChild(badge);
+                }
+              } else if(txt!=='VS'&&txt!=='BYE'){
+                // 패자: 흐리게
+                span.style.color='#444';
+                span.style.fontWeight='400';
+              }
+            });
+          }
+        });
+      });
+
+      // ── ① SVG 연결선 재계산 ──
       const T=rounds.length;
       if(T<2) return;
       const SLOT_H=90, BOX_W=180, GAP=40, PAD=8, LABEL_H=24;
@@ -481,13 +550,26 @@ window.addEventListener('storage',e=>{
       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('data-bv-lines','1');
       svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
-      svg.setAttribute('width',W);svg.setAttribute('height',H);
+      svg.setAttribute('width',W); svg.setAttribute('height',H);
 
-      const PATH=(d)=>{
+      // 승자 진출 경로 추적 — 어느 라인이 승자 진출선인지
+      // rounds[ri+1][nmi] 의 fromA/fromB가 srcA/srcB를 가리키고
+      // rounds[ri][srcA].winner가 있으면 → 그 선은 "진출선"
+      const isWinnerLine=(ri, srcIdx, nm)=>{
+        const srcM=rounds[ri]?.[srcIdx];
+        if(!srcM||!srcM.winner) return false;
+        // nm(다음 라운드 경기)의 p1.name이 srcM.winner.name과 같으면 진출
+        return (nm.p1&&nm.p1.name===srcM.winner.name)||(nm.p2&&nm.p2.name===srcM.winner.name);
+      };
+
+      const PATH=(d, color='#3a3a55', width=1.5)=>{
         const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-        p.setAttribute('d',d);p.setAttribute('stroke','#ffffff');
-        p.setAttribute('stroke-width','2');p.setAttribute('fill','none');
-        p.setAttribute('stroke-linecap','square');svg.appendChild(p);
+        p.setAttribute('d',d);
+        p.setAttribute('stroke',color);
+        p.setAttribute('stroke-width',String(width));
+        p.setAttribute('fill','none');
+        p.setAttribute('stroke-linecap','square');
+        svg.appendChild(p);
       };
 
       rounds.forEach((matches,ri)=>{
@@ -500,29 +582,48 @@ window.addEventListener('storage',e=>{
           else { srcB=nmi*2+1; }
           const hasB=nm.fromB!=null&&srcB<matches.length;
           const a=getBox(ri,srcA), b=hasB?getBox(ri,srcB):null, t=getBox(ri+1,nmi);
+
+          // 승자 진출선 여부
+          const aIsWin=isWinnerLine(ri, srcA, nm);
+          const bIsWin=hasB&&isWinnerLine(ri, srcB, nm);
+          const colorA=aIsWin?'#06d6a0':'#3a3a55';
+          const colorB=bIsWin?'#06d6a0':'#3a3a55';
+          const widthA=aIsWin?2:1.2;
+          const widthB=bIsWin?2:1.2;
+          // 다음 칸으로 가는 중간선: 승자가 확정됐으면 녹색
+          const colorMid=(aIsWin||bIsWin)?'#06d6a0':'#3a3a55';
+          const widthMid=(aIsWin||bIsWin)?2:1.2;
+
           if(reversed){
             const ax=a.left,bx=b?b.left:a.left,tx=t.right,ay=a.cy,midX=(ax+tx)/2;
             if(b){
-              const by=b.cy,midY=(ay+by)/2;
-              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
-              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+              const by=b.cy;
+              PATH(`M${ax},${ay} H${midX}`,colorA,widthA);
+              PATH(`M${bx},${by} H${midX}`,colorB,widthB);
+              PATH(`M${midX},${ay} V${by}`,colorMid,widthMid);
+              PATH(`M${midX},${(ay+by)/2} H${tx}`,colorMid,widthMid);
             } else {
-              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+              Math.abs(ay-t.cy)<1
+                ?PATH(`M${ax},${ay} H${tx}`,colorA,widthA)
+                :PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`,colorA,widthA);
             }
           } else {
             const ax=a.right,bx=b?b.right:a.right,tx=t.left,ay=a.cy,midX=(ax+tx)/2;
             if(b){
-              const by=b.cy,midY=(ay+by)/2;
-              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
-              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+              const by=b.cy;
+              PATH(`M${ax},${ay} H${midX}`,colorA,widthA);
+              PATH(`M${bx},${by} H${midX}`,colorB,widthB);
+              PATH(`M${midX},${ay} V${by}`,colorMid,widthMid);
+              PATH(`M${midX},${(ay+by)/2} H${tx}`,colorMid,widthMid);
             } else {
-              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+              Math.abs(ay-t.cy)<1
+                ?PATH(`M${ax},${ay} H${tx}`,colorA,widthA)
+                :PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`,colorA,widthA);
             }
           }
         });
       });
 
-      // SVG를 container에 붙임
       container.style.position='relative';
       container.appendChild(svg);
     });
