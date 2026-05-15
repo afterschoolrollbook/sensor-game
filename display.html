@@ -685,11 +685,20 @@ function refresh3(){
 function _applyBracketColors(view, groups){
   const _CC=['','#e63946','#4cc9f0','#ffd60a'];
   groups.forEach(g=>{
+    const court=g.court||1;
+    const shortLabel=g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+    // data-court + data-group-label 로 해당 경기장 그룹 래퍼 정확히 찾기
+    const wraps=view.querySelectorAll(`[data-court="${court}"]`);
+    let wrap=null;
+    wraps.forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
+
     (g.matches||[]).forEach((round,ri)=>{
       round.forEach((m,mi)=>{
         const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
         if(!p1ci&&!p2ci) return;
-        const box=view.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        const box=wrap
+          ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
+          : null;
         if(!box) return;
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
@@ -750,6 +759,8 @@ function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;sec.appendChild(hdr);
       const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
+      groupWrap.dataset.court=String(g.court||1);
+      groupWrap.dataset.groupLabel=shortLabel;
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       window.S.matches=taggedMatches;
       try{_renderBracketHTML(groupWrap,taggedMatches,'top',reversed);stripScroll(groupWrap);}catch(e){}
@@ -774,6 +785,8 @@ function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
       hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
       const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
+      groupWrap.dataset.court=String(g.court||1);
+      groupWrap.dataset.groupLabel=shortLabel;
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       window.S.matches=taggedMatches;
       try{

@@ -593,11 +593,20 @@ function _applyBvColors(){
   if(!view||!S.groupBrackets) return;
   const _CC=['','#e63946','#4cc9f0','#ffd60a'];
   S.groupBrackets.forEach(g=>{
+    const court=g.court||1;
+    const shortLabel=g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+    // 경기장+그룹 래퍼 찾기 (data-court + data-group-label 조합)
+    const wraps=view.querySelectorAll(`[data-court="${court}"]`);
+    let wrap=null;
+    wraps.forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
+
     (g.matches||[]).forEach((round,ri)=>{
       round.forEach((m,mi)=>{
         const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
         if(!p1ci&&!p2ci) return;
-        const box=view.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        const box=wrap
+          ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
+          : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1]; // fallback
         if(!box) return;
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
