@@ -1,6 +1,8 @@
 // ══ DS TAB 2: 현재경기 VS 화면 설정 ══
 
 let _tab2Mode = 'court_1'; // 기본: 경기장 1
+let _pv2RandomIv = null;  // pv2 랜덤 순환 인터벌
+let _pv2RandomCourt = 1;  // pv2 현재 경기장
 
 function buildTab2(){
   // ── [BUG FIX 2] 탭 전환 시 _tab2Mode가 항상 'court_1'로 리셋되는 버그 수정 ──
@@ -208,6 +210,8 @@ function buildTab2CourtBtns(){
     const payload=running?{type:'sgp_d2_random_start',interval:_ivSec}:{type:'sgp_d2_random_stop'};
     try{ if(typeof _bc!=='undefined'&&_bc) _bc.postMessage(payload); }catch(e){}
     try{ const dw=_getDispWin(); if(dw&&!dw.closed) dw.postMessage(payload,'*'); }catch(e){}
+    // pv2 미리보기도 동일하게 적용
+    if(running){ _startPv2Random(_ivSec); } else { _stopPv2Random(); }
   };
 }
 
@@ -233,6 +237,27 @@ function _setTab2Mode(mode){
   _updatePv2ForMode(mode);
 }
 
+function _startPv2Random(sec){
+  _stopPv2Random();
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  if(courtCount<2){ _updatePv2ForCourt(1); return; }
+  _pv2RandomCourt=1;
+  _pv2SwitchCourt();
+  _pv2RandomIv=setInterval(()=>{ _pv2SwitchCourt(); }, sec*1000);
+}
+
+function _stopPv2Random(){
+  if(_pv2RandomIv){ clearInterval(_pv2RandomIv); _pv2RandomIv=null; }
+}
+
+function _pv2SwitchCourt(){
+  const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
+  const courtLbl=document.getElementById('pv2-court-lbl');
+  if(courtLbl) courtLbl.textContent=`// 경기장 ${_pv2RandomCourt}`;
+  _updatePv2ForCourt(_pv2RandomCourt);
+  _pv2RandomCourt=(_pv2RandomCourt%courtCount)+1;
+}
+
 function _getDispWin(){
   // step6.js에서 display.html을 window.open한 핸들이 있으면 반환
   try{ return window._dispWin||null; }catch(e){ return null; }
@@ -241,11 +266,17 @@ function _getDispWin(){
 function _updatePv2ForMode(mode){
   const courtLbl=document.getElementById('pv2-court-lbl');
   if(mode==='random'){
-    // 랜덤: 현재 첫 번째 경기장부터 표시
+    // 랜덤: 저장된 실행 여부 확인 후 인터벌 적용
     const courtLbl=document.getElementById('pv2-court-lbl');
+    _pv2RandomCourt=1;
     if(courtLbl) courtLbl.textContent='// 경기장 1';
     _updatePv2ForCourt(1);
     updateDst2();
+    const isRunning=localStorage.getItem('sgp_d2_random_running')==='true';
+    if(isRunning){
+      const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60');
+      _startPv2Random(iv);
+    }
   } else if(mode.startsWith('court_')){
     const c=parseInt(mode.replace('court_',''));
     if(courtLbl) courtLbl.textContent=`// 경기장 ${c}`;
