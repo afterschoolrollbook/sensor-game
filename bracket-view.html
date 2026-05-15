@@ -1619,6 +1619,7 @@ function _redrawBracketViewTree(){
     const mkSection=(g, reversed)=>{
       const labelParts=g.label.split('/').map(s=>s.trim());
       const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+      window._bvCurrentGroupLabel=shortLabel;  // isCurrentMatchIdx 비교용
       const sec=document.createElement('div');
       sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
       const hdr=document.createElement('div');
@@ -4700,6 +4701,48 @@ window.addEventListener('load', ()=>{
 <script>
 window.addEventListener('pagehide',()=>{ try{window._bvBc&&window._bvBc.close();}catch(e){} });
 
+// 경기장별 선택경기 — 트리뷰/리스트뷰 공통 (하이라이트 유지용)
+const _bvSelectedMatches = {}; // { [courtNum]: {ri, mi, groupLabel} }
+
+// 트리뷰용 현재 그룹 label 세팅 (mkSection 안에서 교체)
+window._bvCurrentGroupLabel = '';
+
+// selectedMatches 배열 반환 헬퍼
+function _getBvSelectedArr(){
+  return Object.values(_bvSelectedMatches);
+}
+
+// isCurrentMatchIdx 오버라이드 — 트리뷰에서 호출됨
+function _setBvIsCurrentMatchIdx(){
+  window.isCurrentMatchIdx = function(ri, mi){
+    const arr = _getBvSelectedArr();
+    if(!arr.length) return false;
+    return arr.some(s => s.ri===ri && s.mi===mi && s.groupLabel===window._bvCurrentGroupLabel);
+  };
+}
+
+// storage에서 selectedMatches 재구성
+function _bvLoadSelectedFromStorage(){
+  const gb = S.groupBrackets || [];
+  for(let c=1; c<=Math.max(_courtCount||1, 2); c++){
+    const courtStr = localStorage.getItem(`sgp_display_vs_court_${c}`);
+    if(!courtStr) continue;
+    try{
+      const mv = JSON.parse(courtStr);
+      if(mv.ri!=null && mv.mi!=null && mv.groupLabel){
+        const sl = mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        _bvSelectedMatches[c] = { ri:mv.ri, mi:mv.mi, groupLabel:sl, courtNum:c };
+        // _bvCurrentMatch도 동기화 (리스트뷰용)
+        const gi = gb.findIndex(g=>{
+          const gsl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+          return gsl===sl||g.label===mv.groupLabel;
+        });
+        if(gi>=0) _bvCurrentMatch[c] = { gi, ri:mv.ri, mi:mv.mi };
+      }
+    }catch(e){}
+  }
+}
+
 // 새창/iframe 양방향 하이라이트 연동
 // 공통 하이라이트 함수: ri/mi로 박스 찾기 (텍스트 검색보다 정확)
 function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
@@ -4707,29 +4750,18 @@ function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
     const courtStr = String(court || 1);
     const prev = _selectedMatchByCourt[courtStr];
 
-    // ── 자가 수신 방지 ──
-    if(domId && prev === domId){
-      const alreadyEl = document.querySelector('[data-match-id="'+domId+'"]');
-      if(alreadyEl && alreadyEl.style.outline) return;
-    }
-
     // 이전 하이라이트 제거
     if(prev && prev !== domId){
       const el=document.querySelector('[data-match-id="'+prev+'"]');
       if(el){el.style.outline='';el.style.boxShadow='';}
     }
 
-    // ── 요소 찾기 ──
-    // 1순위: domId 직접 사용 (같은 창에서 온 경우)
+    // 요소 찾기
     let box = domId ? document.querySelector('[data-match-id="'+domId+'"]') : null;
-
-    // 2순위: groupLabel + ri/mi로 정확한 체급 특정 (다른 창에서 온 경우)
-    // groupLabel이 있으면 해당 체급 래퍼만 검색 → ri/mi 중복 방지
     if(!box){
       const courtWraps = document.querySelectorAll('[data-court="'+courtStr+'"]');
       courtWraps.forEach(wrap=>{
         if(box) return;
-        // groupLabel이 있으면 해당 체급 래퍼인지 확인
         if(groupLabel && wrap.dataset.groupLabel && wrap.dataset.groupLabel !== groupLabel) return;
         const found = wrap.querySelector('[data-ri="'+ri+'"][data-mi="'+mi+'"]');
         if(found) box = found;
@@ -4744,6 +4776,31 @@ function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
   }catch(e){}
 }
 
+// 경기 선택 수신 → selectedMatches 업데이트 후 리렌더
+function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
+  const gb = S.groupBrackets || [];
+  // shortLabel 정규화
+  const sl = (groupLabel||'').split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+  const labelToUse = sl || groupLabel || '';
+
+  // _bvSelectedMatches 업데이트
+  _bvSelectedMatches[courtNum] = { ri, mi, groupLabel: labelToUse, courtNum };
+
+  if(_IS_EMBED){
+    // 리스트뷰: _bvCurrentMatch도 업데이트 후 리렌더
+    const gi = gb.findIndex(g=>{
+      const gsl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      return gsl===labelToUse || g.label===groupLabel;
+    });
+    _bvCurrentMatch[courtNum] = { gi: gi>=0 ? gi : 0, ri, mi };
+    _redrawBracketView();
+  } else {
+    // 트리뷰: isCurrentMatchIdx 오버라이드 후 전체 리렌더
+    _setBvIsCurrentMatchIdx();
+    _redrawBracketViewTree();
+  }
+}
+
 // BroadcastChannel: 3번탭 경기 선택 실시간 수신
 (function(){
   try{
@@ -4752,26 +4809,24 @@ function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
       const cmd = e.data;
       if(!cmd || cmd.type !== 'set_match') return;
       const courtNum = cmd.court || 1;
-      if(_IS_EMBED){
-        // 리스트뷰: gi 찾아 _bvCurrentMatch 업데이트 후 리렌더
-        const gb = S.groupBrackets || [];
-        let gi = -1;
-        if(cmd.groupLabel){
-          gi = gb.findIndex(g => {
-            const sl = g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-            return sl === cmd.groupLabel || g.label === cmd.groupLabel;
-          });
-        }
-        if(gi < 0) gi = gb.findIndex(g => (g.court||1) === courtNum);
-        _bvCurrentMatch[courtNum] = { gi: gi >= 0 ? gi : 0, ri: cmd.ri, mi: cmd.mi };
-        _redrawBracketView();
-      } else {
-        // 트리뷰: 박스 하이라이트만
-        if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, courtNum, cmd.domId, cmd.groupLabel);
+      if(cmd.ri!=null && cmd.mi!=null){
+        _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
       }
     };
   }catch(e){}
 })();
+
+// storage 이벤트: sgp_display_vs_court_N 변경 시 하이라이트 동기화
+window.addEventListener('storage', function(e){
+  if(!e.key || !e.key.startsWith('sgp_display_vs_court_')) return;
+  try{
+    const courtNum = parseInt(e.key.replace('sgp_display_vs_court_',''));
+    const mv = JSON.parse(e.newValue||'{}');
+    if(mv.ri!=null && mv.mi!=null){
+      _bvApplySelection(courtNum, mv.ri, mv.mi, mv.groupLabel||mv.label||'', mv.domId);
+    }
+  }catch(err){}
+});
 </script>
 </body>
 </html>
