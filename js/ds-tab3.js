@@ -2,7 +2,7 @@
 // sgp_groupBrackets 직접 읽어서 경기장/라운드별 경기 목록 렌더
 // 승자 선택 → 다음 라운드 자동 반영 → localStorage 저장 → 새창 대진표 동기화
 
-let _t3CurrentMatch = null; // { gi, ri, mi, courtNum }
+const _t3CurrentMatch = {}; // { [courtNum]: { gi, ri, mi, courtNum } } — 경기장별 독립 선택
 let _t3Data = [];           // S.groupBrackets 복사본 (직접 조작)
 
 // ── 진입점: 탭3 클릭 시 ──
@@ -151,10 +151,8 @@ function _t3Render(){
 
 // ── 2줄 경기 카드 ──
 function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
-  const isCur = _t3CurrentMatch &&
-    _t3CurrentMatch.gi === gi &&
-    _t3CurrentMatch.ri === ri &&
-    _t3CurrentMatch.mi === mi;
+  const cur = _t3CurrentMatch[courtNum];
+  const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
   const isDone = !!m.winner;
   const isBye = m.p1 && !m.p2;
   const p1tbd = m.p1 && m.p1.tbd;
@@ -245,7 +243,8 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   const isDone = !!m.winner;
   const isBye = m.p1 && !m.p2;
   const isPending = !isDone && (m.p1 && m.p1.tbd || m.p2 && m.p2.tbd);
-  const isCur = _t3CurrentMatch && _t3CurrentMatch.gi===gi && _t3CurrentMatch.ri===ri && _t3CurrentMatch.mi===mi;
+  const _cur = _t3CurrentMatch[courtNum];
+  const isCur = _cur && _cur.gi===gi && _cur.ri===ri && _cur.mi===mi;
   const p1n = (m.p1 && m.p1.name) || '—';
   const p2n = (m.p2 && m.p2.name) || '—';
   const winnerN = m.winner && m.winner.name;
@@ -327,7 +326,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     mbody.appendChild(lbl3);
     if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum)));
     if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum)));
-    mbody.appendChild(mkBtn('↩', '결과 취소', 'var(--red)', 'rgba(230,57,70,.1)', () => _t3CancelWinner(g, gi, ri, mi)));
+    mbody.appendChild(mkBtn('↩', '결과 취소', 'var(--red)', 'rgba(230,57,70,.1)', () => _t3CancelWinner(g, gi, ri, mi, courtNum)));
   }
 
   modal.appendChild(mbody);
@@ -350,7 +349,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
-  _t3CurrentMatch = { gi, ri, mi, courtNum };
+  _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
   const p1n = (m.p1 && m.p1.name) || '—';
   const p2n = (m.p2 && m.p2.name) || '—';
   const domId = `t3_${gi}_${ri}_${mi}`;
@@ -388,9 +387,10 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum){
     });
   }
 
-  // 현재경기였으면 해제
-  if(_t3CurrentMatch && _t3CurrentMatch.gi===gi && _t3CurrentMatch.ri===ri && _t3CurrentMatch.mi===mi){
-    _t3CurrentMatch = null;
+  // 현재경기였으면 해당 경기장만 해제
+  const cur = _t3CurrentMatch[courtNum];
+  if(cur && cur.gi===gi && cur.ri===ri && cur.mi===mi){
+    delete _t3CurrentMatch[courtNum];
   }
 
   // 저장
@@ -407,7 +407,7 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum){
 }
 
 // ── 결과 취소 ──
-function _t3CancelWinner(g, gi, ri, mi){
+function _t3CancelWinner(g, gi, ri, mi, courtNum){
   const m = g.matches[ri][mi];
   if(!m.winner) return;
   delete m.winner;
@@ -421,8 +421,9 @@ function _t3CancelWinner(g, gi, ri, mi){
     });
   }
 
-  if(_t3CurrentMatch && _t3CurrentMatch.gi===gi && _t3CurrentMatch.ri===ri && _t3CurrentMatch.mi===mi){
-    _t3CurrentMatch = null;
+  const cur2 = _t3CurrentMatch[courtNum];
+  if(cur2 && cur2.gi===gi && cur2.ri===ri && cur2.mi===mi){
+    delete _t3CurrentMatch[courtNum];
   }
 
   _t3Save();
