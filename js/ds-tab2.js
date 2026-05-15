@@ -156,6 +156,7 @@ function buildTab2CourtBtns(){
       <span style="font-size:10px;color:var(--text3);margin-left:2px;">초</span>
     </div>
     <button id="dst2-iv-plus" style="width:24px;height:24px;border-radius:5px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+    <button id="dst2-iv-start" style="padding:4px 12px;border-radius:6px;background:var(--green);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">▶ 시작</button>
   `;
   wrap.appendChild(ivRow);
 
@@ -175,6 +176,22 @@ function buildTab2CourtBtns(){
     try{ const dw=_getDispWin(); if(dw&&!dw.closed) dw.postMessage(payload,'*'); }catch(e){}
   }
 
+  function _updateStartBtn(running){
+    const btn=document.getElementById('dst2-iv-start');
+    if(!btn) return;
+    if(running){
+      btn.textContent='■ 정지';
+      btn.style.background='var(--red)';
+    } else {
+      btn.textContent='▶ 시작';
+      btn.style.background='var(--green)';
+    }
+  }
+
+  // 현재 랜덤 실행 여부 동기화
+  const _isRunning=localStorage.getItem('sgp_d2_random_running')==='true';
+  _updateStartBtn(_isRunning);
+
   document.getElementById('dst2-iv-minus').onclick=()=>{
     const idx=_getStepIdx(_ivSec);
     _applyIv(STEPS[Math.max(0,idx-1)]);
@@ -183,6 +200,14 @@ function buildTab2CourtBtns(){
     const idx=_getStepIdx(_ivSec);
     const next=STEPS[Math.min(STEPS.length-1, _ivSec===STEPS[idx]?idx+1:idx)];
     _applyIv(next);
+  };
+  document.getElementById('dst2-iv-start').onclick=()=>{
+    const running=localStorage.getItem('sgp_d2_random_running')!=='true';
+    try{ localStorage.setItem('sgp_d2_random_running', String(running)); }catch(e){}
+    _updateStartBtn(running);
+    const payload=running?{type:'sgp_d2_random_start',interval:_ivSec}:{type:'sgp_d2_random_stop'};
+    try{ if(typeof _bc!=='undefined'&&_bc) _bc.postMessage(payload); }catch(e){}
+    try{ const dw=_getDispWin(); if(dw&&!dw.closed) dw.postMessage(payload,'*'); }catch(e){}
   };
 }
 

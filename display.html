@@ -269,8 +269,7 @@ function _d2ShowCourt(courtNum){
       if(mv&&mv.p1&&mv.p2){
         _set('d2-p1',cleanName(mv.p1)); _set('d2-p2',cleanName(mv.p2));
         {
-          const _ml = mv.matchLabel||(mv.ri!=null&&mv.mi!=null?`${courtNum}-${mv.ri+1}-${mv.mi+1}`:'');
-          const _seq = _ml ? _ml.split('-').pop() : '';
+          const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
           const _hasSeq = mv.label && mv.label.includes('경기');
           _set('d2-info', (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||''));
         }
@@ -357,6 +356,8 @@ function _applyD2VisualSettings(){
 
 window.addEventListener('message', e=>{
   if(e.data&&e.data.type==='sgp_d2_mode'){ _d2ApplyMode(e.data.mode); }
+  if(e.data&&e.data.type==='sgp_d2_random_start'){ _d2ApplyMode('random'); }
+  if(e.data&&e.data.type==='sgp_d2_random_stop'){ if(_d2RandomIv){clearInterval(_d2RandomIv);_d2RandomIv=null;} }
   if(e.data&&e.data.type==='sgp_d2_refresh_random' && _d2Mode==='random'){
     if(_d2RandomIv){ clearInterval(_d2RandomIv); _d2RandomIv=null; }
     const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60')*1000;
@@ -910,6 +911,8 @@ function handleCmd(cmd){
   if(cmd.type==='screen_2')    switchScreen(2);
   if(cmd.type==='screen_3')    switchScreen(3);
   if(cmd.type==='sgp_d2_mode') _d2ApplyMode(cmd.mode);
+  if(cmd.type==='sgp_d2_random_start'){ _d2ApplyMode('random'); }
+  if(cmd.type==='sgp_d2_random_stop'){ if(_d2RandomIv){clearInterval(_d2RandomIv);_d2RandomIv=null;} }
   if(cmd.type==='refresh_2')   refresh2();
   if(cmd.type==='d2_cfg')      _applyD2Cfg(cmd);
 }
