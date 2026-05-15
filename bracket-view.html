@@ -81,6 +81,110 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
 
+// ── _renderBracketHTML 연결선 오버라이드 ──
+// step4.js의 getBoundingClientRect 방식은 iframe 환경에서 좌표가 틀어지므로
+// bracket-view.html에서만 순수 수학 계산으로 덮어씀 (step4.js는 건드리지 않음)
+(function(){
+  const _orig = _renderBracketHTML;
+  _renderBracketHTML = function(wrap, rounds, direction, reversed){
+    // 1) 원본 함수로 카드/박스 DOM 먼저 렌더
+    _orig(wrap, rounds, direction, reversed);
+
+    // 2) 원본이 그린 SVG 연결선 제거 후 수학 계산으로 재작성
+    requestAnimationFrame(()=>{
+      // 원본 rAF가 그린 SVG 제거
+      wrap.querySelectorAll('svg[data-bv-lines]').forEach(s=>s.remove());
+      // 원본이 붙인 첫 번째 SVG도 제거 (position:absolute, top:0, left:0)
+      const outerWrap=wrap.querySelector('[style*="position:relative"]');
+      if(!outerWrap) return;
+      const container=outerWrap.querySelector('[style*="position:relative"]') || outerWrap.firstElementChild;
+      if(!container) return;
+      container.querySelectorAll('svg').forEach(s=>s.remove());
+      outerWrap.querySelectorAll(':scope>svg').forEach(s=>s.remove());
+
+      const T=rounds.length;
+      if(T<2) return;
+      const SLOT_H=90, BOX_W=180, GAP=40, PAD=8, LABEL_H=24;
+      const r0len=rounds[0].length;
+      const totalSlotH=r0len*SLOT_H;
+
+      const colLeft =(ri)=>reversed ? PAD+(T-1-ri)*(BOX_W+GAP) : PAD+ri*(BOX_W+GAP);
+      const colRight=(ri)=>colLeft(ri)+BOX_W;
+      const W=PAD*2+T*(BOX_W+GAP)-GAP;
+      const H=r0len*SLOT_H+LABEL_H+PAD+40;
+
+      const dirOff=(ri)=>{
+        const usedH=rounds[ri].length*SLOT_H;
+        if(direction==='bottom') return totalSlotH-usedH;
+        if(direction==='center') return (totalSlotH-usedH)/2;
+        return 0;
+      };
+      const getBoxCy=(ri,mi)=>{
+        if(ri===0) return LABEL_H+PAD+dirOff(0)+mi*SLOT_H+SLOT_H/2;
+        const m=rounds[ri][mi];
+        let srcA,srcB;
+        if(m&&m.fromA){ const [fr,fm]=m.fromA.split('-').map(Number); srcA=fr===ri-1?fm:mi*2; }
+        else { srcA=mi*2; }
+        if(m&&m.fromB){ const [fr,fm]=m.fromB.split('-').map(Number); srcB=fr===ri-1?fm:mi*2+1; }
+        else { srcB=null; }
+        const cyA=getBoxCy(ri-1,srcA);
+        if(srcB===null) return cyA;
+        const cyB=srcB<rounds[ri-1].length?getBoxCy(ri-1,srcB):cyA;
+        return(cyA+cyB)/2;
+      };
+      const getBox=(ri,mi)=>({left:colLeft(ri),right:colRight(ri),cy:getBoxCy(ri,mi)});
+
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('data-bv-lines','1');
+      svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
+      svg.setAttribute('width',W);svg.setAttribute('height',H);
+
+      const PATH=(d)=>{
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d',d);p.setAttribute('stroke','#ffffff');
+        p.setAttribute('stroke-width','2');p.setAttribute('fill','none');
+        p.setAttribute('stroke-linecap','square');svg.appendChild(p);
+      };
+
+      rounds.forEach((matches,ri)=>{
+        if(ri>=T-1) return;
+        rounds[ri+1].forEach((nm,nmi)=>{
+          let srcA,srcB;
+          if(nm.fromA){ const [fr,fm]=nm.fromA.split('-').map(Number); srcA=fr===ri?fm:nmi*2; }
+          else { srcA=nmi*2; }
+          if(nm.fromB){ const [fr,fm]=nm.fromB.split('-').map(Number); srcB=fr===ri?fm:nmi*2+1; }
+          else { srcB=nmi*2+1; }
+          const hasB=nm.fromB!=null&&srcB<matches.length;
+          const a=getBox(ri,srcA), b=hasB?getBox(ri,srcB):null, t=getBox(ri+1,nmi);
+          if(reversed){
+            const ax=a.left,bx=b?b.left:a.left,tx=t.right,ay=a.cy,midX=(ax+tx)/2;
+            if(b){
+              const by=b.cy,midY=(ay+by)/2;
+              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
+              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+            } else {
+              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+            }
+          } else {
+            const ax=a.right,bx=b?b.right:a.right,tx=t.left,ay=a.cy,midX=(ax+tx)/2;
+            if(b){
+              const by=b.cy,midY=(ay+by)/2;
+              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
+              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+            } else {
+              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+            }
+          }
+        });
+      });
+
+      // SVG를 container에 붙임
+      container.style.position='relative';
+      container.appendChild(svg);
+    });
+  };
+})();
+
 // ── 선 새로고침 ──
 function _refreshSvgLines(){
   if(document.getElementById('pts-step3').classList.contains('on')){
