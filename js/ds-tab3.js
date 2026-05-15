@@ -233,9 +233,8 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const row2 = document.createElement('div');
   row2.style.cssText = 'display:flex;align-items:center;gap:4px;padding-left:2px;';
 
-  const _T3_COLORS     = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
-  const _T3_COLOR_BG   = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
-  const _T3_COLOR_LBLS = ['','빨','파','금'];
+  const _T3_COLORS   = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const _T3_COLOR_BG = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
 
   const mkNameSpan = (name, slot, forceColor, forceWeight, prefix='') => {
     const span = document.createElement('span');
@@ -243,9 +242,9 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
     const baseColor = forceColor || (idx > 0 ? _T3_COLORS[idx] : '#d0d0d0');
     span.style.cssText = `font-size:11px;font-weight:${forceWeight||'600'};color:${baseColor};cursor:pointer;border-radius:3px;padding:0 2px;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
     if(!forceColor && idx > 0) span.style.background = _T3_COLOR_BG[idx];
-    const dot = idx > 0 ? `<span style="font-size:7px;opacity:.85;margin-right:2px;">[${_T3_COLOR_LBLS[idx]}]</span>` : '';
+    const dot = idx > 0 ? `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${_T3_COLORS[idx]};margin-right:3px;vertical-align:middle;flex-shrink:0;"></span>` : '';
     span.innerHTML = `${prefix}${dot}${name}`;
-    span.title = '클릭: 복장 색상 변경 (흰→빨→파→금)';
+    span.title = '클릭: 복장 색상 변경';
     span.onclick = (ev) => {
       ev.stopPropagation();
       m[slot + 'ColorIdx'] = ((m[slot + 'ColorIdx'] || 0) + 1) % 4;
