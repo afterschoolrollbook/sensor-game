@@ -1545,6 +1545,8 @@ function saveBracketTemp(){
     localStorage.setItem('sgp_bracket_temp', JSON.stringify(saveData));
     // sgp_groupBrackets도 동시에 갱신 — 새로 불러올 때 연결 정보 유지
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
+    // step3 유지 — 중간저장 후 창 재오픈 시 step4로 가지 않도록
+    localStorage.setItem('sgp_step','3');
     toast('중간저장 완료!','success');
   } catch(e){ console.error(e); toast('저장 실패: '+e.message,'error'); }
 }
