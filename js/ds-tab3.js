@@ -350,8 +350,9 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
   _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
-  const p1n = (m.p1 && m.p1.name) || '—';
-  const p2n = (m.p2 && m.p2.name) || '—';
+  const _cn = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim() || n : '—';
+  const p1n = _cn((m.p1 && m.p1.name) || '—');
+  const p2n = _cn((m.p2 && m.p2.name) || '—');
   const domId = `t3_${gi}_${ri}_${mi}`;
 
   // localStorage → 새창 대진표 동기화
