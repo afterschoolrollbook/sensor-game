@@ -309,7 +309,8 @@ function toggleHideNames(){
 }
 
 // ── 이름 보존 브라켓 생성 (slots의 player.name을 번호+이름으로 표시) ──
-function _generateBracketKeepNames(players){
+function _generateBracketKeepNames(players, courtNum){
+  const cNum=courtNum||1;
   const n=players.length;
   if(!n)return[[]];
   const round1=[];
@@ -317,14 +318,14 @@ function _generateBracketKeepNames(players){
   let slotNum=1;
   if(isOdd){
     const p=players[0];
-    round1.push({p1:{name:`${slotNum++}번${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
+    round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
   }
   const rest=isOdd?players.slice(1):players;
   for(let i=0;i<rest.length;i+=2){
     const pa=rest[i], pb=rest[i+1];
     round1.push({
-      p1:{name:`${slotNum++}번${pa?` (${pa.name})`:''}`,id:slotNum-1},
-      p2:{name:`${slotNum++}번${pb?` (${pb.name})`:''}`,id:slotNum-1},
+      p1:{name:`${cNum}-${slotNum++}${pa?` (${pa.name})`:''}`,id:slotNum-1},
+      p2:{name:`${cNum}-${slotNum++}${pb?` (${pb.name})`:''}`,id:slotNum-1},
       bye:false
     });
   }
@@ -1119,7 +1120,8 @@ function shuffleAllGroups(){
   renderOrderArea(); toast('무작위로 섞었어요','success');
 }
 
-function generateBracketWithNames(pts){
+function generateBracketWithNames(pts, courtNum){
+  const cNum=courtNum||1;
   const players=[...pts];
   const n=players.length;
   if(!n)return[[]];
@@ -1128,14 +1130,14 @@ function generateBracketWithNames(pts){
   let slotNum=1;
   if(isOdd){
     const p=players[0];
-    round1.push({p1:{name:`${slotNum++}번${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
+    round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
   }
   const rest=isOdd?players.slice(1):players;
   for(let i=0;i<rest.length;i+=2){
     const pa=rest[i], pb=rest[i+1];
     round1.push({
-      p1:{name:`${slotNum++}번${pa?` (${pa.name})`:''}`,id:slotNum-1},
-      p2:{name:`${slotNum++}번${pb?` (${pb.name})`:''}`,id:slotNum-1},
+      p1:{name:`${cNum}-${slotNum++}${pa?` (${pa.name})`:''}`,id:slotNum-1},
+      p2:{name:`${cNum}-${slotNum++}${pb?` (${pb.name})`:''}`,id:slotNum-1},
       bye:false
     });
   }
@@ -1159,11 +1161,13 @@ function generateAllBrackets(){
   courtSlots.sort((a,b)=>a.court-b.court);
 
   // groupBrackets 생성 (탭용 — 빈 matches)
+  // court 번호를 미리 계산해서 generateBracketWithNames에 전달
+  const courtForGroup=(gname)=>courtSlots.findIndex(c=>c.groups.includes(gname))+1;
   S.groupBrackets=entries.map(([gname,members])=>({
     label:gname,
-    matches:generateBracketWithNames([...members]),
+    matches:generateBracketWithNames([...members], courtForGroup(gname)),
     slots:members.map((p,i)=>({num:i+1,player:p})),
-    court:courtSlots.findIndex(c=>c.groups.includes(gname))+1
+    court:courtForGroup(gname)
   }));
 
   S.activeGroup=0; _assignMode=false; _linkSel=null;
@@ -1562,7 +1566,7 @@ function shuffleGroupBracket(){
   g.slots=[...g.slots].sort(()=>Math.random()-.5).map((s,i)=>({...s,num:i+1}));
   if(hasNames){
     // 이름이 있으면 이름도 함께 섞어서 재배정
-    g.matches=_generateBracketKeepNames(g.slots.map(s=>s.player));
+    g.matches=_generateBracketKeepNames(g.slots.map(s=>s.player), g.court||1);
   } else {
     g.matches=generateBracket(g.slots.map(s=>s.player));
   }
@@ -1895,8 +1899,8 @@ function _openRandomRosterModal(overlay){
       // matches[0] 슬롯에 순서대로 배정
       let idx=0;
       g.matches[0].forEach(m=>{
-        if(m.p1){ const sm=m.p1.name.match(/^(\d+번)/); const sn=sm?sm[1]:m.p1.name; const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
-        if(m.p2&&!m.bye){ const sm=m.p2.name.match(/^(\d+번)/); const sn=sm?sm[1]:m.p2.name; const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
+        if(m.p1){ const sm=m.p1.name.match(/^(\d+-\d+)/); const sn=sm?sm[1]:m.p1.name; const n=names[idx++]||''; m.p1.name=n?`${sn} (${n})`:sn; }
+        if(m.p2&&!m.bye){ const sm=m.p2.name.match(/^(\d+-\d+)/); const sn=sm?sm[1]:m.p2.name; const n=names[idx++]||''; m.p2.name=n?`${sn} (${n})`:sn; }
       });
     });
     document.getElementById('roster-modal').remove();
@@ -1945,7 +1949,7 @@ function _openManualRosterModal(overlay){
         if(!pObj) return;
 
         // 슬롯번호 추출 (예: "1번 (홍길동)" → "1번")
-        const slotMatch=pObj.name.match(/^(\d+번)/);
+        const slotMatch=pObj.name.match(/^(\d+-\d+)/);
         const slotNum=slotMatch?slotMatch[1]:pObj.name;
 
         const cell=document.createElement('div');
