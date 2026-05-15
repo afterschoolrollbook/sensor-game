@@ -309,6 +309,36 @@ function _d2ShowCourt(courtNum){
       _updateMatchNum(courtNum, null, null, null);
     }
   }catch(e){ refresh2(); }
+
+  // 내용 세팅 후 시각 설정(크기/표시여부/폰트/색상) 적용
+  _applyD2VisualSettings();
+}
+
+function _applyD2VisualSettings(){
+  const courtShow  = localStorage.getItem('sgp_d2_court_show')  !== 'false';
+  const courtSize  = parseInt(localStorage.getItem('sgp_d2_court_size')  || '0');
+  const infoShow   = localStorage.getItem('sgp_d2_info_show')   !== 'false';
+  const infoSize   = parseInt(localStorage.getItem('sgp_d2_info_size')   || '0');
+  const nameShow   = localStorage.getItem('sgp_d2_name_show')   !== 'false';
+  const nameSize   = parseInt(localStorage.getItem('sgp_d2_name_size')   || '0');
+  const matchNumShow = localStorage.getItem('sgp_d2_matchnum_show') === 'true';
+  const matchNumSize = parseInt(localStorage.getItem('sgp_d2_matchnum_size') || '0');
+  const vsColor    = localStorage.getItem('sgp_d2_vs_color');
+
+  const ct = document.getElementById('d2-court');
+  if(ct){ ct.style.display=courtShow?'':'none'; if(courtSize) ct.style.fontSize=courtSize+'px'; }
+
+  const infoEl = document.getElementById('d2-info');
+  if(infoEl){ infoEl.style.display=infoShow?'':'none'; if(infoSize) infoEl.style.fontSize=infoSize+'px'; }
+
+  document.querySelectorAll('#d2-row .d2-pl').forEach(pl=>{ pl.style.display=nameShow?'':'none'; });
+  if(nameSize) document.querySelectorAll('#d2-row .d2-nm').forEach(nm=>{ nm.style.fontSize=nameSize+'px'; });
+
+  const mnEl = document.getElementById('d2-matchnum');
+  if(mnEl){ mnEl.style.display=matchNumShow?'':'none'; if(matchNumSize) mnEl.style.fontSize=matchNumSize+'px'; }
+
+  const vsEl = document.getElementById('d2-vs');
+  if(vsEl && vsColor) vsEl.style.color=vsColor;
 }
 
 window.addEventListener('message', e=>{
@@ -587,42 +617,7 @@ function refresh2(){
   if(dispCfg.d2MatchNumShow!==undefined) try{localStorage.setItem('sgp_d2_matchnum_show',String(dispCfg.d2MatchNumShow));}catch(e){}
   if(dispCfg.d2VsColor)               try{localStorage.setItem('sgp_d2_vs_color',dispCfg.d2VsColor);}catch(e){}
 
-  const vsColor=localStorage.getItem('sgp_d2_vs_color');
-  const vsEl=document.getElementById('d2-vs');
-  if(vsEl && vsColor) vsEl.style.color=vsColor;
-
-  // 상단 경기장 레이블 (d2-court)
-  const courtShow=localStorage.getItem('sgp_d2_court_show')!=='false';
-  const courtSize=parseInt(localStorage.getItem('sgp_d2_court_size')||'0');
-  const ct2=document.getElementById('d2-court');
-  if(ct2){
-    if(!courtShow && _d2Mode!=='random') ct2.style.display='none';
-    if(courtSize) ct2.style.fontSize=courtSize+'px';
-  }
-
-  // 하단 경기 정보
-  const infoShow=localStorage.getItem('sgp_d2_info_show')!=='false';
-  const infoSize=parseInt(localStorage.getItem('sgp_d2_info_size')||'0');
-  const infoEl2=document.getElementById('d2-info');
-  if(infoEl2){
-    infoEl2.style.display=infoShow?'':'none';
-    if(infoSize) infoEl2.style.fontSize=infoSize+'px';
-  }
-
-  // 선수 이름
-  const nameShow=localStorage.getItem('sgp_d2_name_show')!=='false';
-  const nameSize=parseInt(localStorage.getItem('sgp_d2_name_size')||'0');
-  document.querySelectorAll('#d2-row .d2-pl').forEach(pl=>{
-    pl.style.display=nameShow?'':'none';
-  });
-  if(nameSize){
-    document.querySelectorAll('#d2-row .d2-nm').forEach(nm=>{ nm.style.fontSize=nameSize+'px'; });
-  }
-
-  // 경기번호 표시
-  const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
-  const mnEl=document.getElementById('d2-matchnum');
-  if(mnEl) mnEl.style.display=matchNumShow?'':'none';
+  _applyD2VisualSettings();
 }
 
 // ── 3번 ──

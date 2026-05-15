@@ -271,6 +271,19 @@ function _updatePv2ForCourt(courtNum){
   if(p1el) p1el.textContent='—';
   if(p2el) p2el.textContent='—';
   if(infoEl) infoEl.textContent='';
+
+  // 시각 설정 적용 (새로고침 후에도 동일하게)
+  _applyD2CfgToPv2({
+    courtShow:    localStorage.getItem('sgp_d2_court_show')    !== 'false',
+    courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')   || '0'),
+    infoShow:     localStorage.getItem('sgp_d2_info_show')     !== 'false',
+    infoSize:     parseInt(localStorage.getItem('sgp_d2_info_size')    || '0'),
+    nameShow:     localStorage.getItem('sgp_d2_name_show')     !== 'false',
+    nameSize:     parseInt(localStorage.getItem('sgp_d2_name_size')    || '0'),
+    nameOnly:     localStorage.getItem('sgp_d2_name_only')     === 'true',
+    matchNumShow: localStorage.getItem('sgp_d2_matchnum_show') === 'true',
+    matchNumSize: parseInt(localStorage.getItem('sgp_d2_matchnum_size') || '0'),
+  });
 }
 
 function updateDst2(){
@@ -383,7 +396,7 @@ function _applyD2CfgToPv2(cfg){
   const pvInfo=document.getElementById('pv2-info');
   // 상단 경기장 레이블
   if(pvCourtLbl){
-    if(cfg.courtShow!==undefined) pvCourtLbl.style.display=(_tab2Mode==='random'||cfg.courtShow)?'':'none';
+    if(cfg.courtShow!==undefined) pvCourtLbl.style.display=cfg.courtShow?'':'none';
     if(cfg.courtSize) pvCourtLbl.style.fontSize=cfg.courtSize+'px';
   }
   // 하단 경기 정보
