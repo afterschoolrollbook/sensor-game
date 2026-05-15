@@ -1376,7 +1376,7 @@ function _checkAndHandleOddAfterLink(g, ri){
   // → 현재까지 연결된 경기 + 아직 미연결 경기 합쳐서 전체 진출자 목록으로 팝업
   const allCandidates=curRound.map((m,mi)=>({
     id:`bye_${ri}_${mi}`,
-    name:`${ri+1}-${mi+1} 승자`,
+    name:`${g.court||1}-${ri+1}-${mi+1} 승자`,
     color:'var(--accent)',
     _ri:ri, _mi:mi
   }));

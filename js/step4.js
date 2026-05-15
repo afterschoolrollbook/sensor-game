@@ -249,7 +249,8 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   const num=document.createElementNS('http://www.w3.org/2000/svg','text');
   num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
+  const _mboxH_court=(match._groupObj&&match._groupObj.court)?match._groupObj.court:1;
+  num.textContent=`${_mboxH_court}-${ri+1}-${mi+1}`;svg.appendChild(num);
 }
 
 /* 세로형 박스 (B/C/E용): 이름을 한 글자씩 세로로 */
@@ -329,7 +330,8 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   const num=document.createElementNS('http://www.w3.org/2000/svg','text');
   num.setAttribute('x',x1+2);num.setAttribute('y',y1+8);num.setAttribute('fill','#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-  num.textContent=`${ri+1}-${mi+1}`;svg.appendChild(num);
+  const _mboxV_court=(match._groupObj&&match._groupObj.court)?match._groupObj.court:1;
+  num.textContent=`${_mboxV_court}-${ri+1}-${mi+1}`;svg.appendChild(num);
 }
 
 /* 공통: 연결선 그리기 (가로, A/D용) */
@@ -812,7 +814,8 @@ function _renderBracketHoriz(wrap, rounds, direction){
       num.setAttribute('x',x+5);num.setAttribute('y',y+11);
       num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
       num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
-      num.textContent=`${ri+1}-${mi+1}`; svg.appendChild(num);
+      const _horiz_court=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
+      num.textContent=`${_horiz_court}-${ri+1}-${mi+1}`; svg.appendChild(num);
 
       const cy=y+BOX_H/2;
       if(isBye){
@@ -937,28 +940,30 @@ function addNextRound(){
   const ri=S.matches.length-1;
   if(lastRound.length<=1){toast('더 이상 라운드를 추가할 수 없어요','info');return;}
 
+  // 현재 활성 그룹의 경기장 번호 (없으면 1)
+  const _addCourt=(S.groupBrackets&&S.groupBrackets[S.activeGroup]&&S.groupBrackets[S.activeGroup].court)||1;
   const next=[];
   const byeIdx=lastRound.findIndex(m=>m.bye);
 
   if(byeIdx>=0){
     next.push({
-      p1:{name:`${ri+1}-0 승자`,tbd:true},
-      p2:{name:`${ri+1}-1 승자`,tbd:true},
+      p1:{name:`${_addCourt}-${ri+1}-0 승자`,tbd:true},
+      p2:{name:`${_addCourt}-${ri+1}-1 승자`,tbd:true},
       bye:false
     });
     const normals=lastRound.filter((_,i)=>i!==byeIdx);
     for(let i=1;i<normals.length;i+=2){
       next.push({
-        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
-        p2:normals[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        p1:{name:`${_addCourt}-${ri+1}-${i+1} 승자`,tbd:true},
+        p2:normals[i+1]?{name:`${_addCourt}-${ri+1}-${i+2} 승자`,tbd:true}:null,
         bye:!normals[i+1]
       });
     }
   } else {
     for(let i=0;i<lastRound.length;i+=2){
       next.push({
-        p1:{name:`${ri+1}-${i+1} 승자`,tbd:true},
-        p2:lastRound[i+1]?{name:`${ri+1}-${i+2} 승자`,tbd:true}:null,
+        p1:{name:`${_addCourt}-${ri+1}-${i+1} 승자`,tbd:true},
+        p2:lastRound[i+1]?{name:`${_addCourt}-${ri+1}-${i+2} 승자`,tbd:true}:null,
         bye:!lastRound[i+1]
       });
     }
