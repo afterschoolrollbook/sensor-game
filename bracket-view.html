@@ -710,6 +710,38 @@ window.addEventListener('storage',e=>{
         });
       });
 
+      // ── ③ 복장 색상 표시 (p1ColorIdx / p2ColorIdx) ──
+      const _C_COLORS=['','#e63946','#4cc9f0','#ffd60a'];
+      const _C_LBLS=['','빨','파','금'];
+      const _C_BG=['','rgba(230,57,70,.2)','rgba(76,201,240,.2)','rgba(255,214,10,.2)'];
+      rounds.forEach((matches,ri)=>{
+        matches.forEach((m,mi)=>{
+          const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
+          if(!p1ci&&!p2ci) return;
+          const box=container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+          if(!box) return;
+          const p1name=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+          const p2name=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+          box.querySelectorAll('span').forEach(span=>{
+            if(span.classList.contains('bv-win-badge')||span.classList.contains('bv-cbadge')) return;
+            const txt=(span.textContent||'').replace('🏆','').trim();
+            let ci=0;
+            if(p1name&&txt===p1name) ci=p1ci;
+            else if(p2name&&txt===p2name) ci=p2ci;
+            if(!ci) return;
+            // winner가 이미 색칠한 경우 덮어쓰지 않음
+            if(!m.winner) span.style.color=_C_COLORS[ci];
+            if(!span.querySelector('.bv-cbadge')){
+              const dot=document.createElement('span');
+              dot.className='bv-cbadge';
+              dot.style.cssText=`font-size:7px;margin-left:3px;vertical-align:middle;color:${_C_COLORS[ci]};background:${_C_BG[ci]};padding:0 3px;border-radius:2px;`;
+              dot.textContent=_C_LBLS[ci];
+              span.appendChild(dot);
+            }
+          });
+        });
+      });
+
       // ── ① SVG 연결선 재계산 ──
       const T=rounds.length;
       if(T<2) return;
