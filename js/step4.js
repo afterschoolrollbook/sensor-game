@@ -250,7 +250,8 @@ function _mboxH(svg,x,cy,match,ri,mi,sz){
   num.setAttribute('x',x+3);num.setAttribute('y',y+8);num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
   const _mboxH_court=(match._groupObj&&match._groupObj.court)?match._groupObj.court:1;
-  num.textContent=`${_mboxH_court}-${ri+1}-${mi+1}`;svg.appendChild(num);
+  const _mboxH_seq=(match._seqMi!=null?match._seqMi:mi)+1;
+  num.textContent=`${_mboxH_court}-${ri+1}-${_mboxH_seq}`;svg.appendChild(num);
 }
 
 /* 세로형 박스 (B/C/E용): 이름을 한 글자씩 세로로 */
@@ -331,7 +332,8 @@ function _mboxV(svg,cx,cy,match,ri,mi,sz){
   num.setAttribute('x',x1+2);num.setAttribute('y',y1+8);num.setAttribute('fill','#e63946');
   num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
   const _mboxV_court=(match._groupObj&&match._groupObj.court)?match._groupObj.court:1;
-  num.textContent=`${_mboxV_court}-${ri+1}-${mi+1}`;svg.appendChild(num);
+  const _mboxV_seq=(match._seqMi!=null?match._seqMi:mi)+1;
+  num.textContent=`${_mboxV_court}-${ri+1}-${_mboxV_seq}`;svg.appendChild(num);
 }
 
 /* 공통: 연결선 그리기 (가로, A/D용) */
@@ -522,11 +524,12 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       // 경기 레이블: 경기장번호-라운드번호-번경기 (예: 1-1-1)
       const _courtNum=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
+      const _seqNum=(m._seqMi!=null?m._seqMi:mi)+1;
       const grpLabel=m._groupLabel||null;
-      const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
-      const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
+      const grpIdx=(m._matchIdx!=null)?m._matchIdx:_seqNum;
+      const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${_seqNum}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${_courtNum}-${ri+1}-${mi+1}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${_courtNum}-${ri+1}-${_seqNum}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
       box.appendChild(header);
 
       if(isBye){
@@ -815,7 +818,8 @@ function _renderBracketHoriz(wrap, rounds, direction){
       num.setAttribute('fill',isBye?'#4cc9f0':'#e63946');
       num.setAttribute('font-size','7');num.setAttribute('font-family','Share Tech Mono,monospace');
       const _horiz_court=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
-      num.textContent=`${_horiz_court}-${ri+1}-${mi+1}`; svg.appendChild(num);
+      const _horiz_seq=(m._seqMi!=null?m._seqMi:mi)+1;
+      num.textContent=`${_horiz_court}-${ri+1}-${_horiz_seq}`; svg.appendChild(num);
 
       const cy=y+BOX_H/2;
       if(isBye){

@@ -1186,8 +1186,26 @@ function generateAllBrackets(){
   _redrawBracketView();
 }
 
+// 경기장+라운드 내 연속 경기번호 오프셋 계산
+// 같은 경기장의 같은 라운드 내에서 그룹 순서대로 번호를 이어줌
+// g._roundOffset[ri] = 이 그룹 이전에 같은 경기장+라운드에 몇 경기가 있었는지
+function _computeSeqOffsets(){
+  const courtRound={}; // {court: {ri: count}}
+  (S.groupBrackets||[]).forEach(g=>{
+    const c=g.court||1;
+    if(!courtRound[c]) courtRound[c]={};
+    g._roundOffset={};
+    (g.matches||[]).forEach((round,ri)=>{
+      if(!courtRound[c][ri]) courtRound[c][ri]=0;
+      g._roundOffset[ri]=courtRound[c][ri];
+      courtRound[c][ri]+=round.length;
+    });
+  });
+}
+
 function _redrawBracketView(){
   _linkSel=null;
+  _computeSeqOffsets();
   const courts=_courtCount||1;
   const view=document.getElementById('pts-bracket-view');
   if(!view||!S.groupBrackets?.length) return;
@@ -1257,7 +1275,7 @@ function _redrawBracketView(){
       const groupWrap=document.createElement('div');
       groupWrap.style.cssText='min-width:max-content;';
       const taggedMatches=g.matches.map((round,ri)=>
-        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
       );
       S.matches=taggedMatches;
       _renderBracketHTML(groupWrap, taggedMatches, 'top', reversed);
@@ -1311,7 +1329,7 @@ function _redrawBracketView(){
       groupWrap.style.cssText='margin-bottom:16px;position:relative;';
 
       const taggedMatches=g.matches.map((round,ri)=>
-        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
       );
 
       S.matches=taggedMatches;
@@ -1376,7 +1394,7 @@ function _checkAndHandleOddAfterLink(g, ri){
   // → 현재까지 연결된 경기 + 아직 미연결 경기 합쳐서 전체 진출자 목록으로 팝업
   const allCandidates=curRound.map((m,mi)=>({
     id:`bye_${ri}_${mi}`,
-    name:`${g.court||1}-${ri+1}-${mi+1} 승자`,
+    name:`${g.court||1}-${ri+1}-${((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1} 승자`,
     color:'var(--accent)',
     _ri:ri, _mi:mi
   }));
@@ -2340,6 +2358,7 @@ function _renderPdfPreview(groups){
   const preview=document.getElementById('pdf-preview');
   if(!preview) return;
   preview.innerHTML='';
+  _computeSeqOffsets();
   if(!groups||!groups.length){
     preview.innerHTML='<div style="text-align:center;padding:48px 0;color:var(--text3);font-size:13px;">위에서 출력할 체급을 선택하면 미리보기가 표시됩니다</div>';
     return;
@@ -2400,7 +2419,7 @@ function _renderPdfPreview(groups){
       sec.appendChild(hdr);
       const gWrap=document.createElement('div');
       gWrap.style.cssText='min-width:max-content;overflow:visible;';
-      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi})));
       S.matches=taggedMatches;
       _renderBracketHTML(gWrap, taggedMatches, 'top', reversed);
       _applyOverflow(gWrap);
@@ -2444,7 +2463,7 @@ function _renderPdfPreview(groups){
       section.appendChild(title);
       const bracketWrap=document.createElement('div');
       bracketWrap.style.cssText='overflow:visible;';
-      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi})));
       S.matches=taggedMatches;
       const fns={A:renderBracketA,B:renderBracketB,C:renderBracketC,E:renderBracketE};
       (fns[_bracketLayout]||renderBracketA)(bracketWrap);
@@ -3610,6 +3629,7 @@ function _doPrint(groups, hideNamesInitial){
   if(!win){ toast('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요','error'); return; }
 
   // 각 그룹 대진표를 숨겨진 div에 렌더 후 rAF 2회 대기(연결선 SVG 완성 후 복사)
+  _computeSeqOffsets();
   const saved=S.matches;
   const hiddenContainer=document.createElement('div');
   hiddenContainer.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;';
@@ -3620,7 +3640,7 @@ function _doPrint(groups, hideNamesInitial){
     const wrapper=document.createElement('div');
     wrapper.style.cssText='margin-bottom:32px;';
     const taggedMatches=g.matches.map((round,ri)=>
-      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
+      round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
     );
     S.matches=taggedMatches;
     _renderBracketHTML(wrapper, taggedMatches, 'top', false);
@@ -3860,7 +3880,7 @@ function _showByeForRound(g, ri){
   if(!round || round.length%2===0) return;
   const candidates=round.map((m,mi)=>({
     id:`bye_${ri}_${mi}`,
-    name:`${g.court||1}-${ri+1}-${mi+1} 승자`,
+    name:`${g.court||1}-${ri+1}-${((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1} 승자`,
     color:'var(--accent)',
     _ri:ri, _mi:mi
   }));
@@ -3889,7 +3909,8 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
   const origRi = (matchObj&&matchObj._origRi!=null) ? matchObj._origRi : ri;
   const courtNum = grpObj ? (grpObj.court || 1) : 1;
-  const label = `${courtNum}-${origRi+1}-${origMi+1}`;
+  const seqMi = (matchObj&&matchObj._seqMi!=null) ? matchObj._seqMi : ((grpObj&&grpObj._roundOffset&&grpObj._roundOffset[origRi]!=null)?grpObj._roundOffset[origRi]:0)+origMi;
+  const label = `${courtNum}-${origRi+1}-${seqMi+1}`;
 
   const modal = document.createElement('div');
   modal.id = 'match-action-modal';
@@ -3995,9 +4016,11 @@ function _doLink(ri, mi, grpObj, origMi, origRi){
   const bLinked=nextRound.find(m=>m.fromA===bKey||m.fromB===bKey);
   if(aLinked||bLinked){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
 
-  nextRound.push({p1:{name:`${grpA.court||1}-${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${grpB.court||1}-${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+  const _aSeq=(a.matchObj&&a.matchObj._seqMi!=null)?a.matchObj._seqMi:((grpA._roundOffset&&grpA._roundOffset[a.origRi]!=null)?grpA._roundOffset[a.origRi]:0)+a.origMi;
+  const _bSeq=((grpB._roundOffset&&grpB._roundOffset[b.origRi]!=null)?grpB._roundOffset[b.origRi]:0)+b.origMi;
+  nextRound.push({p1:{name:`${grpA.court||1}-${a.origRi+1}-${_aSeq+1} 승자`,tbd:true},p2:{name:`${grpB.court||1}-${b.origRi+1}-${_bSeq+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
   _redrawBracketView();
-  toast(`${grp.label} ${grpA.court||1}-${a.origRi+1}-${a.origMi+1} vs ${grpB.court||1}-${b.origRi+1}-${b.origMi+1} 연결됨!`,'success');
+  toast(`${grp.label} ${grpA.court||1}-${a.origRi+1}-${_aSeq+1} vs ${grpB.court||1}-${b.origRi+1}-${_bSeq+1} 연결됨!`,'success');
 }
 
 function _doAdvance(origRi, origMi, grpObj){
@@ -4007,9 +4030,10 @@ function _doAdvance(origRi, origMi, grpObj){
   const aKey = `${origRi}-${origMi}`;
   if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
   const _advCourtNum = g.court || 1;
-  nextRound.push({p1:{name:`${_advCourtNum}-${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  const _advSeq=((g._roundOffset&&g._roundOffset[origRi]!=null)?g._roundOffset[origRi]:0)+origMi;
+  nextRound.push({p1:{name:`${_advCourtNum}-${origRi+1}-${_advSeq+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
   _redrawBracketView();
-  toast(`${_advCourtNum}-${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
+  toast(`${_advCourtNum}-${origRi+1}-${_advSeq+1} 승자 다음 라운드 직행!`,'success');
 }
 
 function _doRemoveRound(origRi, origMi, grpObj){
@@ -4035,7 +4059,8 @@ function _doRemoveRound(origRi, origMi, grpObj){
   if(g.matches[origRi].length === 0) g.matches.splice(origRi);
 
   _redrawBracketView();
-  toast(`${g.label} ${g.court||1}-${origRi+1}-${origMi+1} 경기를 삭제했어요`,'success');
+  const _delSeq=((g._roundOffset&&g._roundOffset[origRi]!=null)?g._roundOffset[origRi]:0)+origMi;
+  toast(`${g.label} ${g.court||1}-${origRi+1}-${_delSeq+1} 경기를 삭제했어요`,'success');
 }
 
 function onMatchClick(ri, mi, matchObj, event){
