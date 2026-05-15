@@ -29,6 +29,12 @@ function initDsPanel(){
       infoSize:  parseInt(localStorage.getItem('sgp_d2_info_size')  || '16'),
     });
   }
+  // 저장된 모드를 초기 로드 시 pv2 미리보기에 반영 (탭2 클릭 없이도 적용)
+  if(typeof _updatePv2ForMode==='function'){
+    const savedMode=localStorage.getItem('sgp_d2_mode')||'court_1';
+    _tab2Mode=savedMode;
+    _updatePv2ForMode(savedMode);
+  }
 
   // courtCount 변경 감지 → 2번 탭 경기장 버튼 갱신
   let _prevCourtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
