@@ -1053,7 +1053,13 @@ function togBlk(id,el){
 
 
 /* ── 2번/3번 화면 ── */
-const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
+const cleanName=n=>{
+  if(!n) return '—';
+  const nameOnly=document.getElementById('ds2-name-only')?.checked;
+  let r=n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||n;
+  if(nameOnly) return r;
+  return n.replace(/[()[\]]/g,'').trim()||n;
+};
 function updatePv2(){
   const mode=typeof _tab2Mode!=='undefined'?_tab2Mode:'court_1';
 
