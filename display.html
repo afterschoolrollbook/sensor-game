@@ -574,41 +574,63 @@ function refresh3(){
   if(!window.S) window.S={matches:[],groupBrackets:groups,laps:1};
   else window.S.groupBrackets=groups;
 
-  // 진행중 경기: 그룹레이블+ri+mi로 특정
-  let curGroupLabel='', curRi=-1, curMi=-1;
-  try{
-    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
-    const curP1=mv.p1||'', curP2=mv.p2||'';
-    const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
-    if(curP1&&curP2){
-      outer: for(const g of groups){
+  // 경기장별 선택경기 전부 수집 (court_1, court_2 각각 → 2개 동시 하이라이트)
+  const selectedMatches=[]; // [{groupLabel, ri, mi}]
+  const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
+  for(let c=1;c<=Math.max(courtCount,2);c++){
+    const courtStr=localStorage.getItem(`sgp_display_vs_court_${c}`);
+    if(!courtStr) continue;
+    try{
+      const mv=JSON.parse(courtStr);
+      // ri/mi/groupLabel이 저장돼 있으면 우선 사용 (BYE 포함 정확히 특정)
+      if(mv.ri!=null && mv.mi!=null && mv.groupLabel){
+        const sl_target=mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        const matched=groups.find(g=>{
+          const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+          return sl===sl_target || g.label===mv.groupLabel;
+        });
+        if(matched){
+          const sl=matched.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+          selectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
+          continue;
+        }
+      }
+      // fallback: 이름 매칭 (BYE 포함)
+      const curP1=_cn(mv.p1||''), curP2=_cn(mv.p2||'');
+      if(!curP1) continue;
+      outer3: for(const g of groups){
         const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
         for(let ri=0;ri<g.matches.length;ri++){
           for(let mi=0;mi<g.matches[ri].length;mi++){
             const m=g.matches[ri][mi];
             const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            if(_cn(p1n)===curP1&&_cn(p2n)===curP2){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
+            const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
+            if(_cn(p1n)===curP1&&p2match){
+              selectedMatches.push({groupLabel:sl, ri, mi});
+              break outer3;
+            }
           }
         }
       }
-    }
-  }catch(e){}
+    }catch(e){}
+  }
 
-  _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi);
+  _d3DrawBracket(view, groups, layout, courtCount, selectedMatches);
 }
 
 
-function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi){
+function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
   function stripScroll(div){
     div.querySelectorAll('*').forEach(el=>{
       if(el.style.overflow==='auto'||el.style.overflowX==='auto') el.style.overflow='visible';
     });
   }
+  // 현재 렌더 중인 그룹의 shortLabel — mkSection 안에서 세팅
+  window._d3CurrentGroupLabel='';
   window.isCurrentMatchIdx=function(ri,mi){
-    if(curRi<0||curMi<0) return false;
-    const curGrp=window.S.matches?.[0]?.[0]?._groupLabel||'';
-    return ri===curRi&&mi===curMi&&curGrp===curGroupLabel;
+    if(!selectedMatches||!selectedMatches.length) return false;
+    return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===window._d3CurrentGroupLabel);
   };
   const saved=window.S.matches;
   view.innerHTML='';
@@ -629,6 +651,7 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
     outerWrap.appendChild(hdrRow);
     const mkSection=(g,reversed)=>{
       const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      window._d3CurrentGroupLabel=shortLabel;
       const sec=document.createElement('div');sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;sec.appendChild(hdr);
@@ -653,6 +676,7 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
     const outerWrap=document.createElement('div');outerWrap.style.cssText='padding:8px;min-width:max-content;';
     groups.forEach(g=>{
       const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      window._d3CurrentGroupLabel=shortLabel;
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
       hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
       const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
@@ -668,6 +692,7 @@ function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, 
     view.appendChild(outerWrap);
   }
   window.S.matches=saved;
+  window._d3CurrentGroupLabel='';
 }
 
 function renderRank(state,cfg){
@@ -761,10 +786,13 @@ function handleCmd(cmd){
   if(cmd.type==='set_match'){
     const p1=cleanName(cmd.p1||'—'), p2=cleanName(cmd.p2||'—');
 
-    // 경기장별 localStorage 저장 (수동 선택 기록)
+    // 경기장별 localStorage 저장 (수동 선택 기록) — ri/mi/groupLabel 포함
     if(cmd.court){
-      try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',court:cmd.court})); }catch(e){}
+      try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',court:cmd.court,ri:cmd.ri,mi:cmd.mi,groupLabel:cmd.groupLabel||cmd.label||''})); }catch(e){}
     }
+
+    // 3번 화면이면 대진표 즉시 갱신
+    if(currentScreen===3) refresh3();
 
     // court_N 모드이면 해당 경기장만 갱신
     if(_d2Mode===`court_${cmd.court}`){
@@ -845,6 +873,7 @@ window.addEventListener('storage',e=>{
   if(e.key==='sgp_state'||e.key==='sgp_display_config') scheduleRefresh();
   if(e.key==='sgp_groupBrackets') refresh3();
   if(e.key==='sgp_display_vs'&&currentScreen===3) refresh3();
+  if(e.key&&e.key.startsWith('sgp_display_vs_court_')&&currentScreen===3) refresh3();
   if(e.key==='sgp_d2_mode'){ _d2ApplyMode(e.newValue||'single'); }
 });
 
