@@ -85,16 +85,20 @@ function buildDs2FontPicker(){
       S.vs2Font=f.id;
       document.querySelectorAll('#ds2-fontpicker .ds-font').forEach(x=>x.classList.remove('on'));
       el.classList.add('on');
-      ['pv2-p1','pv2-p2'].forEach(id=>{
-        const e=document.getElementById(id);
-        if(e)e.style.fontFamily=f.css;
-      });
-      const pv2vs=document.querySelector('#pv2 .pv2-vs');
-      if(pv2vs)pv2vs.style.fontFamily=f.css;
+      _applyPv2Font(f.css);
       if(typeof saveCfgNow==='function') saveCfgNow();
     };
     w.appendChild(el);
   });
+  // 초기 로드 시 저장된 폰트 pv2에 적용
+  const curFont=TITLE_FONTS.find(f=>f.id===S.vs2Font);
+  if(curFont) _applyPv2Font(curFont.css);
+}
+
+function _applyPv2Font(css){
+  ['pv2-p1','pv2-p2'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.fontFamily=css; });
+  const pv2vs=document.querySelector('#pv2 .pv2-vs');
+  if(pv2vs) pv2vs.style.fontFamily=css;
 }
 
 function buildTab2CourtBtns(){
