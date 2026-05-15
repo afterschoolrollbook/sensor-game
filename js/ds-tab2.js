@@ -250,12 +250,15 @@ function _updatePv2ForCourt(courtNum){
         if(p1el){ p1el.textContent=fn(mv.p1); p1el.dataset.rawName=_cn(mv.p1); }
         if(p2el){ p2el.textContent=fn(mv.p2||'—'); p2el.dataset.rawName=_cn(mv.p2||'—'); }
         if(infoEl){
-          const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
+          const _ml=mv.matchLabel||(mv.ri!=null&&mv.mi!=null?`${courtNum}-${mv.ri+1}-${mv.mi+1}`:'');
+          const _seq = _ml ? _ml.split('-').pop() : '';
           const _hasSeq = mv.label && mv.label.includes('경기');
           infoEl.textContent = (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||'');
         }
         // 경기번호 표시
         const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
+        const matchLabel=mv.matchLabel||(mv.ri!=null&&mv.mi!=null?`${courtNum}-${mv.ri+1}-${mv.mi+1}`:'');
+        const _seq2=matchLabel?matchLabel.split('-').pop():'';
         let mnEl=document.getElementById('pv2-match-num');
         if(!mnEl){
           mnEl=document.createElement('div');
@@ -265,7 +268,7 @@ function _updatePv2ForCourt(courtNum){
           if(pv2) pv2.appendChild(mnEl);
         }
         mnEl.style.display=matchNumShow?'':'none';
-        if(matchNumShow) mnEl.textContent=mv.matchLabel||'';
+        if(matchNumShow) mnEl.textContent=matchLabel?matchLabel+' 경기':'';
       }
     }
   }catch(e){}
