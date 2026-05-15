@@ -591,10 +591,42 @@ window.addEventListener('pagehide',()=>{ try{_bc&&_bc.close();}catch(e){} });
 if(_bc){
   _bc.onmessage = function(e){
     const cmd = e.data;
-    if(!cmd || cmd.type !== 'set_match') return;
-    requestAnimationFrame(()=>{
-      try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
-    });
+    if(!cmd) return;
+
+    // 3번탭 현재경기 선택 → pv3 갱신
+    if(cmd.type === 'set_match'){
+      requestAnimationFrame(()=>{
+        try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
+      });
+      return;
+    }
+
+    // 2번탭 설정 변경 → pv2 미리보기 실시간 반영
+    if(cmd.type === 'd2_cfg'){
+      try{ if(typeof _applyD2CfgToPv2==='function') _applyD2CfgToPv2(cmd); }catch(err){}
+      if(cmd.vs_color){
+        const pvVs=document.querySelector('#pv2 .pv2-vs');
+        if(pvVs) pvVs.style.color=cmd.vs_color;
+      }
+      return;
+    }
+
+    // 2번탭 모드 변경(경기장/랜덤) → pv2 미리보기 실시간 반영
+    if(cmd.type === 'sgp_d2_mode'){
+      try{
+        if(typeof _tab2Mode !== 'undefined') _tab2Mode = cmd.mode;
+        if(typeof _updatePv2ForMode==='function') _updatePv2ForMode(cmd.mode);
+      }catch(err){}
+      return;
+    }
+
+    // 랜덤 인터벌 변경 → pv2 갱신
+    if(cmd.type === 'sgp_d2_refresh_random'){
+      try{
+        if(typeof _updatePv2ForMode==='function') _updatePv2ForMode(_tab2Mode||'random');
+      }catch(err){}
+      return;
+    }
   };
 }
 // storage 이벤트로도 pv3 갱신 (같은 창 내 ds-tab3 → setup-core 연동)
