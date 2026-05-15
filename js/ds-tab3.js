@@ -298,7 +298,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   // ── 현재 경기 선택 ──
   if(!isPending){
     mbody.appendChild(mkBtn('▶', '현재 경기 선택', 'var(--accent)', 'rgba(76,201,240,.1)', () => {
-      _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum);
+      _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, label, courtNum);
     }, '미리보기 · 전광판 하이라이트'));
   }
 
@@ -348,16 +348,18 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 }
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
-function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
+function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
   _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
   const _cn = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim() || n : '—';
   const p1n = _cn((m.p1 && m.p1.name) || '—');
   const p2n = _cn((m.p2 && m.p2.name) || '—');
   const domId = `t3_${gi}_${ri}_${mi}`;
+  const seqNum = matchLabel ? matchLabel.split('-').pop() : '';
+  const infoLabel = seqNum ? `${shortLabel} · ${seqNum}경기` : shortLabel;
 
   // localStorage → 새창 대진표 동기화
   try{
-    localStorage.setItem(`sgp_display_vs_court_${courtNum}`, JSON.stringify({ p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label }));
+    localStorage.setItem(`sgp_display_vs_court_${courtNum}`, JSON.stringify({ p1:p1n, p2:p2n, label:infoLabel, matchLabel, court:courtNum, ri, mi, domId, groupLabel:g.label }));
   } catch(ex){}
 
   // 같은 창 내 pv3 미리보기 즉시 갱신:
@@ -374,7 +376,7 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
   // BroadcastChannel → 전광판·미리보기(새창) 동기화
   try{
     const bc = new BroadcastChannel('sgp_cmd');
-    bc.postMessage({ type:'set_match', p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label });
+    bc.postMessage({ type:'set_match', p1:p1n, p2:p2n, label:infoLabel, matchLabel, court:courtNum, ri, mi, domId, groupLabel:g.label });
     bc.close();
   } catch(ex){}
 

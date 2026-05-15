@@ -257,7 +257,7 @@ function _updatePv2ForCourt(courtNum){
           if(pv2) pv2.appendChild(mnEl);
         }
         mnEl.style.display=matchNumShow?'':'none';
-        if(matchNumShow&&mv.domId) mnEl.textContent=mv.domId.replace('t3_','').replace(/_/g,'-');
+        if(matchNumShow) mnEl.textContent=mv.matchLabel||'';
         return;
       }
     }
