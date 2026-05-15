@@ -11,7 +11,7 @@ function buildTab3(){
   if(!container) return;
 
   container.innerHTML = '';
-  container.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0;padding:0;gap:0;';
+  container.style.cssText = 'flex-direction:column;flex:1;min-height:0;padding:0;gap:0;';
 
   // 툴바
   const toolbar = document.createElement('div');
