@@ -253,7 +253,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
       <button onclick="show('pts-step3')" class="btn-back">← 뒤로</button>
       <span style="font-size:15px;color:var(--text);font-weight:700;letter-spacing:1px;">④ 명단 배정 &amp; PDF 출력</span>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-        <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
+        <button onclick="openRosterModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
         <button onclick="toggleHideNames()" id="btn-hide-names" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">👁 이름 가리기</button>
         <button onclick="_refreshSvgLines()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🔁 선 새로고침</button>
         <button onclick="openDeleteNamesModal()" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">🗑 이름 삭제</button>
@@ -4256,7 +4256,18 @@ function _migrateWinnerNames(){
           toast('이전 설정 불러왔어요','info');
         } else if(savedStep==='3'){
           const savedGB=localStorage.getItem('sgp_groupBrackets');
-          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
+          if(savedGB){
+            S.groupBrackets=JSON.parse(savedGB);
+            // 1라운드 선수 이름 제거 — 슬롯 번호만 유지 (이름은 명단 설정에서 배정)
+            S.groupBrackets.forEach(g=>{
+              if(g.matches&&g.matches[0]){
+                g.matches[0].forEach(m=>{
+                  if(m.p1) m.p1.name=m.p1.name.replace(/\s*\(.+\)$/,'');
+                  if(m.p2) m.p2.name=m.p2.name.replace(/\s*\(.+\)$/,'');
+                });
+              }
+            });
+          }
           _migrateSlotNumbers();
           _migrateWinnerNames();
           show('pts-step3');
