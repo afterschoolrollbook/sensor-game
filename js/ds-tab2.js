@@ -238,9 +238,24 @@ function _updatePv2ForCourt(courtNum){
       const mv=JSON.parse(manualStr);
       if(mv&&mv.p1){
         const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
-        if(p1el) p1el.textContent=_cn(mv.p1);
-        if(p2el) p2el.textContent=_cn(mv.p2||'—');
+        const _nameOnly=n=>n?n.replace(/^[\d]+-[\d]+\s+/,'').replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
+        const nameOnly=localStorage.getItem('sgp_d2_name_only')==='true';
+        const fn=nameOnly?_nameOnly:_cn;
+        if(p1el){ p1el.textContent=fn(mv.p1); p1el.dataset.rawName=_cn(mv.p1); }
+        if(p2el){ p2el.textContent=fn(mv.p2||'—'); p2el.dataset.rawName=_cn(mv.p2||'—'); }
         if(infoEl) infoEl.textContent=mv.label||'';
+        // 경기번호 표시
+        const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
+        let mnEl=document.getElementById('pv2-match-num');
+        if(!mnEl){
+          mnEl=document.createElement('div');
+          mnEl.id='pv2-match-num';
+          mnEl.style.cssText='font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--accent);letter-spacing:2px;text-align:center;margin-top:4px;';
+          const pv2=document.getElementById('pv2');
+          if(pv2) pv2.appendChild(mnEl);
+        }
+        mnEl.style.display=matchNumShow?'':'none';
+        if(matchNumShow&&mv.domId) mnEl.textContent=mv.domId.replace('t3_','').replace(/_/g,'-');
         return;
       }
     }
@@ -370,4 +385,28 @@ function _applyD2CfgToPv2(cfg){
     const nm=document.getElementById(id);
     if(nm && cfg.nameSize) nm.style.fontSize=cfg.nameSize+'px';
   });
+  // 이름만 표시 (번호 숨김)
+  if(cfg.nameOnly!==undefined){
+    ['pv2-p1','pv2-p2'].forEach(id=>{
+      const nm=document.getElementById(id);
+      if(!nm) return;
+      const raw=nm.dataset.rawName||nm.textContent;
+      nm.dataset.rawName=raw;
+      nm.textContent=cfg.nameOnly
+        ? raw.replace(/^[\d]+-[\d]+\s+/,'').replace(/^\d+번\s*/,'').trim()||raw
+        : raw;
+    });
+  }
+  // 경기번호 표시
+  if(cfg.matchNumShow!==undefined){
+    let mnEl=document.getElementById('pv2-match-num');
+    if(!mnEl){
+      mnEl=document.createElement('div');
+      mnEl.id='pv2-match-num';
+      mnEl.style.cssText='font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--accent);letter-spacing:2px;text-align:center;margin-top:4px;';
+      const pv2=document.getElementById('pv2');
+      if(pv2) pv2.appendChild(mnEl);
+    }
+    mnEl.style.display=cfg.matchNumShow?'':'none';
+  }
 }
