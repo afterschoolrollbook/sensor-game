@@ -1271,6 +1271,9 @@ function _d3DrawBracketPv3(view, groups, layout, courtCount){
   window._pv3CurrentGroupLabel='';
 }
 
+// 경기장별 선택경기 — updatePv3() 호출 간에 유지 (rAF 타이밍 문제 방지)
+let _pv3SelectedMatches = [];
+
 function updatePv3(){
   const view=document.getElementById('pv3-inner');if(!view)return;
   let groups=[];
@@ -1298,7 +1301,7 @@ function updatePv3(){
             const m=g.matches[ri][mi];
             const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
-            const p2match=curP2?(_cn(p2n)===curP2):(!m.p2); // BYE: p2 없으면 매칭
+            const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
             if(_cn(p1n)===curP1&&p2match){curGroupLabel=sl;curRi=ri;curMi=mi;break outer;}
           }
         }
@@ -1307,7 +1310,7 @@ function updatePv3(){
   }catch(e){}
 
   // 경기장별 선택된 경기 전부 수집 (court_1, court_2 각각)
-  const selectedMatches=[]; // [{groupLabel, ri, mi}]
+  const newSelectedMatches=[];
   try{
     const courtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
     const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'';
@@ -1318,14 +1321,13 @@ function updatePv3(){
       // ri/mi가 저장돼 있으면 그걸 우선 사용 (BYE 포함 정확히 특정)
       if(mv.ri!=null && mv.mi!=null && mv.groupLabel){
         const sl_target = mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
-        // groupLabel 정규화 비교
         const matched = groups.find(g=>{
           const sl=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
           return sl===sl_target || g.label===mv.groupLabel;
         });
         if(matched){
           const sl=matched.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
-          selectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
+          newSelectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
           continue;
         }
       }
@@ -1341,7 +1343,7 @@ function updatePv3(){
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
             const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
             if(_cn(p1n)===curP1&&p2match){
-              selectedMatches.push({groupLabel:sl,ri,mi});
+              newSelectedMatches.push({groupLabel:sl,ri,mi});
               break outer2;
             }
           }
@@ -1350,19 +1352,22 @@ function updatePv3(){
     }
   }catch(e){}
 
+  // 새로 찾은 selectedMatches가 있으면 업데이트, 없으면 이전 값 유지
+  // (rAF 타이밍 문제로 두 번째 updatePv3 호출이 빈 selectedMatches로 하이라이트를 지우는 현상 방지)
+  if(newSelectedMatches.length > 0){
+    _pv3SelectedMatches = newSelectedMatches;
+  }
+  // 단, localStorage에 court 데이터가 아예 없으면 클리어
+  const hasAnyCourt = [1,2,3,4].some(c => localStorage.getItem(`sgp_display_vs_court_${c}`));
+  if(!hasAnyCourt) _pv3SelectedMatches = [];
+
   // _linkSel 강제 null → 파란 테두리 제거
   window._linkSel=null;
   // 그룹별 렌더 시 _pv3CurrentGroupLabel을 세팅해 isCurrentMatchIdx가 정확히 비교
   window._pv3CurrentGroupLabel='';
   window.isCurrentMatchIdx=function(ri,mi){
-    // groupLabel 비교 없이 ri/mi만으로 비교 (같은 그룹 내에서 렌더되므로)
-    return selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===window._pv3CurrentGroupLabel);
+    return _pv3SelectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===window._pv3CurrentGroupLabel);
   };
-  // 콘솔 디버그: 선택경기 확인
-  if(selectedMatches.length) console.log('[pv3] selectedMatches:', JSON.stringify(selectedMatches));
-  else console.log('[pv3] selectedMatches 없음 - court storage 값:', 
-    localStorage.getItem('sgp_display_vs_court_1'),
-    localStorage.getItem('sgp_display_vs_court_2'));
 
   // _getAvailW override: pvcw 실제 너비 기준으로 박스 크기 계산
   const _origGetAvailW = window._getAvailW;

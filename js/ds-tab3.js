@@ -354,24 +354,37 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
   const p2n = (m.p2 && m.p2.name) || '—';
   const domId = `t3_${gi}_${ri}_${mi}`;
 
-  // BroadcastChannel → 전광판·미리보기 동기화
+  // localStorage → 새창 대진표 동기화
+  try{
+    localStorage.setItem(`sgp_display_vs_court_${courtNum}`, JSON.stringify({ p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label }));
+  } catch(ex){}
+
+  // 같은 창 내 pv3 미리보기 즉시 갱신:
+  // _pv3SelectedMatches를 직접 세팅해 rAF 타이밍 문제 없이 하이라이트 유지
+  try{
+    if(typeof _pv3SelectedMatches !== 'undefined'){
+      // 해당 경기장의 기존 항목을 교체
+      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => {
+        // 같은 경기장(court)에 해당하는 항목 제거하기 위해 groupLabel로 판단
+        // courtNum에 속하는 그룹의 shortLabel인지 확인
+        return true; // 다른 경기장 항목은 유지, 같은 그룹은 아래서 교체
+      });
+      // shortLabel로 기존 항목 제거 후 새 항목 추가
+      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => s.groupLabel !== shortLabel);
+      _pv3SelectedMatches.push({ groupLabel: shortLabel, ri, mi });
+    }
+  } catch(ex){}
+
+  // BroadcastChannel → 전광판·미리보기(새창) 동기화
   try{
     const bc = new BroadcastChannel('sgp_cmd');
     bc.postMessage({ type:'set_match', p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label });
     bc.close();
   } catch(ex){}
 
-  // localStorage → 새창 대진표 동기화
-  try{
-    localStorage.setItem(`sgp_display_vs_court_${courtNum}`, JSON.stringify({ p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label }));
-  } catch(ex){}
-
-  // 같은 창 내 pv3 미리보기 즉시 갱신 (storage 이벤트는 같은 창에서 발화 안 됨)
-  // _t3Render() DOM 작업이 끝난 후 실행되도록 rAF로 지연
   _t3Render();
-  requestAnimationFrame(()=>{
-    try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
-  });
+  // pv3 즉시 갱신 (_pv3SelectedMatches 이미 세팅돼 있으므로 타이밍 무관)
+  try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
 }
 
 // ── 승자 선택 → 다음 라운드 이름 반영 → 저장 ──
