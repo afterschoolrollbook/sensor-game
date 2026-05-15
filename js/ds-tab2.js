@@ -231,9 +231,10 @@ function _updatePv2ForCourt(courtNum){
     const manualStr=localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
     if(manualStr){
       const mv=JSON.parse(manualStr);
-      if(mv&&mv.p1&&mv.p2){
-        if(p1el) p1el.textContent=mv.p1;
-        if(p2el) p2el.textContent=mv.p2;
+      if(mv&&mv.p1){
+        const _cn=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
+        if(p1el) p1el.textContent=_cn(mv.p1);
+        if(p2el) p2el.textContent=_cn(mv.p2||'—');
         if(infoEl) infoEl.textContent=mv.label||'';
         return;
       }
