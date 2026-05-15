@@ -277,17 +277,17 @@ function _updatePv2ForCourt(courtNum){
     if(infoEl) infoEl.textContent='';
   }
 
-  // 항상 시각 설정 적용
+  // 항상 시각 설정 적용 (기본값 명시하여 항상 적용되도록)
   _applyD2CfgToPv2({
     courtShow:    localStorage.getItem('sgp_d2_court_show')    !== 'false',
-    courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')   || '0'),
+    courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')   || '16'),
     infoShow:     localStorage.getItem('sgp_d2_info_show')     !== 'false',
-    infoSize:     parseInt(localStorage.getItem('sgp_d2_info_size')    || '0'),
+    infoSize:     parseInt(localStorage.getItem('sgp_d2_info_size')    || '16'),
     nameShow:     localStorage.getItem('sgp_d2_name_show')     !== 'false',
-    nameSize:     parseInt(localStorage.getItem('sgp_d2_name_size')    || '0'),
+    nameSize:     parseInt(localStorage.getItem('sgp_d2_name_size')    || '80'),
     nameOnly:     localStorage.getItem('sgp_d2_name_only')     === 'true',
     matchNumShow: localStorage.getItem('sgp_d2_matchnum_show') === 'true',
-    matchNumSize: parseInt(localStorage.getItem('sgp_d2_matchnum_size') || '0'),
+    matchNumSize: parseInt(localStorage.getItem('sgp_d2_matchnum_size') || '14'),
   });
 }
 

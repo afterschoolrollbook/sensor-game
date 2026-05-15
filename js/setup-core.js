@@ -155,6 +155,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.rankCount)S.rankCount=a.settings.rankCount;
       if(a.settings.theme)S.theme=a.settings.theme;
       if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
+      if(a.settings.vs2Font)S.vs2Font=a.settings.vs2Font;
+      if(a.settings.vs2Bg)S.vs2Bg=a.settings.vs2Bg;
       if(a.settings.matches)S.matches=a.settings.matches;
       if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
