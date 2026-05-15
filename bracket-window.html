@@ -228,7 +228,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
   <div id="pts-step3" class="step">
     <div class="subhdr">
       <button onclick="goStep2()" class="btn-back">← 뒤로</button>
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">③ 대진표 확인 &amp; 수정</span>
+      <span style="font-size:15px;color:var(--text);font-weight:700;letter-spacing:1px;">③ 대진표 확인 &amp; 수정</span>
       <div id="pts-bracket-label" style="font-size:12px;color:var(--accent);font-weight:700;margin-left:4px;"></div>
       <span id="step3-court-info" style="font-size:11px;color:var(--text3);margin-left:8px;"></span>
       <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
@@ -247,11 +247,11 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
   </div>
 
-  <!-- STEP 4: PDF 출력 -->
+  <!-- STEP 4: 명단 배정 & PDF 출력 -->
   <div id="pts-step4" class="step">
     <div class="subhdr">
       <button onclick="show('pts-step3')" class="btn-back">← 뒤로</button>
-      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:1px;">④ PDF 출력</span>
+      <span style="font-size:15px;color:var(--text);font-weight:700;letter-spacing:1px;">④ 명단 배정 &amp; PDF 출력</span>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
         <button onclick="openRosterModal()" style="padding:5px 16px;background:rgba(255,214,10,.1);border:1px solid #ffd60a;color:#ffd60a;border-radius:8px;font-size:12px;font-weight:700;">📋 명단 설정</button>
         <button onclick="toggleHideNames()" id="btn-hide-names" style="padding:5px 16px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:8px;font-size:12px;font-weight:700;">👁 이름 가리기</button>
@@ -447,7 +447,6 @@ function show(stepId){
   if(stepId==='pts-step3'){
     const ci=document.getElementById('step3-court-info');
     if(ci) ci.textContent=`경기장 ${_courtCount||1}개`;
-    // 앞에서 선택된 레이아웃 그대로 하이라이트
     ['A','B','C','D','E'].forEach(x=>{
       const btn=document.getElementById('popup-lay-'+x);
       if(!btn) return;
@@ -456,6 +455,12 @@ function show(stepId){
       btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
       btn.style.color=active?'var(--red)':'var(--text2)';
     });
+    // 스텝3: 항상 이름 없는 상태로 표시
+    window._hideNames=true;
+  }
+  if(stepId==='pts-step4'){
+    // 스텝4: 이름 보이기 상태로
+    window._hideNames=false;
   }
 }
 
