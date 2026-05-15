@@ -88,7 +88,7 @@ const _IS_EMBED = new URLSearchParams(location.search).get('embed') === '1';
 // 리스트 뷰 (embed=1 전용): 경기장별/라운드별 경기 카드
 // ══════════════════════════════════════════════════
 
-let _bvCurrentMatch = null; // {gi, ri, mi} 현재 선택된 경기
+const _bvCurrentMatch = {}; // { [courtNum]: {gi, ri, mi} } — 경기장별 독립 선택
 
 // 경기장+라운드 내 연속 번호 오프셋 계산
 function _computeSeqOffsets(){
@@ -199,7 +199,9 @@ function _redrawBracketView(){
 }
 
 function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
-  const isCur=_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi;
+  const courtNum = g.court || 1;
+  const _bvCur = _bvCurrentMatch[courtNum];
+  const isCur=_bvCur&&_bvCur.gi===gi&&_bvCur.ri===ri&&_bvCur.mi===mi;
   const isDone=!!m.winner;
   const isBye=m.p1&&!m.p2;
   const p1tbd=m.p1?.tbd;
@@ -309,7 +311,7 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
   // ── 현재 경기 선택 (항상 표시) ──
   if(!isPending){
     modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
-      _bvCurrentMatch={gi,ri,mi};
+      _bvCurrentMatch[courtNum]={gi,ri,mi};
       const p1n=m.p1?.name||'—', p2n=m.p2?.name||'—';
       try{
         const bc=new BroadcastChannel('sgp_cmd');
@@ -337,8 +339,10 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
       const winnerName=m.winner?.name;
       delete g.matches[ri][mi].winner;
       // 현재경기 해제
-      if(_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi){
-        _bvCurrentMatch=null;
+      const _crt = g.court || 1;
+      const _bvc = _bvCurrentMatch[_crt];
+      if(_bvc && _bvc.gi===gi && _bvc.ri===ri && _bvc.mi===mi){
+        delete _bvCurrentMatch[_crt];
       }
       // 다음 라운드 tbd 복원
       const key=`${ri}-${mi}`;
@@ -401,8 +405,10 @@ function _bvRecordWinner(g,gi,ri,mi,which){
   }
 
   // 현재경기 해제
-  if(_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi){
-    _bvCurrentMatch=null;
+  const _crt2 = g.court || 1;
+  const _bvc2 = _bvCurrentMatch[_crt2];
+  if(_bvc2 && _bvc2.gi===gi && _bvc2.ri===ri && _bvc2.mi===mi){
+    delete _bvCurrentMatch[_crt2];
   }
 
   _bvSave();
@@ -446,6 +452,34 @@ window.addEventListener('storage',e=>{
     try{
       const gb=JSON.parse(e.newValue||'[]');
       if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); }
+    }catch(ex){}
+    return;
+  }
+
+  // ── 3번탭에서 현재경기 선택 시 하이라이트 동기화 ──
+  if(e.key && e.key.startsWith('sgp_display_vs_court_')){
+    try{
+      const courtNum = parseInt(e.key.replace('sgp_display_vs_court_',''));
+      const vs = JSON.parse(e.newValue||'{}');
+      if(vs.ri==null || vs.mi==null) return;
+
+      if(_IS_EMBED){
+        // 리스트뷰: groupLabel로 gi 찾아 _bvCurrentMatch 업데이트 후 리렌더
+        const gb = S.groupBrackets || [];
+        let gi = -1;
+        if(vs.groupLabel){
+          gi = gb.findIndex(g => {
+            const sl = g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+            return sl === vs.groupLabel || g.label === vs.groupLabel;
+          });
+        }
+        if(gi < 0) gi = gb.findIndex(g => (g.court||1) === courtNum);
+        _bvCurrentMatch[courtNum] = { gi: gi >= 0 ? gi : 0, ri: vs.ri, mi: vs.mi };
+        _redrawBracketView();
+      } else {
+        // 트리뷰: 박스 하이라이트만
+        _applyMatchHighlight(vs.ri, vs.mi, courtNum, vs.domId, vs.groupLabel);
+      }
     }catch(ex){}
   }
 });
@@ -4710,24 +4744,31 @@ function _applyMatchHighlight(ri, mi, court, domId, groupLabel){
   }catch(e){}
 }
 
-// storage 이벤트: 다른 창/iframe에서 경기 선택 시 이 창도 하이라이트
-window.addEventListener('storage', function(e){
-  if(!e.key || !e.key.startsWith('sgp_display_vs_court_')) return;
-  try{
-    const court = parseInt(e.key.replace('sgp_display_vs_court_',''));
-    const vs = JSON.parse(e.newValue||'{}');
-    if(vs.ri!=null && vs.mi!=null) _applyMatchHighlight(vs.ri, vs.mi, court, vs.domId, vs.groupLabel);
-  }catch(err){}
-});
-
-// BroadcastChannel: 보완용
+// BroadcastChannel: 3번탭 경기 선택 실시간 수신
 (function(){
   try{
     const bc = new BroadcastChannel('sgp_cmd');
     bc.onmessage = function(e){
       const cmd = e.data;
       if(!cmd || cmd.type !== 'set_match') return;
-      if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, cmd.court, cmd.domId, cmd.groupLabel);
+      const courtNum = cmd.court || 1;
+      if(_IS_EMBED){
+        // 리스트뷰: gi 찾아 _bvCurrentMatch 업데이트 후 리렌더
+        const gb = S.groupBrackets || [];
+        let gi = -1;
+        if(cmd.groupLabel){
+          gi = gb.findIndex(g => {
+            const sl = g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+            return sl === cmd.groupLabel || g.label === cmd.groupLabel;
+          });
+        }
+        if(gi < 0) gi = gb.findIndex(g => (g.court||1) === courtNum);
+        _bvCurrentMatch[courtNum] = { gi: gi >= 0 ? gi : 0, ri: cmd.ri, mi: cmd.mi };
+        _redrawBracketView();
+      } else {
+        // 트리뷰: 박스 하이라이트만
+        if(cmd.ri!=null && cmd.mi!=null) _applyMatchHighlight(cmd.ri, cmd.mi, courtNum, cmd.domId, cmd.groupLabel);
+      }
     };
   }catch(e){}
 })();

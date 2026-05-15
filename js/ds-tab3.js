@@ -366,6 +366,9 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
     localStorage.setItem(`sgp_display_vs_court_${courtNum}`, JSON.stringify({ p1:p1n, p2:p2n, label:shortLabel, court:courtNum, ri, mi, domId, groupLabel:g.label }));
   } catch(ex){}
 
+  // 같은 창 내 pv3 미리보기 즉시 갱신 (storage 이벤트는 같은 창에서 발화 안 됨)
+  try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
+
   _t3Render();
 }
 

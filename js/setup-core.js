@@ -576,6 +576,21 @@ function saveCfgNow(){
 let _bc=null;
 try{_bc=new BroadcastChannel('sgp_cmd');}catch(e){}
 window.addEventListener('pagehide',()=>{ try{_bc&&_bc.close();}catch(e){} });
+// 3번탭 현재경기 선택 수신 → pv3 하이라이트 갱신
+if(_bc){
+  _bc.onmessage = function(e){
+    const cmd = e.data;
+    if(!cmd || cmd.type !== 'set_match') return;
+    // sgp_display_vs_court_N 저장은 ds-tab3.js에서 이미 하므로 여기선 pv3만 갱신
+    try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
+  };
+}
+// storage 이벤트로도 pv3 갱신 (같은 창 내 ds-tab3 → setup-core 연동)
+window.addEventListener('storage', function(e){
+  if(e.key && e.key.startsWith('sgp_display_vs_court_')){
+    try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
+  }
+});
 
 /* ── CHIPS ── */
 function buildChips(){
