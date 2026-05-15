@@ -444,7 +444,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const container=document.createElement('div');
   // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이
   const totalH=r0len*SLOT_H+32;
-  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;`;
+  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;position:relative;`;
 
   // 재귀 cy 계산: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCy=(ri,mi)=>{
@@ -627,7 +627,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
     const getBox=(ri,mi)=>{
       const colEl=container.querySelector(`[data-col="${ri}"]`);
       const colR=colEl?colEl.getBoundingClientRect():null;
-      const left=colR?colR.left-cr.left:PAD+ri*220;
+      const left=colR?colR.left-cr.left:(reversed?PAD+(T-1-ri)*(BOX_W+40):PAD+ri*(BOX_W+40));
       const right=colR?colR.right-cr.left:left+BOX_W;
       // DOM 실측: 박스 중앙 y를 직접 읽어 선이 정확히 박스 중앙에 연결되도록
       const boxEl=colEl?colEl.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`):null;
@@ -720,7 +720,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       });
     });
 
-    outerWrap.appendChild(svg);
+    container.appendChild(svg);
   }));
 }
 
