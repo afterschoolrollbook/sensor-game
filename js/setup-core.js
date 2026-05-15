@@ -155,8 +155,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.rankCount)S.rankCount=a.settings.rankCount;
       if(a.settings.theme)S.theme=a.settings.theme;
       if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
-      if(a.settings.vs2Font)S.vs2Font=a.settings.vs2Font;
-      if(a.settings.vs2Bg)S.vs2Bg=a.settings.vs2Bg;
       if(a.settings.matches)S.matches=a.settings.matches;
       if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
@@ -1106,75 +1104,12 @@ const cleanName=n=>{
   return n.replace(/[()[\]]/g,'').trim()||n;
 };
 function updatePv2(){
-  const mode=typeof _tab2Mode!=='undefined'?_tab2Mode:'court_1';
-
-  // pv2-court-lbl 세팅
-  const courtLbl=document.getElementById('pv2-court-lbl');
-  if(courtLbl){
-    if(mode.startsWith('court_')){
-      const n=parseInt(mode.replace('court_',''));
-      courtLbl.textContent=`// 경기장 ${n}`;
-    } else if(mode==='random'){
-      courtLbl.textContent='// 랜덤';
-    } else {
-      courtLbl.textContent='';
-    }
-  }
-
-  // 경기장 N 모드: 해당 경기장의 수동 선택 경기만 표시
-  if(mode.startsWith('court_')){
-    const courtNum=parseInt(mode.replace('court_',''));
-    try{
-      const courtStr=localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
-      if(courtStr){
-        const mv=JSON.parse(courtStr);
-        if(mv&&mv.p1){
-          document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
-          document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
-          document.getElementById('pv2-info').textContent=mv.label||'';
-          return;
-        }
-      }
-    }catch(e){}
-    // 선택된 경기 없음 → 대기
-    document.getElementById('pv2-p1').textContent='—';
-    document.getElementById('pv2-p2').textContent='—';
-    document.getElementById('pv2-info').textContent='';
+  // ds-tab2.js의 _updatePv2ForMode에 위임 (시각설정 포함 모든 처리)
+  if(typeof _updatePv2ForMode==='function'){
+    const mode=typeof _tab2Mode!=='undefined'?_tab2Mode:'court_1';
+    _updatePv2ForMode(mode);
     return;
   }
-
-  // 랜덤 모드: 경기장 1 경기 표시
-  if(mode==='random'){
-    try{
-      const courtStr=localStorage.getItem('sgp_display_vs_court_1');
-      if(courtStr){
-        const mv=JSON.parse(courtStr);
-        if(mv&&mv.p1){
-          document.getElementById('pv2-p1').textContent=cleanName(mv.p1);
-          document.getElementById('pv2-p2').textContent=cleanName(mv.p2||'—');
-          document.getElementById('pv2-info').textContent=mv.label||'';
-          return;
-        }
-      }
-    }catch(e){}
-  }
-
-  // fallback: 매치 자동 탐색 (경기장 모드 미설정 시)
-  let p1=null,p2=null,matchInfo='';
-  if(S.matches&&S.matches.length){
-    let found=null,totalM=0,completedM=0;
-    for(let ri=0;ri<S.matches.length;ri++){
-      for(let mi=0;mi<S.matches[ri].length;mi++){
-        const m=S.matches[ri][mi];
-        if(m.p1&&m.p2){totalM++;if(m.winner)completedM++;else if(!found)found=m;}
-      }
-    }
-    if(found){p1=found.p1;p2=found.p2;}
-    else if(!totalM){matchInfo='';}
-  }
-  document.getElementById('pv2-p1').textContent=p1?cleanName(p1.name):'—';
-  document.getElementById('pv2-p2').textContent=p2?cleanName(p2.name):'—';
-  document.getElementById('pv2-info').textContent=matchInfo;
 }
 function _d3DrawBracket(view, groups, layout, courtCount, curGroupLabel, curRi, curMi){
   function stripScroll(div){
