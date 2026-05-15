@@ -43,6 +43,22 @@ function _t3Load(){
       _t3Data = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
     }
   } catch(e){ _t3Data = []; }
+
+  // 저장된 현재경기 선택 복원 (경기장별)
+  for(let c = 1; c <= 8; c++){
+    const saved = localStorage.getItem(`sgp_display_vs_court_${c}`);
+    if(!saved) continue;
+    try{
+      const mv = JSON.parse(saved);
+      if(mv.ri == null || mv.mi == null) continue;
+      const gi = _t3Data.findIndex(g =>
+        g.label === mv.groupLabel ||
+        g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·') === mv.groupLabel
+      );
+      if(gi >= 0) _t3CurrentMatch[c] = { gi, ri: mv.ri, mi: mv.mi, courtNum: c };
+    }catch(e){}
+  }
+
   _t3Render();
 }
 
@@ -217,8 +233,9 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const row2 = document.createElement('div');
   row2.style.cssText = 'display:flex;align-items:center;gap:4px;padding-left:2px;';
 
-  const _T3_COLORS   = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
-  const _T3_COLOR_BG = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
+  const _T3_COLORS     = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const _T3_COLOR_BG   = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
+  const _T3_COLOR_LBLS = ['','빨','파','금'];
 
   const mkNameSpan = (name, slot, forceColor, forceWeight, prefix='') => {
     const span = document.createElement('span');
@@ -226,7 +243,7 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
     const baseColor = forceColor || (idx > 0 ? _T3_COLORS[idx] : '#d0d0d0');
     span.style.cssText = `font-size:11px;font-weight:${forceWeight||'600'};color:${baseColor};cursor:pointer;border-radius:3px;padding:0 2px;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
     if(!forceColor && idx > 0) span.style.background = _T3_COLOR_BG[idx];
-    const dot = idx > 0 ? `<span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${_T3_COLORS[idx]};margin-right:3px;vertical-align:middle;flex-shrink:0;"></span>` : '';
+    const dot = idx > 0 ? `<span style="font-size:7px;opacity:.85;margin-right:2px;">[${_T3_COLOR_LBLS[idx]}]</span>` : '';
     span.innerHTML = `${prefix}${dot}${name}`;
     span.title = '클릭: 복장 색상 변경 (흰→빨→파→금)';
     span.onclick = (ev) => {
