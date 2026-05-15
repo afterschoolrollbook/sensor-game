@@ -217,9 +217,8 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const row2 = document.createElement('div');
   row2.style.cssText = 'display:flex;align-items:center;gap:4px;padding-left:2px;';
 
-  const _T3_COLORS     = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
-  const _T3_COLOR_BG   = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
-  const _T3_COLOR_LBLS = ['','빨','파','금'];
+  const _T3_COLORS   = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const _T3_COLOR_BG = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
 
   const mkNameSpan = (name, slot, forceColor, forceWeight, prefix='') => {
     const span = document.createElement('span');
@@ -227,7 +226,7 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
     const baseColor = forceColor || (idx > 0 ? _T3_COLORS[idx] : '#d0d0d0');
     span.style.cssText = `font-size:11px;font-weight:${forceWeight||'600'};color:${baseColor};cursor:pointer;border-radius:3px;padding:0 2px;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
     if(!forceColor && idx > 0) span.style.background = _T3_COLOR_BG[idx];
-    const dot = idx > 0 ? `<span style="font-size:7px;opacity:.85;margin-right:2px;">[${_T3_COLOR_LBLS[idx]}]</span>` : '';
+    const dot = idx > 0 ? `<span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${_T3_COLORS[idx]};margin-right:3px;vertical-align:middle;flex-shrink:0;"></span>` : '';
     span.innerHTML = `${prefix}${dot}${name}`;
     span.title = '클릭: 복장 색상 변경 (흰→빨→파→금)';
     span.onclick = (ev) => {
@@ -299,9 +298,9 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
   // 모달 헤더
   const mhdr = document.createElement('div');
-  mhdr.style.cssText = `padding:12px 16px 10px;border-bottom:1px solid var(--border);background:${isDone?'rgba(6,214,160,.06)':isCur?'rgba(230,57,70,.08)':'var(--bg2)'};position:relative;`;
+  mhdr.style.cssText = `padding:12px 16px 10px;border-bottom:1px solid var(--border);background:${isDone?'rgba(6,214,160,.06)':isCur?'rgba(230,57,70,.08)':'var(--bg2)'};`;
   mhdr.innerHTML = `
-    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:5px;padding-right:24px;">// ${label} · ${shortLabel}</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:5px;">// ${label} · ${shortLabel}</div>
     ${!isBye ? `
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
       <span style="font-size:13px;font-weight:700;color:${winnerN===p1n?'var(--green)':'var(--text)'};flex:1;text-align:right;">${winnerN===p1n?'🏆 ':''}${p1n}</span>
@@ -309,14 +308,6 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
       <span style="font-size:13px;font-weight:700;color:${winnerN===p2n?'var(--green)':'var(--text)'};flex:1;">${winnerN===p2n?'🏆 ':''}${p2n}</span>
     </div>` : `<div style="font-size:13px;font-weight:700;color:var(--text);">${p1n} <span style="font-size:9px;color:var(--accent);">BYE</span></div>`}
   `;
-  // X 닫기 버튼
-  const closeBtn = document.createElement('button');
-  closeBtn.style.cssText = 'position:absolute;top:10px;right:10px;background:transparent;border:none;color:var(--text3);font-size:14px;cursor:pointer;line-height:1;padding:2px 5px;border-radius:4px;';
-  closeBtn.textContent = '✕';
-  closeBtn.onmouseover = () => closeBtn.style.color = 'var(--text)';
-  closeBtn.onmouseout  = () => closeBtn.style.color = 'var(--text3)';
-  closeBtn.onclick = () => modal.remove();
-  mhdr.appendChild(closeBtn);
   modal.appendChild(mhdr);
 
   // 버튼 헬퍼

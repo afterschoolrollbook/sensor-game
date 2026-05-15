@@ -682,11 +682,8 @@ function refresh3(){
   _applyBracketColors(view, groups);
 }
 
-// ── 복장 색상 후처리 (p1ColorIdx / p2ColorIdx → 이름 스팬 색상 적용) ──
 function _applyBracketColors(view, groups){
-  const _C=['','#e63946','#4cc9f0','#ffd60a'];
-  const _L=['','빨','파','금'];
-  const _B=['','rgba(230,57,70,.2)','rgba(76,201,240,.2)','rgba(255,214,10,.2)'];
+  const _CC=['','#e63946','#4cc9f0','#ffd60a'];
   groups.forEach(g=>{
     (g.matches||[]).forEach((round,ri)=>{
       round.forEach((m,mi)=>{
@@ -697,19 +694,18 @@ function _applyBracketColors(view, groups){
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
         box.querySelectorAll('span').forEach(span=>{
-          if(span.classList.contains('d3-cbadge')) return;
+          if(span.classList.contains('d3-cdot')) return;
           const txt=(span.textContent||'').replace('🏆','').trim();
           let ci=0;
           if(p1n&&txt===p1n) ci=p1ci;
           else if(p2n&&txt===p2n) ci=p2ci;
           if(!ci) return;
-          if(!m.winner) span.style.color=_C[ci];
-          if(!span.querySelector('.d3-cbadge')){
-            const b=document.createElement('span');
-            b.className='d3-cbadge';
-            b.style.cssText=`font-size:8px;margin-left:3px;vertical-align:middle;color:${_C[ci]};background:${_B[ci]};padding:0 3px;border-radius:2px;`;
-            b.textContent=_L[ci];
-            span.appendChild(b);
+          if(!m.winner) span.style.color=_CC[ci];
+          if(!span.querySelector('.d3-cdot')){
+            const dot=document.createElement('span');
+            dot.className='d3-cdot';
+            dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
+            span.appendChild(dot);
           }
         });
       });

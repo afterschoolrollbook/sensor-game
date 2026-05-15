@@ -290,9 +290,8 @@ function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
   const nameRow=document.createElement('div');
   nameRow.style.cssText='display:flex;align-items:center;gap:5px;padding-left:2px;';
 
-  const BV_COLORS=['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const BV_COLORS  =['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
   const BV_COLOR_BG=['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
-  const BV_COLOR_LABELS=['','빨','파','금'];
 
   // 이름 span 생성 (클릭 → 색상 순환)
   const mkNameSpan=(pObj,slot,forceColor,forceWeight,prefix='')=>{
@@ -302,7 +301,9 @@ function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
     const baseColor=forceColor||(idx>0?BV_COLORS[idx]:'#d0d0d0');
     span.style.cssText=`font-size:12px;font-weight:${forceWeight||'500'};color:${baseColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-radius:3px;padding:0 3px;transition:background .15s;`;
     if(!forceColor&&idx>0) span.style.background=BV_COLOR_BG[idx];
-    const colorDot=idx>0?`<span style="font-size:8px;opacity:.8;margin-right:2px;">[${BV_COLOR_LABELS[idx]}]</span>`:'';
+    const colorDot=idx>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${BV_COLORS[idx]};margin-right:3px;vertical-align:middle;"></span>`:'';
+    span.innerHTML=`${prefix}${colorDot}${pObj?pObj.name:'?'}`;
+    span.title='클릭: 복장 색상 변경 (흰→빨→파→금)';
     span.innerHTML=`${prefix}${colorDot}${pObj?pObj.name:'?'}`;
     span.title='클릭: 복장 색상 변경 (흰→빨→파→금)';
     span.onclick=(ev)=>{
@@ -610,10 +611,16 @@ _maybeStubRenderBracketTabs();
 
 // localStorage 변경 감지 → 다른 창에서 데이터 바뀌면 자동 새로고침
 window.addEventListener('storage',e=>{
-  if(e.key==='sgp_groupBrackets'){
+  if(e.key==='sgp_groupBrackets'||e.key==='sgp_bracket_temp'){
     try{
-      const gb=JSON.parse(e.newValue||'[]');
-      if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); }
+      let gb=null;
+      if(e.key==='sgp_bracket_temp'){
+        const tmp=JSON.parse(e.newValue||'{}');
+        if(tmp&&tmp.groupBrackets&&tmp.groupBrackets.length) gb=tmp.groupBrackets;
+      } else {
+        gb=JSON.parse(e.newValue||'[]');
+      }
+      if(gb&&gb.length){ S.groupBrackets=gb; if(_courtCount) _courtCount=Math.max(...gb.map(g=>g.court||1)); _redrawBracketView(); }
     }catch(ex){}
     return;
   }
@@ -710,32 +717,28 @@ window.addEventListener('storage',e=>{
         });
       });
 
-      // ── ③ 복장 색상 표시 (p1ColorIdx / p2ColorIdx) ──
-      const _C_COLORS=['','#e63946','#4cc9f0','#ffd60a'];
-      const _C_LBLS=['','빨','파','금'];
-      const _C_BG=['','rgba(230,57,70,.2)','rgba(76,201,240,.2)','rgba(255,214,10,.2)'];
+      // ── ③ 복장 색상 dot 표시 (p1ColorIdx / p2ColorIdx) ──
+      const _CC=['','#e63946','#4cc9f0','#ffd60a'];
       rounds.forEach((matches,ri)=>{
         matches.forEach((m,mi)=>{
           const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
           if(!p1ci&&!p2ci) return;
           const box=container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
           if(!box) return;
-          const p1name=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
-          const p2name=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
+          const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
+          const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
           box.querySelectorAll('span').forEach(span=>{
-            if(span.classList.contains('bv-win-badge')||span.classList.contains('bv-cbadge')) return;
+            if(span.classList.contains('bv-win-badge')||span.classList.contains('bv-cdot')) return;
             const txt=(span.textContent||'').replace('🏆','').trim();
             let ci=0;
-            if(p1name&&txt===p1name) ci=p1ci;
-            else if(p2name&&txt===p2name) ci=p2ci;
+            if(p1n&&txt===p1n) ci=p1ci;
+            else if(p2n&&txt===p2n) ci=p2ci;
             if(!ci) return;
-            // winner가 이미 색칠한 경우 덮어쓰지 않음
-            if(!m.winner) span.style.color=_C_COLORS[ci];
-            if(!span.querySelector('.bv-cbadge')){
+            if(!m.winner) span.style.color=_CC[ci];
+            if(!span.querySelector('.bv-cdot')){
               const dot=document.createElement('span');
-              dot.className='bv-cbadge';
-              dot.style.cssText=`font-size:7px;margin-left:3px;vertical-align:middle;color:${_C_COLORS[ci]};background:${_C_BG[ci]};padding:0 3px;border-radius:2px;`;
-              dot.textContent=_C_LBLS[ci];
+              dot.className='bv-cdot';
+              dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
               span.appendChild(dot);
             }
           });
