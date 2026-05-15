@@ -58,6 +58,7 @@ function buildDs2Labels(){
   const nameSize=parseInt(localStorage.getItem('sgp_d2_name_size')||'80');
   const nameOnly=localStorage.getItem('sgp_d2_name_only')==='true';
   const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
+  const matchNumSize=parseInt(localStorage.getItem('sgp_d2_matchnum_size')||'14');
 
   const el=(id,val)=>{ const e=document.getElementById(id); if(e) e[typeof val==='boolean'?'checked':'textContent']=val; };
   el('ds2-court-show',courtShow);
@@ -68,8 +69,9 @@ function buildDs2Labels(){
   el('ds2-name-size-val',nameSize);
   el('ds2-name-only',nameOnly);
   el('ds2-matchnum-show',matchNumShow);
+  el('ds2-matchnum-size-val',matchNumSize);
 
-  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize});
+  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,matchNumShow,matchNumSize});
 }
 
 function buildDs2FontPicker(){
@@ -318,6 +320,7 @@ function _saveD2Cfg(){
   const nameSize=parseInt(document.getElementById('ds2-name-size-val')?.textContent||'80');
   const nameOnly=document.getElementById('ds2-name-only')?.checked??false;
   const matchNumShow=document.getElementById('ds2-matchnum-show')?.checked??false;
+  const matchNumSize=parseInt(document.getElementById('ds2-matchnum-size-val')?.textContent||'14');
   try{ localStorage.setItem('sgp_d2_court_show',String(courtShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_court_size',String(courtSize)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_info_show',String(infoShow)); }catch(e){}
@@ -326,7 +329,8 @@ function _saveD2Cfg(){
   try{ localStorage.setItem('sgp_d2_name_size',String(nameSize)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_name_only',String(nameOnly)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_matchnum_show',String(matchNumShow)); }catch(e){}
-  const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,nameOnly,matchNumShow};
+  try{ localStorage.setItem('sgp_d2_matchnum_size',String(matchNumSize)); }catch(e){}
+  const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,nameOnly,matchNumShow,matchNumSize};
   _broadcastD2Cfg(cfg);
   _applyD2CfgToPv2(cfg);
   // sgp_display_config에도 저장 (새로고침 후 복원용)
@@ -355,6 +359,12 @@ function _chD2NameSize(d){
   let cur=parseInt(el.textContent)||80;
   let i=NAME_SIZES.findIndex(s=>s>=cur); if(i<0)i=NAME_SIZES.length-1;
   el.textContent=NAME_SIZES[Math.max(0,Math.min(NAME_SIZES.length-1,i+d))];
+  _saveD2Cfg();
+}
+
+function _chD2MatchNumSize(d){
+  const el=document.getElementById('ds2-matchnum-size-val'); if(!el) return;
+  el.textContent=_stepSize(parseInt(el.textContent)||14,d);
   _saveD2Cfg();
 }
 
@@ -397,16 +407,10 @@ function _applyD2CfgToPv2(cfg){
         : raw;
     });
   }
-  // 경기번호 표시
-  if(cfg.matchNumShow!==undefined){
-    let mnEl=document.getElementById('pv2-match-num');
-    if(!mnEl){
-      mnEl=document.createElement('div');
-      mnEl.id='pv2-match-num';
-      mnEl.style.cssText='font-family:"Share Tech Mono",monospace;font-size:11px;color:var(--accent);letter-spacing:2px;text-align:center;margin-top:4px;';
-      const pv2=document.getElementById('pv2');
-      if(pv2) pv2.appendChild(mnEl);
-    }
-    mnEl.style.display=cfg.matchNumShow?'':'none';
+  // 경기번호 표시/크기
+  const mnEl=document.getElementById('pv2-match-num');
+  if(mnEl){
+    if(cfg.matchNumShow!==undefined) mnEl.style.display=cfg.matchNumShow?'':'none';
+    if(cfg.matchNumSize) mnEl.style.fontSize=cfg.matchNumSize+'px';
   }
 }

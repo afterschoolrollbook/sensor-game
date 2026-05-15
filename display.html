@@ -329,6 +329,7 @@ function _getD2Cfg(){
   return {
     nameOnly: localStorage.getItem('sgp_d2_name_only')==='true',
     matchNumShow: localStorage.getItem('sgp_d2_matchnum_show')==='true',
+    matchNumSize: parseInt(localStorage.getItem('sgp_d2_matchnum_size')||'14'),
   };
 }
 
@@ -337,6 +338,7 @@ function _updateMatchNum(courtNum, ri, mi, seqMi){
   if(!el) return;
   const cfg=_getD2Cfg();
   if(!cfg.matchNumShow){ el.style.display='none'; return; }
+  el.style.fontSize=cfg.matchNumSize+'px';
   if(ri!=null && mi!=null){
     const matchLabel=`${courtNum}-${ri+1}-${(seqMi!=null?seqMi:mi)+1} 경기`;
     el.textContent=matchLabel;
@@ -395,6 +397,11 @@ function _applyD2Cfg(cfg){
     const el=document.getElementById('d2-matchnum');
     if(el) el.style.display=cfg.matchNumShow?'':'none';
     refresh2();
+  }
+  if(cfg.matchNumSize!==undefined){
+    try{ localStorage.setItem('sgp_d2_matchnum_size',String(cfg.matchNumSize)); }catch(e){}
+    const el=document.getElementById('d2-matchnum');
+    if(el) el.style.fontSize=cfg.matchNumSize+'px';
   }
 }
 
