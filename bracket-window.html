@@ -1567,7 +1567,12 @@ function saveBracketTemp(){
 function loadBracketTemp(){
   try{
     const d=JSON.parse(localStorage.getItem('sgp_bracket_temp'));
-    if(d&&d.groupBrackets){ S.groupBrackets=d.groupBrackets; _redrawBracketView(); renderBracketTabs(); toast(`불러오기 완료 (${d.savedAt})`,'success'); }
+    if(d&&d.groupBrackets){
+      S.groupBrackets=d.groupBrackets;
+      _migrateSlotNumbers(); // 구 형식("N번") 자동 변환 + _startNum 항상 계산
+      _redrawBracketView(); renderBracketTabs();
+      toast(`불러오기 완료 (${d.savedAt})`,'success');
+    }
   } catch(e){ toast('불러오기 실패','error'); }
 }
 
