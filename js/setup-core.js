@@ -568,6 +568,17 @@ function saveCfgNow(){
       timerColor:S.timerColor||null,
       ftrSize:parseInt(document.getElementById('ds-ftrsize-val')?.textContent||'0')||null,
       tkSize:parseInt(document.getElementById('ds-tksize-val')?.textContent||'0')||null,
+      // D2 설정
+      d2CourtShow:localStorage.getItem('sgp_d2_court_show')!=='false',
+      d2CourtSize:parseInt(localStorage.getItem('sgp_d2_court_size')||'16'),
+      d2InfoShow:localStorage.getItem('sgp_d2_info_show')!=='false',
+      d2InfoSize:parseInt(localStorage.getItem('sgp_d2_info_size')||'16'),
+      d2NameShow:localStorage.getItem('sgp_d2_name_show')!=='false',
+      d2NameSize:parseInt(localStorage.getItem('sgp_d2_name_size')||'80'),
+      d2NameOnly:localStorage.getItem('sgp_d2_name_only')==='true',
+      d2MatchNumShow:localStorage.getItem('sgp_d2_matchnum_show')==='true',
+      d2VsColor:localStorage.getItem('sgp_d2_vs_color')||'#e63946',
+      d2Mode:localStorage.getItem('sgp_d2_mode')||'court_1',
     });
     localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
   }catch(e){}

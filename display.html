@@ -562,6 +562,18 @@ function refresh2(){
   }
 
   // ── 저장된 D2 커스텀 설정 적용 ──
+  const dispCfg=getCfg();
+  // sgp_display_config의 D2 설정을 개별 키로 동기화 (새로고침 복원)
+  if(dispCfg.d2CourtShow!==undefined) try{localStorage.setItem('sgp_d2_court_show',String(dispCfg.d2CourtShow));}catch(e){}
+  if(dispCfg.d2CourtSize!==undefined) try{localStorage.setItem('sgp_d2_court_size',String(dispCfg.d2CourtSize));}catch(e){}
+  if(dispCfg.d2InfoShow!==undefined)  try{localStorage.setItem('sgp_d2_info_show',String(dispCfg.d2InfoShow));}catch(e){}
+  if(dispCfg.d2InfoSize!==undefined)  try{localStorage.setItem('sgp_d2_info_size',String(dispCfg.d2InfoSize));}catch(e){}
+  if(dispCfg.d2NameShow!==undefined)  try{localStorage.setItem('sgp_d2_name_show',String(dispCfg.d2NameShow));}catch(e){}
+  if(dispCfg.d2NameSize!==undefined)  try{localStorage.setItem('sgp_d2_name_size',String(dispCfg.d2NameSize));}catch(e){}
+  if(dispCfg.d2NameOnly!==undefined)  try{localStorage.setItem('sgp_d2_name_only',String(dispCfg.d2NameOnly));}catch(e){}
+  if(dispCfg.d2MatchNumShow!==undefined) try{localStorage.setItem('sgp_d2_matchnum_show',String(dispCfg.d2MatchNumShow));}catch(e){}
+  if(dispCfg.d2VsColor)               try{localStorage.setItem('sgp_d2_vs_color',dispCfg.d2VsColor);}catch(e){}
+
   const vsColor=localStorage.getItem('sgp_d2_vs_color');
   const vsEl=document.getElementById('d2-vs');
   if(vsEl && vsColor) vsEl.style.color=vsColor;
@@ -593,6 +605,11 @@ function refresh2(){
   if(nameSize){
     document.querySelectorAll('#d2-row .d2-nm').forEach(nm=>{ nm.style.fontSize=nameSize+'px'; });
   }
+
+  // 경기번호 표시
+  const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
+  const mnEl=document.getElementById('d2-matchnum');
+  if(mnEl) mnEl.style.display=matchNumShow?'':'none';
 }
 
 // ── 3번 ──

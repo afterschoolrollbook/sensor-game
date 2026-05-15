@@ -313,6 +313,8 @@ function _saveD2Cfg(){
   const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,nameOnly,matchNumShow};
   _broadcastD2Cfg(cfg);
   _applyD2CfgToPv2(cfg);
+  // sgp_display_config에도 저장 (새로고침 후 복원용)
+  if(typeof saveCfgNow==='function') saveCfgNow();
 }
 
 const _D2SIZES=[10,11,12,13,14,16,18,20,22,24,28,32,36,40];
