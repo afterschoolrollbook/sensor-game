@@ -80,6 +80,405 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
+// ══════════════════════════════════════════════════
+// 3번 미리보기 전용: 대진표 리스트 뷰 + 경기 관리
+// (기존 시각적 대진표 대신 경기장별/라운드별 경기 목록)
+// ══════════════════════════════════════════════════
+
+let _bvCurrentMatch = null; // {gi, ri, mi} 현재 선택된 경기
+
+// 경기장+라운드 내 연속 번호 오프셋 계산
+function _computeSeqOffsets(){
+  const courtRound={};
+  (S.groupBrackets||[]).forEach(g=>{
+    const c=g.court||1;
+    if(!courtRound[c]) courtRound[c]={};
+    g._roundOffset={};
+    (g.matches||[]).forEach((round,ri)=>{
+      if(!courtRound[c][ri]) courtRound[c][ri]=0;
+      g._roundOffset[ri]=courtRound[c][ri];
+      courtRound[c][ri]+=round.length;
+    });
+  });
+}
+
+// _redrawBracketView 완전 교체 — 리스트 뷰로
+function _redrawBracketView(){
+  // 탭 숨김 (리스트 뷰에서는 불필요)
+  const tabs=document.getElementById('pts-bracket-tabs');
+  if(tabs) tabs.style.display='none';
+
+  // 레이아웃 버튼/서브헤더 숨김
+  const subhdr=document.querySelector('.subhdr');
+  if(subhdr) subhdr.style.display='none';
+
+  const view=document.getElementById('pts-bracket-view');
+  if(!view) return;
+  view.innerHTML='';
+  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:10px 14px;display:block;';
+
+  if(!S.groupBrackets||!S.groupBrackets.length){
+    view.innerHTML='<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px;">저장된 대진표가 없습니다</div>';
+    return;
+  }
+
+  _computeSeqOffsets();
+
+  // 경기장별 그룹핑
+  const courts={};
+  S.groupBrackets.forEach((g,gi)=>{
+    const c=g.court||1;
+    if(!courts[c]) courts[c]=[];
+    courts[c].push({g,gi});
+  });
+
+  const roundNames=['1라운드','2라운드','3라운드','4라운드','준결승','결승'];
+
+  Object.keys(courts).map(Number).sort().forEach(courtNum=>{
+    const groups=courts[courtNum];
+    const maxRi=Math.max(...groups.map(({g})=>g.matches.length));
+
+    // 경기장 헤더
+    const courtDiv=document.createElement('div');
+    courtDiv.style.cssText='margin-bottom:16px;';
+    const courtHdr=document.createElement('div');
+    courtHdr.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;padding:5px 0 8px;border-bottom:1px solid rgba(76,201,240,.3);margin-bottom:8px;';
+    courtHdr.textContent=`// 경기장 ${courtNum}`;
+    courtDiv.appendChild(courtHdr);
+
+    // 라운드별 경기 나열
+    for(let ri=0;ri<maxRi;ri++){
+      // 이 라운드에 경기가 있는지 확인
+      const hasMatches=groups.some(({g})=>g.matches[ri]&&g.matches[ri].length);
+      if(!hasMatches) continue;
+
+      const maxRiTotal=Math.max(...groups.map(({g})=>g.matches.length));
+      const rName=ri===maxRiTotal-1&&maxRiTotal>1?'결승':roundNames[ri]||`${ri+1}라운드`;
+
+      const roundHdr=document.createElement('div');
+      roundHdr.style.cssText='font-size:9px;color:#aaaaaa;font-family:"Share Tech Mono",monospace;letter-spacing:1px;padding:6px 2px 4px;margin-top:4px;';
+      roundHdr.textContent=rName;
+      courtDiv.appendChild(roundHdr);
+
+      groups.forEach(({g,gi})=>{
+        if(!g.matches[ri]) return;
+        g.matches[ri].forEach((m,mi)=>{
+          const seqNum=((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1;
+          const label=`${courtNum}-${ri+1}-${seqNum}`;
+          const shortLabel=g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+          courtDiv.appendChild(_bvBuildRow(g,gi,ri,mi,m,label,shortLabel));
+        });
+      });
+    }
+
+    view.appendChild(courtDiv);
+  });
+}
+
+function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
+  const isCur=_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi;
+  const isDone=!!m.winner;
+  const isBye=m.p1&&!m.p2;
+  const p1n=m.p1?.name||'?';
+  const p2n=m.p2?.name||'?';
+  const winnerN=m.winner?.name;
+
+  const row=document.createElement('div');
+  row.style.cssText=`
+    display:flex;align-items:center;gap:8px;padding:6px 10px;
+    border-radius:6px;margin-bottom:3px;cursor:pointer;
+    border:1px solid ${isCur?'var(--red)':isDone?'rgba(6,214,160,.4)':'var(--border)'};
+    background:${isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':'var(--card)'};
+    transition:background .1s;
+  `;
+  row.onmouseover=()=>{ if(!isCur) row.style.background='var(--card2)'; };
+  row.onmouseout=()=>{ row.style.background=isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':'var(--card)'; };
+
+  // 경기 번호
+  const lbl=document.createElement('span');
+  lbl.style.cssText=`font-size:10px;font-weight:700;color:${isCur?'var(--red)':'var(--accent)'};font-family:"Share Tech Mono",monospace;min-width:52px;flex-shrink:0;`;
+  lbl.textContent=label;
+  row.appendChild(lbl);
+
+  // 체급
+  const grpLbl=document.createElement('span');
+  grpLbl.style.cssText='font-size:9px;color:var(--text3);min-width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+  grpLbl.textContent=shortLabel;
+  row.appendChild(grpLbl);
+
+  // 선수
+  const players=document.createElement('span');
+  players.style.cssText='font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  if(isBye){
+    players.innerHTML=`<span style="color:#d0d0d0;">${p1n}</span> <span style="font-size:9px;color:var(--accent);">BYE</span>`;
+  } else {
+    const c1=winnerN?winnerN===p1n?'#06d6a0':'#555':'#d0d0d0';
+    const c2=winnerN?winnerN===p2n?'#06d6a0':'#555':'#d0d0d0';
+    players.innerHTML=`<span style="color:${c1};">${p1n}</span><span style="color:var(--red);font-size:10px;margin:0 4px;font-family:'Bebas Neue',cursive;">VS</span><span style="color:${c2};">${p2n}</span>`;
+  }
+  row.appendChild(players);
+
+  // 상태 뱃지
+  if(isCur){
+    const badge=document.createElement('span');
+    badge.style.cssText='font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
+    badge.textContent='LIVE';
+    row.appendChild(badge);
+  } else if(isDone){
+    const badge=document.createElement('span');
+    badge.style.cssText='font-size:9px;color:var(--green);flex-shrink:0;';
+    badge.textContent='✓';
+    row.appendChild(badge);
+  }
+
+  row.onclick=(e)=>_bvShowModal(e,g,gi,ri,mi,m,label,shortLabel);
+  return row;
+}
+
+function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
+  document.getElementById('bv-action-modal')?.remove();
+  const modal=document.createElement('div');
+  modal.id='bv-action-modal';
+  modal.style.cssText=`
+    position:fixed;z-index:9999;
+    background:var(--card2);border:1px solid var(--border2);
+    border-radius:12px;padding:6px;min-width:230px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);animation:tsin .15s ease;
+  `;
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:5px 12px 7px;font-size:10px;color:var(--text3);font-family:"Share Tech Mono",monospace;border-bottom:1px solid var(--border);margin-bottom:4px;';
+  hdr.textContent=`// ${label} · ${shortLabel}`;
+  modal.appendChild(hdr);
+
+  const mkBtn=(icon,text,color,fn)=>{
+    const b=document.createElement('button');
+    b.style.cssText=`display:flex;align-items:center;gap:9px;padding:9px 12px;width:100%;border:none;background:transparent;color:${color};font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Noto Sans KR',sans-serif;text-align:left;`;
+    b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
+    b.onmouseout=()=>b.style.background='transparent';
+    b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
+    b.onclick=()=>{ modal.remove(); fn(); };
+    return b;
+  };
+
+  const isDone=!!m.winner;
+  const isBye=m.p1&&!m.p2;
+  const courtNum=g.court||1;
+
+  // 현재 경기 선택
+  modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
+    _bvCurrentMatch={gi,ri,mi};
+    const p1n=m.p1?.name||'—', p2n=m.p2?.name||'—';
+    try{
+      const bc=new BroadcastChannel('sgp_cmd');
+      bc.postMessage({type:'set_match',p1:p1n,p2:p2n,label:shortLabel,court:courtNum});
+      bc.close();
+    }catch(ex){}
+    try{ localStorage.setItem(`sgp_display_vs_court_${courtNum}`,JSON.stringify({p1:p1n,p2:p2n,label:shortLabel,court:courtNum})); }catch(ex){}
+    _redrawBracketView();
+  }));
+
+  // 승자 선택 (BYE 아니고 미완료)
+  if(!isBye&&!isDone){
+    if(m.p1) modal.appendChild(mkBtn('🏆',`${m.p1.name} 승`,'var(--green)',()=>_bvRecordWinner(g,gi,ri,mi,'p1')));
+    if(m.p2) modal.appendChild(mkBtn('🏆',`${m.p2.name} 승`,'#ffd60a',()=>_bvRecordWinner(g,gi,ri,mi,'p2')));
+  }
+
+  // 결과 취소 (완료된 경우)
+  if(isDone){
+    modal.appendChild(mkBtn('↩','결과 취소','var(--red)',()=>{
+      delete g.matches[ri][mi].winner;
+      // 다음 라운드 선수 이름도 tbd로 되돌리기
+      const key=`${ri}-${mi}`;
+      if(g.matches[ri+1]){
+        g.matches[ri+1].forEach(nm=>{
+          if(nm.fromA===key&&nm.p1) { nm.p1.tbd=true; }
+          if(nm.fromB===key&&nm.p2) { nm.p2.tbd=true; }
+        });
+      }
+      _bvSave();
+      _redrawBracketView();
+    }));
+  }
+
+  document.body.appendChild(modal);
+
+  // 위치
+  const rect=e.currentTarget.getBoundingClientRect();
+  let top=rect.bottom+4, left=rect.left;
+  if(top+220>window.innerHeight) top=rect.top-220;
+  if(left+240>window.innerWidth) left=window.innerWidth-250;
+  modal.style.top=top+'px'; modal.style.left=left+'px';
+
+  setTimeout(()=>{
+    const close=(ev)=>{ if(!modal.contains(ev.target)){ modal.remove(); document.removeEventListener('click',close,true); }};
+    document.addEventListener('click',close,true);
+  },100);
+}
+
+function _bvRecordWinner(g,gi,ri,mi,which){
+  const m=g.matches[ri][mi];
+  const winner=which==='p1'?m.p1:m.p2;
+  if(!winner) return;
+  m.winner=winner;
+
+  // 다음 라운드 선수 이름 업데이트
+  const key=`${ri}-${mi}`;
+  if(g.matches[ri+1]){
+    g.matches[ri+1].forEach(nm=>{
+      if(nm.fromA===key&&nm.p1) { nm.p1.name=winner.name; nm.p1.tbd=false; }
+      if(nm.fromB===key&&nm.p2) { nm.p2.name=winner.name; nm.p2.tbd=false; }
+    });
+  }
+
+  // 현재경기 해제
+  if(_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi){
+    _bvCurrentMatch=null;
+  }
+
+  _bvSave();
+  _redrawBracketView();
+
+  // 전광판에 승자 알림
+  try{
+    const bc=new BroadcastChannel('sgp_cmd');
+    bc.postMessage({type:'winner',name:winner.name});
+    bc.close();
+  }catch(ex){}
+}
+
+function _bvSave(){
+  try{
+    const clean=S.groupBrackets.map(g=>({
+      ...g,
+      matches:g.matches.map(round=>round.map(m=>{
+        const {_groupObj,...rest}=m; return rest;
+      }))
+    }));
+    localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
+    localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
+    // bracket-window.html에도 동기화
+    try{ localStorage.setItem('sgp_step','3'); }catch(ex){}
+  }catch(ex){}
+}
+
+// renderBracketTabs는 리스트 뷰에서 불필요하므로 빈 함수로
+function renderBracketTabs(){ }
+
+// localStorage 변경 감지 → 다른 창에서 데이터 바뀌면 자동 새로고침
+window.addEventListener('storage',e=>{
+  if(e.key==='sgp_groupBrackets'){
+    try{
+      const gb=JSON.parse(e.newValue||'[]');
+      if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); }
+    }catch(ex){}
+  }
+});
+
+
+// ── _renderBracketHTML 연결선 오버라이드 ──
+// step4.js의 getBoundingClientRect 방식은 iframe 환경에서 좌표가 틀어지므로
+// bracket-view.html에서만 순수 수학 계산으로 덮어씀 (step4.js는 건드리지 않음)
+(function(){
+  const _orig = _renderBracketHTML;
+  _renderBracketHTML = function(wrap, rounds, direction, reversed){
+    // 1) 원본 함수로 카드/박스 DOM 먼저 렌더
+    _orig(wrap, rounds, direction, reversed);
+
+    // 2) 원본이 그린 SVG 연결선 제거 후 수학 계산으로 재작성
+    requestAnimationFrame(()=>{
+      // 원본 rAF가 그린 SVG 제거
+      wrap.querySelectorAll('svg[data-bv-lines]').forEach(s=>s.remove());
+      // 원본이 붙인 첫 번째 SVG도 제거 (position:absolute, top:0, left:0)
+      const outerWrap=wrap.querySelector('[style*="position:relative"]');
+      if(!outerWrap) return;
+      const container=outerWrap.querySelector('[style*="position:relative"]') || outerWrap.firstElementChild;
+      if(!container) return;
+      container.querySelectorAll('svg').forEach(s=>s.remove());
+      outerWrap.querySelectorAll(':scope>svg').forEach(s=>s.remove());
+
+      const T=rounds.length;
+      if(T<2) return;
+      const SLOT_H=90, BOX_W=180, GAP=40, PAD=8, LABEL_H=24;
+      const r0len=rounds[0].length;
+      const totalSlotH=r0len*SLOT_H;
+
+      const colLeft =(ri)=>reversed ? PAD+(T-1-ri)*(BOX_W+GAP) : PAD+ri*(BOX_W+GAP);
+      const colRight=(ri)=>colLeft(ri)+BOX_W;
+      const W=PAD*2+T*(BOX_W+GAP)-GAP;
+      const H=r0len*SLOT_H+LABEL_H+PAD+40;
+
+      const dirOff=(ri)=>{
+        const usedH=rounds[ri].length*SLOT_H;
+        if(direction==='bottom') return totalSlotH-usedH;
+        if(direction==='center') return (totalSlotH-usedH)/2;
+        return 0;
+      };
+      const getBoxCy=(ri,mi)=>{
+        if(ri===0) return LABEL_H+PAD+dirOff(0)+mi*SLOT_H+SLOT_H/2;
+        const m=rounds[ri][mi];
+        let srcA,srcB;
+        if(m&&m.fromA){ const [fr,fm]=m.fromA.split('-').map(Number); srcA=fr===ri-1?fm:mi*2; }
+        else { srcA=mi*2; }
+        if(m&&m.fromB){ const [fr,fm]=m.fromB.split('-').map(Number); srcB=fr===ri-1?fm:mi*2+1; }
+        else { srcB=null; }
+        const cyA=getBoxCy(ri-1,srcA);
+        if(srcB===null) return cyA;
+        const cyB=srcB<rounds[ri-1].length?getBoxCy(ri-1,srcB):cyA;
+        return(cyA+cyB)/2;
+      };
+      const getBox=(ri,mi)=>({left:colLeft(ri),right:colRight(ri),cy:getBoxCy(ri,mi)});
+
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('data-bv-lines','1');
+      svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
+      svg.setAttribute('width',W);svg.setAttribute('height',H);
+
+      const PATH=(d)=>{
+        const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d',d);p.setAttribute('stroke','#ffffff');
+        p.setAttribute('stroke-width','2');p.setAttribute('fill','none');
+        p.setAttribute('stroke-linecap','square');svg.appendChild(p);
+      };
+
+      rounds.forEach((matches,ri)=>{
+        if(ri>=T-1) return;
+        rounds[ri+1].forEach((nm,nmi)=>{
+          let srcA,srcB;
+          if(nm.fromA){ const [fr,fm]=nm.fromA.split('-').map(Number); srcA=fr===ri?fm:nmi*2; }
+          else { srcA=nmi*2; }
+          if(nm.fromB){ const [fr,fm]=nm.fromB.split('-').map(Number); srcB=fr===ri?fm:nmi*2+1; }
+          else { srcB=nmi*2+1; }
+          const hasB=nm.fromB!=null&&srcB<matches.length;
+          const a=getBox(ri,srcA), b=hasB?getBox(ri,srcB):null, t=getBox(ri+1,nmi);
+          if(reversed){
+            const ax=a.left,bx=b?b.left:a.left,tx=t.right,ay=a.cy,midX=(ax+tx)/2;
+            if(b){
+              const by=b.cy,midY=(ay+by)/2;
+              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
+              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+            } else {
+              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+            }
+          } else {
+            const ax=a.right,bx=b?b.right:a.right,tx=t.left,ay=a.cy,midX=(ax+tx)/2;
+            if(b){
+              const by=b.cy,midY=(ay+by)/2;
+              PATH(`M${ax},${ay} H${midX}`);PATH(`M${bx},${by} H${midX}`);
+              PATH(`M${midX},${ay} V${by}`);PATH(`M${midX},${midY} H${tx}`);
+            } else {
+              Math.abs(ay-t.cy)<1?PATH(`M${ax},${ay} H${tx}`):PATH(`M${ax},${ay} H${midX} V${t.cy} H${tx}`);
+            }
+          }
+        });
+      });
+
+      // SVG를 container에 붙임
+      container.style.position='relative';
+      container.appendChild(svg);
+    });
+  };
+})();
 
 // ── 선 새로고침 ──
 function _refreshSvgLines(){
@@ -4179,227 +4578,6 @@ window.addEventListener('storage', function(e){
     };
   }catch(e){}
 })();
-
-// ══════════════════════════════════════════════
-// 3번 전광판 미리보기 전용: 경기 리스트 뷰
-// 마지막에 정의하여 기존 _redrawBracketView 덮어씀
-// ══════════════════════════════════════════════
-
-let _bvCurrent = null; // {gi, ri, mi}
-
-function _computeSeqOffsets(){
-  const cr={};
-  (S.groupBrackets||[]).forEach(g=>{
-    const c=g.court||1;
-    if(!cr[c]) cr[c]={};
-    g._roundOffset={};
-    (g.matches||[]).forEach((round,ri)=>{
-      if(!cr[c][ri]) cr[c][ri]=0;
-      g._roundOffset[ri]=cr[c][ri];
-      cr[c][ri]+=round.length;
-    });
-  });
-}
-
-function renderBracketTabs(){}
-
-function _redrawBracketView(){
-  const tabs=document.getElementById('pts-bracket-tabs');
-  if(tabs) tabs.style.display='none';
-  const subhdr=document.querySelector('.subhdr');
-  if(subhdr) subhdr.style.display='none';
-
-  const view=document.getElementById('pts-bracket-view');
-  if(!view) return;
-  view.innerHTML='';
-  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:10px 14px;display:block;background:var(--bg);';
-
-  if(!S.groupBrackets||!S.groupBrackets.length){
-    view.innerHTML='<div style="color:var(--text3);padding:24px;text-align:center;">저장된 대진표가 없습니다</div>';
-    return;
-  }
-
-  _computeSeqOffsets();
-
-  const courts={};
-  S.groupBrackets.forEach((g,gi)=>{
-    const c=g.court||1;
-    if(!courts[c]) courts[c]=[];
-    courts[c].push({g,gi});
-  });
-
-  const rNames=['1라운드','2라운드','3라운드','4라운드','준결승','결승'];
-
-  Object.keys(courts).map(Number).sort().forEach(courtNum=>{
-    const groups=courts[courtNum];
-    const maxRi=Math.max(...groups.map(({g})=>g.matches.length));
-
-    const courtDiv=document.createElement('div');
-    courtDiv.style.cssText='margin-bottom:20px;';
-
-    const courtHdr=document.createElement('div');
-    courtHdr.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;padding:5px 0 8px;border-bottom:1px solid rgba(76,201,240,.3);margin-bottom:8px;';
-    courtHdr.textContent=`// 경기장 ${courtNum}`;
-    courtDiv.appendChild(courtHdr);
-
-    for(let ri=0;ri<maxRi;ri++){
-      const hasMatch=groups.some(({g})=>g.matches[ri]&&g.matches[ri].length);
-      if(!hasMatch) continue;
-
-      const maxRiAll=Math.max(...groups.map(({g})=>g.matches.length));
-      const rName=ri===maxRiAll-1&&maxRiAll>1?'결승':rNames[ri]||`${ri+1}라운드`;
-      const roundHdr=document.createElement('div');
-      roundHdr.style.cssText='font-size:9px;color:#aaa;font-family:"Share Tech Mono",monospace;letter-spacing:1px;padding:6px 2px 4px;margin-top:2px;';
-      roundHdr.textContent=rName;
-      courtDiv.appendChild(roundHdr);
-
-      groups.forEach(({g,gi})=>{
-        if(!g.matches[ri]) return;
-        g.matches[ri].forEach((m,mi)=>{
-          const seq=((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1;
-          const label=`${courtNum}-${ri+1}-${seq}`;
-          const sl=g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
-          courtDiv.appendChild(_bvRow(g,gi,ri,mi,m,label,sl));
-        });
-      });
-    }
-    view.appendChild(courtDiv);
-  });
-}
-
-function _bvRow(g,gi,ri,mi,m,label,sl){
-  const isCur=_bvCurrent&&_bvCurrent.gi===gi&&_bvCurrent.ri===ri&&_bvCurrent.mi===mi;
-  const done=!!m.winner;
-  const bye=m.p1&&!m.p2;
-  const p1n=m.p1?.name||'?', p2n=m.p2?.name||'?', winN=m.winner?.name;
-
-  const row=document.createElement('div');
-  row.style.cssText=`display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;margin-bottom:3px;cursor:pointer;border:1px solid ${isCur?'var(--red)':done?'rgba(6,214,160,.4)':'var(--border)'};background:${isCur?'rgba(230,57,70,.08)':done?'rgba(6,214,160,.04)':'var(--card)'};transition:background .1s;`;
-  row.onmouseover=()=>{ if(!isCur) row.style.background='var(--card2)'; };
-  row.onmouseout=()=>{ row.style.background=isCur?'rgba(230,57,70,.08)':done?'rgba(6,214,160,.04)':'var(--card)'; };
-
-  const lbl=document.createElement('span');
-  lbl.style.cssText=`font-size:10px;font-weight:700;color:${isCur?'var(--red)':'var(--accent)'};font-family:"Share Tech Mono",monospace;min-width:52px;flex-shrink:0;`;
-  lbl.textContent=label;
-  row.appendChild(lbl);
-
-  const grp=document.createElement('span');
-  grp.style.cssText='font-size:9px;color:var(--text3);min-width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-  grp.textContent=sl;
-  row.appendChild(grp);
-
-  const pl=document.createElement('span');
-  pl.style.cssText='font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-  if(bye){
-    pl.innerHTML=`<span style="color:#d0d0d0;">${p1n}</span> <span style="font-size:9px;color:var(--accent);">BYE</span>`;
-  } else {
-    const c1=winN?winN===p1n?'#06d6a0':'#555':'#d0d0d0';
-    const c2=winN?winN===p2n?'#06d6a0':'#555':'#d0d0d0';
-    pl.innerHTML=`<span style="color:${c1};">${p1n}</span><span style="color:var(--red);font-size:10px;margin:0 4px;font-family:'Bebas Neue',cursive;">VS</span><span style="color:${c2};">${p2n}</span>`;
-  }
-  row.appendChild(pl);
-
-  if(isCur){
-    const b=document.createElement('span');
-    b.style.cssText='font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
-    b.textContent='LIVE'; row.appendChild(b);
-  } else if(done){
-    const b=document.createElement('span');
-    b.style.cssText='font-size:11px;color:var(--green);flex-shrink:0;';
-    b.textContent='✓'; row.appendChild(b);
-  }
-
-  row.onclick=(e)=>_bvModal(e,g,gi,ri,mi,m,label,sl);
-  return row;
-}
-
-function _bvModal(e,g,gi,ri,mi,m,label,sl){
-  document.getElementById('bv-modal')?.remove();
-  const modal=document.createElement('div');
-  modal.id='bv-modal';
-  modal.style.cssText='position:fixed;z-index:9999;background:var(--card2);border:1px solid var(--border2);border-radius:12px;padding:6px;min-width:230px;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:tsin .15s ease;';
-
-  const hdr=document.createElement('div');
-  hdr.style.cssText='padding:5px 12px 7px;font-size:10px;color:var(--text3);font-family:"Share Tech Mono",monospace;border-bottom:1px solid var(--border);margin-bottom:4px;';
-  hdr.textContent=`// ${label} · ${sl}`;
-  modal.appendChild(hdr);
-
-  const mkBtn=(icon,text,color,fn)=>{
-    const b=document.createElement('button');
-    b.style.cssText=`display:flex;align-items:center;gap:9px;padding:9px 12px;width:100%;border:none;background:transparent;color:${color};font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Noto Sans KR',sans-serif;`;
-    b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
-    b.onmouseout=()=>b.style.background='transparent';
-    b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
-    b.onclick=()=>{ modal.remove(); fn(); };
-    return b;
-  };
-
-  const done=!!m.winner, bye=m.p1&&!m.p2, court=g.court||1;
-
-  modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
-    _bvCurrent={gi,ri,mi};
-    const p1n=m.p1?.name||'—', p2n=m.p2?.name||'—';
-    try{ const bc=new BroadcastChannel('sgp_cmd'); bc.postMessage({type:'set_match',p1:p1n,p2:p2n,label:sl,court}); bc.close(); }catch(ex){}
-    try{ localStorage.setItem(`sgp_display_vs_court_${court}`,JSON.stringify({p1:p1n,p2:p2n,label:sl,court})); }catch(ex){}
-    _redrawBracketView();
-  }));
-
-  if(!bye&&!done){
-    if(m.p1) modal.appendChild(mkBtn('🏆',`${m.p1.name} 승`,'var(--green)',()=>_bvWinner(g,gi,ri,mi,'p1')));
-    if(m.p2) modal.appendChild(mkBtn('🏆',`${m.p2.name} 승`,'#ffd60a',()=>_bvWinner(g,gi,ri,mi,'p2')));
-  }
-  if(done){
-    modal.appendChild(mkBtn('↩','결과 취소','var(--red)',()=>{
-      delete g.matches[ri][mi].winner;
-      const key=`${ri}-${mi}`;
-      if(g.matches[ri+1]) g.matches[ri+1].forEach(nm=>{
-        if(nm.fromA===key&&nm.p1) nm.p1.tbd=true;
-        if(nm.fromB===key&&nm.p2) nm.p2.tbd=true;
-      });
-      _bvSave(); _redrawBracketView();
-    }));
-  }
-
-  document.body.appendChild(modal);
-  const rect=e.currentTarget.getBoundingClientRect();
-  let top=rect.bottom+4, left=rect.left;
-  if(top+220>window.innerHeight) top=rect.top-220;
-  if(left+240>window.innerWidth) left=window.innerWidth-250;
-  modal.style.top=top+'px'; modal.style.left=left+'px';
-  setTimeout(()=>{
-    const close=(ev)=>{ if(!modal.contains(ev.target)){ modal.remove(); document.removeEventListener('click',close,true); }};
-    document.addEventListener('click',close,true);
-  },100);
-}
-
-function _bvWinner(g,gi,ri,mi,which){
-  const m=g.matches[ri][mi];
-  const winner=which==='p1'?m.p1:m.p2;
-  if(!winner) return;
-  m.winner=winner;
-  const key=`${ri}-${mi}`;
-  if(g.matches[ri+1]) g.matches[ri+1].forEach(nm=>{
-    if(nm.fromA===key&&nm.p1){ nm.p1.name=winner.name; nm.p1.tbd=false; }
-    if(nm.fromB===key&&nm.p2){ nm.p2.name=winner.name; nm.p2.tbd=false; }
-  });
-  if(_bvCurrent&&_bvCurrent.gi===gi&&_bvCurrent.ri===ri&&_bvCurrent.mi===mi) _bvCurrent=null;
-  _bvSave(); _redrawBracketView();
-  try{ const bc=new BroadcastChannel('sgp_cmd'); bc.postMessage({type:'winner',name:winner.name}); bc.close(); }catch(ex){}
-}
-
-function _bvSave(){
-  try{
-    const clean=S.groupBrackets.map(g=>({...g,matches:g.matches.map(r=>r.map(m=>{const {_groupObj,...rest}=m;return rest;}))}));
-    localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
-    localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
-  }catch(ex){}
-}
-
-window.addEventListener('storage',e=>{
-  if(e.key==='sgp_groupBrackets'){
-    try{ const gb=JSON.parse(e.newValue||'[]'); if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); } }catch(ex){}
-  }
-});
 </script>
 </body>
 </html>
