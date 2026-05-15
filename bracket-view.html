@@ -80,9 +80,12 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
+
+// ── embed 모드 감지 (?embed=1 → 리스트뷰, 없으면 → 시각적 트리) ──
+const _IS_EMBED = new URLSearchParams(location.search).get('embed') === '1';
+
 // ══════════════════════════════════════════════════
-// 3번 미리보기 전용: 대진표 리스트 뷰 + 경기 관리
-// (기존 시각적 대진표 대신 경기장별/라운드별 경기 목록)
+// 리스트 뷰 (embed=1 전용): 경기장별/라운드별 경기 카드
 // ══════════════════════════════════════════════════
 
 let _bvCurrentMatch = null; // {gi, ri, mi} 현재 선택된 경기
@@ -102,20 +105,20 @@ function _computeSeqOffsets(){
   });
 }
 
-// _redrawBracketView 완전 교체 — 리스트 뷰로
+// _redrawBracketView — embed=1이면 리스트뷰, 아니면 원래 트리로
 function _redrawBracketView(){
-  // 탭 숨김 (리스트 뷰에서는 불필요)
+  if(!_IS_EMBED){ _redrawBracketViewTree(); return; }
+
+  // ── embed 모드: 리스트뷰 ──
   const tabs=document.getElementById('pts-bracket-tabs');
   if(tabs) tabs.style.display='none';
-
-  // 레이아웃 버튼/서브헤더 숨김
   const subhdr=document.querySelector('.subhdr');
   if(subhdr) subhdr.style.display='none';
 
   const view=document.getElementById('pts-bracket-view');
   if(!view) return;
   view.innerHTML='';
-  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:10px 14px;display:block;';
+  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:14px 16px;display:block;background:var(--bg);';
 
   if(!S.groupBrackets||!S.groupBrackets.length){
     view.innerHTML='<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px;">저장된 대진표가 없습니다</div>';
@@ -362,8 +365,14 @@ function _bvSave(){
   }catch(ex){}
 }
 
-// renderBracketTabs는 리스트 뷰에서 불필요하므로 빈 함수로
-function renderBracketTabs(){ }
+// renderBracketTabs: embed=1이면 불필요(빈 함수), 새창이면 원래 함수 사용
+// → embed=1일 때만 빈 함수로 덮어씀 (로드 후 분기)
+function _maybeStubRenderBracketTabs(){
+  if(_IS_EMBED){
+    renderBracketTabs=function(){};
+  }
+}
+_maybeStubRenderBracketTabs();
 
 // localStorage 변경 감지 → 다른 창에서 데이터 바뀌면 자동 새로고침
 window.addEventListener('storage',e=>{
@@ -482,7 +491,9 @@ window.addEventListener('storage',e=>{
 
 // ── 선 새로고침 ──
 function _refreshSvgLines(){
-  if(document.getElementById('pts-step3').classList.contains('on')){
+  if(_IS_EMBED){
+    _redrawBracketView();
+  } else if(document.getElementById('pts-step3').classList.contains('on')){
     renderBracketTabs();
     _redrawBracketView();
   } else {
@@ -1370,7 +1381,8 @@ function generateAllBrackets(){
   _redrawBracketView();
 }
 
-function _redrawBracketView(){
+// 원래 시각적 트리 렌더 (새창 전용, embed=0)
+function _redrawBracketViewTree(){
   _linkSel=null;
   const courts=_courtCount||1;
   const view=document.getElementById('pts-bracket-view');
