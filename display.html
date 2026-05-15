@@ -653,7 +653,7 @@ function refresh3(){
         });
         if(matched){
           const sl=matched.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
-          selectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi, court:c});
+          selectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
           continue;
         }
       }
@@ -669,7 +669,7 @@ function refresh3(){
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
             const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
             if(_cn(p1n)===curP1&&p2match){
-              selectedMatches.push({groupLabel:sl, ri, mi, court:c});
+              selectedMatches.push({groupLabel:sl, ri, mi});
               break outer3;
             }
           }
@@ -680,23 +680,6 @@ function refresh3(){
 
   _d3DrawBracket(view, groups, layout, courtCount, selectedMatches);
   _applyBracketColors(view, groups);
-  _applySelectionHighlights(view, selectedMatches);
-}
-
-// 경기장별 선택경기 하이라이트 직접 적용 (isCurrentMatchIdx 우회)
-function _applySelectionHighlights(view, selectedMatches){
-  if(!selectedMatches||!selectedMatches.length) return;
-  selectedMatches.forEach(sel=>{
-    const wraps=view.querySelectorAll(`[data-court="${sel.court}"]`);
-    wraps.forEach(wrap=>{
-      if(sel.groupLabel&&wrap.dataset.groupLabel&&wrap.dataset.groupLabel!==sel.groupLabel) return;
-      const box=wrap.querySelector(`[data-ri="${sel.ri}"][data-mi="${sel.mi}"]`);
-      if(box){
-        box.style.outline='2px solid var(--red)';
-        box.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
-      }
-    });
-  });
 }
 
 function _applyBracketColors(view, groups){
@@ -767,13 +750,12 @@ function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;sec.appendChild(hdr);
       const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
-      groupWrap.dataset.court=String(g.court||1);
-      groupWrap.dataset.groupLabel=shortLabel;
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       window.S.matches=taggedMatches;
       try{_renderBracketHTML(groupWrap,taggedMatches,'top',reversed);stripScroll(groupWrap);}catch(e){}
       sec.appendChild(groupWrap);return sec;
     };
+    for(let i=0;i<rowCount;i++){
       const row=document.createElement('div');row.style.cssText='display:flex;flex-direction:row;align-items:stretch;gap:0;margin-bottom:20px;';
       const cL=document.createElement('div');cL.style.cssText='padding-right:24px;flex-shrink:0;min-width:max-content;';
       if(lGroups[i]) cL.appendChild(mkSection(lGroups[i],false));
@@ -792,8 +774,6 @@ function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
       const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;';
       hdr.textContent=shortLabel;outerWrap.appendChild(hdr);
       const groupWrap=document.createElement('div');groupWrap.style.cssText='margin-bottom:16px;position:relative;';
-      groupWrap.dataset.court=String(g.court||1);
-      groupWrap.dataset.groupLabel=shortLabel;
       const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
       window.S.matches=taggedMatches;
       try{
