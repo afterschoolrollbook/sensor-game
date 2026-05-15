@@ -518,12 +518,13 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
       const header=document.createElement('div');
       header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
 
-      // 경기 레이블: 그룹명(_groupLabel)이 있으면 "체급 N경기", 없으면 "N경기"
+      // 경기 레이블: 경기장번호-라운드번호-번경기 (예: 1-1-1)
+      const _courtNum=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
       const grpLabel=m._groupLabel||null;
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:(mi+1);
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${mi+1}경기`;
 
-      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${ri+1}-${mi+1}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${_courtNum}-${ri+1}-${mi+1}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
       box.appendChild(header);
 
       if(isBye){

@@ -340,6 +340,7 @@ function _stripInnerScroll(div){
   });
 }
 
+
 renderBracketD = function(wrap){
   if(!S.matches||!S.matches.length)return;
   const leftRounds=[], rightRounds=[];
@@ -3859,7 +3860,7 @@ function _showByeForRound(g, ri){
   if(!round || round.length%2===0) return;
   const candidates=round.map((m,mi)=>({
     id:`bye_${ri}_${mi}`,
-    name:`${ri+1}-${mi+1} 승자`,
+    name:`${g.court||1}-${ri+1}-${mi+1} 승자`,
     color:'var(--accent)',
     _ri:ri, _mi:mi
   }));
@@ -3887,7 +3888,8 @@ function _showMatchModal(anchorEl, ri, mi, matchObj){
   const grpObj = matchObj&&matchObj._groupObj ? matchObj._groupObj : null;
   const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
   const origRi = (matchObj&&matchObj._origRi!=null) ? matchObj._origRi : ri;
-  const label = `${origRi+1}-${origMi+1}`;
+  const courtNum = grpObj ? (grpObj.court || 1) : 1;
+  const label = `${courtNum}-${origRi+1}-${origMi+1}`;
 
   const modal = document.createElement('div');
   modal.id = 'match-action-modal';
@@ -3993,9 +3995,9 @@ function _doLink(ri, mi, grpObj, origMi, origRi){
   const bLinked=nextRound.find(m=>m.fromA===bKey||m.fromB===bKey);
   if(aLinked||bLinked){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
 
-  nextRound.push({p1:{name:`${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+  nextRound.push({p1:{name:`${grpA.court||1}-${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${grpB.court||1}-${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
   _redrawBracketView();
-  toast(`${grp.label} ${a.origRi+1}-${a.origMi+1} vs ${b.origRi+1}-${b.origMi+1} 연결됨!`,'success');
+  toast(`${grp.label} ${grpA.court||1}-${a.origRi+1}-${a.origMi+1} vs ${grpB.court||1}-${b.origRi+1}-${b.origMi+1} 연결됨!`,'success');
 }
 
 function _doAdvance(origRi, origMi, grpObj){
@@ -4004,9 +4006,10 @@ function _doAdvance(origRi, origMi, grpObj){
   const nextRound = g.matches[origRi+1];
   const aKey = `${origRi}-${origMi}`;
   if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
-  nextRound.push({p1:{name:`${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  const _advCourtNum = g.court || 1;
+  nextRound.push({p1:{name:`${_advCourtNum}-${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
   _redrawBracketView();
-  toast(`${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
+  toast(`${_advCourtNum}-${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
 }
 
 function _doRemoveRound(origRi, origMi, grpObj){
@@ -4032,7 +4035,7 @@ function _doRemoveRound(origRi, origMi, grpObj){
   if(g.matches[origRi].length === 0) g.matches.splice(origRi);
 
   _redrawBracketView();
-  toast(`${g.label} ${origRi+1}-${origMi+1} 경기를 삭제했어요`,'success');
+  toast(`${g.label} ${g.court||1}-${origRi+1}-${origMi+1} 경기를 삭제했어요`,'success');
 }
 
 function onMatchClick(ri, mi, matchObj, event){
