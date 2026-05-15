@@ -71,7 +71,7 @@ function buildDs2Labels(){
   el('ds2-matchnum-show',matchNumShow);
   el('ds2-matchnum-size-val',matchNumSize);
 
-  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,matchNumShow,matchNumSize});
+  _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,nameOnly,matchNumShow,matchNumSize});
 }
 
 function buildDs2FontPicker(){
@@ -267,7 +267,7 @@ function _updatePv2ForCourt(courtNum){
   }catch(e){}
 
   // 선택된 경기 없으면 대기 상태
-  if(!(p1el&&p1el.textContent&&p1el.textContent!=='—')){
+  if(p1el && (!p1el.dataset.rawName)) {
     if(p1el) p1el.textContent='—';
     if(p2el) p2el.textContent='—';
     if(infoEl) infoEl.textContent='';
