@@ -268,7 +268,11 @@ function _d2ShowCourt(courtNum){
       const mv=JSON.parse(manualStr);
       if(mv&&mv.p1&&mv.p2){
         _set('d2-p1',cleanName(mv.p1)); _set('d2-p2',cleanName(mv.p2));
-        _set('d2-info',mv.label||'');
+        {
+          const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
+          const _hasSeq = mv.label && mv.label.includes('경기');
+          _set('d2-info', (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||''));
+        }
         _updateMatchNum(courtNum, mv.ri, mv.mi, mv.seqMi);
         return;
       }
@@ -362,7 +366,7 @@ function _applyD2Cfg(cfg){
   }
   if(cfg.courtShow!==undefined){
     const ct=document.getElementById('d2-court');
-    if(ct) ct.style.display=cfg.courtShow?'':'none';
+    if(ct) ct.style.display=(_d2Mode==='random'||cfg.courtShow)?'':'none';
     try{ localStorage.setItem('sgp_d2_court_show',String(cfg.courtShow)); }catch(e){}
   }
   if(cfg.courtSize!==undefined){
@@ -537,6 +541,8 @@ function refresh2(){
       const c=parseInt(_d2Mode.replace('court_',''));
       courtEl.textContent=`// 경기장 ${c}`;
       courtEl.style.display='';
+    } else if(_d2Mode==='random'){
+      // 랜덤 모드: _d2ShowCourt가 직접 관리 — 여기서 건드리지 않음
     } else if(court>0){
       courtEl.textContent=`// 경기장 ${court}`;
       courtEl.style.display='';
@@ -590,7 +596,7 @@ function refresh2(){
   const courtSize=parseInt(localStorage.getItem('sgp_d2_court_size')||'0');
   const ct2=document.getElementById('d2-court');
   if(ct2){
-    if(!courtShow) ct2.style.display='none';
+    if(!courtShow && _d2Mode!=='random') ct2.style.display='none';
     if(courtSize) ct2.style.fontSize=courtSize+'px';
   }
 
@@ -854,7 +860,7 @@ function handleCmd(cmd){
 
     // 경기장별 localStorage 저장 (수동 선택 기록) — ri/mi/groupLabel 포함
     if(cmd.court){
-      try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',court:cmd.court,ri:cmd.ri,mi:cmd.mi,groupLabel:cmd.groupLabel||cmd.label||''})); }catch(e){}
+      try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',matchLabel:cmd.matchLabel||'',court:cmd.court,ri:cmd.ri,mi:cmd.mi,groupLabel:cmd.groupLabel||cmd.label||''})); }catch(e){}
     }
 
     // 3번 화면이면 대진표 즉시 갱신
