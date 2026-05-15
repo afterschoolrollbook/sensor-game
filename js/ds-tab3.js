@@ -367,9 +367,11 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
   } catch(ex){}
 
   // 같은 창 내 pv3 미리보기 즉시 갱신 (storage 이벤트는 같은 창에서 발화 안 됨)
-  try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
-
+  // _t3Render() DOM 작업이 끝난 후 실행되도록 rAF로 지연
   _t3Render();
+  requestAnimationFrame(()=>{
+    try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
+  });
 }
 
 // ── 승자 선택 → 다음 라운드 이름 반영 → 저장 ──

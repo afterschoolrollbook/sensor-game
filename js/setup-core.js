@@ -581,8 +581,9 @@ if(_bc){
   _bc.onmessage = function(e){
     const cmd = e.data;
     if(!cmd || cmd.type !== 'set_match') return;
-    // sgp_display_vs_court_N 저장은 ds-tab3.js에서 이미 하므로 여기선 pv3만 갱신
-    try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
+    requestAnimationFrame(()=>{
+      try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
+    });
   };
 }
 // storage 이벤트로도 pv3 갱신 (같은 창 내 ds-tab3 → setup-core 연동)
