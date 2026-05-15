@@ -14,6 +14,7 @@ function buildTab2(){
   buildDs2VsColor();
   buildDs2Labels();
   updateDst2();
+  _updatePv2ForMode(_tab2Mode);
 }
 
 function buildDs2VsColor(){
@@ -353,7 +354,7 @@ function _applyD2CfgToPv2(cfg){
   const pvInfo=document.getElementById('pv2-info');
   // 상단 경기장 레이블
   if(pvCourtLbl){
-    if(cfg.courtShow!==undefined) pvCourtLbl.style.display=cfg.courtShow?'':'none';
+    if(cfg.courtShow!==undefined) pvCourtLbl.style.display=(_tab2Mode==='random'||cfg.courtShow)?'':'none';
     if(cfg.courtSize) pvCourtLbl.style.fontSize=cfg.courtSize+'px';
   }
   // 하단 경기 정보
