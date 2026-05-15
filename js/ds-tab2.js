@@ -262,17 +262,18 @@ function _updatePv2ForCourt(courtNum){
         }
         mnEl.style.display=matchNumShow?'':'none';
         if(matchNumShow) mnEl.textContent=mv.matchLabel||'';
-        return;
       }
     }
   }catch(e){}
 
-  // 선택된 경기 없음 → 대기 상태
-  if(p1el) p1el.textContent='—';
-  if(p2el) p2el.textContent='—';
-  if(infoEl) infoEl.textContent='';
+  // 선택된 경기 없으면 대기 상태
+  if(!(p1el&&p1el.textContent&&p1el.textContent!=='—')){
+    if(p1el) p1el.textContent='—';
+    if(p2el) p2el.textContent='—';
+    if(infoEl) infoEl.textContent='';
+  }
 
-  // 시각 설정 적용 (새로고침 후에도 동일하게)
+  // 항상 시각 설정 적용
   _applyD2CfgToPv2({
     courtShow:    localStorage.getItem('sgp_d2_court_show')    !== 'false',
     courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')   || '0'),

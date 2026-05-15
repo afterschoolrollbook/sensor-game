@@ -556,31 +556,6 @@ function refresh1(){
 // ── 2번 ──
 function refresh2(){
   const cfg=getCfg();
-  let p1='—', p2='—', label='참가자를 등록해주세요', court=0;
-  try{
-    const mv=JSON.parse(localStorage.getItem('sgp_display_vs')||'{}');
-    if(mv.p1){p1=mv.p1; p2=mv.p2||'—'; label=mv.label||'';}
-    if(mv.court) court=mv.court;
-  }catch(e){}
-  _set('d2-p1', p1); _set('d2-p2', p2);
-  _set('d2-info', label);
-  // 경기장 레이블: _d2Mode가 court_N이면 모드 기준으로 항상 표시
-  const courtEl=document.getElementById('d2-court');
-  if(courtEl){
-    if(_d2Mode&&_d2Mode.startsWith('court_')){
-      const c=parseInt(_d2Mode.replace('court_',''));
-      courtEl.textContent=`// 경기장 ${c}`;
-      courtEl.style.display='';
-    } else if(_d2Mode==='random'){
-      // 랜덤 모드: _d2ShowCourt가 직접 관리 — 여기서 건드리지 않음
-    } else if(court>0){
-      courtEl.textContent=`// 경기장 ${court}`;
-      courtEl.style.display='';
-    } else {
-      courtEl.textContent='';
-      courtEl.style.display='none';
-    }
-  }
 
   // 폰트 — vs2Font 없으면 titleFont fallback
   const fontMap={'bebas':"'Bebas Neue',cursive",'rajdhani':"'Rajdhani',sans-serif",'mono':"'Share Tech Mono',monospace",'noto':"'Noto Sans KR',sans-serif",'serif':'Georgia,serif'};
@@ -595,18 +570,12 @@ function refresh2(){
   // 배경 스타일
   const disp2=document.getElementById('disp2');
   if(disp2){
-    const BG={
-      dark:'var(--bg)',
-      gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',
-      blur:'rgba(10,10,20,0.95)',
-      solid:'#0d1b2a',
-    };
+    const BG={dark:'var(--bg)',gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',blur:'rgba(10,10,20,0.95)',solid:'#0d1b2a'};
     disp2.style.background=BG[cfg.vs2Bg||'dark']||BG.dark;
   }
 
-  // ── 저장된 D2 커스텀 설정 적용 ──
+  // sgp_display_config → sgp_d2_* 동기화 (새로고침 복원)
   const dispCfg=getCfg();
-  // sgp_display_config의 D2 설정을 개별 키로 동기화 (새로고침 복원)
   if(dispCfg.d2CourtShow!==undefined) try{localStorage.setItem('sgp_d2_court_show',String(dispCfg.d2CourtShow));}catch(e){}
   if(dispCfg.d2CourtSize!==undefined) try{localStorage.setItem('sgp_d2_court_size',String(dispCfg.d2CourtSize));}catch(e){}
   if(dispCfg.d2InfoShow!==undefined)  try{localStorage.setItem('sgp_d2_info_show',String(dispCfg.d2InfoShow));}catch(e){}
@@ -615,9 +584,10 @@ function refresh2(){
   if(dispCfg.d2NameSize!==undefined)  try{localStorage.setItem('sgp_d2_name_size',String(dispCfg.d2NameSize));}catch(e){}
   if(dispCfg.d2NameOnly!==undefined)  try{localStorage.setItem('sgp_d2_name_only',String(dispCfg.d2NameOnly));}catch(e){}
   if(dispCfg.d2MatchNumShow!==undefined) try{localStorage.setItem('sgp_d2_matchnum_show',String(dispCfg.d2MatchNumShow));}catch(e){}
-  if(dispCfg.d2VsColor)               try{localStorage.setItem('sgp_d2_vs_color',dispCfg.d2VsColor);}catch(e){}
+  if(dispCfg.d2VsColor) try{localStorage.setItem('sgp_d2_vs_color',dispCfg.d2VsColor);}catch(e){}
 
-  _applyD2VisualSettings();
+  // 내용 + 시각 설정 모두 현재 모드로 갱신
+  _d2ApplyMode(_d2Mode);
 }
 
 // ── 3번 ──
