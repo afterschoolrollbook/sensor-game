@@ -245,7 +245,11 @@ function _updatePv2ForCourt(courtNum){
         const fn=nameOnly?_nameOnly:_cn;
         if(p1el){ p1el.textContent=fn(mv.p1); p1el.dataset.rawName=_cn(mv.p1); }
         if(p2el){ p2el.textContent=fn(mv.p2||'—'); p2el.dataset.rawName=_cn(mv.p2||'—'); }
-        if(infoEl) infoEl.textContent=mv.label||'';
+        if(infoEl){
+          const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
+          const _hasSeq = mv.label && mv.label.includes('경기');
+          infoEl.textContent = (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||'');
+        }
         // 경기번호 표시
         const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
         let mnEl=document.getElementById('pv2-match-num');
