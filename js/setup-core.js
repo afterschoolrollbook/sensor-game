@@ -155,6 +155,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(a.settings.rankCount)S.rankCount=a.settings.rankCount;
       if(a.settings.theme)S.theme=a.settings.theme;
       if(a.settings.pointColor)S.pointColor=a.settings.pointColor;
+      if(a.settings.vs2Font)S.vs2Font=a.settings.vs2Font;
+      if(a.settings.vs2Bg)S.vs2Bg=a.settings.vs2Bg;
       if(a.settings.matches)S.matches=a.settings.matches;
       if(a.settings.groupBrackets)S.groupBrackets=a.settings.groupBrackets;
     }
@@ -170,10 +172,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     const grpObj = matchObj._groupObj || null;
     const court = grpObj?.court || 1;
     const label = matchObj._groupLabel || '';
-    const vsData = {p1, p2, label, court};
+    const matchLabel = matchObj._matchLabel || '';
+    const seqNum = matchLabel ? matchLabel.split('-').pop() : '';
+    const infoLabel = seqNum ? `${label} · ${seqNum}경기` : label;
+    const vsData = {p1, p2, label:infoLabel, matchLabel, court};
     try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
     try{ localStorage.setItem('sgp_display_vs_court_'+court, JSON.stringify(vsData)); }catch(e){}
-    const cmd = {type:'set_match', p1, p2, label, court, ts:Date.now()};
+    const cmd = {type:'set_match', p1, p2, label:infoLabel, matchLabel, court, ts:Date.now()};
     try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
     try{
       if(!window._pv3Bc) window._pv3Bc = new BroadcastChannel('sgp_cmd');
@@ -577,6 +582,7 @@ function saveCfgNow(){
       d2NameSize:parseInt(localStorage.getItem('sgp_d2_name_size')||'80'),
       d2NameOnly:localStorage.getItem('sgp_d2_name_only')==='true',
       d2MatchNumShow:localStorage.getItem('sgp_d2_matchnum_show')==='true',
+      d2MatchNumSize:parseInt(localStorage.getItem('sgp_d2_matchnum_size')||'14'),
       d2VsColor:localStorage.getItem('sgp_d2_vs_color')||'#e63946',
       d2Mode:localStorage.getItem('sgp_d2_mode')||'court_1',
     });

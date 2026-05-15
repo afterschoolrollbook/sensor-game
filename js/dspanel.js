@@ -18,6 +18,19 @@ function initDsPanel(){
   buildTab1(); // 기본 1번 탭
 
   // ── pv2 초기 설정 적용: 탭2 클릭 없이도 저장된 모든 설정을 미리보기에 반영 ──
+  // sgp_display_config → sgp_d2_* 동기화 (새로고침 시 복원)
+  try{
+    const _cfg=JSON.parse(localStorage.getItem('sgp_display_config')||'{}');
+    if(_cfg.d2CourtShow!==undefined) localStorage.setItem('sgp_d2_court_show',String(_cfg.d2CourtShow));
+    if(_cfg.d2CourtSize!==undefined) localStorage.setItem('sgp_d2_court_size',String(_cfg.d2CourtSize));
+    if(_cfg.d2InfoShow!==undefined)  localStorage.setItem('sgp_d2_info_show',String(_cfg.d2InfoShow));
+    if(_cfg.d2InfoSize!==undefined)  localStorage.setItem('sgp_d2_info_size',String(_cfg.d2InfoSize));
+    if(_cfg.d2NameShow!==undefined)  localStorage.setItem('sgp_d2_name_show',String(_cfg.d2NameShow));
+    if(_cfg.d2NameSize!==undefined)  localStorage.setItem('sgp_d2_name_size',String(_cfg.d2NameSize));
+    if(_cfg.d2NameOnly!==undefined)  localStorage.setItem('sgp_d2_name_only',String(_cfg.d2NameOnly));
+    if(_cfg.d2MatchNumShow!==undefined) localStorage.setItem('sgp_d2_matchnum_show',String(_cfg.d2MatchNumShow));
+    if(_cfg.d2MatchNumSize!==undefined) localStorage.setItem('sgp_d2_matchnum_size',String(_cfg.d2MatchNumSize));
+  }catch(e){}
   // buildTab2()를 직접 호출해 탭2 클릭과 동일한 초기화 수행 (단, UI 탭은 전환하지 않음)
   try{ if(typeof buildTab2==='function') buildTab2(); }catch(e){}
 
