@@ -55,6 +55,8 @@ function buildDs2Labels(){
   const infoSize=parseInt(localStorage.getItem('sgp_d2_info_size')||'16');
   const nameShow=localStorage.getItem('sgp_d2_name_show')!=='false';
   const nameSize=parseInt(localStorage.getItem('sgp_d2_name_size')||'80');
+  const nameOnly=localStorage.getItem('sgp_d2_name_only')==='true';
+  const matchNumShow=localStorage.getItem('sgp_d2_matchnum_show')==='true';
 
   const el=(id,val)=>{ const e=document.getElementById(id); if(e) e[typeof val==='boolean'?'checked':'textContent']=val; };
   el('ds2-court-show',courtShow);
@@ -63,6 +65,8 @@ function buildDs2Labels(){
   el('ds2-info-size-val',infoSize);
   el('ds2-name-show',nameShow);
   el('ds2-name-size-val',nameSize);
+  el('ds2-name-only',nameOnly);
+  el('ds2-matchnum-show',matchNumShow);
 
   _applyD2CfgToPv2({courtShow,courtSize,infoShow,infoSize,nameShow,nameSize});
 }
@@ -296,13 +300,17 @@ function _saveD2Cfg(){
   const infoSize=parseInt(document.getElementById('ds2-info-size-val')?.textContent||'16');
   const nameShow=document.getElementById('ds2-name-show')?.checked??true;
   const nameSize=parseInt(document.getElementById('ds2-name-size-val')?.textContent||'80');
+  const nameOnly=document.getElementById('ds2-name-only')?.checked??false;
+  const matchNumShow=document.getElementById('ds2-matchnum-show')?.checked??false;
   try{ localStorage.setItem('sgp_d2_court_show',String(courtShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_court_size',String(courtSize)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_info_show',String(infoShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_info_size',String(infoSize)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_name_show',String(nameShow)); }catch(e){}
   try{ localStorage.setItem('sgp_d2_name_size',String(nameSize)); }catch(e){}
-  const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize};
+  try{ localStorage.setItem('sgp_d2_name_only',String(nameOnly)); }catch(e){}
+  try{ localStorage.setItem('sgp_d2_matchnum_show',String(matchNumShow)); }catch(e){}
+  const cfg={courtShow,courtSize,infoShow,infoSize,nameShow,nameSize,nameOnly,matchNumShow};
   _broadcastD2Cfg(cfg);
   _applyD2CfgToPv2(cfg);
 }

@@ -202,10 +202,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 <div id="screen-2">
 <div id="disp2">
   <div id="d2-court"></div>
+  <div id="d2-matchnum" style="display:none;font-family:'Share Tech Mono',monospace;font-size:18px;letter-spacing:3px;color:var(--text3);margin-bottom:8px;z-index:2;"></div>
   <div id="d2-row">
-    <div class="d2-pl"><div class="d2-nm" id="d2-p1">—</div><div class="d2-sub">선수 1</div></div>
+    <div class="d2-pl"><div class="d2-nm" id="d2-p1">—</div></div>
     <div id="d2-vs">VS</div>
-    <div class="d2-pl"><div class="d2-nm" id="d2-p2">—</div><div class="d2-sub">선수 2</div></div>
+    <div class="d2-pl"><div class="d2-nm" id="d2-p2">—</div></div>
   </div>
   <div id="d2-info"></div>
 </div>
@@ -266,8 +267,9 @@ function _d2ShowCourt(courtNum){
     if(manualStr){
       const mv=JSON.parse(manualStr);
       if(mv&&mv.p1&&mv.p2){
-        _set('d2-p1',mv.p1); _set('d2-p2',mv.p2);
+        _set('d2-p1',cleanName(mv.p1)); _set('d2-p2',cleanName(mv.p2));
         _set('d2-info',mv.label||'');
+        _updateMatchNum(courtNum, mv.ri, mv.mi, mv.seqMi);
         return;
       }
     }
@@ -280,23 +282,27 @@ function _d2ShowCourt(courtNum){
     let found=null;
     outer: for(const g of courtGroups){
       if(!g.matches) continue;
-      for(const round of g.matches){
-        for(const m of round){
+      for(let ri=0;ri<g.matches.length;ri++){
+        const round=g.matches[ri];
+        for(let mi=0;mi<round.length;mi++){
+          const m=round[mi];
           if(!m.winner&&m.p1&&m.p2&&!m.bye){
             const p1n=typeof m.p1==='object'?m.p1.name:m.p1;
             const p2n=typeof m.p2==='object'?m.p2.name:m.p2;
-            found={p1:p1n,p2:p2n,label:g.label};
+            found={p1:p1n,p2:p2n,label:g.label,ri,mi,seqMi:m._seqMi};
             break outer;
           }
         }
       }
     }
     if(found){
-      _set('d2-p1',found.p1); _set('d2-p2',found.p2);
+      _set('d2-p1',cleanName(found.p1)); _set('d2-p2',cleanName(found.p2));
       _set('d2-info',found.label);
+      _updateMatchNum(courtNum, found.ri, found.mi, found.seqMi);
     } else {
       _set('d2-p1','—'); _set('d2-p2','—');
       _set('d2-info','');
+      _updateMatchNum(courtNum, null, null, null);
     }
   }catch(e){ refresh2(); }
 }
@@ -319,6 +325,27 @@ try{
 window.addEventListener('pagehide',()=>{ try{_dispBc&&_dispBc.close();}catch(e){} });
 
 // d2 설정 즉시 적용
+function _getD2Cfg(){
+  return {
+    nameOnly: localStorage.getItem('sgp_d2_name_only')==='true',
+    matchNumShow: localStorage.getItem('sgp_d2_matchnum_show')==='true',
+  };
+}
+
+function _updateMatchNum(courtNum, ri, mi, seqMi){
+  const el=document.getElementById('d2-matchnum');
+  if(!el) return;
+  const cfg=_getD2Cfg();
+  if(!cfg.matchNumShow){ el.style.display='none'; return; }
+  if(ri!=null && mi!=null){
+    const matchLabel=`${courtNum}-${ri+1}-${(seqMi!=null?seqMi:mi)+1} 경기`;
+    el.textContent=matchLabel;
+    el.style.display='';
+  } else {
+    el.style.display='none';
+  }
+}
+
 function _applyD2Cfg(cfg){
   const BG={dark:'var(--bg)',gradient:'linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 100%)',blur:'rgba(10,10,20,0.95)',solid:'#0d1b2a'};
   if(cfg.vs_bg!==undefined){
@@ -358,6 +385,16 @@ function _applyD2Cfg(cfg){
   if(cfg.nameSize!==undefined){
     document.querySelectorAll('#d2-row .d2-nm').forEach(nm=>{ nm.style.fontSize=cfg.nameSize+'px'; });
     try{ localStorage.setItem('sgp_d2_name_size',String(cfg.nameSize)); }catch(e){}
+  }
+  if(cfg.nameOnly!==undefined){
+    try{ localStorage.setItem('sgp_d2_name_only',String(cfg.nameOnly)); }catch(e){}
+    refresh2();
+  }
+  if(cfg.matchNumShow!==undefined){
+    try{ localStorage.setItem('sgp_d2_matchnum_show',String(cfg.matchNumShow)); }catch(e){}
+    const el=document.getElementById('d2-matchnum');
+    if(el) el.style.display=cfg.matchNumShow?'':'none';
+    refresh2();
   }
 }
 
@@ -779,7 +816,12 @@ function switchScreen(n){
   if(n===3) refresh3();
 }
 
-const cleanName=n=>n?n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n:'—';
+const cleanName=n=>{
+  if(!n) return '—';
+  const nameOnly=_getD2Cfg().nameOnly;
+  if(nameOnly) return n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||n;
+  return n.replace(/[()[\]]/g,'').trim()||n;
+};
 
 function handleCmd(cmd){
   if(!cmd)return;
