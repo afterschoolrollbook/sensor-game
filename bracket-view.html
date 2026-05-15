@@ -80,6 +80,301 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
 function isCurrentMatchIdx(){ return false; }
+// ══════════════════════════════════════════════════
+// 3번 미리보기 전용: 대진표 리스트 뷰 + 경기 관리
+// (기존 시각적 대진표 대신 경기장별/라운드별 경기 목록)
+// ══════════════════════════════════════════════════
+
+let _bvCurrentMatch = null; // {gi, ri, mi} 현재 선택된 경기
+
+// 경기장+라운드 내 연속 번호 오프셋 계산
+function _computeSeqOffsets(){
+  const courtRound={};
+  (S.groupBrackets||[]).forEach(g=>{
+    const c=g.court||1;
+    if(!courtRound[c]) courtRound[c]={};
+    g._roundOffset={};
+    (g.matches||[]).forEach((round,ri)=>{
+      if(!courtRound[c][ri]) courtRound[c][ri]=0;
+      g._roundOffset[ri]=courtRound[c][ri];
+      courtRound[c][ri]+=round.length;
+    });
+  });
+}
+
+// _redrawBracketView 완전 교체 — 리스트 뷰로
+function _redrawBracketView(){
+  // 탭 숨김 (리스트 뷰에서는 불필요)
+  const tabs=document.getElementById('pts-bracket-tabs');
+  if(tabs) tabs.style.display='none';
+
+  // 레이아웃 버튼/서브헤더 숨김
+  const subhdr=document.querySelector('.subhdr');
+  if(subhdr) subhdr.style.display='none';
+
+  const view=document.getElementById('pts-bracket-view');
+  if(!view) return;
+  view.innerHTML='';
+  view.style.cssText='flex:1;min-height:0;overflow:auto;padding:10px 14px;display:block;';
+
+  if(!S.groupBrackets||!S.groupBrackets.length){
+    view.innerHTML='<div style="color:var(--text3);padding:24px;text-align:center;font-size:13px;">저장된 대진표가 없습니다</div>';
+    return;
+  }
+
+  _computeSeqOffsets();
+
+  // 경기장별 그룹핑
+  const courts={};
+  S.groupBrackets.forEach((g,gi)=>{
+    const c=g.court||1;
+    if(!courts[c]) courts[c]=[];
+    courts[c].push({g,gi});
+  });
+
+  const roundNames=['1라운드','2라운드','3라운드','4라운드','준결승','결승'];
+
+  Object.keys(courts).map(Number).sort().forEach(courtNum=>{
+    const groups=courts[courtNum];
+    const maxRi=Math.max(...groups.map(({g})=>g.matches.length));
+
+    // 경기장 헤더
+    const courtDiv=document.createElement('div');
+    courtDiv.style.cssText='margin-bottom:16px;';
+    const courtHdr=document.createElement('div');
+    courtHdr.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;padding:5px 0 8px;border-bottom:1px solid rgba(76,201,240,.3);margin-bottom:8px;';
+    courtHdr.textContent=`// 경기장 ${courtNum}`;
+    courtDiv.appendChild(courtHdr);
+
+    // 라운드별 경기 나열
+    for(let ri=0;ri<maxRi;ri++){
+      // 이 라운드에 경기가 있는지 확인
+      const hasMatches=groups.some(({g})=>g.matches[ri]&&g.matches[ri].length);
+      if(!hasMatches) continue;
+
+      const maxRiTotal=Math.max(...groups.map(({g})=>g.matches.length));
+      const rName=ri===maxRiTotal-1&&maxRiTotal>1?'결승':roundNames[ri]||`${ri+1}라운드`;
+
+      const roundHdr=document.createElement('div');
+      roundHdr.style.cssText='font-size:9px;color:#aaaaaa;font-family:"Share Tech Mono",monospace;letter-spacing:1px;padding:6px 2px 4px;margin-top:4px;';
+      roundHdr.textContent=rName;
+      courtDiv.appendChild(roundHdr);
+
+      groups.forEach(({g,gi})=>{
+        if(!g.matches[ri]) return;
+        g.matches[ri].forEach((m,mi)=>{
+          const seqNum=((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1;
+          const label=`${courtNum}-${ri+1}-${seqNum}`;
+          const shortLabel=g.label.split('/').map(s=>s.trim()).map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+          courtDiv.appendChild(_bvBuildRow(g,gi,ri,mi,m,label,shortLabel));
+        });
+      });
+    }
+
+    view.appendChild(courtDiv);
+  });
+}
+
+function _bvBuildRow(g,gi,ri,mi,m,label,shortLabel){
+  const isCur=_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi;
+  const isDone=!!m.winner;
+  const isBye=m.p1&&!m.p2;
+  const p1n=m.p1?.name||'?';
+  const p2n=m.p2?.name||'?';
+  const winnerN=m.winner?.name;
+
+  const row=document.createElement('div');
+  row.style.cssText=`
+    display:flex;align-items:center;gap:8px;padding:6px 10px;
+    border-radius:6px;margin-bottom:3px;cursor:pointer;
+    border:1px solid ${isCur?'var(--red)':isDone?'rgba(6,214,160,.4)':'var(--border)'};
+    background:${isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':'var(--card)'};
+    transition:background .1s;
+  `;
+  row.onmouseover=()=>{ if(!isCur) row.style.background='var(--card2)'; };
+  row.onmouseout=()=>{ row.style.background=isCur?'rgba(230,57,70,.08)':isDone?'rgba(6,214,160,.04)':'var(--card)'; };
+
+  // 경기 번호
+  const lbl=document.createElement('span');
+  lbl.style.cssText=`font-size:10px;font-weight:700;color:${isCur?'var(--red)':'var(--accent)'};font-family:"Share Tech Mono",monospace;min-width:52px;flex-shrink:0;`;
+  lbl.textContent=label;
+  row.appendChild(lbl);
+
+  // 체급
+  const grpLbl=document.createElement('span');
+  grpLbl.style.cssText='font-size:9px;color:var(--text3);min-width:72px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+  grpLbl.textContent=shortLabel;
+  row.appendChild(grpLbl);
+
+  // 선수
+  const players=document.createElement('span');
+  players.style.cssText='font-size:11px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  if(isBye){
+    players.innerHTML=`<span style="color:#d0d0d0;">${p1n}</span> <span style="font-size:9px;color:var(--accent);">BYE</span>`;
+  } else {
+    const c1=winnerN?winnerN===p1n?'#06d6a0':'#555':'#d0d0d0';
+    const c2=winnerN?winnerN===p2n?'#06d6a0':'#555':'#d0d0d0';
+    players.innerHTML=`<span style="color:${c1};">${p1n}</span><span style="color:var(--red);font-size:10px;margin:0 4px;font-family:'Bebas Neue',cursive;">VS</span><span style="color:${c2};">${p2n}</span>`;
+  }
+  row.appendChild(players);
+
+  // 상태 뱃지
+  if(isCur){
+    const badge=document.createElement('span');
+    badge.style.cssText='font-size:8px;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 5px;font-family:"Share Tech Mono",monospace;flex-shrink:0;';
+    badge.textContent='LIVE';
+    row.appendChild(badge);
+  } else if(isDone){
+    const badge=document.createElement('span');
+    badge.style.cssText='font-size:9px;color:var(--green);flex-shrink:0;';
+    badge.textContent='✓';
+    row.appendChild(badge);
+  }
+
+  row.onclick=(e)=>_bvShowModal(e,g,gi,ri,mi,m,label,shortLabel);
+  return row;
+}
+
+function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
+  document.getElementById('bv-action-modal')?.remove();
+  const modal=document.createElement('div');
+  modal.id='bv-action-modal';
+  modal.style.cssText=`
+    position:fixed;z-index:9999;
+    background:var(--card2);border:1px solid var(--border2);
+    border-radius:12px;padding:6px;min-width:230px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);animation:tsin .15s ease;
+  `;
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:5px 12px 7px;font-size:10px;color:var(--text3);font-family:"Share Tech Mono",monospace;border-bottom:1px solid var(--border);margin-bottom:4px;';
+  hdr.textContent=`// ${label} · ${shortLabel}`;
+  modal.appendChild(hdr);
+
+  const mkBtn=(icon,text,color,fn)=>{
+    const b=document.createElement('button');
+    b.style.cssText=`display:flex;align-items:center;gap:9px;padding:9px 12px;width:100%;border:none;background:transparent;color:${color};font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;font-family:'Noto Sans KR',sans-serif;text-align:left;`;
+    b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
+    b.onmouseout=()=>b.style.background='transparent';
+    b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
+    b.onclick=()=>{ modal.remove(); fn(); };
+    return b;
+  };
+
+  const isDone=!!m.winner;
+  const isBye=m.p1&&!m.p2;
+  const courtNum=g.court||1;
+
+  // 현재 경기 선택
+  modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
+    _bvCurrentMatch={gi,ri,mi};
+    const p1n=m.p1?.name||'—', p2n=m.p2?.name||'—';
+    try{
+      const bc=new BroadcastChannel('sgp_cmd');
+      bc.postMessage({type:'set_match',p1:p1n,p2:p2n,label:shortLabel,court:courtNum});
+      bc.close();
+    }catch(ex){}
+    try{ localStorage.setItem(`sgp_display_vs_court_${courtNum}`,JSON.stringify({p1:p1n,p2:p2n,label:shortLabel,court:courtNum})); }catch(ex){}
+    _redrawBracketView();
+  }));
+
+  // 승자 선택 (BYE 아니고 미완료)
+  if(!isBye&&!isDone){
+    if(m.p1) modal.appendChild(mkBtn('🏆',`${m.p1.name} 승`,'var(--green)',()=>_bvRecordWinner(g,gi,ri,mi,'p1')));
+    if(m.p2) modal.appendChild(mkBtn('🏆',`${m.p2.name} 승`,'#ffd60a',()=>_bvRecordWinner(g,gi,ri,mi,'p2')));
+  }
+
+  // 결과 취소 (완료된 경우)
+  if(isDone){
+    modal.appendChild(mkBtn('↩','결과 취소','var(--red)',()=>{
+      delete g.matches[ri][mi].winner;
+      // 다음 라운드 선수 이름도 tbd로 되돌리기
+      const key=`${ri}-${mi}`;
+      if(g.matches[ri+1]){
+        g.matches[ri+1].forEach(nm=>{
+          if(nm.fromA===key&&nm.p1) { nm.p1.tbd=true; }
+          if(nm.fromB===key&&nm.p2) { nm.p2.tbd=true; }
+        });
+      }
+      _bvSave();
+      _redrawBracketView();
+    }));
+  }
+
+  document.body.appendChild(modal);
+
+  // 위치
+  const rect=e.currentTarget.getBoundingClientRect();
+  let top=rect.bottom+4, left=rect.left;
+  if(top+220>window.innerHeight) top=rect.top-220;
+  if(left+240>window.innerWidth) left=window.innerWidth-250;
+  modal.style.top=top+'px'; modal.style.left=left+'px';
+
+  setTimeout(()=>{
+    const close=(ev)=>{ if(!modal.contains(ev.target)){ modal.remove(); document.removeEventListener('click',close,true); }};
+    document.addEventListener('click',close,true);
+  },100);
+}
+
+function _bvRecordWinner(g,gi,ri,mi,which){
+  const m=g.matches[ri][mi];
+  const winner=which==='p1'?m.p1:m.p2;
+  if(!winner) return;
+  m.winner=winner;
+
+  // 다음 라운드 선수 이름 업데이트
+  const key=`${ri}-${mi}`;
+  if(g.matches[ri+1]){
+    g.matches[ri+1].forEach(nm=>{
+      if(nm.fromA===key&&nm.p1) { nm.p1.name=winner.name; nm.p1.tbd=false; }
+      if(nm.fromB===key&&nm.p2) { nm.p2.name=winner.name; nm.p2.tbd=false; }
+    });
+  }
+
+  // 현재경기 해제
+  if(_bvCurrentMatch&&_bvCurrentMatch.gi===gi&&_bvCurrentMatch.ri===ri&&_bvCurrentMatch.mi===mi){
+    _bvCurrentMatch=null;
+  }
+
+  _bvSave();
+  _redrawBracketView();
+
+  // 전광판에 승자 알림
+  try{
+    const bc=new BroadcastChannel('sgp_cmd');
+    bc.postMessage({type:'winner',name:winner.name});
+    bc.close();
+  }catch(ex){}
+}
+
+function _bvSave(){
+  try{
+    const clean=S.groupBrackets.map(g=>({
+      ...g,
+      matches:g.matches.map(round=>round.map(m=>{
+        const {_groupObj,...rest}=m; return rest;
+      }))
+    }));
+    localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
+    localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
+    // bracket-window.html에도 동기화
+    try{ localStorage.setItem('sgp_step','3'); }catch(ex){}
+  }catch(ex){}
+}
+
+// renderBracketTabs는 리스트 뷰에서 불필요하므로 빈 함수로
+function renderBracketTabs(){ }
+
+// localStorage 변경 감지 → 다른 창에서 데이터 바뀌면 자동 새로고침
+window.addEventListener('storage',e=>{
+  if(e.key==='sgp_groupBrackets'){
+    try{
+      const gb=JSON.parse(e.newValue||'[]');
+      if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); }
+    }catch(ex){}
+  }
+});
+
 
 // ── _renderBracketHTML 연결선 오버라이드 ──
 // step4.js의 getBoundingClientRect 방식은 iframe 환경에서 좌표가 틀어지므로
