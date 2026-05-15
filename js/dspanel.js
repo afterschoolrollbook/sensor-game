@@ -17,24 +17,25 @@ function dstab(n){
 function initDsPanel(){
   buildTab1(); // 기본 1번 탭
 
-  // ── pv2 초기 설정 적용: 탭2 첫 클릭 전에도 저장된 값을 미리보기에 반영
-  // (CSS .pv2-nm의 기본 font-size와 localStorage 저장값이 달라 탭 클릭 시 크기가 바뀌는 버그 방지)
+  // ── pv2 초기 설정 적용: 탭2 클릭 없이도 저장된 모든 설정을 미리보기에 반영 ──
   if(typeof _applyD2CfgToPv2==='function'){
     _applyD2CfgToPv2({
-      nameShow:  localStorage.getItem('sgp_d2_name_show')  !== 'false',
-      nameSize:  parseInt(localStorage.getItem('sgp_d2_name_size')  || '80'),
-      courtShow: localStorage.getItem('sgp_d2_court_show') !== 'false',
-      courtSize: parseInt(localStorage.getItem('sgp_d2_court_size') || '16'),
-      infoShow:  localStorage.getItem('sgp_d2_info_show')  !== 'false',
-      infoSize:  parseInt(localStorage.getItem('sgp_d2_info_size')  || '16'),
+      nameShow:     localStorage.getItem('sgp_d2_name_show')     !== 'false',
+      nameSize:     parseInt(localStorage.getItem('sgp_d2_name_size')   || '80'),
+      courtShow:    localStorage.getItem('sgp_d2_court_show')    !== 'false',
+      courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')  || '16'),
+      infoShow:     localStorage.getItem('sgp_d2_info_show')     !== 'false',
+      infoSize:     parseInt(localStorage.getItem('sgp_d2_info_size')   || '16'),
+      nameOnly:     localStorage.getItem('sgp_d2_name_only')     === 'true',
+      matchNumShow: localStorage.getItem('sgp_d2_matchnum_show') === 'true',
     });
   }
-  // 저장된 모드를 초기 로드 시 pv2 미리보기에 반영 (탭2 클릭 없이도 적용)
-  if(typeof _updatePv2ForMode==='function'){
-    const savedMode=localStorage.getItem('sgp_d2_mode')||'court_1';
-    _tab2Mode=savedMode;
-    _updatePv2ForMode(savedMode);
-  }
+  // 저장된 모드로 pv2 경기 정보까지 초기 반영 (탭2 클릭 없이도 적용)
+  try{
+    const _savedMode=localStorage.getItem('sgp_d2_mode')||'court_1';
+    if(typeof _tab2Mode!=='undefined') _tab2Mode=_savedMode;
+    if(typeof _updatePv2ForMode==='function') _updatePv2ForMode(_savedMode);
+  }catch(e){}
 
   // courtCount 변경 감지 → 2번 탭 경기장 버튼 갱신
   let _prevCourtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
