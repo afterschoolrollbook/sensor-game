@@ -109,8 +109,8 @@ function _computeSeqOffsets(){
 function _redrawBracketView(){
   if(!_IS_EMBED){
     _redrawBracketViewTree();
-    // 트리뷰 DOM 안정화 후 색상 확실히 적용
-    requestAnimationFrame(()=>requestAnimationFrame(_applyBvColors));
+    // 트리뷰 DOM 안정화 후 색상 + 선택 하이라이트 확실히 적용
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ _applyBvColors(); _applyBvSelectionHighlights(); }));
     return;
   }
 
@@ -617,6 +617,25 @@ function _applyBvColors(){
           }
         });
       });
+    });
+  });
+}
+
+// 트리뷰 선택경기 하이라이트 직접 적용 (isCurrentMatchIdx 우회)
+function _applyBvSelectionHighlights(){
+  const view=document.getElementById('pts-bracket-view');
+  if(!view) return;
+  const arr=_getBvSelectedArr();
+  if(!arr.length) return;
+  arr.forEach(sel=>{
+    const wraps=view.querySelectorAll(`[data-court="${sel.courtNum}"]`);
+    wraps.forEach(wrap=>{
+      if(sel.groupLabel&&wrap.dataset.groupLabel&&wrap.dataset.groupLabel!==sel.groupLabel) return;
+      const box=wrap.querySelector(`[data-ri="${sel.ri}"][data-mi="${sel.mi}"]`);
+      if(box){
+        box.style.outline='2px solid var(--red)';
+        box.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
+      }
     });
   });
 }
@@ -4889,6 +4908,8 @@ window.addEventListener('load', ()=>{
       if(name) document.getElementById('win-title').textContent = '대진표 — ' + name;
     }catch(e){}
 
+    _bvLoadSelectedFromStorage(); // 저장된 선택경기 복원
+    _setBvIsCurrentMatchIdx();    // isCurrentMatchIdx 업데이트
     show('pts-step3');
     renderBracketTabs();
     _redrawBracketView();
