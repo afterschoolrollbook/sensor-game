@@ -213,20 +213,58 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
 
   card.appendChild(row1);
 
-  // ── 2줄: 선수 이름 ──
+  // ── 2줄: 선수 이름 (클릭 → 복장 색상 순환) ──
   const row2 = document.createElement('div');
   row2.style.cssText = 'display:flex;align-items:center;gap:4px;padding-left:2px;';
 
+  const _T3_COLORS     = ['#d0d0d0','#e63946','#4cc9f0','#ffd60a'];
+  const _T3_COLOR_BG   = ['transparent','rgba(230,57,70,.18)','rgba(76,201,240,.18)','rgba(255,214,10,.18)'];
+  const _T3_COLOR_LBLS = ['','빨','파','금'];
+
+  const mkNameSpan = (name, slot, forceColor, forceWeight, prefix='') => {
+    const span = document.createElement('span');
+    const idx  = m[slot + 'ColorIdx'] || 0;
+    const baseColor = forceColor || (idx > 0 ? _T3_COLORS[idx] : '#d0d0d0');
+    span.style.cssText = `font-size:11px;font-weight:${forceWeight||'600'};color:${baseColor};cursor:pointer;border-radius:3px;padding:0 2px;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+    if(!forceColor && idx > 0) span.style.background = _T3_COLOR_BG[idx];
+    const dot = idx > 0 ? `<span style="font-size:7px;opacity:.85;margin-right:2px;">[${_T3_COLOR_LBLS[idx]}]</span>` : '';
+    span.innerHTML = `${prefix}${dot}${name}`;
+    span.title = '클릭: 복장 색상 변경 (흰→빨→파→금)';
+    span.onclick = (ev) => {
+      ev.stopPropagation();
+      m[slot + 'ColorIdx'] = ((m[slot + 'ColorIdx'] || 0) + 1) % 4;
+      _t3Save();
+      _t3Render();
+    };
+    return span;
+  };
+
   if(isBye){
-    row2.innerHTML = `<span style="font-size:11px;font-weight:600;color:#d0d0d0;">${p1n}</span><span style="font-size:9px;color:var(--accent);margin-left:3px;">BYE</span>`;
+    const sp = mkNameSpan(p1n, 'p1', isDone ? 'var(--green)' : null, isDone ? '700' : '600');
+    row2.appendChild(sp);
+    const byeTag = document.createElement('span');
+    byeTag.style.cssText = 'font-size:9px;color:var(--accent);margin-left:3px;flex-shrink:0;';
+    byeTag.textContent = 'BYE';
+    row2.appendChild(byeTag);
+    if(isDone){
+      const doneTag = document.createElement('span');
+      doneTag.style.cssText = 'font-size:9px;color:var(--green);margin-left:4px;flex-shrink:0;';
+      doneTag.textContent = '✓ 진출';
+      row2.appendChild(doneTag);
+    }
   } else {
-    const c1 = winnerN ? (winnerN===p1n ? 'var(--green)' : '#555') : (p1tbd ? 'var(--text3)' : '#d0d0d0');
-    const c2 = winnerN ? (winnerN===p2n ? 'var(--green)' : '#555') : (p2tbd ? 'var(--text3)' : '#d0d0d0');
-    row2.innerHTML = `
-      <span style="font-size:11px;font-weight:600;color:${c1};">${p1tbd?'<span style="font-size:8px;color:var(--text3);">대기 </span>':''}${p1n}</span>
-      <span style="font-size:9px;color:var(--red);font-family:'Bebas Neue',cursive;margin:0 3px;flex-shrink:0;">VS</span>
-      <span style="font-size:11px;font-weight:600;color:${c2};">${p2tbd?'<span style="font-size:8px;color:var(--text3);">대기 </span>':''}${p2n}</span>
-    `;
+    const isW1 = winnerN && winnerN === p1n;
+    const isW2 = winnerN && winnerN === p2n;
+    const c1 = winnerN ? (isW1 ? 'var(--green)' : '#555') : (p1tbd ? 'var(--text3)' : null);
+    const c2 = winnerN ? (isW2 ? 'var(--green)' : '#555') : (p2tbd ? 'var(--text3)' : null);
+    const sp1 = mkNameSpan(p1n, 'p1', c1, isW1 ? '700' : '600', isW1 ? '🏆 ' : (p1tbd ? '<span style="font-size:8px;color:var(--text3);">대기 </span>' : ''));
+    const vsSpan = document.createElement('span');
+    vsSpan.style.cssText = "font-size:9px;color:var(--red);font-family:'Bebas Neue',cursive;margin:0 3px;flex-shrink:0;";
+    vsSpan.textContent = 'VS';
+    const sp2 = mkNameSpan(p2n, 'p2', c2, isW2 ? '700' : '600', isW2 ? '🏆 ' : (p2tbd ? '<span style="font-size:8px;color:var(--text3);">대기 </span>' : ''));
+    row2.appendChild(sp1);
+    row2.appendChild(vsSpan);
+    row2.appendChild(sp2);
   }
 
   card.appendChild(row2);
@@ -300,6 +338,26 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     mbody.appendChild(mkBtn('▶', '현재 경기 선택', 'var(--accent)', 'rgba(76,201,240,.1)', () => {
       _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, label, courtNum);
     }, '미리보기 · 전광판 하이라이트'));
+  }
+
+  // ── BYE 부전승 진출 ──
+  if(isBye && !isDone){
+    const divBye = document.createElement('div');
+    divBye.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;padding-top:2px;';
+    mbody.appendChild(divBye);
+    const lblBye = document.createElement('div');
+    lblBye.style.cssText = 'padding:5px 14px 3px;font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:1px;';
+    lblBye.textContent = '// 부전승 · 자동 진출';
+    mbody.appendChild(lblBye);
+    mbody.appendChild(mkBtn('⏩', `${p1n} 다음 라운드 진출`, 'var(--accent)', 'rgba(76,201,240,.1)', () => _t3AdvanceBye(g, gi, ri, mi, courtNum), '상대 없음 · 부전승 처리'));
+  }
+
+  // ── BYE 진출 취소 ──
+  if(isBye && isDone){
+    const divByeD = document.createElement('div');
+    divByeD.style.cssText = 'border-top:1px solid var(--border);margin:4px 0;padding-top:2px;';
+    mbody.appendChild(divByeD);
+    mbody.appendChild(mkBtn('↩', '진출 취소', 'var(--red)', 'rgba(230,57,70,.1)', () => _t3CancelWinner(g, gi, ri, mi, courtNum)));
   }
 
   // ── 승자 선택 (미완료, 선수 확정) ──
@@ -416,6 +474,44 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum){
   try{
     const bc = new BroadcastChannel('sgp_cmd');
     bc.postMessage({ type:'winner', name:winner.name });
+    bc.close();
+  } catch(ex){}
+
+  _t3Render();
+}
+
+// ── 부전승 진출 처리 ──
+function _t3AdvanceBye(g, gi, ri, mi, courtNum){
+  const m = g.matches[ri][mi];
+  if(!m.p1) return;
+  m.winner = { name: m.p1.name, id: m.p1.id };
+
+  // 다음 라운드 슬롯에 이름 채우기 (fromA/fromB 우선, 폴백 수학)
+  const key = `${ri}-${mi}`;
+  if(g.matches[ri + 1]){
+    let updated = false;
+    g.matches[ri + 1].forEach(nm => {
+      if(nm.fromA === key && nm.p1){ nm.p1.name = m.p1.name; nm.p1.tbd = false; updated = true; }
+      if(nm.fromB === key && nm.p2){ nm.p2.name = m.p1.name; nm.p2.tbd = false; updated = true; }
+    });
+    if(!updated){
+      const nextMi = Math.floor(mi / 2);
+      const nextMatch = g.matches[ri + 1][nextMi];
+      if(nextMatch){
+        if(mi % 2 === 0 && nextMatch.p1){ nextMatch.p1.name = m.p1.name; nextMatch.p1.tbd = false; }
+        else if(nextMatch.p2){ nextMatch.p2.name = m.p1.name; nextMatch.p2.tbd = false; }
+      }
+    }
+  }
+
+  const cur = _t3CurrentMatch[courtNum];
+  if(cur && cur.gi===gi && cur.ri===ri && cur.mi===mi) delete _t3CurrentMatch[courtNum];
+
+  _t3Save();
+
+  try{
+    const bc = new BroadcastChannel('sgp_cmd');
+    bc.postMessage({ type:'winner', name: m.p1.name });
     bc.close();
   } catch(ex){}
 
