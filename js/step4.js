@@ -27,10 +27,7 @@ function buildProc(){
   treeWrap.style.cssText='margin-top:16px;border-top:1px solid var(--border);padding-top:16px;';
   w.appendChild(treeWrap);
 
-  if(S.matches&&S.matches.length){
-    // 대진표가 있으면 항상 토너먼트/리그 트리 표시
-    buildTournamentTree(treeWrap);
-  } else if(S.proc==='ind-rec'){
+  if(S.proc==='ind-rec'){
     buildOrderList(treeWrap);
   } else if(S.proc==='team-rec'||S.proc==='team-ind'){
     buildTeamList(treeWrap);
