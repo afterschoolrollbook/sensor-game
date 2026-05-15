@@ -1129,15 +1129,13 @@ function generateBracketWithNames(pts, courtNum, startNum){
   const isOdd=n%2===1;
   let slotNum=startNum||1;
   if(isOdd){
-    const p=players[0];
-    round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
+    round1.push({p1:{name:`${cNum}-${slotNum++}`,id:slotNum-1},p2:null,bye:true});
   }
   const rest=isOdd?players.slice(1):players;
   for(let i=0;i<rest.length;i+=2){
-    const pa=rest[i], pb=rest[i+1];
     round1.push({
-      p1:{name:`${cNum}-${slotNum++}${pa?` (${pa.name})`:''}`,id:slotNum-1},
-      p2:{name:`${cNum}-${slotNum++}${pb?` (${pb.name})`:''}`,id:slotNum-1},
+      p1:{name:`${cNum}-${slotNum++}`,id:slotNum-1},
+      p2:{name:`${cNum}-${slotNum++}`,id:slotNum-1},
       bye:false
     });
   }
