@@ -1162,9 +1162,13 @@ function generateAllBrackets(){
 
   // groupBrackets 생성 — 경기장별 통합 순번 (체급 상관없이 이어서)
   const courtForGroup=(gname)=>courtSlots.findIndex(c=>c.groups.includes(gname))+1;
-  // 경기장별 시작 번호 사전 계산 — courtSlots 배정 순서 기준으로 누적 (entries 정렬과 독립)
+  // 경기장별 시작 번호 사전 계산 — entries(알파벳순) 기준으로 누적하되 경기장별로 독립
   const _courtCounters={};
   const _groupStartNums={};
+  // 각 경기장의 groups를 entries 알파벳순으로 정렬
+  courtSlots.forEach(slot=>{
+    slot.groups.sort((a,b)=>a.localeCompare(b,'ko'));
+  });
   courtSlots.forEach(slot=>{
     const c=slot.court;
     if(!_courtCounters[c]) _courtCounters[c]=1;
