@@ -18,24 +18,8 @@ function initDsPanel(){
   buildTab1(); // 기본 1번 탭
 
   // ── pv2 초기 설정 적용: 탭2 클릭 없이도 저장된 모든 설정을 미리보기에 반영 ──
-  if(typeof _applyD2CfgToPv2==='function'){
-    _applyD2CfgToPv2({
-      nameShow:     localStorage.getItem('sgp_d2_name_show')     !== 'false',
-      nameSize:     parseInt(localStorage.getItem('sgp_d2_name_size')   || '80'),
-      courtShow:    localStorage.getItem('sgp_d2_court_show')    !== 'false',
-      courtSize:    parseInt(localStorage.getItem('sgp_d2_court_size')  || '16'),
-      infoShow:     localStorage.getItem('sgp_d2_info_show')     !== 'false',
-      infoSize:     parseInt(localStorage.getItem('sgp_d2_info_size')   || '16'),
-      nameOnly:     localStorage.getItem('sgp_d2_name_only')     === 'true',
-      matchNumShow: localStorage.getItem('sgp_d2_matchnum_show') === 'true',
-    });
-  }
-  // 저장된 모드로 pv2 경기 정보까지 초기 반영 (탭2 클릭 없이도 적용)
-  try{
-    const _savedMode=localStorage.getItem('sgp_d2_mode')||'court_1';
-    if(typeof _tab2Mode!=='undefined') _tab2Mode=_savedMode;
-    if(typeof _updatePv2ForMode==='function') _updatePv2ForMode(_savedMode);
-  }catch(e){}
+  // buildTab2()를 직접 호출해 탭2 클릭과 동일한 초기화 수행 (단, UI 탭은 전환하지 않음)
+  try{ if(typeof buildTab2==='function') buildTab2(); }catch(e){}
 
   // courtCount 변경 감지 → 2번 탭 경기장 버튼 갱신
   let _prevCourtCount=parseInt(localStorage.getItem('sgp_courtCount')||'1');
