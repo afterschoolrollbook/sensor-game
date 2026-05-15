@@ -361,17 +361,12 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, courtNum){
 
   // 같은 창 내 pv3 미리보기 즉시 갱신:
   // _pv3SelectedMatches를 직접 세팅해 rAF 타이밍 문제 없이 하이라이트 유지
+  // courtNum 키로 관리해 경기장별 독립 하이라이트 보존
   try{
     if(typeof _pv3SelectedMatches !== 'undefined'){
-      // 해당 경기장의 기존 항목을 교체
-      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => {
-        // 같은 경기장(court)에 해당하는 항목 제거하기 위해 groupLabel로 판단
-        // courtNum에 속하는 그룹의 shortLabel인지 확인
-        return true; // 다른 경기장 항목은 유지, 같은 그룹은 아래서 교체
-      });
-      // shortLabel로 기존 항목 제거 후 새 항목 추가
-      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => s.groupLabel !== shortLabel);
-      _pv3SelectedMatches.push({ groupLabel: shortLabel, ri, mi });
+      // 같은 경기장의 기존 항목만 제거 (다른 경기장 항목은 유지)
+      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => s.courtNum !== courtNum);
+      _pv3SelectedMatches.push({ groupLabel: shortLabel, ri, mi, courtNum });
     }
   } catch(ex){}
 

@@ -1327,7 +1327,7 @@ function updatePv3(){
         });
         if(matched){
           const sl=matched.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
-          newSelectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi});
+          newSelectedMatches.push({groupLabel:sl, ri:mv.ri, mi:mv.mi, courtNum:c});
           continue;
         }
       }
@@ -1343,7 +1343,7 @@ function updatePv3(){
             const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
             const p2match=curP2?(_cn(p2n)===curP2):(!m.p2);
             if(_cn(p1n)===curP1&&p2match){
-              newSelectedMatches.push({groupLabel:sl,ri,mi});
+              newSelectedMatches.push({groupLabel:sl, ri, mi, courtNum:c});
               break outer2;
             }
           }
@@ -1352,12 +1352,16 @@ function updatePv3(){
     }
   }catch(e){}
 
-  // 새로 찾은 selectedMatches가 있으면 업데이트, 없으면 이전 값 유지
-  // (rAF 타이밍 문제로 두 번째 updatePv3 호출이 빈 selectedMatches로 하이라이트를 지우는 현상 방지)
+  // court별로 병합: 새로 찾은 court는 업데이트, 못 찾은 court는 기존 값 유지
+  // (rAF 타이밍 문제로 두 번째 updatePv3 호출이 빈 값으로 하이라이트를 지우는 현상 방지)
   if(newSelectedMatches.length > 0){
-    _pv3SelectedMatches = newSelectedMatches;
+    const updatedCourts = new Set(newSelectedMatches.map(s => s.courtNum));
+    _pv3SelectedMatches = [
+      ..._pv3SelectedMatches.filter(s => !updatedCourts.has(s.courtNum)),
+      ...newSelectedMatches
+    ];
   }
-  // 단, localStorage에 court 데이터가 아예 없으면 클리어
+  // localStorage에 court 데이터가 아예 없으면 클리어
   const hasAnyCourt = [1,2,3,4].some(c => localStorage.getItem(`sgp_display_vs_court_${c}`));
   if(!hasAnyCourt) _pv3SelectedMatches = [];
 
