@@ -1162,13 +1162,9 @@ function generateAllBrackets(){
 
   // groupBrackets 생성 — 경기장별 통합 순번 (체급 상관없이 이어서)
   const courtForGroup=(gname)=>courtSlots.findIndex(c=>c.groups.includes(gname))+1;
-  // 경기장별 시작 번호 사전 계산 — entries(알파벳순) 기준으로 누적하되 경기장별로 독립
+  // 경기장별 시작 번호 사전 계산 — courtSlots.groups 순서 기준 (화면 표시 순서와 동일)
   const _courtCounters={};
   const _groupStartNums={};
-  // 각 경기장의 groups를 entries 알파벳순으로 정렬
-  courtSlots.forEach(slot=>{
-    slot.groups.sort((a,b)=>a.localeCompare(b,'ko'));
-  });
   courtSlots.forEach(slot=>{
     const c=slot.court;
     if(!_courtCounters[c]) _courtCounters[c]=1;
@@ -1178,7 +1174,15 @@ function generateAllBrackets(){
       _courtCounters[c]+=members.length;
     });
   });
-  S.groupBrackets=entries.map(([gname,members])=>{
+  // courtSlots.groups 순서대로 groupBrackets 생성 → 화면 표시 순서와 startNum 순서 일치
+  const _groupsOrdered=[];
+  courtSlots.forEach(slot=>{
+    slot.groups.forEach(gname=>{
+      const members=_groups[gname]||[];
+      _groupsOrdered.push([gname,members]);
+    });
+  });
+  S.groupBrackets=_groupsOrdered.map(([gname,members])=>{
     const c=courtForGroup(gname);
     const sn=_groupStartNums[gname];
     return {
