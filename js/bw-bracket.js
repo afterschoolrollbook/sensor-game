@@ -259,7 +259,7 @@ function _redrawBracketView(){
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
       );
       S.matches=taggedMatches;
-      _renderBracketHTML(groupWrap,taggedMatches,'top',false);
+      _renderBracketHTML(groupWrap,taggedMatches,'top-down',false);
       _stripInnerScroll(groupWrap);
       sec.appendChild(groupWrap);
       return sec;
