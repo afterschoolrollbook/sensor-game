@@ -5041,17 +5041,26 @@ function _applyMatchStates(){
   const view = document.getElementById('pts-bracket-view');
   if(!view) return;
 
-  // 1. 트로피 + 초록 테두리 (winner)
+  // 1. 트로피 + 초록 테두리 (winner) — 경기장별 wrapper 안에서 찾기
   (S.groupBrackets||[]).forEach(g=>{
+    const court = g.court||1;
+    const shortLabel = g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+    // 해당 경기장+그룹 wrapper 찾기
+    let wrap = null;
+    view.querySelectorAll(`[data-court="${court}"]`).forEach(w=>{
+      if(w.dataset.groupLabel===shortLabel) wrap=w;
+    });
+    if(!wrap) wrap = view.querySelector(`[data-court="${court}"]`);
+
     (g.matches||[]).forEach((round, ri)=>{
       round.forEach((m, mi)=>{
         if(!m.winner) return;
-        const box = view.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        const box = wrap ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
+                        : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1];
         if(!box) return;
         box.style.borderColor='#06d6a0';
         box.style.borderWidth='2px';
         box.style.boxShadow='0 0 8px rgba(6,214,160,.3)';
-        // 모든 span 순회해서 이름 매칭
         box.querySelectorAll('span').forEach(span=>{
           if(span.dataset.bvDone) return;
           const txt = (span.textContent||'').trim();
@@ -5075,14 +5084,17 @@ function _applyMatchStates(){
     });
   });
 
-  // 2. LIVE + 빨간 테두리 (현재 경기)
+  // 2. LIVE + 빨간 테두리 — 경기장별 wrapper 안에서 찾기
   for(let c=1; c<=8; c++){
     try{
       const raw = localStorage.getItem(`sgp_display_vs_court_${c}`);
       if(!raw) continue;
       const mv = JSON.parse(raw);
       if(mv.ri==null || mv.mi==null) continue;
-      const box = view.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`);
+      // 해당 경기장 wrapper 안에서 박스 찾기
+      const courtWrap = view.querySelector(`[data-court="${c}"]`);
+      const box = courtWrap ? courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)
+                            : view.querySelectorAll(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)[c-1];
       if(!box) continue;
       box.style.borderColor='#e63946';
       box.style.borderWidth='2.5px';
