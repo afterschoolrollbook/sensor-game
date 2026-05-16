@@ -604,15 +604,26 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
   const key = `${ri}-${mi}`;
   const courtN = g.court || 1;
 
+  // fromA/fromB 키에서 원래 이름 복원
+  const _origName = (fromKey) => {
+    if(!fromKey) return null;
+    const parts = fromKey.split('-');
+    if(parts.length >= 2){
+      const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
+      if(!isNaN(fRi) && !isNaN(fMi)) return `${courtN}-${fRi+1}-${fMi+1} 승자`;
+    }
+    return null;
+  };
+
   g.matches[ri + 1].forEach((nm, nextMi) => {
     let affected = false;
 
-    // fromA/fromB 기반 매칭
+    // fromA/fromB 기반 매칭 — 원래 이름으로 복원
     if(nm.fromA === key && nm.p1){
-      nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+      nm.p1.name = _origName(nm.fromA) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
     }
     if(nm.fromB === key && nm.p2){
-      nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+      nm.p2.name = _origName(nm.fromB) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
     }
 
     // fromA/fromB 없을 때 수학 폴백
