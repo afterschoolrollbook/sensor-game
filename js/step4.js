@@ -905,12 +905,14 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
         if(!a||!t) return;
 
         // D reversed=false: right→left, H선
-        // E: bottom→top, V선
-        const ax=a.cx, ay=a.bottom;
-        const tx=t.cx, ty=t.top;
+        // E: reverseRounds=false → 1라운드(위) bottom → 결승(아래) top
+        //    reverseRounds=true  → 1라운드(아래) top   → 결승(위)  bottom
+        //    박스 바깥 엣지에서 출발/도착해야 박스 내부를 뚫지 않음
+        const ax=a.cx, ay=reverseRounds?a.top:a.bottom;
+        const tx=t.cx, ty=reverseRounds?t.bottom:t.top;
         const midY=(ay+ty)/2;
         if(b){
-          const bx=b.cx,by=b.bottom;
+          const bx=b.cx,by=reverseRounds?b.top:b.bottom;
           const midX=(ax+bx)/2;
           PATH(`M${ax},${ay} V${midY}`);
           PATH(`M${bx},${by} V${midY}`);
