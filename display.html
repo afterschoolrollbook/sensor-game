@@ -754,7 +754,8 @@ function refresh3(){
 
   _d3DrawBracket(view, groups, layout, courtCount, selectedMatches);
   _applyBracketColors(view, groups);
-  _applyBracketBadges(view, groups);
+  // bracket-view와 동일하게 rAF 2번 후 실행 (SVG 연결선 완성 후)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>_applyBracketBadges(view, groups)));
 }
 
 function _applyBracketColors(view, groups){
@@ -778,18 +779,27 @@ function _applyBracketColors(view, groups){
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
         box.querySelectorAll('span').forEach(span=>{
-          if(span.classList.contains('d3-cdot')) return;
+          if(span.classList.contains('d3-cdot')||span.classList.contains('bv-live')||span.classList.contains('bv-trophy-row')) return;
           const txt=(span.textContent||'').replace('🏆','').trim();
-          let ci=0;
+          let ci=0, isP2=false;
           if(p1n&&txt===p1n) ci=p1ci;
-          else if(p2n&&txt===p2n) ci=p2ci;
+          else if(p2n&&txt===p2n){ ci=p2ci; isP2=true; }
           if(!ci) return;
           if(!m.winner) span.style.color=_CC[ci];
-          if(!span.querySelector('.d3-cdot')){
+          // dot을 span 밖(옆)에 추가 — bracket-view _applyBvColors 방식
+          if(!span.parentNode.querySelector('.d3-cdot[data-for="'+txt+'"]')){
             const dot=document.createElement('span');
             dot.className='d3-cdot';
-            dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
-            span.appendChild(dot);
+            dot.dataset.for=txt;
+            if(isP2){
+              // p2: 이름 앞에
+              dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
+              span.parentNode.insertBefore(dot, span);
+            } else {
+              // p1: 이름 뒤에
+              dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
+              span.parentNode.insertBefore(dot, span.nextSibling);
+            }
           }
         });
       });
