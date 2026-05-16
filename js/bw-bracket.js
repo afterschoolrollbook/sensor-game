@@ -227,12 +227,15 @@ function _redrawBracketView(){
   view.style.flexDirection='column';
 
   if(_bracketLayout==='E' && courts>=2){
-    view.style.overflow='auto';
+    view.style.overflow='auto'; // 가로+세로 스크롤 모두 허용
+    view.style.height='100%';   // outerWrap의 min-height:100%가 작동하려면 부모 높이 필요
     view.style.padding='12px';
+    view.style.boxSizing='border-box';
     _computeSeqOffsets();
 
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;';
+    // min-height:100%로 경기장2가 창 하단에 붙도록 컨테이너를 뷰 전체 높이로 확장
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;min-height:100%;';
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
@@ -298,10 +301,12 @@ function _redrawBracketView(){
 
     // 경기장 섹션: 라운드별로 전체 경기를 가로 한 줄 + 연결선 + 2라운드 위치
     const SLOT=200, CARD_W=190; // 카드 190px + 우측여백 10px
+    const SVG_H=36, MID=18; // 연결선 SVG 높이 (카드와 딱 붙도록)
     const renderCourtSection=(groups, courtLabel, reverseRounds)=>{
       if(!groups.length) return null;
       const sec=document.createElement('div');
-      sec.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;margin-bottom:8px;position:relative;';
+      // reverseRounds(경기장 2): 1라운드가 창 하단에 고정되도록 flex-end + margin-top:auto
+      sec.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:max-content;position:relative;${reverseRounds?'margin-top:auto;':'margin-bottom:40px;'}`;
 
       const lbl=document.createElement('div');
       lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;';
@@ -329,7 +334,6 @@ function _redrawBracketView(){
       });
 
       // reverseRounds면 화면에 뒤집어서 렌더 (경기장 2: 2라운드→1라운드 순서)
-      // 연결선은 항상 "더 작은 ri(상위 라운드)" → "더 큰 ri(하위 라운드)" 방향
       const renderOrder=reverseRounds?[...roundData].reverse():roundData;
 
       renderOrder.forEach((allMatches, rowIdx)=>{
@@ -339,30 +343,30 @@ function _redrawBracketView(){
         const roundBlock=document.createElement('div');
         roundBlock.style.cssText='margin-bottom:0;min-width:max-content;position:relative;';
 
-        const rHdr=document.createElement('div');
-        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
-        rHdr.textContent=rName.toUpperCase();
-        roundBlock.appendChild(rHdr);
+        // 경기장 2(reverseRounds): 마지막 행(1라운드)은 레이블 없애고 아래 고정
+        const showHdr=!(reverseRounds && rowIdx===renderOrder.length-1);
+        if(showHdr){
+          const rHdr=document.createElement('div');
+          rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:4px;white-space:nowrap;';
+          rHdr.textContent=rName.toUpperCase();
+          roundBlock.appendChild(rHdr);
+        }
 
         const row=document.createElement('div');
-        // 수정1: align-items:center → 카드 세로 중앙정렬
         row.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;position:relative;';
 
-        // "1라운드"는 roundData 기준 ri===0인 행 (reverseRounds와 무관하게 slot 기반 나열)
+        // "1라운드"는 roundData 기준 ri===0인 행
         const isFirstRound=(ri===0);
         if(isFirstRound){
-          // 1라운드: 순서대로 나열 (빈자리 없이 연속)
           allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
         } else {
-          // 2라운드+: 부모 슬롯(ri-1) 기반으로 위치 계산
-          // prevRoundData = roundData에서 ri-1에 해당하는 항목
           const prevRoundData=roundData.find(rd=>rd.length>0&&rd[0].ri===ri-1)||[];
           const prevSlotMap={};
           prevRoundData.forEach(({g,ri:pRi,mi,slot})=>{
             prevSlotMap[`${g.label}-${pRi}-${mi}`]=slot;
           });
 
-          let placedUntilX=-SLOT; // 마지막으로 배치된 카드의 절대 우측 끝 x
+          let placedUntilX=-SLOT;
           allMatches.forEach(({m,g,ri,mi})=>{
             const card=mkCard(m,g,ri,mi);
             const fromA=m.fromA, fromB=m.fromB;
@@ -377,7 +381,6 @@ function _redrawBracketView(){
               const key=`${g.label}-${pRi}-${pMi}`;
               if(prevSlotMap[key]!=null) slotB=prevSlotMap[key];
             }
-            // fromA/B 없으면 수학 폴백
             if(slotA<0){
               const groupPrev=prevRoundData.filter(x=>x.g===g);
               if(groupPrev.length){
@@ -387,35 +390,38 @@ function _redrawBracketView(){
                 slotB=(base+localMi*2+1)<groupPrev.length?base+localMi*2+1:-1;
               }
             }
-            // 카드 중앙 절대 x 계산
             let centerX;
             if(slotA>=0&&slotB>=0) centerX=(slotA*SLOT+95+slotB*SLOT+95)/2;
             else if(slotA>=0) centerX=slotA*SLOT+95;
             else centerX=placedUntilX+SLOT+95;
 
-            // 카드 왼쪽 끝 절대 x
             const cardLeft=centerX-95;
-            // 이전 카드 우측 끝 이후로부터의 margin
             const marginLeft=Math.max(0, cardLeft-(placedUntilX+SLOT));
             card.style.marginLeft=marginLeft+'px';
-            placedUntilX=cardLeft; // 이 카드 왼쪽 기준 (다음 카드는 +SLOT 이후)
+            placedUntilX=cardLeft;
             row.appendChild(card);
           });
         }
-        roundBlock.appendChild(row);
 
         // ── 연결선 SVG ──
-        // reverseRounds(경기장 2): 2라운드가 위에, 1라운드가 아래 → 선은 위에서 아래로(1라운드→2라운드 방향)
-        // 경기장 2의 경우 현재 row가 2라운드면 다음 row(아래)가 1라운드이므로
-        // "현재 라운드의 부모(1라운드) 슬롯"을 기준으로 선을 그려야 함
-        const hasNextRow=rowIdx<renderOrder.length-1;
-        if(hasNextRow){
-          // 경기장 1(reverseRounds=false): 현재=1라운드, 다음=2라운드 → 현재→다음 방향 선
-          // 경기장 2(reverseRounds=true):  현재=2라운드, 다음=1라운드 → 다음(1라운드)에서 현재(2라운드)로 올라오는 선
-          const SVG_H=40, MID=20;
+        // 경기장 1: 카드 아래에 SVG 붙임 (선이 아래 다음 라운드로)
+        // 경기장 2: 카드 위에 SVG 붙임 (선이 위 이전 라운드로) → roundBlock에 row보다 먼저 SVG 삽입
 
-          if(!reverseRounds){
-            // 경기장 1: 기존 방식 (1라운드 → 2라운드, 선이 아래로)
+        const hasNextRow=rowIdx<renderOrder.length-1;
+
+        const mkSvgLine=(svg,x1,y1,x2,y2)=>{
+          const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+          l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+          l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+          l.setAttribute('stroke','rgba(90,90,122,.8)');
+          l.setAttribute('stroke-width','1.5');
+          svg.appendChild(l);
+        };
+
+        if(!reverseRounds){
+          // 경기장 1: row → svg 순서 (선이 아래로)
+          roundBlock.appendChild(row);
+          if(hasNextRow){
             const nextRound=renderOrder[rowIdx+1];
             const svgW=allMatches.length*SLOT+200;
             const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -425,15 +431,6 @@ function _redrawBracketView(){
 
             const curSlotMap={};
             allMatches.forEach(({g,ri,mi,slot})=>{ curSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
-
-            const mkLine=(x1,y1,x2,y2)=>{
-              const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-              l.setAttribute('x1',x1);l.setAttribute('y1',y1);
-              l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-              l.setAttribute('stroke','rgba(90,90,122,.8)');
-              l.setAttribute('stroke-width','1.5');
-              svg.appendChild(l);
-            };
 
             nextRound.forEach(({m,g})=>{
               const fromA=m.fromA, fromB=m.fromB;
@@ -445,43 +442,37 @@ function _redrawBracketView(){
               const cxB=slotB>=0?slotB*SLOT+95:-1;
               const childCx=(cxA>=0&&cxB>=0)?(cxA+cxB)/2:cxA>=0?cxA:cxB;
               if(cxA>=0&&cxB>=0){
-                mkLine(cxA,0,cxA,MID);
-                mkLine(cxB,0,cxB,MID);
-                mkLine(cxA,MID,cxB,MID);
-                mkLine(childCx,MID,childCx,SVG_H);
+                mkSvgLine(svg,cxA,0,cxA,MID);
+                mkSvgLine(svg,cxB,0,cxB,MID);
+                mkSvgLine(svg,cxA,MID,cxB,MID);
+                mkSvgLine(svg,childCx,MID,childCx,SVG_H);
               } else {
-                mkLine(childCx,0,childCx,SVG_H);
+                mkSvgLine(svg,childCx,0,childCx,SVG_H);
               }
             });
             roundBlock.appendChild(svg);
-
           } else {
-            // 경기장 2: 현재 행=2라운드, 다음 행=1라운드
-            // 선은 현재 2라운드 카드 아래에서 → 아래 1라운드 카드 두 개 위로 올라가는 방향
-            // 즉 현재 roundData(2라운드) 기준으로 fromA/fromB가 가리키는 1라운드 슬롯을 기준으로 선 그리기
-            // 1라운드 슬롯맵
-            const nextRowData=renderOrder[rowIdx+1]; // 1라운드
+            roundBlock.style.marginBottom='16px';
+          }
+
+        } else {
+          // 경기장 2: svg → row 순서 (선이 위 카드와 붙도록 카드 위에 SVG)
+          // 현재 row가 2라운드: 아래쪽 1라운드 카드 위에 SVG를 그려야 하므로
+          // SVG는 다음 roundBlock(1라운드) 맨 위에 붙임 → 여기서는 현재 2라운드 row를 먼저 그리고
+          // SVG는 현재 roundBlock 하단에 붙여서 1라운드 카드와 맞닿게 함
+          if(hasNextRow){
+            // 다음 행 = 1라운드. 1라운드 슬롯맵
+            const nextRowData=renderOrder[rowIdx+1];
             const nextSlotMap={};
             nextRowData.forEach(({g,ri,mi,slot})=>{ nextSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
 
             const svgW=nextRowData.length*SLOT+200;
             const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-            // 선이 위(2라운드 카드 아래)에서 아래(1라운드 카드 위)로 → SVG는 현재 roundBlock 하단에 붙음
             svg.style.cssText=`display:block;min-width:max-content;height:${SVG_H}px;overflow:visible;`;
             svg.setAttribute('width', svgW);
             svg.setAttribute('height', SVG_H);
 
-            const mkLine=(x1,y1,x2,y2)=>{
-              const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-              l.setAttribute('x1',x1);l.setAttribute('y1',y1);
-              l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-              l.setAttribute('stroke','rgba(90,90,122,.8)');
-              l.setAttribute('stroke-width','1.5');
-              svg.appendChild(l);
-            };
-
-            // 현재 행(2라운드) 각 카드의 절대 centerX 계산
-            // 2라운드 카드는 fromA/fromB로 1라운드 슬롯을 알 수 있음
+            // 2라운드 각 카드에서 1라운드 두 카드로 선 내리기
             allMatches.forEach(({m,g})=>{
               const fromA=m.fromA, fromB=m.fromB;
               let slotA=-1, slotB=-1;
@@ -491,20 +482,22 @@ function _redrawBracketView(){
               const cxA=slotA>=0?slotA*SLOT+95:-1;
               const cxB=slotB>=0?slotB*SLOT+95:-1;
               const parentCx=(cxA>=0&&cxB>=0)?(cxA+cxB)/2:cxA>=0?cxA:cxB;
-              // 선: 2라운드 카드 중앙(y=0, parentCx) → 아래로 → 1라운드 카드들 위쪽(y=SVG_H)
               if(cxA>=0&&cxB>=0){
-                mkLine(parentCx,0,parentCx,MID);
-                mkLine(cxA,MID,cxB,MID);
-                mkLine(cxA,MID,cxA,SVG_H);
-                mkLine(cxB,MID,cxB,SVG_H);
+                mkSvgLine(svg,parentCx,0,parentCx,MID);
+                mkSvgLine(svg,cxA,MID,cxB,MID);
+                mkSvgLine(svg,cxA,MID,cxA,SVG_H);
+                mkSvgLine(svg,cxB,MID,cxB,SVG_H);
               } else {
-                mkLine(parentCx,0,parentCx,SVG_H);
+                mkSvgLine(svg,parentCx,0,parentCx,SVG_H);
               }
             });
+            roundBlock.appendChild(row);
             roundBlock.appendChild(svg);
+          } else {
+            // 마지막 행(1라운드): SVG 없이 카드만
+            roundBlock.appendChild(row);
+            roundBlock.style.marginBottom='0';
           }
-        } else {
-          roundBlock.style.marginBottom='16px';
         }
 
         sec.appendChild(roundBlock);
