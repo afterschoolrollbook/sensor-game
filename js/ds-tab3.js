@@ -179,7 +179,18 @@ function _t3Render(){
 function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const cur = _t3CurrentMatch[courtNum];
   const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
-  const isDone = !!m.winner;
+  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
+  const _nextHasWinner = ()=>{
+    const key = `${ri}-${mi}`;
+    const nextRound = g.matches[ri+1];
+    if(!nextRound) return false;
+    for(const nm of nextRound){
+      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
+      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
+    }
+    return false;
+  };
+  const isDone = !!m.winner || _nextHasWinner();
   const isBye = m.p1 && !m.p2;
   const p1tbd = m.p1 && m.p1.tbd;
   const p2tbd = m.p2 && m.p2.tbd;
@@ -303,7 +314,18 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
 function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   document.getElementById('t3-modal')?.remove();
 
-  const isDone = !!m.winner;
+  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
+  const _hasWinnerInNextRound = ()=>{
+    const key = `${ri}-${mi}`;
+    const nextRound = g.matches[ri+1];
+    if(!nextRound) return false;
+    for(const nm of nextRound){
+      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
+      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
+    }
+    return false;
+  };
+  const isDone = !!m.winner || _hasWinnerInNextRound();
   const isBye = m.p1 && !m.p2;
   const isPending = !isDone && (m.p1 && m.p1.tbd || m.p2 && m.p2.tbd);
   const _cur = _t3CurrentMatch[courtNum];
@@ -582,8 +604,19 @@ function _t3AdvanceBye(g, gi, ri, mi, courtNum, matchLabel, shortLabel){
 // ── 결과 취소 (다음 라운드 cascade 취소 포함) ──
 function _t3CancelWinner(g, gi, ri, mi, courtNum){
   const m = g.matches[ri][mi];
-  if(!m.winner) return;
-  const cancelledName = m.winner.name;
+  // winner가 없어도 다음 라운드에서 승자 이름 역추적
+  let cancelledName = m.winner ? m.winner.name : null;
+  if(!cancelledName){
+    const key = `${ri}-${mi}`;
+    const nextRound = g.matches[ri+1];
+    if(nextRound){
+      for(const nm of nextRound){
+        if(nm.fromA===key && nm.p1 && !nm.p1.tbd) { cancelledName = nm.p1.name; break; }
+        if(nm.fromB===key && nm.p2 && !nm.p2.tbd) { cancelledName = nm.p2.name; break; }
+      }
+    }
+  }
+  if(!cancelledName) return;
   delete m.winner;
 
   // 다음 라운드 tbd 복원 + cascade (다중 라운드 연쇄 취소)
