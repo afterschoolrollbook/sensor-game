@@ -1972,6 +1972,21 @@ function _redrawBracketViewTree(){
     if(_bSec) outerWrap.appendChild(_bSec);
 
     view.appendChild(outerWrap);
+
+    // ── E 동적 크기 조절 ──
+    // SVG 연결선이 rAF 2회 후 그려지므로 3회 후에 측정
+    // zoom: 레이아웃 공간도 함께 줄어들어 여백 처리가 깔끔
+    requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const viewW=view.clientWidth-32;
+      [_tSec,_bSec].filter(Boolean).forEach(sec=>{
+        sec.style.zoom=''; // 이전 zoom 초기화
+        const secW=sec.scrollWidth;
+        if(secW>0&&viewW>0&&secW>viewW){
+          sec.style.zoom=String((viewW/secW).toFixed(4));
+        }
+      });
+    })));
+
   } else {
     // A/B/C/E형(단일 경기장) — 그룹별로 태깅해서 렌더링
     view.style.overflow='auto';
