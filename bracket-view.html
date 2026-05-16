@@ -5152,7 +5152,7 @@ function _syncFromTab3(){
         const courtNum = cmd.court || 1;
         if(cmd.ri!=null && cmd.mi!=null){
           _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
-          requestAnimationFrame(()=>_applyMatchStates());
+          requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
         }
       }
 
@@ -5201,7 +5201,7 @@ window.addEventListener('storage', function(e){
     const mv = JSON.parse(e.newValue);
     if(mv.ri!=null && mv.mi!=null){
       _bvApplySelection(courtNum, mv.ri, mv.mi, mv.groupLabel||mv.label||'', mv.domId);
-      requestAnimationFrame(()=>_applyMatchStates());
+      requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
     }
   }catch(err){}
 });
