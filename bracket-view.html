@@ -661,6 +661,10 @@ function _applyBvSelectionHighlights(){
 }
 
 function _bvSave(){
+  // ── bracket-view는 읽기 전용 ──
+  // sgp_groupBrackets / sgp_bracket_temp는 3번탭(_t3Save)만 씀
+  // bracket-view가 덮어쓰면 3번탭이 stale 데이터를 로드하게 되므로 금지
+  // (match 링크 정보 등 bracket-view 자체 변경은 별도 키에 저장)
   try{
     const clean=S.groupBrackets.map(g=>({
       ...g,
@@ -668,10 +672,8 @@ function _bvSave(){
         const {_groupObj,...rest}=m; return rest;
       }))
     }));
-    localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
-    localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
-    // bracket-window.html에도 동기화
-    try{ localStorage.setItem('sgp_step','3'); }catch(ex){}
+    // 공유 키 대신 bracket-view 전용 키에만 저장
+    localStorage.setItem('sgp_bv_local',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
   }catch(ex){}
 }
 
@@ -5054,6 +5056,13 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
         if(cmd.ri!=null && cmd.mi!=null){
           _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
         }
+      }
+
+      // 3번탭 데이터 저장 시 전체 대진표 즉시 동기화
+      if(cmd.type === 'brackets_update' && cmd.groupBrackets && cmd.groupBrackets.length){
+        S.groupBrackets = cmd.groupBrackets;
+        _redrawBracketView();
+        _applyBvColors();
       }
 
       // 승자 선택 후 하이라이트 해제

@@ -36,11 +36,14 @@ function buildTab3(){
 // ── 데이터 로드 ──
 function _t3Load(){
   try {
-    const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
-    if(temp && temp.groupBrackets && temp.groupBrackets.length){
-      _t3Data = temp.groupBrackets;
+    // sgp_groupBrackets 1순위 — bracket-view가 sgp_bracket_temp를 덮을 수 있음
+    const gb = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
+    if(gb && gb.length){
+      _t3Data = gb;
     } else {
-      _t3Data = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
+      // 폴백: sgp_bracket_temp
+      const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
+      _t3Data = (temp && temp.groupBrackets && temp.groupBrackets.length) ? temp.groupBrackets : [];
     }
   } catch(e){ _t3Data = []; }
 
@@ -635,6 +638,13 @@ function _t3Save(){
     }));
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
     localStorage.setItem('sgp_bracket_temp', JSON.stringify({ groupBrackets: clean, savedAt: new Date().toLocaleTimeString() }));
+
+    // BroadcastChannel로도 즉시 전파 — storage 이벤트 누락/타이밍 오류 방지
+    try{
+      const bc = new BroadcastChannel('sgp_cmd');
+      bc.postMessage({ type: 'brackets_update', groupBrackets: clean });
+      bc.close();
+    }catch(ex){}
   } catch(ex){ console.error('t3Save error', ex); }
 }
 
