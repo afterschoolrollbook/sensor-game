@@ -198,6 +198,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <button class="scr-btn active" id="scr-btn-1" onclick="switchScreen(1)">📺 1번</button>
   <button class="scr-btn" id="scr-btn-2" onclick="switchScreen(2)">⚔️ 2번</button>
   <button class="scr-btn" id="scr-btn-3" onclick="switchScreen(3)">🏆 3번</button>
+  <button class="scr-btn" onclick="_syncFromTab3()" title="3번탭 최신 데이터 강제 로드" style="border-color:rgba(76,201,240,.5);color:var(--accent);font-weight:700;">⟳ 동기화</button>
   <button class="scr-btn" onclick="location.reload(true)" title="캐시 무시하고 새로고침" style="border-color:rgba(255,214,10,.4);color:rgba(255,214,10,.7);">↺ 새로고침</button>
 </div>
 
@@ -1050,6 +1051,16 @@ const cleanName=n=>{
   return n.replace(/[()[\]]/g,'').trim()||n;
 };
 
+// ── 3번탭 동기화: sgp_groupBrackets 강제 로드 ──
+function _syncFromTab3(){
+  try{
+    const gb = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
+    if(gb && gb.length && currentScreen===3){
+      refresh3();
+    }
+  }catch(e){}
+}
+
 function handleCmd(cmd){
   if(!cmd)return;
   if(cmd.type==='set_match'){
@@ -1114,6 +1125,10 @@ function handleCmd(cmd){
     if(cmd.court){
       try{ localStorage.removeItem(`sgp_display_vs_court_${cmd.court}`); }catch(e){}
     }
+    if(currentScreen===3) refresh3();
+  }
+  // 3번탭 데이터 저장 시 즉시 대진표 갱신 (3번 화면만)
+  if(cmd.type==='brackets_update'){
     if(currentScreen===3) refresh3();
   }
   if(cmd.type==='timer_start'){

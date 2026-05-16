@@ -68,6 +68,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="setBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="setBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="_refreshSvgLines()" style="padding:4px 10px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:6px;font-size:11px;">🔁 선 새로고침</button>
+        <button onclick="_syncFromTab3()" style="padding:4px 12px;background:rgba(76,201,240,.12);border:1px solid rgba(76,201,240,.5);color:var(--accent);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⟳ 3번탭 동기화</button>
       </div>
     </div>
     <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
@@ -1776,7 +1777,7 @@ function generateAllBrackets(){
     localStorage.setItem('sgp_step','3');
     localStorage.setItem('sgp_courtCount', String(_courtCount||1));
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
-    localStorage.setItem('sgp_groupBrackets', JSON.stringify(S.groupBrackets));
+    // sgp_groupBrackets는 3번탭(_t3Save) 전용 — bracket-view는 쓰지 않음
   }catch(e){}
   // 중간저장 데이터가 있으면 matches만 복원
   try{
@@ -2116,9 +2117,8 @@ function saveBracketTemp(){
       }))
     }));
     const saveData={groupBrackets:clean,savedAt:new Date().toLocaleTimeString()};
-    localStorage.setItem('sgp_bracket_temp', JSON.stringify(saveData));
-    // sgp_groupBrackets도 동시에 갱신 — 새로 불러올 때 연결 정보 유지
-    localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
+    // sgp_groupBrackets / sgp_bracket_temp는 3번탭 전용 → bracket-view 전용 키에만 저장
+    localStorage.setItem('sgp_bv_local', JSON.stringify(saveData));
     toast('중간저장 완료!','success');
   } catch(e){ console.error(e); toast('저장 실패: '+e.message,'error'); }
 }
@@ -2204,7 +2204,7 @@ function applyBracket(){
   // localStorage에 step4 저장 — 새로고침해도 이어서 진행
   try{
     localStorage.setItem('sgp_step','4');
-    localStorage.setItem('sgp_groupBrackets', JSON.stringify(S.groupBrackets));
+    // sgp_groupBrackets는 3번탭 전용 — bracket-view는 쓰지 않음
     localStorage.setItem('sgp_courtCount', String(_courtCount||1));
     localStorage.setItem('sgp_layout', _bracketLayout||'A');
   }catch(e){}
@@ -2243,11 +2243,9 @@ function finalizeBracket(){
 
     // 4) 전광판용 키에 저장 (sgp_bracket_final)
     localStorage.setItem('sgp_bracket_final', JSON.stringify(finalData));
-    // 기존 키들도 동기화
-    localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
+    // sgp_groupBrackets / sgp_bracket_temp는 3번탭 전용 — 여기선 쓰지 않음
     localStorage.setItem('sgp_courtCount', String(finalData.courtCount));
     localStorage.setItem('sgp_layout', finalData.layout);
-    localStorage.setItem('sgp_bracket_temp', JSON.stringify({groupBrackets:clean, savedAt:new Date().toLocaleTimeString()}));
 
     // 5) 부모창에도 알림
     if(window.opener){
@@ -4893,17 +4891,17 @@ window.addEventListener('load', ()=>{
     if(savedLayout) _bracketLayout = savedLayout;
 
     let gb = null;
-    // 1순위: sgp_bracket_temp
+    // 1순위: sgp_groupBrackets — 3번탭이 유일하게 쓰는 키
     try{
-      const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
-      if(temp && temp.groupBrackets && temp.groupBrackets.length) gb = temp.groupBrackets;
+      const raw = localStorage.getItem('sgp_groupBrackets');
+      if(raw){ const parsed=JSON.parse(raw); if(parsed&&parsed.length) gb=parsed; }
     }catch(e){}
-    // 2순위: sgp_groupBrackets
+    // 2순위: sgp_bracket_temp
     if(!gb || !gb.length){
       try{
-        const raw = localStorage.getItem('sgp_groupBrackets');
-        if(raw) gb = JSON.parse(raw);
-      }catch(e){ _showLoadError('sgp_groupBrackets 파싱 오류: '+e.message); return; }
+        const temp = JSON.parse(localStorage.getItem('sgp_bracket_temp') || '{}');
+        if(temp && temp.groupBrackets && temp.groupBrackets.length) gb = temp.groupBrackets;
+      }catch(e){}
     }
     // 3순위: sgp_bracket_final
     if(!gb || !gb.length){
@@ -5043,6 +5041,22 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
   }
 }
 
+// ── 3번탭 동기화: sgp_groupBrackets에서 최신 데이터 강제 로드 ──
+function _syncFromTab3(){
+  try{
+    const gb = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
+    if(gb && gb.length){
+      S.groupBrackets = gb;
+      _redrawBracketView();
+      _applyBvColors();
+      if(typeof _applyBvSelectionHighlights==='function') _applyBvSelectionHighlights();
+      toast('3번탭 동기화 완료', 'success');
+    } else {
+      toast('3번탭 데이터 없음', 'error');
+    }
+  }catch(e){ toast('동기화 실패: '+e.message, 'error'); }
+}
+
 // BroadcastChannel: 3번탭 경기 선택 / 하이라이트 해제 실시간 수신
 (function(){
   try{
@@ -5063,6 +5077,7 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
         S.groupBrackets = cmd.groupBrackets;
         _redrawBracketView();
         _applyBvColors();
+        if(typeof _applyBvSelectionHighlights==='function') _applyBvSelectionHighlights();
       }
 
       // 승자 선택 후 하이라이트 해제
