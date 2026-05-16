@@ -65,7 +65,7 @@ function _t3Load(){
   _t3Render();
 }
 
-function _t3Reload(){ _t3Load(); }
+function _t3Reload(){ _t3Load(); _t3Save(); }
 
 // ── 오프셋 계산 (경기장+라운드 내 연번) ──
 function _t3ComputeOffsets(){
