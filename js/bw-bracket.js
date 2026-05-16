@@ -245,8 +245,10 @@ function _redrawBracketView(){
       const seqNum=offset+mi+1;
       const label=`${courtN}-${ri+1}-${seqNum}`;
       const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
-      const p1n=(m.p1&&m.p1.name)||'?';
-      const p2n=(m.p2&&m.p2.name)||'?';
+      const hiding=!!window._hideNames;
+      const stripName=n=>hiding?(n||'').replace(/\s*\(.*\)$/,'').trim()||n:n;
+      const p1n=stripName((m.p1&&m.p1.name)||'?');
+      const p2n=stripName((m.p2&&m.p2.name)||'?');
       const isBye=m.p1&&!m.p2;
       const isDone=!!m.winner;
       const isW1=isDone&&m.winner&&m.winner.name===p1n;
