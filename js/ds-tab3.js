@@ -602,16 +602,17 @@ function _t3CancelWinner(g, gi, ri, mi, courtNum){
 function _t3CancelCascade(g, ri, mi, cancelledName){
   if(!g.matches[ri + 1]) return;
   const key = `${ri}-${mi}`;
+  const courtN = g.court || 1;
 
   g.matches[ri + 1].forEach((nm, nextMi) => {
     let affected = false;
 
     // fromA/fromB 기반 매칭
     if(nm.fromA === key && nm.p1){
-      nm.p1.name = `${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+      nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
     }
     if(nm.fromB === key && nm.p2){
-      nm.p2.name = `${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+      nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
     }
 
     // fromA/fromB 없을 때 수학 폴백
@@ -619,9 +620,9 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
       const expMi = Math.floor(mi / 2);
       if(nextMi === expMi){
         if(mi % 2 === 0 && nm.p1 && nm.p1.name === cancelledName){
-          nm.p1.name = `${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+          nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
         } else if(mi % 2 === 1 && nm.p2 && nm.p2.name === cancelledName){
-          nm.p2.name = `${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+          nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
         }
       }
     }
