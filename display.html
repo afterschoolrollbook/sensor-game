@@ -763,7 +763,6 @@ function _applyBracketColors(view, groups){
   groups.forEach(g=>{
     const court=g.court||1;
     const shortLabel=g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
-    // data-court + data-group-label 로 해당 경기장 그룹 래퍼 정확히 찾기
     const wraps=view.querySelectorAll(`[data-court="${court}"]`);
     let wrap=null;
     wraps.forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
@@ -774,31 +773,27 @@ function _applyBracketColors(view, groups){
         if(!p1ci&&!p2ci) return;
         const box=wrap
           ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
-          : null;
+          : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1];
         if(!box) return;
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
         box.querySelectorAll('span').forEach(span=>{
-          if(span.classList.contains('d3-cdot')||span.classList.contains('bv-live')||span.classList.contains('bv-trophy-row')) return;
+          if(span.classList.contains('bv-live')||span.classList.contains('bv-cdot')) return;
           const txt=(span.textContent||'').replace('🏆','').trim();
           let ci=0, isP2=false;
           if(p1n&&txt===p1n) ci=p1ci;
           else if(p2n&&txt===p2n){ ci=p2ci; isP2=true; }
           if(!ci) return;
           if(!m.winner) span.style.color=_CC[ci];
-          // dot을 span 밖(옆)에 추가 — bracket-view _applyBvColors 방식
-          if(!span.parentNode.querySelector('.d3-cdot[data-for="'+txt+'"]')){
+          if(!span.querySelector('.bv-cdot')){
             const dot=document.createElement('span');
-            dot.className='d3-cdot';
-            dot.dataset.for=txt;
+            dot.className='bv-cdot';
             if(isP2){
-              // p2: 이름 앞에
               dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
-              span.parentNode.insertBefore(dot, span);
+              span.insertBefore(dot, span.firstChild);
             } else {
-              // p1: 이름 뒤에
               dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
-              span.parentNode.insertBefore(dot, span.nextSibling);
+              span.appendChild(dot);
             }
           }
         });
@@ -839,9 +834,14 @@ function _applyBracketBadges(view, groups){
         // 승자 초록 / 패자 흐림
         box.querySelectorAll('span').forEach(span=>{
           if(span.dataset.bvDone) return;
+          if(span.classList.contains('bv-cdot')||span.classList.contains('bv-live')) return;
+          // bv-cdot이 span 안에 있으면 textContent에서 제거
           const txt=(span.textContent||'').trim();
-          if(!txt||txt==='VS'||txt==='BYE') return;
-          if(txt===m.winner.name){ span.style.color='#06d6a0'; span.style.fontWeight='700'; span.dataset.bvDone='1'; }
+          // 실제 이름만 추출 (bv-cdot textContent는 빈 문자열이므로 trim으로 충분)
+          const cleanTxt=Array.from(span.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+          const matchName=cleanTxt||txt;
+          if(!matchName||matchName==='VS'||matchName==='BYE') return;
+          if(matchName===m.winner.name){ span.style.color='#06d6a0'; span.style.fontWeight='700'; span.dataset.bvDone='1'; }
           else { span.style.color='#555'; span.dataset.bvDone='1'; }
         });
       });
