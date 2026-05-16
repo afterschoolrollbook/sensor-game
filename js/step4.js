@@ -474,6 +474,11 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const totalSlotH=r0len*SLOT_H;
 
   rounds.forEach((matches,ri)=>{
+    // ── 위치 기반 경기 순위 (위→아래 순서로 번호 배정) ──
+    const _posRankMap={};
+    [...matches.map((_,mi)=>({mi,cy:calcCy(ri,mi)}))]
+      .sort((a,b)=>a.cy-b.cy)
+      .forEach((item,rank)=>{ _posRankMap[item.mi]=rank; });
     const col=document.createElement('div');
     col.dataset.col=ri;
     col.style.cssText=`display:flex;flex-direction:column;height:100%;width:${BRACKET_CARD_W}px;flex-shrink:0;`; // ← step4.js 상단 BRACKET_CARD_W 참조
@@ -529,7 +534,8 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
 
       // 경기 레이블: 경기장번호-라운드번호-번경기 (예: 1-1-1)
       const _courtNum=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
-      const _seqNum=(m._seqMi!=null?m._seqMi:mi)+1;
+      const _roundOff=(m._seqMi!=null)?m._seqMi-mi:0;
+      const _seqNum=_roundOff+(_posRankMap[mi]??mi)+1;
       const grpLabel=m._groupLabel||null;
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:_seqNum;
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${_seqNum}경기`;
@@ -770,6 +776,11 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
 
   renderOrder.forEach((ri)=>{
     const matches=rounds[ri];
+    // ── 위치 기반 경기 순위 (왼→오른쪽 순서로 번호 배정) ──
+    const _posRankMapV={};
+    [...matches.map((_,mi)=>({mi,cx:calcCx(ri,mi)}))]
+      .sort((a,b)=>a.cx-b.cx)
+      .forEach((item,rank)=>{ _posRankMapV[item.mi]=rank; });
     const rName=ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
 
     const rowWrap=document.createElement('div');
@@ -817,7 +828,8 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       const header=document.createElement('div');
       header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
       const _courtNum=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
-      const _seqNum=(m._seqMi!=null?m._seqMi:mi)+1;
+      const _roundOffV=(m._seqMi!=null)?m._seqMi-mi:0;
+      const _seqNum=_roundOffV+(_posRankMapV[mi]??mi)+1;
       const grpLabel=m._groupLabel||null;
       const grpIdx=(m._matchIdx!=null)?m._matchIdx:_seqNum;
       const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${_seqNum}경기`;
