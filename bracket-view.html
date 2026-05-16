@@ -395,14 +395,6 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
   const isPending=!isDone&&(m.p1?.tbd||m.p2?.tbd);
   const courtNum=g.court||1;
 
-  // ── 현재 경기 선택 (항상 표시) ──
-  if(!isPending){
-    modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
-      _bvCurrentMatch[courtNum]={gi,ri,mi};
-      _redrawBracketView();
-    },'미리보기 · 전광판 하이라이트'));
-  }
-
   // ── BYE 부전승 진출 버튼 ──
   if(isBye&&!isDone){
     const divBye=document.createElement('div');
