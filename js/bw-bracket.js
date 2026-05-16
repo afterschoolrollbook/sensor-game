@@ -281,7 +281,7 @@ function _redrawBracketView(){
       outerWrap.appendChild(mkLabel('// 경기장 2'));
       const botSec=document.createElement('div');
       botSec.style.cssText='display:flex;flex-wrap:wrap;align-items:flex-start;';
-      bGroups.forEach(g=>botSec.appendChild(mkSection(g,'bottom')));
+      bGroups.forEach(g=>botSec.appendChild(mkSection(g,'top')));
       outerWrap.appendChild(botSec);
     }
 
