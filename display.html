@@ -937,6 +937,18 @@ function triggerCountdown(){
 
 let _winnerTimer=null;
 function showWinner(name,time,court,matchLabel,shortLabel,seqNum){
+  // ── 폴백: set_match에서 저장한 경기 정보 활용 (구버전 ds-tab3.js 호환) ──
+  if(!court || !matchLabel){
+    const fallbackCourt = court || window._d3LastMatchCourt;
+    const last = fallbackCourt && window._d3LastMatch ? window._d3LastMatch[fallbackCourt] : null;
+    if(last){
+      court      = court      || last.court;
+      matchLabel = matchLabel || last.matchLabel;
+      shortLabel = shortLabel || last.shortLabel;
+      seqNum     = seqNum     || last.seqNum;
+    }
+  }
+
   // 이름 정리: 번호 접두사(1-2, 3번 등)·괄호 제거
   const _cleanWinName=n=>{
     if(!n||n==='—') return n||'—';
@@ -1012,6 +1024,21 @@ function handleCmd(cmd){
     if(_wb) _wb.classList.remove('show');
     if(_ov) _ov.classList.remove('show');
     if(_winnerTimer){clearTimeout(_winnerTimer);_winnerTimer=null;}
+
+    // ── winner 표시용 폴백: 경기 정보 저장 ──
+    if(cmd.court){
+      window._d3LastMatch = window._d3LastMatch || {};
+      const _gl = cmd.groupLabel || cmd.label || '';
+      const _sl = _gl.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+      const _ml = cmd.matchLabel || '';
+      window._d3LastMatch[cmd.court] = {
+        court: cmd.court,
+        matchLabel: _ml,
+        shortLabel: _sl,
+        seqNum: _ml ? _ml.split('-').pop() : ''
+      };
+      window._d3LastMatchCourt = cmd.court;
+    }
 
     const p1=cleanName(cmd.p1||'—'), p2=cleanName(cmd.p2||'—');
 
