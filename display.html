@@ -188,7 +188,6 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <div id="countdown-go">GO!</div>
 </div>
 <div id="winner-overlay">
-  <div class="w-trophy">🏆</div>
   <div class="w-badge">승리! 진출!</div>
   <div class="w-name" id="w-name">—</div>
   <div class="w-time" id="w-time"></div>
@@ -909,7 +908,12 @@ function triggerCountdown(){
 
 let _winnerTimer=null;
 function showWinner(name,time){
-  _set('w-name',name||'—'); _set('w-time',time||'');
+  // 이름 정리: 번호 접두사(1-2, 3번 등)·괄호 제거
+  const _cleanWinName=n=>{
+    if(!n||n==='—') return n||'—';
+    return n.replace(/^\d+-\d+\s*/,'').replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n;
+  };
+  _set('w-name',_cleanWinName(name)||'—'); _set('w-time',time||'');
   const ov=document.getElementById('winner-overlay');
   const wb=document.getElementById('waiting-next');
   // 이전 타이머 취소
