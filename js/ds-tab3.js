@@ -19,7 +19,7 @@ function buildTab3(){
   toolbar.innerHTML = `
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;">// BRACKET</span>
     <span style="font-size:11px;color:var(--text3);flex:1;">경기 선택 후 2번 전광판에 표시 · 승자 선택 시 다음 라운드 자동 반영</span>
-    <button onclick="_t3Reload()" style="padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;">↺ 새로고침</button>
+    <button id="t3-reload-btn" onclick="_t3Reload(this)" style="padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;">↺ 새로고침</button>
     <button onclick="window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no')" style="padding:3px 10px;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;">⤢ 크게 보기</button>
   `;
   container.appendChild(toolbar);
@@ -65,7 +65,14 @@ function _t3Load(){
   _t3Render();
 }
 
-function _t3Reload(){ _t3Load(); _t3Save(); }
+function _t3Reload(btn){
+  if(btn){ btn.textContent='⏳ 로딩중...'; btn.disabled=true; }
+  _t3Load();
+  _t3Save();
+  setTimeout(()=>{
+    if(btn){ btn.textContent='↺ 새로고침'; btn.disabled=false; }
+  }, 600);
+}
 
 // ── 오프셋 계산 (경기장+라운드 내 연번) ──
 function _t3ComputeOffsets(){
