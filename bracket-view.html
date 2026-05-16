@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>대진표 보기 — SGP</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -75,7 +78,15 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
 <div id="tc"></div>
 
 <!-- step4.js 로드: generateBracket, renderBracketA~E 함수 사용 -->
-<script src="js/step4.js"></script>
+<!-- 캐시 무효화 -->
+<script>
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+    });
+  }
+  document.write('<scr'+'ipt src="js/step4.js?v='+Date.now()+'"><\/scr'+'ipt>');
+</script>
 <script>
 // generateBracket은 step4.js 원본 그대로 사용
 // 대진표 설정 화면에서는 현재 경기 강조 표시 비활성화
@@ -5030,27 +5041,57 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
   }
 }
 
-// BroadcastChannel: 3번탭 경기 선택 실시간 수신
+// BroadcastChannel: 3번탭 경기 선택 / 하이라이트 해제 실시간 수신
 (function(){
   try{
     const bc = new BroadcastChannel('sgp_cmd');
     bc.onmessage = function(e){
       const cmd = e.data;
-      if(!cmd || cmd.type !== 'set_match') return;
-      const courtNum = cmd.court || 1;
-      if(cmd.ri!=null && cmd.mi!=null){
-        _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
+      if(!cmd) return;
+
+      if(cmd.type === 'set_match'){
+        const courtNum = cmd.court || 1;
+        if(cmd.ri!=null && cmd.mi!=null){
+          _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
+        }
+      }
+
+      // 승자 선택 후 하이라이트 해제
+      if(cmd.type === 'clear_match'){
+        const courtNum = cmd.court || 1;
+        delete _bvCurrentMatch[courtNum];
+        const courtStr = String(courtNum);
+        const prev = _selectedMatchByCourt[courtStr];
+        if(prev){
+          const el = document.querySelector('[data-match-id="'+prev+'"]');
+          if(el){ el.style.outline=''; el.style.boxShadow=''; }
+          delete _selectedMatchByCourt[courtStr];
+        }
+        _redrawBracketView();
       }
     };
   }catch(e){}
 })();
 
-// storage 이벤트: sgp_display_vs_court_N 변경 시 하이라이트 동기화
+// storage 이벤트: sgp_display_vs_court_N 변경/삭제 시 하이라이트 동기화
 window.addEventListener('storage', function(e){
   if(!e.key || !e.key.startsWith('sgp_display_vs_court_')) return;
   try{
     const courtNum = parseInt(e.key.replace('sgp_display_vs_court_',''));
-    const mv = JSON.parse(e.newValue||'{}');
+    // 키 삭제(newValue=null) → 하이라이트 해제
+    if(!e.newValue){
+      delete _bvCurrentMatch[courtNum];
+      const courtStr = String(courtNum);
+      const prev = _selectedMatchByCourt[courtStr];
+      if(prev){
+        const el = document.querySelector('[data-match-id="'+prev+'"]');
+        if(el){ el.style.outline=''; el.style.boxShadow=''; }
+        delete _selectedMatchByCourt[courtStr];
+      }
+      _redrawBracketView();
+      return;
+    }
+    const mv = JSON.parse(e.newValue);
     if(mv.ri!=null && mv.mi!=null){
       _bvApplySelection(courtNum, mv.ri, mv.mi, mv.groupLabel||mv.label||'', mv.domId);
     }

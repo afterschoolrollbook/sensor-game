@@ -567,28 +567,59 @@ function _t3AdvanceBye(g, gi, ri, mi, courtNum){
   _t3Render();
 }
 
-// ── 결과 취소 ──
+// ── 결과 취소 (다음 라운드 cascade 취소 포함) ──
 function _t3CancelWinner(g, gi, ri, mi, courtNum){
   const m = g.matches[ri][mi];
   if(!m.winner) return;
+  const cancelledName = m.winner.name;
   delete m.winner;
 
-  // 다음 라운드 tbd 복원
-  const key = `${ri}-${mi}`;
-  if(g.matches[ri + 1]){
-    g.matches[ri + 1].forEach(nm => {
-      if(nm.fromA === key && nm.p1){ nm.p1.name = `${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; }
-      if(nm.fromB === key && nm.p2){ nm.p2.name = `${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; }
-    });
-  }
+  // 다음 라운드 tbd 복원 + cascade (다중 라운드 연쇄 취소)
+  _t3CancelCascade(g, ri, mi, cancelledName);
 
-  const cur2 = _t3CurrentMatch[courtNum];
-  if(cur2 && cur2.gi===gi && cur2.ri===ri && cur2.mi===mi){
+  const cur = _t3CurrentMatch[courtNum];
+  if(cur && cur.gi===gi && cur.ri===ri && cur.mi===mi){
     delete _t3CurrentMatch[courtNum];
   }
 
   _t3Save();
   _t3Render();
+}
+
+// ── cascade 취소: 취소된 선수가 다음 라운드에도 기록돼 있으면 재귀 제거 ──
+function _t3CancelCascade(g, ri, mi, cancelledName){
+  if(!g.matches[ri + 1]) return;
+  const key = `${ri}-${mi}`;
+
+  g.matches[ri + 1].forEach((nm, nextMi) => {
+    let affected = false;
+
+    // fromA/fromB 기반 매칭
+    if(nm.fromA === key && nm.p1){
+      nm.p1.name = `${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+    }
+    if(nm.fromB === key && nm.p2){
+      nm.p2.name = `${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+    }
+
+    // fromA/fromB 없을 때 수학 폴백
+    if(!nm.fromA && !nm.fromB){
+      const expMi = Math.floor(mi / 2);
+      if(nextMi === expMi){
+        if(mi % 2 === 0 && nm.p1 && nm.p1.name === cancelledName){
+          nm.p1.name = `${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+        } else if(mi % 2 === 1 && nm.p2 && nm.p2.name === cancelledName){
+          nm.p2.name = `${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+        }
+      }
+    }
+
+    // 다음 라운드 경기도 이 선수가 승자였다면 연쇄 취소
+    if(affected && nm.winner && nm.winner.name === cancelledName){
+      delete nm.winner;
+      _t3CancelCascade(g, ri + 1, nextMi, cancelledName);
+    }
+  });
 }
 
 // ── localStorage 저장 → 새창 대진표 자동 갱신 ──
