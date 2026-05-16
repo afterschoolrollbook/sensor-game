@@ -121,8 +121,8 @@ function _computeSeqOffsets(){
 function _redrawBracketView(){
   if(!_IS_EMBED){
     _redrawBracketViewTree();
-    // 트리뷰 DOM 안정화 후 색상 적용
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ _applyBvColors(); }));
+    // 트리뷰 DOM 안정화 후 색상 + 상태(트로피/LIVE/색상) 복원
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); }));
     return;
   }
 
