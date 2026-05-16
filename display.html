@@ -937,7 +937,7 @@ function triggerCountdown(){
 
 let _winnerTimer=null;
 function showWinner(name,time,court,matchLabel,shortLabel,seqNum){
-  // ── 폴백: set_match에서 저장한 경기 정보 활용 (구버전 ds-tab3.js 호환) ──
+  // ── 폴백 1: 메모리 변수 (_d3LastMatch) ──
   if(!court || !matchLabel){
     const fallbackCourt = court || window._d3LastMatchCourt;
     const last = fallbackCourt && window._d3LastMatch ? window._d3LastMatch[fallbackCourt] : null;
@@ -947,6 +947,34 @@ function showWinner(name,time,court,matchLabel,shortLabel,seqNum){
       shortLabel = shortLabel || last.shortLabel;
       seqNum     = seqNum     || last.seqNum;
     }
+  }
+
+  // ── 폴백 2: localStorage 직접 조회 (이름 매칭) ──
+  if(!court || !matchLabel){
+    const _cln=n=>(n||'').replace(/^\d+-\d+\s*/,'').replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim().toLowerCase();
+    const winClean=_cln(name);
+    for(let c=1;c<=8;c++){
+      try{
+        const stored=localStorage.getItem(`sgp_display_vs_court_${c}`);
+        if(!stored) continue;
+        const mv=JSON.parse(stored);
+        if(!mv.court) continue;
+        const p1c=_cln(mv.p1||''), p2c=_cln(mv.p2||'');
+        if(winClean && (p1c===winClean || p2c===winClean || !p1c)){
+          court      = court      || mv.court;
+          matchLabel = matchLabel || mv.matchLabel || '';
+          const gl   = mv.groupLabel || '';
+          shortLabel = shortLabel || gl.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+          seqNum     = seqNum     || (matchLabel ? matchLabel.split('-').pop() : '');
+          break;
+        }
+      }catch(e){}
+    }
+  }
+
+  // ── 폴백 3: 마지막 수단 — 경기장 번호라도 표시 ──
+  if(!court && window._d3LastMatchCourt){
+    court = window._d3LastMatchCourt;
   }
 
   // 이름 정리: 번호 접두사(1-2, 3번 등)·괄호 제거
@@ -1148,6 +1176,30 @@ startClock();
 document.getElementById('screen-1').classList.add('visible');
 // 저장된 2번 모드 복원
 try{ const m=localStorage.getItem('sgp_d2_mode'); _d2ApplyMode(m&&m!=='single'?m:'court_1'); }catch(e){}
+
+// ── 페이지 로드 시 localStorage → _d3LastMatch 복원 ──
+// (새로고침/재시작 후에도 경기 정보 유지)
+(function(){
+  window._d3LastMatch = window._d3LastMatch || {};
+  for(let c=1;c<=8;c++){
+    try{
+      const stored=localStorage.getItem(`sgp_display_vs_court_${c}`);
+      if(!stored) continue;
+      const mv=JSON.parse(stored);
+      if(!mv.court) continue;
+      const gl=mv.groupLabel||'';
+      const sl=gl.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+      const ml=mv.matchLabel||'';
+      window._d3LastMatch[mv.court]={
+        court:mv.court,
+        matchLabel:ml,
+        shortLabel:sl,
+        seqNum:ml?ml.split('-').pop():''
+      };
+      window._d3LastMatchCourt=mv.court;
+    }catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
