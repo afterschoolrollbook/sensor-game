@@ -177,20 +177,14 @@ function _t3Render(){
 
 // ── 2줄 경기 카드 ──
 function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
+  const isDone = !!m.winner || _t3HasWinnerInNext(g, ri, mi);
+  // isDone이면 현재경기에서 즉시 해제
+  if(isDone && _t3CurrentMatch[courtNum]){
+    const _c = _t3CurrentMatch[courtNum];
+    if(_c.gi===gi && _c.ri===ri && _c.mi===mi) delete _t3CurrentMatch[courtNum];
+  }
   const cur = _t3CurrentMatch[courtNum];
   const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
-  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
-  const _nextHasWinner = ()=>{
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(!nextRound) return false;
-    for(const nm of nextRound){
-      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-    }
-    return false;
-  };
-  const isDone = !!m.winner || _nextHasWinner();
   const isBye = m.p1 && !m.p2;
   const p1tbd = m.p1 && m.p1.tbd;
   const p2tbd = m.p2 && m.p2.tbd;
@@ -310,24 +304,43 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 
 
+
+// ── 다음 라운드에서 승자 이름 역추적 ──
+function _t3GetWinnerFromNext(g, ri, mi){
+  const nextRound = g.matches[ri+1];
+  if(!nextRound) return null;
+  const key = `${ri}-${mi}`;
+  for(let ni=0; ni<nextRound.length; ni++){
+    const nm = nextRound[ni];
+    if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+    if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+    if(!nm.fromA && !nm.fromB){
+      const expMi = Math.floor(mi/2);
+      if(ni===expMi){
+        if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+        if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+      }
+    }
+  }
+  return null;
+}
+
+// ── 다음 라운드에 승자가 배정됐는지 여부 ──
+function _t3HasWinnerInNext(g, ri, mi){
+  return !!_t3GetWinnerFromNext(g, ri, mi);
+}
 // ── 모달 ──
 function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   document.getElementById('t3-modal')?.remove();
 
-  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
-  const _hasWinnerInNextRound = ()=>{
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(!nextRound) return false;
-    for(const nm of nextRound){
-      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-    }
-    return false;
-  };
-  const isDone = !!m.winner || _hasWinnerInNextRound();
+  const isDone = !!m.winner || _t3HasWinnerInNext(g, ri, mi);
   const isBye = m.p1 && !m.p2;
   const isPending = !isDone && (m.p1 && m.p1.tbd || m.p2 && m.p2.tbd);
+  // 승자 있는데 현재경기로 설정돼 있으면 즉시 해제
+  if(isDone && _t3CurrentMatch[courtNum]){
+    const _c = _t3CurrentMatch[courtNum];
+    if(_c.gi===gi && _c.ri===ri && _c.mi===mi) delete _t3CurrentMatch[courtNum];
+  }
   const _cur = _t3CurrentMatch[courtNum];
   const isCur = _cur && _cur.gi===gi && _cur.ri===ri && _cur.mi===mi;
   const p1n = (m.p1 && m.p1.name) || '—';
@@ -389,8 +402,8 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     mbody.appendChild(info);
   }
 
-  // ── 현재 경기 선택 ──
-  if(!isPending){
+  // ── 현재 경기 선택 (승자 있으면 불가) ──
+  if(!isPending && !isDone){
     mbody.appendChild(mkBtn('▶', '현재 경기 선택', 'var(--accent)', 'rgba(76,201,240,.1)', () => {
       _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, label, courtNum);
     }, '미리보기 · 전광판 하이라이트'));
@@ -511,10 +524,20 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum, matchLabel, shortLabel)
   // 다음 라운드 해당 슬롯에 승자 이름 채우기
   const key = `${ri}-${mi}`;
   if(g.matches[ri + 1]){
+    let updated = false;
     g.matches[ri + 1].forEach(nm => {
-      if(nm.fromA === key && nm.p1){ nm.p1.name = winner.name; nm.p1.tbd = false; }
-      if(nm.fromB === key && nm.p2){ nm.p2.name = winner.name; nm.p2.tbd = false; }
+      if(nm.fromA === key && nm.p1){ nm.p1.name = winner.name; nm.p1.tbd = false; updated = true; }
+      if(nm.fromB === key && nm.p2){ nm.p2.name = winner.name; nm.p2.tbd = false; updated = true; }
     });
+    // fromA/fromB 없을 때 수학 폴백
+    if(!updated){
+      const nextMi = Math.floor(mi / 2);
+      const nextMatch = g.matches[ri + 1][nextMi];
+      if(nextMatch){
+        if(mi % 2 === 0 && nextMatch.p1){ nextMatch.p1.name = winner.name; nextMatch.p1.tbd = false; }
+        else if(mi % 2 === 1 && nextMatch.p2){ nextMatch.p2.name = winner.name; nextMatch.p2.tbd = false; }
+      }
+    }
   }
 
   // 현재경기였으면 해당 경기장만 해제
@@ -604,18 +627,8 @@ function _t3AdvanceBye(g, gi, ri, mi, courtNum, matchLabel, shortLabel){
 // ── 결과 취소 (다음 라운드 cascade 취소 포함) ──
 function _t3CancelWinner(g, gi, ri, mi, courtNum){
   const m = g.matches[ri][mi];
-  // winner가 없어도 다음 라운드에서 승자 이름 역추적
-  let cancelledName = m.winner ? m.winner.name : null;
-  if(!cancelledName){
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(nextRound){
-      for(const nm of nextRound){
-        if(nm.fromA===key && nm.p1 && !nm.p1.tbd) { cancelledName = nm.p1.name; break; }
-        if(nm.fromB===key && nm.p2 && !nm.p2.tbd) { cancelledName = nm.p2.name; break; }
-      }
-    }
-  }
+  // winner 없어도 다음 라운드에서 승자 이름 역추적
+  const cancelledName = m.winner ? m.winner.name : _t3GetWinnerFromNext(g, ri, mi);
   if(!cancelledName) return;
   delete m.winner;
 
@@ -636,16 +649,26 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
   if(!g.matches[ri + 1]) return;
   const key = `${ri}-${mi}`;
   const courtN = g.court || 1;
+  // fromA/fromB로 원래 이름 계산
+  const _origName = (fromKey) => {
+    if(!fromKey) return null;
+    const parts = fromKey.split('-');
+    if(parts.length >= 2){
+      const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
+      if(!isNaN(fRi) && !isNaN(fMi)) return `${courtN}-${fRi+1}-${fMi+1} 승자`;
+    }
+    return null;
+  };
 
   g.matches[ri + 1].forEach((nm, nextMi) => {
     let affected = false;
 
-    // fromA/fromB 기반 매칭
+    // fromA/fromB 기반 매칭 → 원래 이름으로 복원
     if(nm.fromA === key && nm.p1){
-      nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+      nm.p1.name = _origName(nm.fromA) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
     }
     if(nm.fromB === key && nm.p2){
-      nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+      nm.p2.name = _origName(nm.fromB) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
     }
 
     // fromA/fromB 없을 때 수학 폴백
@@ -661,9 +684,12 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
     }
 
     // 다음 라운드 경기도 이 선수가 승자였다면 연쇄 취소
-    if(affected && nm.winner && nm.winner.name === cancelledName){
-      delete nm.winner;
-      _t3CancelCascade(g, ri + 1, nextMi, cancelledName);
+    if(affected){
+      const nextCancelledName = nm.winner ? nm.winner.name : _t3GetWinnerFromNext(g, ri+1, nextMi);
+      if(nextCancelledName){
+        delete nm.winner;
+        _t3CancelCascade(g, ri + 1, nextMi, nextCancelledName);
+      }
     }
   });
 }
@@ -675,24 +701,17 @@ function _t3Save(){
       ...g,
       matches: g.matches.map(round => round.map(m => {
         const { _t3Offset, _groupObj, ...rest } = m;
-        // fromA/fromB 기반으로 tbd 이름 보정 (경기장 번호 누락 방어)
         const courtN = g.court || 1;
         const fixName = (p, fromKey) => {
           if(!p || !p.tbd || !fromKey) return p;
           const parts = fromKey.split('-');
           if(parts.length >= 2){
             const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
-            if(!isNaN(fRi) && !isNaN(fMi)){
-              return { ...p, name: `${courtN}-${fRi+1}-${fMi+1} 승자` };
-            }
+            if(!isNaN(fRi) && !isNaN(fMi)) return { ...p, name: `${courtN}-${fRi+1}-${fMi+1} 승자` };
           }
           return p;
         };
-        return {
-          ...rest,
-          p1: fixName(rest.p1, rest.fromA),
-          p2: fixName(rest.p2, rest.fromB),
-        };
+        return { ...rest, p1: fixName(rest.p1, rest.fromA), p2: fixName(rest.p2, rest.fromB) };
       }))
     }));
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
