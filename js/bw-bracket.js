@@ -238,16 +238,17 @@ function _redrawBracketView(){
 
     const mkLabel=(txt)=>{
       const d=document.createElement('div');
-      d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;';
+      d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
       d.textContent=txt;
       return d;
     };
 
+    // D의 mkSection과 동일 — 그룹별 브라켓 트리
     const mkSection=(g)=>{
       const labelParts=g.label.split('/').map(s=>s.trim());
       const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
       const sec=document.createElement('div');
-      sec.style.cssText='display:inline-flex;flex-direction:column;flex-shrink:0;min-width:max-content;margin-bottom:16px;margin-right:24px;';
+      sec.style.cssText='display:inline-flex;flex-direction:column;flex-shrink:0;min-width:max-content;margin-right:24px;';
       const hdr=document.createElement('div');
       hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
       hdr.textContent=shortLabel;
@@ -258,31 +259,31 @@ function _redrawBracketView(){
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
       );
       S.matches=taggedMatches;
-      _renderBracketHTML(groupWrap, taggedMatches, 'top', false);
+      _renderBracketHTML(groupWrap,taggedMatches,'top',false);
       _stripInnerScroll(groupWrap);
       sec.appendChild(groupWrap);
       return sec;
     };
 
-    // ── 경기장 1 (위) ──
+    // 경기장 1 (위) — 그룹들 가로로 나열
     outerWrap.appendChild(mkLabel('// 경기장 1'));
-    const topSec=document.createElement('div');
-    topSec.style.cssText='display:flex;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
-    tGroups.forEach(g=>topSec.appendChild(mkSection(g)));
-    outerWrap.appendChild(topSec);
+    const topRow=document.createElement('div');
+    topRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;margin-bottom:20px;';
+    tGroups.forEach(g=>topRow.appendChild(mkSection(g)));
+    outerWrap.appendChild(topRow);
 
-    // ── 구분선 ──
-    const divider=document.createElement('div');
-    divider.style.cssText='border-top:2px dashed var(--border2);margin:16px 0;min-width:max-content;';
-    outerWrap.appendChild(divider);
-
-    // ── 경기장 2 (아래) ──
+    // 구분선
     if(bGroups.length){
+      const divider=document.createElement('div');
+      divider.style.cssText='border-top:2px dashed var(--border2);margin:8px 0 20px;min-width:max-content;';
+      outerWrap.appendChild(divider);
+
+      // 경기장 2 (아래) — 그룹들 가로로 나열
       outerWrap.appendChild(mkLabel('// 경기장 2'));
-      const botSec=document.createElement('div');
-      botSec.style.cssText='display:flex;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
-      bGroups.forEach(g=>botSec.appendChild(mkSection(g)));
-      outerWrap.appendChild(botSec);
+      const botRow=document.createElement('div');
+      botRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
+      bGroups.forEach(g=>botRow.appendChild(mkSection(g)));
+      outerWrap.appendChild(botRow);
     }
 
     view.appendChild(outerWrap);
