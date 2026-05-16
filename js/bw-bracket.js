@@ -231,7 +231,7 @@ function _redrawBracketView(){
     view.style.padding='12px';
 
     const outerWrap=document.createElement('div');
-    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;';
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
@@ -243,7 +243,7 @@ function _redrawBracketView(){
       return d;
     };
 
-    const mkSection=(g, direction)=>{
+    const mkSection=(g)=>{
       const labelParts=g.label.split('/').map(s=>s.trim());
       const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
       const sec=document.createElement('div');
@@ -258,7 +258,7 @@ function _redrawBracketView(){
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
       );
       S.matches=taggedMatches;
-      _renderBracketHTML(groupWrap, taggedMatches, direction, false);
+      _renderBracketHTML(groupWrap, taggedMatches, 'top', false);
       _stripInnerScroll(groupWrap);
       sec.appendChild(groupWrap);
       return sec;
@@ -267,21 +267,21 @@ function _redrawBracketView(){
     // ── 경기장 1 (위) ──
     outerWrap.appendChild(mkLabel('// 경기장 1'));
     const topSec=document.createElement('div');
-    topSec.style.cssText='display:flex;flex-wrap:wrap;align-items:flex-start;';
-    tGroups.forEach(g=>topSec.appendChild(mkSection(g,'top')));
+    topSec.style.cssText='display:flex;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
+    tGroups.forEach(g=>topSec.appendChild(mkSection(g)));
     outerWrap.appendChild(topSec);
 
     // ── 구분선 ──
     const divider=document.createElement('div');
-    divider.style.cssText='border-top:2px dashed var(--border2);margin:16px 0;';
+    divider.style.cssText='border-top:2px dashed var(--border2);margin:16px 0;min-width:max-content;';
     outerWrap.appendChild(divider);
 
     // ── 경기장 2 (아래) ──
     if(bGroups.length){
       outerWrap.appendChild(mkLabel('// 경기장 2'));
       const botSec=document.createElement('div');
-      botSec.style.cssText='display:flex;flex-wrap:wrap;align-items:flex-start;';
-      bGroups.forEach(g=>botSec.appendChild(mkSection(g,'top')));
+      botSec.style.cssText='display:flex;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
+      bGroups.forEach(g=>botSec.appendChild(mkSection(g)));
       outerWrap.appendChild(botSec);
     }
 
