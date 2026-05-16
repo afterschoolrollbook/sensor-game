@@ -692,7 +692,12 @@ window.addEventListener('storage',e=>{
   if(e.key==='sgp_groupBrackets'){
     try{
       const gb=JSON.parse(e.newValue||'[]');
-      if(gb.length){ S.groupBrackets=gb; _redrawBracketView(); }
+      if(gb.length){
+        S.groupBrackets=gb;
+        _redrawBracketView();
+        _applyBvColors();
+        if(typeof _applyBvSelectionHighlights==='function') _applyBvSelectionHighlights();
+      }
     }catch(ex){}
     return;
   }
@@ -5041,7 +5046,7 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
   }
 }
 
-// ── 3번탭 동기화: sgp_groupBrackets에서 최신 데이터 강제 로드 ──
+
 function _syncFromTab3(){
   try{
     const gb = JSON.parse(localStorage.getItem('sgp_groupBrackets') || '[]');
