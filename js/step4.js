@@ -843,7 +843,8 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
 
   wrap.appendChild(container);
 
-  // 연결선 — DOM 렌더 후 실측 (D 레이아웃 _renderBracketHTML과 동일 방식)
+  // 연결선: 박스 하단 중앙→아래→다음 박스 상단 중앙
+  // D의 fromA/fromB 로직 동일, 방향만 세로
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const W=container.scrollWidth+200, H=container.scrollHeight+200;
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -852,7 +853,10 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
     const cr=container.getBoundingClientRect();
 
     const getBox=(ri,mi)=>{
-      const el=container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+      const m=rounds[ri]&&rounds[ri][mi];
+      const el=m&&m._domId
+        ? container.querySelector(`[data-match-id="${m._domId}"]`)
+        : container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
       if(!el) return null;
       const r=el.getBoundingClientRect();
       return{cx:r.left-cr.left+r.width/2, top:r.top-cr.top, bottom:r.bottom-cr.top};
@@ -865,29 +869,37 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       svg.appendChild(p);
     };
 
-    // renderOrder 기준 인접 라운드 사이 선 그리기
+    // fromA/fromB 우선, 없으면 mi*2 폴백 (D와 동일 로직)
     for(let i=0;i<renderOrder.length-1;i++){
       const curRi  = renderOrder[i];
       const nextRi = renderOrder[i+1];
+      const curMatches = rounds[curRi];
       rounds[nextRi].forEach((nm,nmi)=>{
-        let srcA=-1,srcB=-1;
-        if(nm.fromA){const [r,mm]=nm.fromA.split('-').map(Number);if(r===curRi)srcA=mm;}
-        if(nm.fromB){const [r,mm]=nm.fromB.split('-').map(Number);if(r===curRi)srcB=mm;}
-        if(srcA<0){srcA=nmi*2;srcB=nmi*2+1<rounds[curRi].length?nmi*2+1:-1;}
-        const hasB=srcB>=0&&srcB<rounds[curRi].length;
-        const a=getBox(curRi,srcA), b=hasB?getBox(curRi,srcB):null, t=getBox(nextRi,nmi);
+        let srcA,srcB;
+        if(nm.fromA){const [r,mm]=nm.fromA.split('-').map(Number);srcA=r===curRi?mm:nmi*2;}
+        else{srcA=nmi*2;}
+        if(nm.fromB){const [r,mm]=nm.fromB.split('-').map(Number);srcB=r===curRi?mm:nmi*2+1;}
+        else{srcB=nmi*2+1;}
+        const hasB=nm.fromB!=null&&srcB<curMatches.length;
+        const a=getBox(curRi,srcA);
+        const b=hasB?getBox(curRi,srcB):null;
+        const t=getBox(nextRi,nmi);
         if(!a||!t) return;
-        const ax=a.cx, ay=a.bottom, bx=b?b.cx:null, by_=b?b.bottom:null, tx=t.cx, ty=t.top;
-        const midY=(Math.max(ay,by_||ay)+ty)/2;
+
+        // 박스 하단 중앙→아래 수직→수평 연결→다음 박스 상단 중앙
+        const ax=a.cx, ay=a.bottom;
+        const tx=t.cx, ty=t.top;
+        const midY=(ay+ty)/2;
         if(b){
+          const bx=b.cx, by=b.bottom;
           const midX=(ax+bx)/2;
           PATH(`M${ax},${ay} V${midY}`);
-          PATH(`M${bx},${by_} V${midY}`);
+          PATH(`M${bx},${by} V${midY}`);
           PATH(`M${ax},${midY} H${bx}`);
           PATH(`M${midX},${midY} V${ty}`);
         } else {
-          if(Math.abs(ax-tx)<1){PATH(`M${ax},${ay} V${ty}`);}
-          else{PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`);}
+          if(Math.abs(ax-tx)<1){ PATH(`M${ax},${ay} V${ty}`); }
+          else{ PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`); }
         }
       });
     }
