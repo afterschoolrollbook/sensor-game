@@ -459,14 +459,23 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
       if(_bvc && _bvc.gi===gi && _bvc.ri===ri && _bvc.mi===mi){
         delete _bvCurrentMatch[_crt];
       }
-      // 다음 라운드 tbd 복원
+      // 다음 라운드 tbd 복원 — fromA/fromB 파싱해서 원래 이름으로 복원
       const key=`${ri}-${mi}`;
       const courtN=g.court||1;
+      const _origName=(fromKey)=>{
+        if(!fromKey) return null;
+        const parts=fromKey.split('-');
+        if(parts.length>=2){
+          const fRi=parseInt(parts[0]), fMi=parseInt(parts[1]);
+          if(!isNaN(fRi)&&!isNaN(fMi)) return `${courtN}-${fRi+1}-${fMi+1} 승자`;
+        }
+        return null;
+      };
       if(g.matches[ri+1]){
         let reverted=false;
         g.matches[ri+1].forEach(nm=>{
-          if(nm.fromA===key&&nm.p1){ nm.p1.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd=true; reverted=true; }
-          if(nm.fromB===key&&nm.p2){ nm.p2.name=`${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd=true; reverted=true; }
+          if(nm.fromA===key&&nm.p1){ nm.p1.name=_origName(nm.fromA)||`${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd=true; reverted=true; }
+          if(nm.fromB===key&&nm.p2){ nm.p2.name=_origName(nm.fromB)||`${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd=true; reverted=true; }
         });
         // fromA/fromB 없으면 표준 수학 폴백
         if(!reverted){
@@ -4599,7 +4608,8 @@ function _doLink(ri, mi, grpObj, origMi, origRi){
   const bLinked=nextRound.find(m=>m.fromA===bKey||m.fromB===bKey);
   if(aLinked||bLinked){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
 
-  nextRound.push({p1:{name:`${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+  const _crtL=grp.court||1;
+  nextRound.push({p1:{name:`${_crtL}-${a.origRi+1}-${a.origMi+1} 승자`,tbd:true},p2:{name:`${_crtL}-${b.origRi+1}-${b.origMi+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
   _redrawBracketView();
   toast(`${grp.label} ${a.origRi+1}-${a.origMi+1} vs ${b.origRi+1}-${b.origMi+1} 연결됨!`,'success');
 }
@@ -4610,7 +4620,8 @@ function _doAdvance(origRi, origMi, grpObj){
   const nextRound = g.matches[origRi+1];
   const aKey = `${origRi}-${origMi}`;
   if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
-  nextRound.push({p1:{name:`${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  const _crtA=g.court||1;
+  nextRound.push({p1:{name:`${_crtA}-${origRi+1}-${origMi+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
   _redrawBracketView();
   toast(`${origRi+1}-${origMi+1} 승자 다음 라운드 직행!`,'success');
 }
