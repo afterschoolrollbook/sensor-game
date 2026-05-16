@@ -288,7 +288,7 @@ function _redrawBracketView(){
     };
 
     // 경기장 섹션: 라운드별로 전체 경기를 가로 한 줄
-    const renderCourtSection=(groups, courtLabel)=>{
+    const renderCourtSection=(groups, courtLabel, reverseRounds)=>{
       if(!groups.length) return null;
       const sec=document.createElement('div');
       sec.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;margin-bottom:8px;';
@@ -299,11 +299,13 @@ function _redrawBracketView(){
       sec.appendChild(lbl);
 
       const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
-      for(let ri=0;ri<maxRi;ri++){
-        // 이 라운드의 모든 그룹 경기를 순서대로 수집
+      const riList=Array.from({length:maxRi},(_,i)=>i);
+      if(reverseRounds) riList.reverse();
+
+      riList.forEach(ri=>{
         const allMatches=[];
         groups.forEach(g=>{ if(g.matches[ri]) g.matches[ri].forEach((m,mi)=>allMatches.push({m,g,ri,mi})); });
-        if(!allMatches.length) continue;
+        if(!allMatches.length) return;
 
         const rName=ri===maxRi-1&&maxRi>1?'결승':ri===maxRi-2&&maxRi>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
 
@@ -311,7 +313,7 @@ function _redrawBracketView(){
         roundBlock.style.cssText='margin-bottom:16px;min-width:max-content;';
 
         const rHdr=document.createElement('div');
-        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);white-space:nowrap;';
+        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
         rHdr.textContent=rName.toUpperCase();
         roundBlock.appendChild(rHdr);
 
@@ -320,18 +322,18 @@ function _redrawBracketView(){
         allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
         roundBlock.appendChild(row);
         sec.appendChild(roundBlock);
-      }
+      });
       return sec;
     };
 
-    const topSec=renderCourtSection(tGroups,'// 경기장 1');
+    const topSec=renderCourtSection(tGroups,'// 경기장 1', false);
     if(topSec) outerWrap.appendChild(topSec);
 
     const divider=document.createElement('div');
     divider.style.cssText='border-top:2px dashed var(--border2);margin:16px 0;min-width:max-content;';
     outerWrap.appendChild(divider);
 
-    const botSec=renderCourtSection(bGroups,'// 경기장 2');
+    const botSec=renderCourtSection(bGroups,'// 경기장 2', true);
     if(botSec) outerWrap.appendChild(botSec);
 
     view.appendChild(outerWrap);
