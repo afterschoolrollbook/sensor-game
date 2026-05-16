@@ -630,11 +630,18 @@ function _applyBvColors(){
           else if(p2n&&txt===p2n) ci=p2ci;
           if(!ci) return;
           if(!m.winner) span.style.color=_CC[ci];
-          if(!span.querySelector('.bv-cdot')){
+        if(!span.querySelector('.bv-cdot')){
             const dot=document.createElement('span');
             dot.className='bv-cdot';
-            dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
-            span.appendChild(dot);
+            dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
+            // 오른쪽(reversed) 그룹은 점을 이름 앞에, 왼쪽은 이름 뒤에
+            if(wrap && wrap.dataset.reversed==='1'){
+              dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
+              span.insertBefore(dot, span.firstChild);
+            } else {
+              dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-left:3px;vertical-align:middle;`;
+              span.appendChild(dot);
+            }
           }
         });
       });
@@ -1875,6 +1882,7 @@ function _redrawBracketViewTree(){
       groupWrap.style.cssText='min-width:max-content;';
       groupWrap.dataset.court=String(g.court||1);
       groupWrap.dataset.groupLabel=shortLabel;
+      groupWrap.dataset.reversed=reversed?'1':'0';
       const taggedMatches=g.matches.map((round,ri)=>
         round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel}))
       );
@@ -5061,20 +5069,29 @@ function _applyMatchStates(){
         box.style.borderColor='#06d6a0';
         box.style.borderWidth='2px';
         box.style.boxShadow='0 0 8px rgba(6,214,160,.3)';
+        // 트로피를 이름 위에 표시 (중복 방지)
+        if(!box.querySelector('.bv-trophy-row')){
+          const tRow=document.createElement('div');
+          tRow.className='bv-trophy-row';
+          tRow.style.cssText='text-align:center;font-size:11px;padding:2px 4px;background:rgba(6,214,160,.1);color:#06d6a0;font-weight:700;letter-spacing:1px;';
+          tRow.textContent='🏆 ' + m.winner.name;
+          // header 다음에 삽입 (이름 행 위)
+          const header=box.firstElementChild;
+          if(header && header.nextSibling){
+            box.insertBefore(tRow, header.nextSibling);
+          } else {
+            box.appendChild(tRow);
+          }
+        }
+        // 패자 이름 흐리게
         box.querySelectorAll('span').forEach(span=>{
           if(span.dataset.bvDone) return;
-          const txt = (span.textContent||'').trim();
-          if(!txt || txt==='VS' || txt==='BYE') return;
-          if(txt === m.winner.name){
+          const txt=(span.textContent||'').trim();
+          if(!txt||txt==='VS'||txt==='BYE') return;
+          if(txt===m.winner.name){
             span.style.color='#06d6a0';
             span.style.fontWeight='700';
             span.dataset.bvDone='1';
-            if(!span.querySelector('.bv-trophy')){
-              const t=document.createElement('span');
-              t.className='bv-trophy';
-              t.textContent=' 🏆';
-              span.appendChild(t);
-            }
           } else {
             span.style.color='#555';
             span.dataset.bvDone='1';
