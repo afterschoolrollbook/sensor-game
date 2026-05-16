@@ -238,7 +238,7 @@ function _redrawBracketView(){
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
     const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
-    // 경기 카드 (D랑 동일한 브라켓 박스 스타일)
+    // 경기 카드 (세로 가운데 정렬: 경기명 / 선수1 / VS / 선수2)
     const mkCard=(m,g,ri,mi)=>{
       const courtN=g.court||1;
       const offset=(g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0;
@@ -254,36 +254,43 @@ function _redrawBracketView(){
 
       const card=document.createElement('div');
       card.dataset.ri=ri; card.dataset.mi=mi;
-      card.style.cssText=`width:190px;flex-shrink:0;border:1.5px solid ${isDone?'#06d6a0':'var(--border2)'};background:${isDone?'rgba(6,214,160,.04)':'var(--card)'};border-radius:8px;padding:6px 9px;margin-right:10px;`;
+      card.style.cssText=`width:190px;flex-shrink:0;border:1.5px solid ${isDone?'#06d6a0':'var(--border2)'};background:${isDone?'rgba(6,214,160,.04)':'var(--card)'};border-radius:8px;padding:8px;margin-right:10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;`;
 
+      // 경기명
       const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:.5px;margin-bottom:5px;white-space:nowrap;';
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:.5px;white-space:nowrap;width:100%;text-align:center;';
       hdr.textContent=`${label}  ${shortLabel}`;
       card.appendChild(hdr);
 
-      const nameRow=document.createElement('div');
-      nameRow.style.cssText='display:flex;align-items:center;gap:4px;';
       if(isBye){
-        const sp=document.createElement('span');
-        sp.style.cssText='font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;';
+        const sp=document.createElement('div');
+        sp.style.cssText='font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;';
         sp.textContent=p1n;
-        const bye=document.createElement('span');
-        bye.style.cssText='font-size:9px;color:var(--accent);flex-shrink:0;margin-left:4px;';
+        const bye=document.createElement('div');
+        bye.style.cssText='font-size:9px;color:var(--accent);';
         bye.textContent='BYE';
-        nameRow.appendChild(sp); nameRow.appendChild(bye);
+        card.appendChild(sp);
+        card.appendChild(bye);
       } else {
-        const sp1=document.createElement('span');
-        sp1.style.cssText=`font-size:11px;font-weight:${isW1?'700':'500'};color:${isW1?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;`;
+        // 선수1
+        const sp1=document.createElement('div');
+        sp1.style.cssText=`font-size:12px;font-weight:${isW1?'700':'500'};color:${isW1?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
         sp1.textContent=(isW1?'🏆 ':'')+p1n;
-        const vs=document.createElement('span');
-        vs.style.cssText="font-family:'Bebas Neue',cursive;font-size:11px;color:var(--red);flex-shrink:0;";
+
+        // VS
+        const vs=document.createElement('div');
+        vs.style.cssText="font-family:'Bebas Neue',cursive;font-size:13px;color:var(--red);line-height:1;";
         vs.textContent='VS';
-        const sp2=document.createElement('span');
-        sp2.style.cssText=`font-size:11px;font-weight:${isW2?'700':'500'};color:${isW2?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;`;
+
+        // 선수2
+        const sp2=document.createElement('div');
+        sp2.style.cssText=`font-size:12px;font-weight:${isW2?'700':'500'};color:${isW2?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
         sp2.textContent=(isW2?'🏆 ':'')+p2n;
-        nameRow.appendChild(sp1); nameRow.appendChild(vs); nameRow.appendChild(sp2);
+
+        card.appendChild(sp1);
+        card.appendChild(vs);
+        card.appendChild(sp2);
       }
-      card.appendChild(nameRow);
       return card;
     };
 
