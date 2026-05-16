@@ -254,15 +254,40 @@ function _redrawBracketView(){
 
       // 경기장 내 전체 라운드를 통합 rounds 배열로 구성 (체급별 경기를 라운드별로 합침)
       const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
+
+      // ── 1단계: 그룹별·라운드별 merged 배열 시작 오프셋 사전 계산 ──
+      // groupMergedOffset[gi][ri] = 그룹 gi가 라운드 ri의 merged 배열에서 시작하는 인덱스
+      // fromA/fromB는 그룹 내부 인덱스(group-local mi)이므로,
+      // merged 배열 기준으로 remapping하지 않으면 calcCx/연결선이 엉뚱한 경기를 참조함
+      const groupMergedOffset={};
+      for(let ri=0;ri<maxRi;ri++){
+        let cursor=0;
+        groups.forEach((g,gi)=>{
+          if(!groupMergedOffset[gi]) groupMergedOffset[gi]={};
+          groupMergedOffset[gi][ri]=cursor;
+          if(g.matches[ri]) cursor+=g.matches[ri].length;
+        });
+      }
+
+      // ── 2단계: rounds 배열 생성 + fromA/fromB를 merged 인덱스로 변환 ──
       const rounds=[];
       for(let ri=0;ri<maxRi;ri++){
         const matches=[];
-        groups.forEach(g=>{
+        groups.forEach((g,gi)=>{
           if(g.matches[ri]){
             const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
+            // 이 그룹의 fromA/fromB(group-local ri-mi)를 merged 배열 기준으로 remapping
+            const remapKey=(key)=>{
+              if(!key) return key;
+              const [kr,km]=key.split('-').map(Number);
+              const off=(groupMergedOffset[gi]&&groupMergedOffset[gi][kr]!=null)
+                        ?groupMergedOffset[gi][kr]:0;
+              return `${kr}-${km+off}`;
+            };
             g.matches[ri].forEach((m,mi)=>{
-              // _renderBracketHTML과 동일하게 태깅
               matches.push({...m,
+                fromA:remapKey(m.fromA),
+                fromB:remapKey(m.fromB),
                 _groupObj:g,
                 _origMi:mi, _origRi:ri,
                 _groupLabel:shortLabel,
