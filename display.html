@@ -754,7 +754,7 @@ function refresh3(){
 
   _d3DrawBracket(view, groups, layout, courtCount, selectedMatches);
   _applyBracketColors(view, groups);
-  _applyBracketBadges(view, groups, selectedMatches);
+  _applyBracketBadges(view, groups);
 }
 
 function _applyBracketColors(view, groups){
@@ -798,62 +798,69 @@ function _applyBracketColors(view, groups){
 }
 
 
-// ── 경기 박스에 LIVE/✓/🏆 뱃지 후처리 적용 ──
-function _applyBracketBadges(view, groups, selectedMatches){
-  groups.forEach((g,gi)=>{
+// ── bracket-view _applyMatchStates 방식 그대로 ──
+function _applyBracketBadges(view, groups){
+  // 1. winner → 초록 테두리 + 🏆 트로피 행 + 승자초록/패자흐림
+  groups.forEach(g=>{
     const court=g.court||1;
     const shortLabel=g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
-    const wraps=view.querySelectorAll(`[data-court="${court}"]`);
     let wrap=null;
-    wraps.forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
-    if(!wrap) return;
+    view.querySelectorAll(`[data-court="${court}"]`).forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
+    if(!wrap) wrap=view.querySelector(`[data-court="${court}"]`);
 
     (g.matches||[]).forEach((round,ri)=>{
       round.forEach((m,mi)=>{
-        const box=wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        if(!m.winner) return;
+        const box=wrap?wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`):null;
         if(!box) return;
-        const header=box.firstChild;
-        if(!header) return;
-
-        const isDone=!!m.winner;
-        const isCur=selectedMatches&&selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===shortLabel);
-
-        // LIVE 뱃지 (이미 있으면 skip)
-        if(isCur&&!header.querySelector('.disp-live-badge')){
-          const b=document.createElement('span');
-          b.className='disp-live-badge';
-          b.style.cssText='font-size:8px;color:#e63946;border:1px solid #e63946;border-radius:3px;padding:1px 4px;font-family:Share Tech Mono,monospace;animation:livepulse 1.2s ease-in-out infinite;margin-left:3px;';
-          b.textContent='LIVE';
-          header.appendChild(b);
+        box.style.borderColor='#06d6a0';
+        box.style.borderWidth='2px';
+        box.style.boxShadow='0 0 8px rgba(6,214,160,.3)';
+        // 트로피 행 (중복 방지)
+        if(!box.querySelector('.bv-trophy-row')){
+          const tRow=document.createElement('div');
+          tRow.className='bv-trophy-row';
+          tRow.style.cssText='text-align:center;font-size:11px;padding:2px 4px;background:rgba(6,214,160,.1);color:#06d6a0;font-weight:700;letter-spacing:1px;';
+          tRow.textContent='🏆 '+m.winner.name;
+          const header=box.firstElementChild;
+          if(header&&header.nextSibling) box.insertBefore(tRow,header.nextSibling);
+          else box.appendChild(tRow);
         }
-        // ✓ 완료 뱃지
-        if(!isCur&&isDone&&!header.querySelector('.disp-done-badge')){
-          const b=document.createElement('span');
-          b.className='disp-done-badge';
-          b.style.cssText='font-size:10px;color:#06d6a0;font-weight:700;margin-left:3px;';
-          b.textContent='✓';
-          header.appendChild(b);
-        }
-
-        // 🏆 승자 이름 앞에 트로피
-        if(isDone&&m.winner){
-          const winName=m.winner.name;
-          box.querySelectorAll('span').forEach(span=>{
-            if(span.classList.contains('disp-live-badge')||span.classList.contains('disp-done-badge')||span.classList.contains('d3-cdot')) return;
-            const txt=(span.textContent||'').trim();
-            if(txt===winName&&!span.querySelector('.disp-trophy')){
-              const t=document.createElement('span');
-              t.className='disp-trophy';
-              t.textContent='🏆 ';
-              span.prepend(t);
-              span.style.color='#06d6a0';
-              span.style.fontWeight='700';
-            }
-          });
-        }
+        // 승자 초록 / 패자 흐림
+        box.querySelectorAll('span').forEach(span=>{
+          if(span.dataset.bvDone) return;
+          const txt=(span.textContent||'').trim();
+          if(!txt||txt==='VS'||txt==='BYE') return;
+          if(txt===m.winner.name){ span.style.color='#06d6a0'; span.style.fontWeight='700'; span.dataset.bvDone='1'; }
+          else { span.style.color='#555'; span.dataset.bvDone='1'; }
+        });
       });
     });
   });
+
+  // 2. LIVE → localStorage sgp_display_vs_court_N 직접 읽어서 적용
+  for(let c=1;c<=8;c++){
+    try{
+      const raw=localStorage.getItem(`sgp_display_vs_court_${c}`);
+      if(!raw) continue;
+      const mv=JSON.parse(raw);
+      if(mv.ri==null||mv.mi==null) continue;
+      const courtWrap=view.querySelector(`[data-court="${c}"]`);
+      const box=courtWrap?courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`):null;
+      if(!box) continue;
+      box.style.borderColor='#e63946';
+      box.style.borderWidth='2.5px';
+      box.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
+      const hdr=box.firstElementChild;
+      if(hdr&&!hdr.querySelector('.bv-live')){
+        const live=document.createElement('span');
+        live.className='bv-live';
+        live.style.cssText='font-size:8px;color:#e63946;border:1px solid #e63946;border-radius:3px;padding:1px 4px;font-family:Share Tech Mono,monospace;margin-left:4px;animation:livepulse 1.2s ease-in-out infinite;';
+        live.textContent='LIVE';
+        hdr.appendChild(live);
+      }
+    }catch(e){}
+  }
 }
 
 function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
