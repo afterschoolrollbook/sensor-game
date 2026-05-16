@@ -625,17 +625,16 @@ function _applyBvColors(){
         box.querySelectorAll('span').forEach(span=>{
           if(span.classList.contains('bv-win-badge')||span.classList.contains('bv-cdot')) return;
           const txt=(span.textContent||'').replace('🏆','').trim();
-          let ci=0;
+          let ci=0, isP2=false;
           if(p1n&&txt===p1n) ci=p1ci;
-          else if(p2n&&txt===p2n) ci=p2ci;
+          else if(p2n&&txt===p2n){ ci=p2ci; isP2=true; }
           if(!ci) return;
           if(!m.winner) span.style.color=_CC[ci];
-        if(!span.querySelector('.bv-cdot')){
+          if(!span.querySelector('.bv-cdot')){
             const dot=document.createElement('span');
             dot.className='bv-cdot';
-            dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
-            // 오른쪽(reversed) 그룹은 점을 이름 앞에, 왼쪽은 이름 뒤에
-            if(wrap && wrap.dataset.reversed==='1'){
+            // p2(오른쪽 선수)는 이름 앞, p1(왼쪽 선수)는 이름 뒤
+            if(isP2){
               dot.style.cssText=`display:inline-block;width:7px;height:7px;border-radius:2px;background:${_CC[ci]};margin-right:3px;vertical-align:middle;`;
               span.insertBefore(dot, span.firstChild);
             } else {
