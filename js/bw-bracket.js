@@ -395,17 +395,29 @@ function _redrawBracketView(){
         }
         roundBlock.appendChild(row);
 
-        // ── 연결선 SVG (이 라운드와 다음 라운드 사이) ──
+        // ── 연결선 SVG: 카드 하단 중앙 → 수직 → 수평 연결 → 다음 카드 상단 ──
         if(rowIdx<roundData.length-1){
           const nextRound=roundData[rowIdx+1];
-          const SVG_H=32;
+          const SVG_H=40, MID=20;
+          const totalSlots=allMatches.length;
+          const svgW=totalSlots*SLOT+200; // 여유폭
           const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-          svg.style.cssText=`display:block;width:100%;height:${SVG_H}px;overflow:visible;margin:0;`;
-          svg.setAttribute('height',SVG_H);
+          svg.style.cssText=`display:block;min-width:max-content;height:${SVG_H}px;overflow:visible;`;
+          svg.setAttribute('width', svgW);
+          svg.setAttribute('height', SVG_H);
 
           // 현재 라운드 슬롯맵
           const curSlotMap={};
           allMatches.forEach(({g,ri,mi,slot})=>{ curSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
+
+          const mkLine=(x1,y1,x2,y2)=>{
+            const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+            l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+            l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+            l.setAttribute('stroke','rgba(90,90,122,.8)');
+            l.setAttribute('stroke-width','1.5');
+            svg.appendChild(l);
+          };
 
           nextRound.forEach(({m,g})=>{
             const fromA=m.fromA, fromB=m.fromB;
@@ -413,20 +425,23 @@ function _redrawBracketView(){
             if(fromA){const [r,mm]=fromA.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotA=curSlotMap[k];}
             if(fromB){const [r,mm]=fromB.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotB=curSlotMap[k];}
             if(slotA<0&&slotB<0) return;
-            const childCx=slotA>=0&&slotB>=0?(slotA*SLOT+95+slotB*SLOT+95)/2:slotA>=0?slotA*SLOT+95:slotB*SLOT+95;
-            if(slotA>=0){
-              const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-              line.setAttribute('x1',slotA*SLOT+95); line.setAttribute('y1',0);
-              line.setAttribute('x2',childCx); line.setAttribute('y2',SVG_H);
-              line.setAttribute('stroke','rgba(90,90,122,.7)'); line.setAttribute('stroke-width','1.5');
-              svg.appendChild(line);
-            }
-            if(slotB>=0&&slotB!==slotA){
-              const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-              line.setAttribute('x1',slotB*SLOT+95); line.setAttribute('y1',0);
-              line.setAttribute('x2',childCx); line.setAttribute('y2',SVG_H);
-              line.setAttribute('stroke','rgba(90,90,122,.7)'); line.setAttribute('stroke-width','1.5');
-              svg.appendChild(line);
+
+            const cxA = slotA>=0 ? slotA*SLOT+95 : -1;
+            const cxB = slotB>=0 ? slotB*SLOT+95 : -1;
+            const childCx = (cxA>=0&&cxB>=0) ? (cxA+cxB)/2 : cxA>=0 ? cxA : cxB;
+
+            if(cxA>=0&&cxB>=0){
+              // 카드A 하단 → 수직 내려오기
+              mkLine(cxA, 0, cxA, MID);
+              // 카드B 하단 → 수직 내려오기
+              mkLine(cxB, 0, cxB, MID);
+              // 수평 연결
+              mkLine(cxA, MID, cxB, MID);
+              // 중앙에서 다음 카드까지 수직
+              mkLine(childCx, MID, childCx, SVG_H);
+            } else {
+              // BYE: 직선
+              mkLine(childCx, 0, childCx, SVG_H);
             }
           });
           roundBlock.appendChild(svg);
