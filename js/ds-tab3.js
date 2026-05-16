@@ -424,12 +424,12 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   modal.appendChild(mbody);
   document.body.appendChild(modal);
 
-  // 위치
-  const rect = e.currentTarget.getBoundingClientRect();
-  let top = rect.bottom + 4, left = rect.left;
-  if(top + 280 > window.innerHeight) top = rect.top - 280;
+  // 위치 — 클릭 위치 기준
+  let top = e.clientY + 4, left = e.clientX;
+  if(top + 320 > window.innerHeight) top = e.clientY - 320;
   if(left + 270 > window.innerWidth) left = window.innerWidth - 275;
   if(top < 4) top = 4;
+  if(left < 4) left = 4;
   modal.style.top = top + 'px';
   modal.style.left = left + 'px';
 
@@ -604,26 +604,15 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
   const key = `${ri}-${mi}`;
   const courtN = g.court || 1;
 
-  // fromA/fromB 키에서 원래 이름 복원
-  const _origName = (fromKey) => {
-    if(!fromKey) return null;
-    const parts = fromKey.split('-');
-    if(parts.length >= 2){
-      const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
-      if(!isNaN(fRi) && !isNaN(fMi)) return `${courtN}-${fRi+1}-${fMi+1} 승자`;
-    }
-    return null;
-  };
-
   g.matches[ri + 1].forEach((nm, nextMi) => {
     let affected = false;
 
-    // fromA/fromB 기반 매칭 — 원래 이름으로 복원
+    // fromA/fromB 기반 매칭
     if(nm.fromA === key && nm.p1){
-      nm.p1.name = _origName(nm.fromA) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+      nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
     }
     if(nm.fromB === key && nm.p2){
-      nm.p2.name = _origName(nm.fromB) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+      nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
     }
 
     // fromA/fromB 없을 때 수학 폴백
@@ -653,7 +642,24 @@ function _t3Save(){
       ...g,
       matches: g.matches.map(round => round.map(m => {
         const { _t3Offset, _groupObj, ...rest } = m;
-        return rest;
+        // fromA/fromB 기반으로 tbd 이름 보정 (경기장 번호 누락 방어)
+        const courtN = g.court || 1;
+        const fixName = (p, fromKey) => {
+          if(!p || !p.tbd || !fromKey) return p;
+          const parts = fromKey.split('-');
+          if(parts.length >= 2){
+            const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
+            if(!isNaN(fRi) && !isNaN(fMi)){
+              return { ...p, name: `${courtN}-${fRi+1}-${fMi+1} 승자` };
+            }
+          }
+          return p;
+        };
+        return {
+          ...rest,
+          p1: fixName(rest.p1, rest.fromA),
+          p2: fixName(rest.p2, rest.fromB),
+        };
       }))
     }));
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
