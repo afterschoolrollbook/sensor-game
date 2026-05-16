@@ -149,7 +149,21 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   margin:8px 0 4px;
   text-shadow:0 0 30px rgba(255,214,10,.6);
 }
+.w-matchinfo{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(13px,1.8vw,22px);
+  color:var(--accent);
+  letter-spacing:2px;
+  margin-bottom:4px;
+}
 .w-name{font-family:'Bebas Neue',cursive;font-size:clamp(42px,9vw,110px);letter-spacing:4px;color:var(--text);line-height:1.05;}
+.w-catinfo{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(12px,1.6vw,20px);
+  color:var(--text2,#9090b0);
+  letter-spacing:2px;
+  margin-top:6px;
+}
 .w-time{font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2vw,28px);color:var(--accent);margin-top:8px;}
 
 /* 다음경기 준비중 하단 바 */
@@ -189,12 +203,13 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 </div>
 <div id="winner-overlay">
   <div class="w-badge">승리! 진출!</div>
+  <div class="w-matchinfo" id="w-matchinfo"></div>
   <div class="w-name" id="w-name">—</div>
-  <div class="w-time" id="w-time"></div>
+  <div class="w-catinfo" id="w-catinfo"></div>
 </div>
 <div id="waiting-next">
   <span class="w-wait-dot">●</span>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2.2vw,26px);letter-spacing:4px;color:var(--accent);">다음경기 준비중...</span>
+  <span id="waiting-next-txt" style="font-family:'Share Tech Mono',monospace;font-size:clamp(14px,2.2vw,26px);letter-spacing:4px;color:var(--accent);">다음경기 준비중...</span>
   <span class="w-wait-dot" style="animation-delay:.7s;">●</span>
 </div>
 
@@ -907,13 +922,29 @@ function triggerCountdown(){
 }
 
 let _winnerTimer=null;
-function showWinner(name,time){
+function showWinner(name,time,court,matchLabel,shortLabel,seqNum){
   // 이름 정리: 번호 접두사(1-2, 3번 등)·괄호 제거
   const _cleanWinName=n=>{
     if(!n||n==='—') return n||'—';
     return n.replace(/^\d+-\d+\s*/,'').replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n;
   };
-  _set('w-name',_cleanWinName(name)||'—'); _set('w-time',time||'');
+  _set('w-name', _cleanWinName(name)||'—');
+
+  // 경기장 / 경기번호 줄: "경기장1 / 1-1-2 경기"
+  const matchInfoEl = document.getElementById('w-matchinfo');
+  if(matchInfoEl){
+    const courtTxt = court ? `경기장${court}` : '';
+    const matchTxt = matchLabel ? `${matchLabel} 경기` : '';
+    matchInfoEl.textContent = [courtTxt, matchTxt].filter(Boolean).join('  /  ');
+  }
+
+  // 체급·경기 줄: "남·고등·65kg · 2경기"
+  const catInfoEl = document.getElementById('w-catinfo');
+  if(catInfoEl){
+    const seqTxt = seqNum ? `${seqNum}경기` : '';
+    catInfoEl.textContent = [shortLabel, seqTxt].filter(Boolean).join(' · ');
+  }
+
   const ov=document.getElementById('winner-overlay');
   const wb=document.getElementById('waiting-next');
   // 이전 타이머 취소
@@ -924,7 +955,12 @@ function showWinner(name,time){
   // 10초 후 승리 배너 숨기고 준비중 배너 표시
   _winnerTimer=setTimeout(()=>{
     if(ov) ov.classList.remove('show');
-    if(wb) wb.classList.add('show');
+    if(wb){
+      const courtTxt = court ? `${court}경기장` : '';
+      const waitTxtEl = document.getElementById('waiting-next-txt');
+      if(waitTxtEl) waitTxtEl.textContent = courtTxt ? `${courtTxt} 다음경기 준비중 입니다~` : '다음경기 준비중...';
+      wb.classList.add('show');
+    }
     _winnerTimer=null;
   },10000);
 }
@@ -996,7 +1032,7 @@ function handleCmd(cmd){
     // random 모드: 타이머가 자동 처리
   }
   if(cmd.type==='countdown')   triggerCountdown();
-  if(cmd.type==='winner')      showWinner(cmd.name,cmd.time);
+  if(cmd.type==='winner')      showWinner(cmd.name,cmd.time,cmd.court,cmd.matchLabel,cmd.shortLabel,cmd.seqNum);
   if(cmd.type==='timer_start'){
     document.getElementById('d1-time').className='running';
     document.getElementById('d1-live').classList.add('active');
