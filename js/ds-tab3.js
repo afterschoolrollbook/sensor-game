@@ -376,7 +376,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     lblBye.style.cssText = 'padding:5px 14px 3px;font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:1px;';
     lblBye.textContent = '// 부전승 · 자동 진출';
     mbody.appendChild(lblBye);
-    mbody.appendChild(mkBtn('⏩', `${p1n} 다음 라운드 진출`, 'var(--accent)', 'rgba(76,201,240,.1)', () => _t3AdvanceBye(g, gi, ri, mi, courtNum), '상대 없음 · 부전승 처리'));
+    mbody.appendChild(mkBtn('⏩', `${p1n} 다음 라운드 진출`, 'var(--accent)', 'rgba(76,201,240,.1)', () => _t3AdvanceBye(g, gi, ri, mi, courtNum, label, shortLabel), '상대 없음 · 부전승 처리'));
   }
 
   // ── BYE 진출 취소 ──
@@ -534,7 +534,7 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum, matchLabel, shortLabel)
 }
 
 // ── 부전승 진출 처리 ──
-function _t3AdvanceBye(g, gi, ri, mi, courtNum){
+function _t3AdvanceBye(g, gi, ri, mi, courtNum, matchLabel, shortLabel){
   const m = g.matches[ri][mi];
   if(!m.p1) return;
   m.winner = { name: m.p1.name, id: m.p1.id };
@@ -563,8 +563,9 @@ function _t3AdvanceBye(g, gi, ri, mi, courtNum){
   _t3Save();
 
   try{
+    const seqNum = matchLabel ? matchLabel.split('-').pop() : '';
     const bc = new BroadcastChannel('sgp_cmd');
-    bc.postMessage({ type:'winner', name: m.p1.name });
+    bc.postMessage({ type:'winner', name: m.p1.name, court: courtNum, matchLabel: matchLabel||'', shortLabel: shortLabel||'', seqNum });
     bc.close();
   } catch(ex){}
 
