@@ -1,4 +1,103 @@
+function _refreshSvgLines(){
+  if(document.getElementById('pts-step3').classList.contains('on')){
+    renderBracketTabs();
+    _redrawBracketView();
+  } else {
+    _renderPdfPreview(_getSelectedGroups());
+  }
+}
 
+// ── 이름 가리기 토글 ──
+window._hideNames=false;
+function toggleHideNames(){
+  _hideNames=window._hideNames=!window._hideNames;
+  const btn=document.getElementById('btn-hide-names');
+  if(btn){
+    btn.textContent=_hideNames?'👁 이름 보이기':'👁 이름 가리기';
+    btn.style.borderColor=_hideNames?'var(--accent)':'var(--border2)';
+    btn.style.background=_hideNames?'rgba(76,201,240,.12)':'transparent';
+    btn.style.color=_hideNames?'var(--accent)':'var(--text3)';
+  }
+  _renderPdfPreview(_getSelectedGroups());
+  /* _renderPdfPreview가 bracket-display를 초기화하면서 헤더를 지우므로 재렌더 */
+  if(typeof _renderInfoHeader==='function') _renderInfoHeader();
+}
+
+// ── 이름 보존 브라켓 생성 (slots의 player.name을 번호+이름으로 표시) ──
+function _generateBracketKeepNames(players, courtNum, startNum){
+  const cNum=courtNum||1;
+  const n=players.length;
+  if(!n)return[[]];
+  const round1=[];
+  const isOdd=n%2===1;
+  let slotNum=startNum||1;
+  if(isOdd){
+    const p=players[0];
+    round1.push({p1:{name:`${cNum}-${slotNum++}${p?` (${p.name})`:''}`,id:slotNum-1},p2:null,bye:true});
+  }
+  const rest=isOdd?players.slice(1):players;
+  for(let i=0;i<rest.length;i+=2){
+    const pa=rest[i], pb=rest[i+1];
+    round1.push({
+      p1:{name:`${cNum}-${slotNum++}${pa?` (${pa.name})`:''}`,id:slotNum-1},
+      p2:{name:`${cNum}-${slotNum++}${pb?` (${pb.name})`:''}`,id:slotNum-1},
+      bye:false
+    });
+  }
+  return[round1];
+}
+
+// renderBracketD/E 오버라이드 — 내부 overflow 제거, 외부 하나만 스크롤
+function _stripInnerScroll(div){
+  div.querySelectorAll('*').forEach(el=>{
+    if(el.style.overflow==='auto'||el.style.overflowX==='auto'||el.style.overflowY==='auto'){
+      el.style.overflow='visible';
+    }
+  });
+}
+
+
+renderBracketD = function(wrap){
+  if(!S.matches||!S.matches.length)return;
+  const leftRounds=[], rightRounds=[];
+  S.matches.forEach(round=>{
+    const h=Math.ceil(round.length/2);
+    leftRounds.push(round.slice(0,h));
+    rightRounds.push(round.slice(h));
+  });
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='display:flex;flex-direction:row;align-items:flex-start;overflow:auto;padding-bottom:8px;';
+  const lDiv=document.createElement('div');
+  const rDiv=document.createElement('div');
+  _renderBracketHTML(lDiv,leftRounds,'top',false);
+  _renderBracketHTML(rDiv,[...rightRounds].reverse(),'top',true);
+  _stripInnerScroll(lDiv);
+  _stripInnerScroll(rDiv);
+  outerWrap.appendChild(lDiv);
+  outerWrap.appendChild(rDiv);
+  wrap.appendChild(outerWrap);
+};
+
+renderBracketE = function(wrap){
+  if(!S.matches||!S.matches.length)return;
+  const topRounds=[], botRounds=[];
+  S.matches.forEach(round=>{
+    const h=Math.ceil(round.length/2);
+    topRounds.push(round.slice(0,h));
+    botRounds.push(round.slice(h));
+  });
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='display:flex;flex-direction:column;overflow:auto;padding-bottom:8px;';
+  const tDiv=document.createElement('div');
+  const bDiv=document.createElement('div');
+  _renderBracketHTML(tDiv,topRounds,'top-down');
+  _renderBracketHTML(bDiv,[...botRounds].reverse(),'bottom-up');
+  _stripInnerScroll(tDiv);
+  _stripInnerScroll(bDiv);
+  outerWrap.appendChild(tDiv);
+  outerWrap.appendChild(bDiv);
+  wrap.appendChild(outerWrap);
+};
 function generateBracketWithNames(pts, courtNum, startNum){
   const cNum=courtNum||1;
   const players=[...pts];
@@ -665,3 +764,393 @@ function finalizeBracket(){
     toast('완성 저장 실패: '+e.message,'error');
   }
 }
+
+// ── 체급 선택 체크박스 렌더 ──
+// 특정 라운드가 홀수일 때 부전승 팝업
+// 상단 버튼 클릭 시 부전승 팝업 트리거
+function triggerByeSelector(){
+  const g=S.groupBrackets[S.activeGroup];
+  const ri=g.matches.findIndex((round,ri)=>
+    round.length>=2 && round.length%2===1 && !(g.matches[ri+1]||[]).some(m=>m.bye)
+  );
+  if(ri>=0) _showByeForRound(g, ri);
+}
+
+function _showByeForRound(g, ri){
+  const existing=document.getElementById('bye-selector-overlay');
+  if(existing) existing.remove();
+
+  const round=g.matches[ri];
+  if(!round || round.length%2===0) return;
+  const candidates=round.map((m,mi)=>({
+    id:`bye_${ri}_${mi}`,
+    name:`${g.court||1}-${ri+1}-${((g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0)+mi+1} 승자`,
+    color:'var(--accent)',
+    _ri:ri, _mi:mi
+  }));
+  showByeSelector(
+    candidates,
+    `${round.length}경기 중 부전승 배정`,
+    (sel)=>{
+      _byeAssigned={ri:sel._ri, mi:sel._mi};
+      toast(sel.name+' 부전승!','success');
+    }
+  );
+}
+
+function _hideMatchModal(){
+  const m=document.getElementById('match-action-modal');
+  if(m) m.remove();
+  if(window._modalOutsideListener){
+    document.removeEventListener('click', window._modalOutsideListener, true);
+    window._modalOutsideListener=null;
+  }
+}
+
+function _showMatchModal(anchorEl, ri, mi, matchObj){
+  _hideMatchModal();
+  const grpObj = matchObj&&matchObj._groupObj ? matchObj._groupObj : null;
+  const origMi = (matchObj&&matchObj._origMi!=null) ? matchObj._origMi : mi;
+  const origRi = (matchObj&&matchObj._origRi!=null) ? matchObj._origRi : ri;
+  const courtNum = grpObj ? (grpObj.court || 1) : 1;
+  const seqMi = (matchObj&&matchObj._seqMi!=null) ? matchObj._seqMi : ((grpObj&&grpObj._roundOffset&&grpObj._roundOffset[origRi]!=null)?grpObj._roundOffset[origRi]:0)+origMi;
+  const label = `${courtNum}-${origRi+1}-${seqMi+1}`;
+
+  const modal = document.createElement('div');
+  modal.id = 'match-action-modal';
+  modal.style.cssText = `
+    position:fixed;z-index:9999;
+    background:var(--card2);border:1px solid var(--border2);
+    border-radius:12px;padding:6px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+    display:flex;flex-direction:column;gap:4px;
+    min-width:190px;animation:tsin .15s ease;
+  `;
+
+  const mkBtn=(icon,text,color,fn)=>{
+    const b=document.createElement('button');
+    b.style.cssText=`display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:8px;border:none;background:transparent;color:${color};font-size:12px;font-weight:600;cursor:pointer;text-align:left;transition:background .1s;font-family:'Noto Sans KR',sans-serif;width:100%;`;
+    b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
+    b.onmouseout=()=>b.style.background='transparent';
+    b.innerHTML=`<span style="font-size:15px;width:20px;text-align:center;">${icon}</span><span>${text}</span>`;
+    b.onclick=(e)=>{ e.stopPropagation(); _hideMatchModal(); fn(); };
+    return b;
+  };
+
+  // 헤더
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:5px 13px 7px;font-size:10px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:1px;border-bottom:1px solid var(--border);margin-bottom:2px;';
+  hdr.textContent=`// 경기 ${label}`;
+  modal.appendChild(hdr);
+
+  // 연결 대기 중이면 → "이 경기와 연결" 옵션만
+  if(_linkSel){
+    modal.appendChild(mkBtn('🔗','이 경기와 연결','var(--accent)',()=>{
+      _doLink(ri,mi,grpObj,origMi,origRi);
+    }));
+    modal.appendChild(mkBtn('✕','선택 취소','var(--text3)',()=>{
+      _linkSel=null; _redrawBracketView();
+    }));
+  } else {
+    modal.appendChild(mkBtn('🔗','다른 경기와 연결','var(--accent)',()=>{
+      _linkSel={ri,mi,grpObj,origMi,origRi,matchObj};
+      // 선택 박스 강조
+      if(matchObj&&matchObj._domId){
+        const el=document.querySelector(`[data-match-id="${matchObj._domId}"]`);
+        if(el){ el.style.borderColor='#4cc9f0'; el.style.boxShadow='0 0 8px rgba(76,201,240,.5)'; }
+      }
+      toast(`${label} 선택됨 — 연결할 경기를 클릭하세요`,'info');
+    }));
+    modal.appendChild(mkBtn('▶','부전승 직행','var(--green)',()=>{
+      _doAdvance(origRi, origMi, grpObj);
+    }));
+    modal.appendChild(mkBtn('🗑','이 라운드 삭제','var(--red)',()=>{
+      _doRemoveRound(origRi, origMi, grpObj);
+    }));
+  }
+
+  document.body.appendChild(modal);
+
+  // 위치 잡기 — 클릭 박스 바로 아래, 화면 벗어나면 위로
+  const rect = anchorEl.getBoundingClientRect();
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if(top + 220 > window.innerHeight) top = rect.top - 220;
+  if(left + 200 > window.innerWidth) left = window.innerWidth - 210;
+  modal.style.top = top + 'px';
+  modal.style.left = left + 'px';
+
+  // 외부 클릭 시 닫기 — 전역 변수로 관리해서 누수 방지
+  if(window._modalOutsideListener){
+    document.removeEventListener('click', window._modalOutsideListener, true);
+  }
+  window._modalOutsideListener = (e)=>{
+    const m = document.getElementById('match-action-modal');
+    if(!m){ document.removeEventListener('click', window._modalOutsideListener, true); window._modalOutsideListener=null; return; }
+    if(!m.contains(e.target)){
+      document.removeEventListener('click', window._modalOutsideListener, true);
+      window._modalOutsideListener=null;
+      _hideMatchModal();
+    }
+  };
+  setTimeout(()=>{ document.addEventListener('click', window._modalOutsideListener, true); }, 200);
+}
+
+function _doLink(ri, mi, grpObj, origMi, origRi){
+  const a = _linkSel;
+  const b = {ri, mi, grpObj, origMi, origRi};
+  _linkSel = null;
+
+  if(a.origRi===origRi && a.origMi===origMi && a.grpObj===grpObj){
+    _redrawBracketView(); return; // 같은 경기 재클릭 → 취소
+  }
+
+  const grpA = a.grpObj || S.groupBrackets[S.activeGroup];
+  const grpB = b.grpObj || S.groupBrackets[S.activeGroup];
+  if(grpA !== grpB){ toast('같은 체급 경기끼리만 연결할 수 있어요','error'); _redrawBracketView(); return; }
+  if(a.origRi !== b.origRi){ toast('라운드가 맞지 않습니다','error'); _redrawBracketView(); return; }
+
+  const grp = grpA;
+  const targetRi = Math.max(a.origRi, b.origRi) + 1;
+  while(grp.matches.length <= targetRi) grp.matches.push([]);
+  const nextRound = grp.matches[targetRi];
+
+  const aKey=`${a.origRi}-${a.origMi}`, bKey=`${b.origRi}-${b.origMi}`;
+  const aLinked=nextRound.find(m=>m.fromA===aKey||m.fromB===aKey);
+  const bLinked=nextRound.find(m=>m.fromA===bKey||m.fromB===bKey);
+  if(aLinked||bLinked){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
+
+  const _aSeq=(a.matchObj&&a.matchObj._seqMi!=null)?a.matchObj._seqMi:((grpA._roundOffset&&grpA._roundOffset[a.origRi]!=null)?grpA._roundOffset[a.origRi]:0)+a.origMi;
+  const _bSeq=((grpB._roundOffset&&grpB._roundOffset[b.origRi]!=null)?grpB._roundOffset[b.origRi]:0)+b.origMi;
+  nextRound.push({p1:{name:`${grpA.court||1}-${a.origRi+1}-${_aSeq+1} 승자`,tbd:true},p2:{name:`${grpB.court||1}-${b.origRi+1}-${_bSeq+1} 승자`,tbd:true},fromA:aKey,fromB:bKey,bye:false});
+  _redrawBracketView();
+  toast(`${grp.label} ${grpA.court||1}-${a.origRi+1}-${_aSeq+1} vs ${grpB.court||1}-${b.origRi+1}-${_bSeq+1} 연결됨!`,'success');
+}
+
+function _doAdvance(origRi, origMi, grpObj){
+  const g = grpObj || S.groupBrackets[S.activeGroup];
+  while(g.matches.length <= origRi+1) g.matches.push([]);
+  const nextRound = g.matches[origRi+1];
+  const aKey = `${origRi}-${origMi}`;
+  if(nextRound.find(m=>m.fromA===aKey||m.fromB===aKey)){ toast('이미 연결된 경기입니다','error'); _redrawBracketView(); return; }
+  const _advCourtNum = g.court || 1;
+  const _advSeq=((g._roundOffset&&g._roundOffset[origRi]!=null)?g._roundOffset[origRi]:0)+origMi;
+  nextRound.push({p1:{name:`${_advCourtNum}-${origRi+1}-${_advSeq+1} 승자`,tbd:true},p2:null,fromA:aKey,fromB:null,bye:true});
+  _redrawBracketView();
+  toast(`${_advCourtNum}-${origRi+1}-${_advSeq+1} 승자 다음 라운드 직행!`,'success');
+}
+
+function _doRemoveRound(origRi, origMi, grpObj){
+  // grpObj가 null이면 origRi, origMi로 해당 매치를 가진 그룹을 전체에서 찾음
+  let g = grpObj;
+  if(!g){
+    g = S.groupBrackets.find(gb =>
+      gb.matches[origRi] && gb.matches[origRi][origMi]
+    );
+  }
+  if(!g){ toast('삭제할 연결이 없어요','info'); return; }
+  if(!g.matches[origRi]){ toast('삭제할 연결이 없어요','info'); return; }
+
+  const match = g.matches[origRi][origMi];
+  if(!match){ toast('삭제할 연결이 없어요','info'); return; }
+
+  // 1라운드 자동 생성 경기(fromA/fromB 없음)는 삭제 불가
+  if(origRi === 0 && !match.fromA && !match.fromB){
+    toast('1라운드 경기는 삭제할 수 없어요','info'); return;
+  }
+
+  g.matches[origRi].splice(origMi, 1);
+  if(g.matches[origRi].length === 0) g.matches.splice(origRi);
+
+  _redrawBracketView();
+  const _delSeq=((g._roundOffset&&g._roundOffset[origRi]!=null)?g._roundOffset[origRi]:0)+origMi;
+  toast(`${g.label} ${g.court||1}-${origRi+1}-${_delSeq+1} 경기를 삭제했어요`,'success');
+}
+
+function onMatchClick(ri, mi, matchObj, event){
+  event = event || window.event;
+  // 클릭된 경기 박스 DOM 요소 찾기
+  let anchorEl = null;
+  if(matchObj&&matchObj._domId){
+    anchorEl = document.querySelector(`[data-match-id="${matchObj._domId}"]`);
+  }
+  if(!anchorEl && event) anchorEl = event.currentTarget || event.target;
+  if(!anchorEl) anchorEl = document.getElementById('pts-bracket-view');
+
+  // 연결 대기 중이고 다른 경기 클릭 → 모달에 "이 경기와 연결" 표시
+  if(_linkSel){
+    const isSame = matchObj&&matchObj._domId && _linkSel.matchObj&&matchObj._domId===_linkSel.matchObj._domId;
+    if(!isSame){ _showMatchModal(anchorEl, ri, mi, matchObj); return; }
+  }
+
+  _showMatchModal(anchorEl, ri, mi, matchObj);
+}
+
+function advanceMatch(ri,mi){
+  // 하위 호환 — 직접 호출되는 경우 대비
+  _doAdvance(ri, mi, null);
+}
+
+function _showLinkBar(){ /* 모달로 대체됨 — 빈 함수 유지 (step4.js 등 외부 참조 대비) */ }
+function _hideLinkBar(){ _hideMatchModal(); }
+
+document.addEventListener('keydown', e=>{ 
+  if(e.key==='Escape'){
+    if(document.getElementById('match-action-modal')){ _hideMatchModal(); _linkSel=null; _redrawBracketView(); }
+    else window.close();
+  }
+});
+
+
+// 저장된 대진표의 승자 이름을 새 형식(경기장-라운드-번경기)으로 자동 변환
+// "1-2 승자" → "1-1-3 승자" 처럼 seqMi 기반으로 재계산
+function _migrateSlotNumbers(){
+  // 구 형식 "N번" → 새 형식 "경기장-N" 변환 + _startNum 항상 계산
+  if(!S.groupBrackets||!S.groupBrackets.length) return;
+  const needsMigration=S.groupBrackets.some(g=>
+    g.matches&&g.matches[0]&&g.matches[0].some(m=>
+      (m.p1&&/^\d+번/.test(m.p1.name))||(m.p2&&/^\d+번/.test(m.p2.name))
+    )
+  );
+  // 경기장별 통합 순번 계산 (groupBrackets 순서대로) — 마이그레이션 여부 무관하게 항상 실행
+  const courtCounters={};
+  let changed=0;
+  S.groupBrackets.forEach(g=>{
+    const court=g.court||1;
+    if(!courtCounters[court]) courtCounters[court]=1;
+    const startNum=courtCounters[court];
+    // _startNum이 없거나 0이면 계산값으로 설정
+    if(!g._startNum) g._startNum=startNum;
+    // 1라운드 슬롯 수 계산 (BYE=1, 일반=2)
+    let slotCount=0;
+    if(g.matches&&g.matches[0]){
+      g.matches[0].forEach(m=>{ slotCount+=m.bye?1:2; });
+    }
+    courtCounters[court]+=slotCount;
+    if(!needsMigration) return; // 이름 변환은 마이그레이션 필요할 때만
+    // 1라운드 이름 순서대로 순번 재할당
+    let cur=startNum;
+    if(g.matches&&g.matches[0]){
+      g.matches[0].forEach(m=>{
+        if(m.p1&&/^\d+번/.test(m.p1.name)){
+          m.p1.name=m.p1.name.replace(/^\d+번/,`${court}-${cur++}`);
+          changed++;
+        }
+        if(!m.bye&&m.p2&&/^\d+번/.test(m.p2.name)){
+          m.p2.name=m.p2.name.replace(/^\d+번/,`${court}-${cur++}`);
+          changed++;
+        }
+      });
+    }
+  });
+  if(changed>0){
+    try{
+      const clean=S.groupBrackets.map(g=>({...g,matches:g.matches.map(r=>r.map(m=>{const {_groupObj,...rest}=m;return rest;}))}));
+      localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
+      localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
+    }catch(e){}
+  }
+}
+
+function _migrateWinnerNames(){
+  if(!S.groupBrackets||!S.groupBrackets.length) return;
+  _computeSeqOffsets();
+  let changed=0;
+  S.groupBrackets.forEach(g=>{
+    const court=g.court||1;
+    g.matches.forEach((round,ri)=>{
+      round.forEach(m=>{
+        [m.p1,m.p2].forEach(p=>{
+          if(!p||!p.tbd) return;
+          // 기존 형식 "숫자-숫자 승자" 또는 "숫자-숫자-숫자 승자" 감지
+          const old2=p.name.match(/^(\d+)-(\d+) 승자$/);
+          const old3=p.name.match(/^(\d+)-(\d+)-(\d+) 승자$/);
+          if(old2||old3){
+            // fromA/fromB 키로 원본 경기 찾기
+            const fromKey=m.fromA||m.fromB;
+            if(!fromKey) return;
+            const [srcRi,srcMi]=fromKey.split('-').map(Number);
+            const srcRound=g.matches[srcRi];
+            if(!srcRound) return;
+            // 해당 라운드에서 p1/p2 기준으로 정확한 srcMi 파악
+            const isPFromA = m.fromA&&(p===m.p1);
+            const key=isPFromA?m.fromA:m.fromB;
+            if(!key) return;
+            const [kRi,kMi]=key.split('-').map(Number);
+            const seqNum=((g._roundOffset&&g._roundOffset[kRi]!=null)?g._roundOffset[kRi]:0)+kMi+1;
+            const newName=`${court}-${kRi+1}-${seqNum} 승자`;
+            if(p.name!==newName){ p.name=newName; changed++; }
+          }
+        });
+      });
+    });
+  });
+  if(changed>0){
+    // localStorage 갱신
+    try{
+      const clean=S.groupBrackets.map(g=>({...g,matches:g.matches.map(r=>r.map(m=>{const {_groupObj,...rest}=m;return rest;}))}));
+      localStorage.setItem('sgp_groupBrackets',JSON.stringify(clean));
+      localStorage.setItem('sgp_bracket_temp',JSON.stringify({groupBrackets:clean,savedAt:new Date().toLocaleTimeString()}));
+    }catch(e){}
+  }
+}
+
+// localStorage 복원 — 저장된 단계로 이동
+(function restoreFromStorage(){
+  try {
+    const savedGroups = localStorage.getItem('sgp_groups');
+    const savedKeys   = localStorage.getItem('sgp_sortKeys');
+    const savedPts    = localStorage.getItem('sgp_pts');
+    const savedStep   = localStorage.getItem('sgp_step');
+    if(savedGroups){
+      _groups   = JSON.parse(savedGroups);
+      _sortKeys = JSON.parse(savedKeys||'[]');
+      if(savedPts){ _pts=JSON.parse(savedPts); S.pts=_pts; }
+      const savedCourtCount = localStorage.getItem('sgp_courtCount');
+      const savedLayout     = localStorage.getItem('sgp_layout');
+      if(savedCourtCount) _courtCount=parseInt(savedCourtCount);
+      if(savedLayout) _bracketLayout=savedLayout;
+      setTimeout(()=>{
+        if(savedStep==='4'){
+          const savedGB=localStorage.getItem('sgp_groupBrackets');
+          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
+          _migrateSlotNumbers();
+          _migrateWinnerNames();
+          show('pts-step3');
+          renderBracketTabs();
+          _redrawBracketView();
+          setTimeout(()=>goStep4(), 100);
+          toast('이전 설정 불러왔어요','info');
+        } else if(savedStep==='3'){
+          const savedGB=localStorage.getItem('sgp_groupBrackets');
+          if(savedGB) S.groupBrackets=JSON.parse(savedGB);
+          _migrateSlotNumbers();
+          _migrateWinnerNames();
+          show('pts-step3');
+          renderBracketTabs();
+          _redrawBracketView();
+          toast('이전 설정 불러왔어요','info');
+        } else {
+          goStep2();
+          toast('이전 설정 불러왔어요','info');
+        }
+      }, 0);
+    }
+  } catch(e){}
+})();
+
+function restoreThenGo(){
+  if(window._restoreBanner) window._restoreBanner.remove();
+  goStep2();
+  toast('이어서 진행합니다!','success');
+}
+
+function clearSavedAndRestart(){
+  try{ localStorage.removeItem('sgp_groups'); localStorage.removeItem('sgp_sortKeys'); localStorage.removeItem('sgp_pts'); }catch(e){}
+  if(window._restoreBanner) window._restoreBanner.remove();
+  toast('초기화됐어요','info');
+}
+
+autoDetectSortKeys();
+renderList();
+/* ── 줌(비율 보기): zoom-wrap 전체(격자+콘텐츠)를 화면 배율로 조정 ── */

@@ -1,5 +1,3 @@
-
-// ── 체급 선택 체크박스 렌더 ──
 function _renderPdfCheckboxes(){
   const wrap=document.getElementById('pdf-group-checkboxes');
   if(!wrap) return;
@@ -670,4 +668,5 @@ function _showShuffleAnimation(type, names, onDone){
     spin();
   }
 }
+
 
