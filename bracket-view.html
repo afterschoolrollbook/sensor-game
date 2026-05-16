@@ -71,7 +71,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="_syncFromTab3()" style="padding:4px 12px;background:rgba(76,201,240,.15);border:1px solid rgba(76,201,240,.5);color:var(--accent);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⟳ 3번탭 동기화</button>
       </div>
     </div>
-
+    <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
     <div id="pts-bracket-view" style="flex:1;min-height:0;padding:16px 18px;overflow:hidden;display:flex;flex-direction:column;"></div>
   </div>
 
@@ -1073,14 +1073,7 @@ function show(stepId){
   if(el) el.classList.add('on');
   const ci=document.getElementById('step3-court-info');
   if(ci) ci.textContent=`경기장 ${_courtCount||1}개`;
-  ['A','B','C','D','E'].forEach(x=>{
-    const btn=document.getElementById('popup-lay-'+x);
-    if(!btn) return;
-    const active=x===(_bracketLayout||'A');
-    btn.style.borderColor=active?'var(--red)':'var(--border2)';
-    btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
-    btn.style.color=active?'var(--red)':'var(--text2)';
-  });
+  _updateLayoutBtns();
 }
 
 function togglePtsSort(key){
@@ -2030,7 +2023,85 @@ function _checkAndHandleOddAfterLink(g, ri){
   );
 }
 
-function renderBracketTabs(){ /* 삭제됨 */ }
+function renderBracketTabs(){
+  const tabs=document.getElementById('pts-bracket-tabs');
+  const groups=S.groupBrackets||[];
+  tabs.innerHTML='';
+  if(groups.length<1){tabs.style.display='none';return;}
+  tabs.style.display='block';
+
+  // 경기장별로 그룹 분류
+  const courts={};
+  groups.forEach((g,i)=>{
+    const c=g.court||1;
+    if(!courts[c]) courts[c]=[];
+    courts[c].push({g,i});
+  });
+
+  const courtNums=Object.keys(courts).map(Number).sort((a,b)=>a-b);
+
+  // 좌우 분리 컨테이너
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:0;width:100%;';
+
+  courtNums.forEach((courtNum, ci)=>{
+    const col=document.createElement('div');
+    col.style.cssText=`flex:1;padding:8px 14px;${ci>0?'border-left:1px solid var(--border)':''}`;
+
+    // 경기장 헤더
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-size:9px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;';
+    hdr.textContent=`// 경기장 ${courtNum}`;
+    col.appendChild(hdr);
+
+    // 그룹 목록
+    const list=document.createElement('div');
+    list.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+
+    courts[courtNum].forEach(({g,i})=>{
+      // 현재 그려진 non-bye 경기 박스 수
+      // 총 목표 박스 수 계산 (BYE 포함, 참가자 수 기준)
+      const calcTotalBoxes=(n)=>{ let t=0,c=n; while(c>1){t+=Math.ceil(c/2);c=Math.ceil(c/2);} return t; };
+      const totalBoxes=calcTotalBoxes(g.slots.length);
+      // 현재 그려진 박스 수 (BYE 포함)
+      const drawnBoxes=g.matches.reduce((acc,round)=>acc+round.length, 0);
+      const allDone=drawnBoxes>=totalBoxes;
+
+      const checkboxes=Array.from({length:totalBoxes},(_,ci)=>
+        `<span style="font-size:11px;color:${ci<drawnBoxes?'var(--green)':'var(--border2)'};">${ci<drawnBoxes?'☑':'☐'}</span>`
+      ).join('');
+
+      const btn=document.createElement('button');
+      const active=i===S.activeGroup;
+
+      const labelParts=g.label.split('/').map(s=>s.trim());
+      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+
+      btn.style.cssText=`
+        display:inline-flex;align-items:center;gap:5px;
+        padding:3px 8px;border-radius:5px;
+        border:1px solid ${allDone?'var(--green)':active?'var(--red)':'var(--border)'};
+        background:${allDone?'rgba(6,214,160,.1)':active?'rgba(230,57,70,.15)':'transparent'};
+        color:${allDone?'var(--green)':active?'var(--red)':'var(--text3)'};
+        font-size:10px;cursor:pointer;font-weight:${active?'700':'400'};
+        white-space:nowrap;
+      `;
+
+      btn.innerHTML=`
+        <span style="font-size:10px;">${shortLabel}</span>
+        <span style="font-size:9px;color:var(--text3);">(${g.slots.length}명)</span>
+        <span style="display:inline-flex;gap:1px;align-items:center;">${checkboxes}</span>
+      `;
+      btn.onclick=()=>{ S.activeGroup=i; renderBracketTabs(); _redrawBracketView(); };
+      list.appendChild(btn);
+    });
+
+    col.appendChild(list);
+    row.appendChild(col);
+  });
+
+  tabs.appendChild(row);
+}
 
 function saveBracketTemp(){
   try{
@@ -2099,14 +2170,38 @@ function toggleAssignMode(){
 }
 
 function setBracketLayout(mode){
+  // 경기장 2개 이상이면 단방향(A·B·C) 비활성
+  if((_courtCount||1) >= 2 && ['A','B','C'].includes(mode)){
+    toast('경기장 2개 이상에서는 단방향 레이아웃(A·B·C)을 사용할 수 없습니다. D 또는 E를 선택하세요.','error');
+    return;
+  }
   _bracketLayout=mode;
+  _updateLayoutBtns();
+  _redrawBracketView();
+}
+
+function _updateLayoutBtns(){
+  const multiCourt = (_courtCount||1) >= 2;
   ['A','B','C','D','E'].forEach(l=>{
     const btn=document.getElementById('popup-lay-'+l); if(!btn) return;
-    btn.style.borderColor=l===mode?'var(--red)':'var(--border2)';
-    btn.style.background=l===mode?'rgba(230,57,70,.2)':'transparent';
-    btn.style.color=l===mode?'var(--red)':'var(--text2)';
+    const active = l===(_bracketLayout||'A');
+    const disabled = multiCourt && ['A','B','C'].includes(l);
+    if(disabled){
+      btn.style.borderColor='var(--border)';
+      btn.style.background='transparent';
+      btn.style.color='var(--text3)';
+      btn.style.opacity='.3';
+      btn.style.cursor='not-allowed';
+      btn.title = `${l}: 단방향 — 경기장 2개 이상에서 사용 불가`;
+    } else {
+      btn.style.opacity='1';
+      btn.style.cursor='pointer';
+      btn.style.borderColor=active?'var(--red)':'var(--border2)';
+      btn.style.background=active?'rgba(230,57,70,.2)':'transparent';
+      btn.style.color=active?'var(--red)':'var(--text2)';
+      btn.title = l==='A'?'A: 좌→우':l==='B'?'B: 아래→위':l==='C'?'C: 위→아래':l==='D'?'D: 양쪽→가운데':'E: 위아래→가운데';
+    }
   });
-  _redrawBracketView();
 }
 
 function addRound(){ toast('경기 박스를 클릭해서 연결하세요','info'); }
