@@ -5169,6 +5169,13 @@ function _syncFromTab3(){
 
       if(cmd.type === 'brackets_update' && cmd.groupBrackets && cmd.groupBrackets.length){
         S.groupBrackets = cmd.groupBrackets;
+        // 현재경기 중 localStorage에서 삭제된 항목 정리
+        for(let _c=1;_c<=8;_c++){
+          if(_bvCurrentMatch[_c] && !localStorage.getItem(`sgp_display_vs_court_${_c}`)){
+            delete _bvCurrentMatch[_c];
+            delete _bvSelectedMatches[_c];
+          }
+        }
         _redrawBracketView();
         requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       }
