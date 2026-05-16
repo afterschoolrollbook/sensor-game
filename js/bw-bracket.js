@@ -239,85 +239,12 @@ function _redrawBracketView(){
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
-    const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
-    // 경기 카드 — D 레이아웃(_renderBracketHTML)과 동일한 스타일
-    const mkCard=(m,g,ri,mi)=>{
-      const courtN=g.court||1;
-      const offset=(g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0;
-      const seqNum=offset+mi+1;
-      const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
-      const hiding=!!window._hideNames;
-      const p1=m.p1, p2=m.p2;
-      const isBye=p1&&!p2;
-      const isDone=!!m.winner;
-      const isW1=isDone&&m.winner&&m.winner.name===(p1&&p1.name);
-      const isW2=isDone&&m.winner&&m.winner.name===(p2&&p2.name);
-      const borderColor=isDone?'#06d6a0':'var(--border2)';
-
-      const card=document.createElement('div');
-      card.dataset.ri=ri; card.dataset.mi=mi;
-      // 카드 크기/간격: step4.js 상단 BRACKET_CARD_W, BRACKET_CARD_GAP 참조
-      card.style.cssText=`width:${BRACKET_CARD_W}px;flex-shrink:0;border:2px solid ${borderColor};border-radius:6px;overflow:hidden;margin-right:${BRACKET_CARD_GAP}px;cursor:pointer;`;
-
-      // 헤더: D 레이아웃과 동일
-      const header=document.createElement('div');
-      header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
-      const lSpan=document.createElement('span');
-      lSpan.style.cssText='font-size:9px;color:#aaaaaa;font-weight:700;font-family:Share Tech Mono,monospace;';
-      lSpan.textContent=`${courtN}-${ri+1}-${seqNum}`;
-      const rSpan=document.createElement('span');
-      rSpan.style.cssText='font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;';
-      rSpan.textContent=`${shortLabel} ${seqNum}경기`;
-      header.appendChild(lSpan);
-      header.appendChild(rSpan);
-      card.appendChild(header);
-
-      const getName=(p)=>{
-        if(!p) return '?';
-        return hiding ? p.name.replace(/\s*\(.+\)/,'') : p.name;
-      };
-
-      if(isBye){
-        const row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
-        if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
-        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;white-space:nowrap;';
-        nm.textContent=getName(p1);
-        row.appendChild(nm);
-        const byeBadge=document.createElement('span');
-        byeBadge.style.cssText='font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;flex-shrink:0;';
-        byeBadge.textContent='BYE';
-        row.appendChild(byeBadge);
-        card.appendChild(row);
-      } else {
-        const row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#0d0d1a;width:100%;box-sizing:border-box;';
-        const mkName=(p,isWin,isLose)=>{
-          const span=document.createElement('span');
-          span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
-          span.textContent=getName(p);
-          return span;
-        };
-        const vs=document.createElement('span');
-        vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';
-        vs.textContent='VS';
-        if(p1&&p1.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p1.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
-        row.appendChild(mkName(p1,isW1,!isW1&&isDone));
-        row.appendChild(vs);
-        if(p2&&p2.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p2.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
-        row.appendChild(mkName(p2,isW2,!isW2&&isDone));
-        card.appendChild(row);
-      }
-      return card;
-    };
-
-    // SLOT/CARD_W: step4.js 상단 BRACKET_CARD_W + BRACKET_CARD_GAP 참조
-    const SLOT=BRACKET_CARD_W+BRACKET_CARD_GAP, CARD_W=BRACKET_CARD_W;
+    // 경기장 섹션 렌더 — _renderBracketVert(step4.js)를 호출 (D의 _renderBracketHTML과 동일 방식)
     const renderCourtSection=(groups, courtLabel, reverseRounds)=>{
       if(!groups.length) return null;
       const sec=document.createElement('div');
-      // reverseRounds(경기장 2): margin-top:auto로 하단 고정
+      // reverseRounds(경기장 2): margin-top:auto로 창 하단 고정
       sec.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:max-content;position:relative;${reverseRounds?'margin-top:auto;':'margin-bottom:40px;'}`;
 
       const lbl=document.createElement('div');
@@ -325,190 +252,36 @@ function _redrawBracketView(){
       lbl.textContent=courtLabel;
       sec.appendChild(lbl);
 
+      // 경기장 내 전체 라운드를 통합 rounds 배열로 구성 (체급별 경기를 라운드별로 합침)
       const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
-      // 항상 ri=0(1라운드)부터 수집 → reverseRounds면 렌더 순서만 뒤집기
-      const riList=Array.from({length:maxRi},(_,i)=>i);
-
-      // 라운드별 전체 경기 + 각 경기의 globalSlot 계산 (항상 ri 오름차순으로 수집)
-      const roundData=[]; // [{allMatches:[{m,g,ri,mi,slot}]}]
-      riList.forEach(ri=>{
-        let slot=0;
-        const allMatches=[];
+      const rounds=[];
+      for(let ri=0;ri<maxRi;ri++){
+        const matches=[];
         groups.forEach(g=>{
           if(g.matches[ri]){
+            const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
             g.matches[ri].forEach((m,mi)=>{
-              allMatches.push({m,g,ri,mi,slot});
-              slot++;
+              // _renderBracketHTML과 동일하게 태깅
+              matches.push({...m,
+                _groupObj:g,
+                _origMi:mi, _origRi:ri,
+                _groupLabel:shortLabel,
+                _seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi
+              });
             });
           }
         });
-        if(allMatches.length) roundData.push(allMatches);
-      });
+        rounds.push(matches);
+      }
 
-      // reverseRounds면 화면에 뒤집어서 렌더 (경기장 2: 2라운드→1라운드 순서)
-      // 연결선은 항상 "더 작은 ri(상위 라운드)" → "더 큰 ri(하위 라운드)" 방향
-      const renderOrder=reverseRounds?[...roundData].reverse():roundData;
-
-      renderOrder.forEach((allMatches, rowIdx)=>{
-        const ri=allMatches[0].ri;
-        const rName=ri===maxRi-1&&maxRi>1?'결승':ri===maxRi-2&&maxRi>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
-
-        const roundBlock=document.createElement('div');
-        roundBlock.style.cssText='margin-bottom:0;min-width:max-content;position:relative;';
-
-        const rHdr=document.createElement('div');
-        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
-        rHdr.textContent=rName.toUpperCase();
-        roundBlock.appendChild(rHdr);
-
-        const row=document.createElement('div');
-        // 수정1: align-items:center → 카드 세로 중앙정렬
-        row.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;position:relative;';
-
-        // "1라운드"는 roundData 기준 ri===0인 행 (reverseRounds와 무관하게 slot 기반 나열)
-        const isFirstRound=(ri===0);
-        if(isFirstRound){
-          // 1라운드: 순서대로 나열 (빈자리 없이 연속)
-          allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
-        } else {
-          // 2라운드+: 부모 슬롯(ri-1) 기반으로 위치 계산
-          // prevRoundData = roundData에서 ri-1에 해당하는 항목
-          const prevRoundData=roundData.find(rd=>rd.length>0&&rd[0].ri===ri-1)||[];
-          const prevSlotMap={};
-          prevRoundData.forEach(({g,ri:pRi,mi,slot})=>{
-            prevSlotMap[`${g.label}-${pRi}-${mi}`]=slot;
-          });
-
-          let placedUntilX=-SLOT; // 마지막으로 배치된 카드의 절대 우측 끝 x
-          allMatches.forEach(({m,g,ri,mi})=>{
-            const card=mkCard(m,g,ri,mi);
-            const fromA=m.fromA, fromB=m.fromB;
-            let slotA=-1, slotB=-1;
-            if(fromA){
-              const [pRi,pMi]=fromA.split('-').map(Number);
-              const key=`${g.label}-${pRi}-${pMi}`;
-              if(prevSlotMap[key]!=null) slotA=prevSlotMap[key];
-            }
-            if(fromB){
-              const [pRi,pMi]=fromB.split('-').map(Number);
-              const key=`${g.label}-${pRi}-${pMi}`;
-              if(prevSlotMap[key]!=null) slotB=prevSlotMap[key];
-            }
-            // fromA/B 없으면 수학 폴백
-            if(slotA<0){
-              const groupPrev=prevRoundData.filter(x=>x.g===g);
-              if(groupPrev.length){
-                const base=groupPrev[0].slot;
-                const localMi=allMatches.filter(x=>x.g===g).findIndex(x=>x.mi===mi);
-                slotA=base+localMi*2;
-                slotB=(base+localMi*2+1)<groupPrev.length?base+localMi*2+1:-1;
-              }
-            }
-            // 카드 중앙 절대 x 계산
-            let centerX;
-            if(slotA>=0&&slotB>=0) centerX=(slotA*SLOT+90+slotB*SLOT+90)/2;
-            else if(slotA>=0) centerX=slotA*SLOT+90;
-            else centerX=placedUntilX+SLOT+90;
-
-            // 카드 왼쪽 끝 절대 x
-            const cardLeft=centerX-90;
-            // 이전 카드 우측 끝 이후로부터의 margin
-            const marginLeft=Math.max(0, cardLeft-(placedUntilX+SLOT));
-            card.style.marginLeft=marginLeft+'px';
-            placedUntilX=cardLeft; // 이 카드 왼쪽 기준 (다음 카드는 +SLOT 이후)
-            row.appendChild(card);
-          });
-        }
-        roundBlock.appendChild(row);
-        // 연결선 placeholder — DOM 렌더 후 실측으로 그림 (D 레이아웃과 동일 방식)
-        roundBlock.dataset.rowIdx=rowIdx;
-        sec.appendChild(roundBlock);
-      });
-
-      // ── DOM 렌더 후 실측으로 연결선 그리기 (D 레이아웃 _renderBracketHTML 방식) ──
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        const secR=sec.getBoundingClientRect();
-        const W=sec.scrollWidth+200, H=sec.scrollHeight+200;
-
-        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-        svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;z-index:1;';
-        svg.setAttribute('width',W); svg.setAttribute('height',H);
-
-        const PATH=(d)=>{
-          const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-          p.setAttribute('d',d);
-          p.setAttribute('stroke','#ffffff');
-          p.setAttribute('stroke-width','2');
-          p.setAttribute('fill','none');
-          p.setAttribute('stroke-linecap','square');
-          p.setAttribute('stroke-linejoin','miter');
-          svg.appendChild(p);
-        };
-
-        // 카드 DOM 실측: data-ri, data-mi로 찾아서 getBoundingClientRect
-        const getCard=(ri,mi)=>{
-          const el=sec.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
-          if(!el) return null;
-          const r=el.getBoundingClientRect();
-          return{
-            left: r.left-secR.left,
-            right: r.right-secR.left,
-            top: r.top-secR.top,
-            bottom: r.bottom-secR.top,
-            cx: r.left-secR.left+r.width/2,
-            cy: r.top-secR.top+r.height/2,
-          };
-        };
-
-        // E 레이아웃: 세로 방향 (1라운드 위/아래, 2라운드 아래/위)
-        // 경기장1: 1라운드 카드 하단→2라운드 카드 상단
-        // 경기장2: 2라운드 카드 하단→1라운드 카드 상단 (reverseRounds이므로 renderOrder상 위→아래)
-        renderOrder.forEach((allMatches, rowIdx)=>{
-          const hasNext=rowIdx<renderOrder.length-1;
-          if(!hasNext) return;
-
-          const nextRound=renderOrder[rowIdx+1];
-          const nextRi=nextRound[0].ri;
-
-          nextRound.forEach(({m,g,mi:nmi})=>{
-            const fromA=m.fromA, fromB=m.fromB;
-            let a=null, b=null;
-            if(fromA){ const [r,mm]=fromA.split('-').map(Number); a=getCard(r,mm); }
-            if(fromB){ const [r,mm]=fromB.split('-').map(Number); b=getCard(r,mm); }
-            const t=getCard(nextRi, nmi);
-            if(!a||!t) return;
-
-            // 현재 라운드 카드 하단→다음 라운드 카드 상단 (세로 연결)
-            const ay=a.bottom, by_=b?b.bottom:a.bottom;
-            const ty=t.top;
-            const ax=a.cx, bx=b?b.cx:a.cx, tx=t.cx;
-            const midY=(ay+ty)/2;
-
-            if(b){
-              const midX=(ax+bx)/2;
-              // a 하단→midY, b 하단→midY, 수평 연결, 중앙→t 상단
-              PATH(`M${ax},${ay} V${midY}`);
-              PATH(`M${bx},${by_} V${midY}`);
-              PATH(`M${ax},${midY} H${bx}`);
-              PATH(`M${midX},${midY} V${ty}`);
-            } else {
-              // BYE: 직선
-              if(Math.abs(ax-tx)<1){ PATH(`M${ax},${ay} V${ty}`); }
-              else { PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`); }
-            }
-          });
-        });
-
-        sec.appendChild(svg);
-      }));
-
+      // _renderBracketVert: step4.js에 정의 (D의 _renderBracketHTML 세로형 버전)
+      _renderBracketVert(sec, rounds, reverseRounds);
       return sec;
     };
 
     const topSec=renderCourtSection(tGroups,'// 경기장 1', false);
     if(topSec) outerWrap.appendChild(topSec);
 
-    // 점선 없이 경기장 2 바로 배치
     const botSec=renderCourtSection(bGroups,'// 경기장 2', true);
     if(botSec) outerWrap.appendChild(botSec);
 
