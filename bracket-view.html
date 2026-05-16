@@ -68,6 +68,7 @@ button{cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
         <button onclick="setBracketLayout('D')" id="popup-lay-D" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="setBracketLayout('E')" id="popup-lay-E" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
         <button onclick="_refreshSvgLines()" style="padding:4px 10px;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:6px;font-size:11px;">🔁 선 새로고침</button>
+        <button onclick="_syncFromTab3()" style="padding:4px 12px;background:rgba(76,201,240,.15);border:1px solid rgba(76,201,240,.5);color:var(--accent);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">⟳ 3번탭 동기화</button>
       </div>
     </div>
     <div id="pts-bracket-tabs" style="display:none;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-x:auto;"></div>
@@ -693,13 +694,8 @@ window.addEventListener('storage',e=>{
       const gb=JSON.parse(e.newValue||'[]');
       if(gb.length){
         S.groupBrackets=gb;
-        _bvLoadSelectedFromStorage();
-        _setBvIsCurrentMatchIdx();
         _redrawBracketView();
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          _applyBvColors();
-          _applyBvSelectionHighlights();
-        }));
+        requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       }
     }catch(ex){}
     return;
@@ -4902,25 +4898,12 @@ window.addEventListener('load', ()=>{
     if(savedLayout) _bracketLayout = savedLayout;
 
     let gb = null;
-    // 1순위: sgp_groupBrackets — 3번탭이 유일하게 쓰는 키
-    try{
-      const raw=localStorage.getItem('sgp_groupBrackets');
-      if(raw){const p=JSON.parse(raw);if(p&&p.length)gb=p;}
-    }catch(e){}
+    // 1순위: sgp_groupBrackets (3번탭 전용 키)
+    try{ const r=localStorage.getItem('sgp_groupBrackets'); if(r){const p=JSON.parse(r);if(p&&p.length)gb=p;} }catch(e){}
     // 2순위: sgp_bracket_temp
-    if(!gb||!gb.length){
-      try{
-        const temp=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');
-        if(temp&&temp.groupBrackets&&temp.groupBrackets.length)gb=temp.groupBrackets;
-      }catch(e){}
-    }
+    if(!gb||!gb.length){ try{const t=JSON.parse(localStorage.getItem('sgp_bracket_temp')||'{}');if(t&&t.groupBrackets&&t.groupBrackets.length)gb=t.groupBrackets;}catch(e){} }
     // 3순위: sgp_bracket_final
-    if(!gb||!gb.length){
-      try{
-        const fin=JSON.parse(localStorage.getItem('sgp_bracket_final')||'{}');
-        if(fin&&fin.groupBrackets&&fin.groupBrackets.length)gb=fin.groupBrackets;
-      }catch(e){}
-    }
+    if(!gb||!gb.length){ try{const f=JSON.parse(localStorage.getItem('sgp_bracket_final')||'{}');if(f&&f.groupBrackets&&f.groupBrackets.length)gb=f.groupBrackets;}catch(e){} }
 
     if(!gb || !gb.length){
       const raw = localStorage.getItem('sgp_groupBrackets');
@@ -4944,10 +4927,7 @@ window.addEventListener('load', ()=>{
     show('pts-step3');
     renderBracketTabs();
     _redrawBracketView();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      _applyBvColors();
-      _applyBvSelectionHighlights();
-    }));
+    requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
   }catch(e){
     _showLoadError('렌더링 오류: '+e.message+'\n'+e.stack);
   }
@@ -5056,6 +5036,82 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
   }
 }
 
+// ── 단순 직접 적용: LIVE + 트로피 + 선수색상 ──
+function _applyMatchStates(){
+  const view = document.getElementById('pts-bracket-view');
+  if(!view) return;
+
+  // 1. 트로피 + 초록 테두리 (winner)
+  (S.groupBrackets||[]).forEach(g=>{
+    (g.matches||[]).forEach((round, ri)=>{
+      round.forEach((m, mi)=>{
+        if(!m.winner) return;
+        const box = view.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        if(!box) return;
+        box.style.borderColor='#06d6a0';
+        box.style.borderWidth='2px';
+        box.style.boxShadow='0 0 8px rgba(6,214,160,.3)';
+        // 모든 span 순회해서 이름 매칭
+        box.querySelectorAll('span').forEach(span=>{
+          if(span.dataset.bvDone) return;
+          const txt = (span.textContent||'').trim();
+          if(!txt || txt==='VS' || txt==='BYE') return;
+          if(txt === m.winner.name){
+            span.style.color='#06d6a0';
+            span.style.fontWeight='700';
+            span.dataset.bvDone='1';
+            if(!span.querySelector('.bv-trophy')){
+              const t=document.createElement('span');
+              t.className='bv-trophy';
+              t.textContent=' 🏆';
+              span.appendChild(t);
+            }
+          } else {
+            span.style.color='#555';
+            span.dataset.bvDone='1';
+          }
+        });
+      });
+    });
+  });
+
+  // 2. LIVE + 빨간 테두리 (현재 경기)
+  for(let c=1; c<=8; c++){
+    try{
+      const raw = localStorage.getItem(`sgp_display_vs_court_${c}`);
+      if(!raw) continue;
+      const mv = JSON.parse(raw);
+      if(mv.ri==null || mv.mi==null) continue;
+      const box = view.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`);
+      if(!box) continue;
+      box.style.borderColor='#e63946';
+      box.style.borderWidth='2.5px';
+      box.style.boxShadow='0 0 12px rgba(230,57,70,.5)';
+      const hdr = box.firstElementChild;
+      if(hdr && !hdr.querySelector('.bv-live')){
+        const live=document.createElement('span');
+        live.className='bv-live';
+        live.style.cssText='font-size:8px;color:#e63946;border:1px solid #e63946;border-radius:3px;padding:1px 4px;font-family:Share Tech Mono,monospace;margin-left:4px;animation:livepulse 1.2s ease-in-out infinite;';
+        live.textContent='LIVE';
+        hdr.appendChild(live);
+      }
+    }catch(e){}
+  }
+}
+
+// ── 3번탭 동기화 버튼 ──
+function _syncFromTab3(){
+  try{
+    const gb=JSON.parse(localStorage.getItem('sgp_groupBrackets')||'[]');
+    if(gb&&gb.length){
+      S.groupBrackets=gb;
+      _redrawBracketView();
+      requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
+      toast('3번탭 동기화 완료','success');
+    } else { toast('데이터 없음','error'); }
+  }catch(e){ toast('실패: '+e.message,'error'); }
+}
+
 // BroadcastChannel: 3번탭 경기 선택 / 하이라이트 해제 실시간 수신
 (function(){
   try{
@@ -5068,26 +5124,19 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
         const courtNum = cmd.court || 1;
         if(cmd.ri!=null && cmd.mi!=null){
           _bvApplySelection(courtNum, cmd.ri, cmd.mi, cmd.groupLabel||cmd.label||'', cmd.domId);
+          requestAnimationFrame(()=>_applyMatchStates());
         }
       }
 
-      // 3번탭 데이터 저장 시 전체 대진표 즉시 동기화
       if(cmd.type === 'brackets_update' && cmd.groupBrackets && cmd.groupBrackets.length){
         S.groupBrackets = cmd.groupBrackets;
-        _bvLoadSelectedFromStorage();
-        _setBvIsCurrentMatchIdx();
         _redrawBracketView();
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          _applyBvColors();
-          _applyBvSelectionHighlights();
-        }));
+        requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       }
 
-      // 승자 선택 후 하이라이트 해제
       if(cmd.type === 'clear_match'){
         const courtNum = cmd.court || 1;
         delete _bvCurrentMatch[courtNum];
-        delete _bvSelectedMatches[courtNum];
         const courtStr = String(courtNum);
         const prev = _selectedMatchByCourt[courtStr];
         if(prev){
@@ -5095,13 +5144,8 @@ function _bvApplySelection(courtNum, ri, mi, groupLabel, domId){
           if(el){ el.style.outline=''; el.style.boxShadow=''; }
           delete _selectedMatchByCourt[courtStr];
         }
-        _bvLoadSelectedFromStorage();
-        _setBvIsCurrentMatchIdx();
         _redrawBracketView();
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          _applyBvColors();
-          _applyBvSelectionHighlights();
-        }));
+        requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       }
     };
   }catch(e){}
@@ -5123,11 +5167,13 @@ window.addEventListener('storage', function(e){
         delete _selectedMatchByCourt[courtStr];
       }
       _redrawBracketView();
+      requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       return;
     }
     const mv = JSON.parse(e.newValue);
     if(mv.ri!=null && mv.mi!=null){
       _bvApplySelection(courtNum, mv.ri, mv.mi, mv.groupLabel||mv.label||'', mv.domId);
+      requestAnimationFrame(()=>_applyMatchStates());
     }
   }catch(err){}
 });
