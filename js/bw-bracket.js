@@ -229,62 +229,110 @@ function _redrawBracketView(){
   if(_bracketLayout==='E' && courts>=2){
     view.style.overflow='auto';
     view.style.padding='12px';
+    _computeSeqOffsets();
 
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;';
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
+    const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
-    const mkLabel=(txt)=>{
-      const d=document.createElement('div');
-      d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
-      d.textContent=txt;
-      return d;
+    // 경기 카드 (D랑 동일한 브라켓 박스 스타일)
+    const mkCard=(m,g,ri,mi)=>{
+      const courtN=g.court||1;
+      const offset=(g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0;
+      const seqNum=offset+mi+1;
+      const label=`${courtN}-${ri+1}-${seqNum}`;
+      const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
+      const p1n=(m.p1&&m.p1.name)||'?';
+      const p2n=(m.p2&&m.p2.name)||'?';
+      const isBye=m.p1&&!m.p2;
+      const isDone=!!m.winner;
+      const isW1=isDone&&m.winner&&m.winner.name===p1n;
+      const isW2=isDone&&m.winner&&m.winner.name===p2n;
+
+      const card=document.createElement('div');
+      card.dataset.ri=ri; card.dataset.mi=mi;
+      card.style.cssText=`width:190px;flex-shrink:0;border:1.5px solid ${isDone?'#06d6a0':'var(--border2)'};background:${isDone?'rgba(6,214,160,.04)':'var(--card)'};border-radius:8px;padding:6px 9px;margin-right:10px;`;
+
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:.5px;margin-bottom:5px;white-space:nowrap;';
+      hdr.textContent=`${label}  ${shortLabel}`;
+      card.appendChild(hdr);
+
+      const nameRow=document.createElement('div');
+      nameRow.style.cssText='display:flex;align-items:center;gap:4px;';
+      if(isBye){
+        const sp=document.createElement('span');
+        sp.style.cssText='font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;';
+        sp.textContent=p1n;
+        const bye=document.createElement('span');
+        bye.style.cssText='font-size:9px;color:var(--accent);flex-shrink:0;margin-left:4px;';
+        bye.textContent='BYE';
+        nameRow.appendChild(sp); nameRow.appendChild(bye);
+      } else {
+        const sp1=document.createElement('span');
+        sp1.style.cssText=`font-size:11px;font-weight:${isW1?'700':'500'};color:${isW1?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;`;
+        sp1.textContent=(isW1?'🏆 ':'')+p1n;
+        const vs=document.createElement('span');
+        vs.style.cssText="font-family:'Bebas Neue',cursive;font-size:11px;color:var(--red);flex-shrink:0;";
+        vs.textContent='VS';
+        const sp2=document.createElement('span');
+        sp2.style.cssText=`font-size:11px;font-weight:${isW2?'700':'500'};color:${isW2?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68px;`;
+        sp2.textContent=(isW2?'🏆 ':'')+p2n;
+        nameRow.appendChild(sp1); nameRow.appendChild(vs); nameRow.appendChild(sp2);
+      }
+      card.appendChild(nameRow);
+      return card;
     };
 
-    // D의 mkSection과 동일 — 그룹별 브라켓 트리
-    const mkSection=(g)=>{
-      const labelParts=g.label.split('/').map(s=>s.trim());
-      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    // 경기장 섹션: 라운드별로 전체 경기를 가로 한 줄
+    const renderCourtSection=(groups, courtLabel)=>{
+      if(!groups.length) return null;
       const sec=document.createElement('div');
-      sec.style.cssText='display:inline-flex;flex-direction:column;flex-shrink:0;min-width:max-content;margin-right:24px;';
-      const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
-      hdr.textContent=shortLabel;
-      sec.appendChild(hdr);
-      const groupWrap=document.createElement('div');
-      groupWrap.style.cssText='min-width:max-content;';
-      const taggedMatches=g.matches.map((round,ri)=>
-        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
-      );
-      S.matches=taggedMatches;
-      _renderBracketHTML(groupWrap,taggedMatches,'top-down',false);
-      _stripInnerScroll(groupWrap);
-      sec.appendChild(groupWrap);
+      sec.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;margin-bottom:8px;';
+
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;';
+      lbl.textContent=courtLabel;
+      sec.appendChild(lbl);
+
+      const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
+      for(let ri=0;ri<maxRi;ri++){
+        // 이 라운드의 모든 그룹 경기를 순서대로 수집
+        const allMatches=[];
+        groups.forEach(g=>{ if(g.matches[ri]) g.matches[ri].forEach((m,mi)=>allMatches.push({m,g,ri,mi})); });
+        if(!allMatches.length) continue;
+
+        const rName=ri===maxRi-1&&maxRi>1?'결승':ri===maxRi-2&&maxRi>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
+
+        const roundBlock=document.createElement('div');
+        roundBlock.style.cssText='margin-bottom:16px;min-width:max-content;';
+
+        const rHdr=document.createElement('div');
+        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);white-space:nowrap;';
+        rHdr.textContent=rName.toUpperCase();
+        roundBlock.appendChild(rHdr);
+
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
+        allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
+        roundBlock.appendChild(row);
+        sec.appendChild(roundBlock);
+      }
       return sec;
     };
 
-    // 경기장 1 (위) — 그룹들 가로로 나열
-    outerWrap.appendChild(mkLabel('// 경기장 1'));
-    const topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;margin-bottom:20px;';
-    tGroups.forEach(g=>topRow.appendChild(mkSection(g)));
-    outerWrap.appendChild(topRow);
+    const topSec=renderCourtSection(tGroups,'// 경기장 1');
+    if(topSec) outerWrap.appendChild(topSec);
 
-    // 구분선
-    if(bGroups.length){
-      const divider=document.createElement('div');
-      divider.style.cssText='border-top:2px dashed var(--border2);margin:8px 0 20px;min-width:max-content;';
-      outerWrap.appendChild(divider);
+    const divider=document.createElement('div');
+    divider.style.cssText='border-top:2px dashed var(--border2);margin:16px 0;min-width:max-content;';
+    outerWrap.appendChild(divider);
 
-      // 경기장 2 (아래) — 그룹들 가로로 나열
-      outerWrap.appendChild(mkLabel('// 경기장 2'));
-      const botRow=document.createElement('div');
-      botRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
-      bGroups.forEach(g=>botRow.appendChild(mkSection(g)));
-      outerWrap.appendChild(botRow);
-    }
+    const botSec=renderCourtSection(bGroups,'// 경기장 2');
+    if(botSec) outerWrap.appendChild(botSec);
 
     view.appendChild(outerWrap);
   } else if(_bracketLayout==='D' && courts>=2){
