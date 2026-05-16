@@ -399,13 +399,6 @@ function _bvShowModal(e,g,gi,ri,mi,m,label,shortLabel){
   if(!isPending){
     modal.appendChild(mkBtn('▶','현재 경기 선택','var(--accent)',()=>{
       _bvCurrentMatch[courtNum]={gi,ri,mi};
-      const p1n=m.p1?.name||'—', p2n=m.p2?.name||'—';
-      try{
-        const bc=new BroadcastChannel('sgp_cmd');
-        bc.postMessage({type:'set_match',p1:p1n,p2:p2n,label:shortLabel,court:courtNum,ri,mi,domId:`m_${gi}_${ri}_${mi}`,groupLabel:g.label});
-        bc.close();
-      }catch(ex){}
-      try{ localStorage.setItem(`sgp_display_vs_court_${courtNum}`,JSON.stringify({p1:p1n,p2:p2n,label:shortLabel,court:courtNum,ri,mi,domId:`m_${gi}_${ri}_${mi}`,groupLabel:g.label})); }catch(ex){}
       _redrawBracketView();
     },'미리보기 · 전광판 하이라이트'));
   }
@@ -4681,19 +4674,6 @@ function onMatchClick(ri, mi, matchObj, event){
     if(el){ el.style.outline='2px solid var(--red)'; el.style.boxShadow='0 0 12px rgba(230,57,70,.5)'; }
   }
 
-  // 전역 + 경기장별 localStorage 저장 (ri/mi/groupLabel 포함해서 상대방이 정확히 하이라이트)
-  const vsData = { p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, groupLabel: grpLbl };
-  try{ localStorage.setItem('sgp_display_vs', JSON.stringify(vsData)); }catch(e){}
-  try{ localStorage.setItem(`sgp_display_vs_court_${court}`, JSON.stringify(vsData)); }catch(e){}
-
-  // BroadcastChannel + storage cmd → display.html + 상대방 bracket-view 즉시 반영
-  const cmd = { type:'set_match', p1, p2, label, court, ri:origRi, mi:origMi, domId: matchObj?._domId, groupLabel: grpLbl, ts:Date.now() };
-  try{ localStorage.setItem('sgp_display_cmd', JSON.stringify(cmd)); }catch(e){}
-  try{
-    if(!window._bvBc) window._bvBc = new BroadcastChannel('sgp_cmd');
-    window._bvBc.postMessage(cmd);
-  }catch(e){}
-
   toast(`${label} (경기장 ${court}) 선택됨`, 'info');
 }
 
@@ -5169,6 +5149,13 @@ function _syncFromTab3(){
 
       if(cmd.type === 'brackets_update' && cmd.groupBrackets && cmd.groupBrackets.length){
         S.groupBrackets = cmd.groupBrackets;
+        for(let _c=1;_c<=8;_c++){
+          if(_bvCurrentMatch[_c] && !localStorage.getItem(`sgp_display_vs_court_${_c}`)){
+            delete _bvCurrentMatch[_c];
+            delete _bvSelectedMatches[_c];
+          }
+        }
+        _setBvIsCurrentMatchIdx();
         _redrawBracketView();
         requestAnimationFrame(()=>{ _applyBvColors(); _applyMatchStates(); });
       }
