@@ -40,6 +40,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #d1-live{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:3px;color:var(--red);border:1px solid var(--red);padding:4px 11px;border-radius:3px;flex-shrink:0;animation:lp 2s infinite;animation-play-state:paused;transform:translateZ(0);}
 #d1-live.active{animation-play-state:running;}
 @keyframes lp{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* 메인 */
 #d1-main{display:flex;gap:14px;align-items:stretch;overflow:hidden;min-height:0;position:relative;z-index:2;}
@@ -753,6 +754,7 @@ function refresh3(){
 
   _d3DrawBracket(view, groups, layout, courtCount, selectedMatches);
   _applyBracketColors(view, groups);
+  _applyBracketBadges(view, groups, selectedMatches);
 }
 
 function _applyBracketColors(view, groups){
@@ -795,6 +797,64 @@ function _applyBracketColors(view, groups){
   });
 }
 
+
+// ── 경기 박스에 LIVE/✓/🏆 뱃지 후처리 적용 ──
+function _applyBracketBadges(view, groups, selectedMatches){
+  groups.forEach((g,gi)=>{
+    const court=g.court||1;
+    const shortLabel=g.label.split('/').map((s,i)=>i===0?s.trim():s.trim().replace('부','')).join('·');
+    const wraps=view.querySelectorAll(`[data-court="${court}"]`);
+    let wrap=null;
+    wraps.forEach(w=>{ if(w.dataset.groupLabel===shortLabel) wrap=w; });
+    if(!wrap) return;
+
+    (g.matches||[]).forEach((round,ri)=>{
+      round.forEach((m,mi)=>{
+        const box=wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
+        if(!box) return;
+        const header=box.firstChild;
+        if(!header) return;
+
+        const isDone=!!m.winner;
+        const isCur=selectedMatches&&selectedMatches.some(s=>s.ri===ri&&s.mi===mi&&s.groupLabel===shortLabel);
+
+        // LIVE 뱃지 (이미 있으면 skip)
+        if(isCur&&!header.querySelector('.disp-live-badge')){
+          const b=document.createElement('span');
+          b.className='disp-live-badge';
+          b.style.cssText='font-size:8px;color:#e63946;border:1px solid #e63946;border-radius:3px;padding:1px 4px;font-family:Share Tech Mono,monospace;animation:livepulse 1.2s ease-in-out infinite;margin-left:3px;';
+          b.textContent='LIVE';
+          header.appendChild(b);
+        }
+        // ✓ 완료 뱃지
+        if(!isCur&&isDone&&!header.querySelector('.disp-done-badge')){
+          const b=document.createElement('span');
+          b.className='disp-done-badge';
+          b.style.cssText='font-size:10px;color:#06d6a0;font-weight:700;margin-left:3px;';
+          b.textContent='✓';
+          header.appendChild(b);
+        }
+
+        // 🏆 승자 이름 앞에 트로피
+        if(isDone&&m.winner){
+          const winName=m.winner.name;
+          box.querySelectorAll('span').forEach(span=>{
+            if(span.classList.contains('disp-live-badge')||span.classList.contains('disp-done-badge')||span.classList.contains('d3-cdot')) return;
+            const txt=(span.textContent||'').trim();
+            if(txt===winName&&!span.querySelector('.disp-trophy')){
+              const t=document.createElement('span');
+              t.className='disp-trophy';
+              t.textContent='🏆 ';
+              span.prepend(t);
+              span.style.color='#06d6a0';
+              span.style.fontWeight='700';
+            }
+          });
+        }
+      });
+    });
+  });
+}
 
 function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
   function stripScroll(div){
