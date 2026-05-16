@@ -949,18 +949,25 @@ function showWinner(name,time,court,matchLabel,shortLabel,seqNum){
     }
   }
 
-  // ── 폴백 2: localStorage 직접 조회 (이름 매칭) ──
+  // ── 폴백 2: localStorage 직접 조회 ──
+  // 우선순위: 가장 최근 선택된 경기장(_d3LastMatchCourt) → 이름 매칭 순으로 탐색
   if(!court || !matchLabel){
     const _cln=n=>(n||'').replace(/^\d+-\d+\s*/,'').replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim().toLowerCase();
     const winClean=_cln(name);
-    for(let c=1;c<=8;c++){
+    // 최근 선택 경기장 우선 확인
+    const courtOrder=[];
+    if(window._d3LastMatchCourt) courtOrder.push(window._d3LastMatchCourt);
+    for(let c=1;c<=8;c++){ if(c!==window._d3LastMatchCourt) courtOrder.push(c); }
+
+    for(const c of courtOrder){
       try{
         const stored=localStorage.getItem(`sgp_display_vs_court_${c}`);
         if(!stored) continue;
         const mv=JSON.parse(stored);
         if(!mv.court) continue;
         const p1c=_cln(mv.p1||''), p2c=_cln(mv.p2||'');
-        if(winClean && (p1c===winClean || p2c===winClean || !p1c)){
+        // 이름이 정확히 매칭될 때만 선택 (빈 이름으로 매칭 금지)
+        if(winClean && (p1c===winClean || p2c===winClean)){
           court      = court      || mv.court;
           matchLabel = matchLabel || mv.matchLabel || '';
           const gl   = mv.groupLabel || '';
@@ -1102,6 +1109,13 @@ function handleCmd(cmd){
   }
   if(cmd.type==='countdown')   triggerCountdown();
   if(cmd.type==='winner')      showWinner(cmd.name,cmd.time,cmd.court,cmd.matchLabel,cmd.shortLabel,cmd.seqNum);
+  if(cmd.type==='clear_match'){
+    // 해당 경기장 하이라이트 제거 후 대진표 갱신
+    if(cmd.court){
+      try{ localStorage.removeItem(`sgp_display_vs_court_${cmd.court}`); }catch(e){}
+    }
+    if(currentScreen===3) refresh3();
+  }
   if(cmd.type==='timer_start'){
     document.getElementById('d1-time').className='running';
     document.getElementById('d1-live').classList.add('active');

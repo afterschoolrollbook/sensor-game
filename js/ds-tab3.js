@@ -393,8 +393,8 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     lbl2.style.cssText = 'padding:5px 14px 3px;font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:1px;';
     lbl2.textContent = '// 경기 끝 · 승자 선택 → 다음 라운드 진출';
     mbody.appendChild(lbl2);
-    if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum)));
-    if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum)));
+    if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum, label, shortLabel)));
+    if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum, label, shortLabel)));
   }
 
   // ── 완료된 경기 ──
@@ -406,9 +406,8 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     lbl3.style.cssText = 'padding:5px 14px 3px;font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:1px;';
     lbl3.textContent = '// 승자 재선택';
     mbody.appendChild(lbl3);
-    if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum)));
-    if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum)));
-    mbody.appendChild(mkBtn('↩', '결과 취소', 'var(--red)', 'rgba(230,57,70,.1)', () => _t3CancelWinner(g, gi, ri, mi, courtNum)));
+    if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum, label, shortLabel)));
+    if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum, label, shortLabel)));
   }
 
   modal.appendChild(mbody);
@@ -468,7 +467,7 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
 }
 
 // ── 승자 선택 → 다음 라운드 이름 반영 → 저장 ──
-function _t3RecordWinner(g, gi, ri, mi, which, courtNum){
+function _t3RecordWinner(g, gi, ri, mi, which, courtNum, matchLabel, shortLabel){
   const m = g.matches[ri][mi];
   const winner = which === 'p1' ? m.p1 : m.p2;
   if(!winner) return;
@@ -491,13 +490,39 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum){
     delete _t3CurrentMatch[courtNum];
   }
 
+  // 전광판 하이라이트 제거: localStorage court 항목 삭제 → display.html refresh3() 자동 트리거
+  try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); }catch(ex){}
+
+  // pv3 미리보기 하이라이트도 제거
+  try{
+    if(typeof _pv3SelectedMatches !== 'undefined'){
+      _pv3SelectedMatches = _pv3SelectedMatches.filter(s => s.courtNum !== courtNum);
+    }
+    if(typeof updatePv3 === 'function') updatePv3();
+  }catch(ex){}
+
+  // bracket-view(새창)에도 하이라이트 해제 알림
+  try{
+    const bc2 = new BroadcastChannel('sgp_cmd');
+    bc2.postMessage({ type:'clear_match', court: courtNum });
+    bc2.close();
+  }catch(ex){}
+
   // 저장
   _t3Save();
 
-  // 전광판에 승자 알림
+  // 전광판에 승자 알림 (경기장·경기명·체급 포함)
   try{
+    const seqNum = matchLabel ? matchLabel.split('-').pop() : '';
     const bc = new BroadcastChannel('sgp_cmd');
-    bc.postMessage({ type:'winner', name:winner.name });
+    bc.postMessage({
+      type: 'winner',
+      name: winner.name,
+      court: courtNum,
+      matchLabel: matchLabel || '',
+      shortLabel: shortLabel || '',
+      seqNum: seqNum
+    });
     bc.close();
   } catch(ex){}
 
