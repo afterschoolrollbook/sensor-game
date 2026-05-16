@@ -1,5 +1,13 @@
 // ══ STEP 4: 진행방식 ══
 
+// ── 브라켓 카드 공통 상수 ──
+// bw-bracket.js(E 레이아웃)와 이 파일(_renderBracketHTML)이 함께 참조
+// 카드 크기/간겜 변경은 여기서만 하면 됨
+const BRACKET_CARD_W   = 180; // 카드 너비(px)
+const BRACKET_CARD_GAP  = 40; // 카드 사이 가로 간겜(px)
+const BRACKET_SLOT_H    = 90; // 세로 슬롯 높이(px) — _renderBracketHTML 전용
+
+
 /* ── PROC 선택 + 대진표 트리 ── */
 function buildProc(){
   const w=document.getElementById('proclist');
@@ -433,7 +441,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   // 1라운드 매치 수 → 전체 슬롯 깊이 기준
   const r0len=rounds[0].length;
   // 슬롯 1개당 고정 높이 (px). 박스 높이 ~70px + 위아래 여백
-  const SLOT_H=90;
+  const SLOT_H=BRACKET_SLOT_H; // ← step4.js 상단 BRACKET_SLOT_H 참조
 
   const outerWrap=document.createElement('div');
   outerWrap.style.cssText='position:relative;overflow:auto;padding-bottom:8px;';
@@ -441,7 +449,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const container=document.createElement('div');
   // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이
   const totalH=r0len*SLOT_H+32;
-  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;position:relative;`;
+  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:${BRACKET_CARD_GAP}px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;position:relative;` // ← step4.js 상단 BRACKET_CARD_GAP 참조;
 
   // 재귀 cy 계산: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCy=(ri,mi)=>{
@@ -468,7 +476,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
     col.dataset.col=ri;
-    col.style.cssText=`display:flex;flex-direction:column;height:100%;width:180px;flex-shrink:0;`;
+    col.style.cssText=`display:flex;flex-direction:column;height:100%;width:${BRACKET_CARD_W}px;flex-shrink:0;`; // ← step4.js 상단 BRACKET_CARD_W 참조
 
     // 라운드 라벨
     const lbl=document.createElement('div');
@@ -506,7 +514,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         top:${slotCenterY}px;
         border-radius:6px;overflow:hidden;cursor:pointer;
         border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};
-        width:180px;
+        width:${BRACKET_CARD_W}px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
       const _capturedMatch=m;
@@ -721,49 +729,42 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   }));
 }
 
+
 /* ────────────────────────────────────────────────
    세로 브라켓 렌더러 — E 레이아웃 전용
    1라운드가 가로로 나열, 다음 라운드가 아래로 쌓임
-   reverseRounds=true 이면 렌더 순서 반전 (경기장2: 2라운드 위, 1라운드 아래)
-   _renderBracketHTML과 동일한 카드 구조/클릭/승자/선택 기능 유지
+   reverseRounds=true: 경기장2 (2라운드 위, 1라운드 아래)
+   _renderBracketHTML과 동일한 카드/클릭/승자/선택 기능
 ──────────────────────────────────────────────── */
 function _renderBracketVert(wrap, rounds, reverseRounds){
-  // rounds: [[{p1,p2,bye,winner,fromA,fromB,_groupObj,_groupLabel,_seqMi,...},...],...]
-  // ri=0이 1라운드, ri=1이 2라운드
-  // reverseRounds=true: 화면에 ri=1(2라운드)을 위에, ri=0(1라운드)을 아래에 표시
+  if(!rounds||!rounds.length||!rounds[0].length) return;
 
-  const SLOT_W = BRACKET_CARD_W + BRACKET_CARD_GAP; // 카드 1슬롯 가로폭 (step4.js 상단 상수 참조)
-  const ROUND_GAP = 16; // 라운드 간 세로 간격(px)
+  const SLOT_W = BRACKET_CARD_W + BRACKET_CARD_GAP; // step4.js 상단 상수 참조
+  const ROUND_GAP = 16;
   const roundNames = ['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
+  const T = rounds.length;
 
   const container = document.createElement('div');
   container.style.cssText = 'position:relative;min-width:max-content;';
 
-  // 렌더 순서 결정
-  const riList = rounds.map((_,i)=>i);
-  const renderOrder = reverseRounds ? [...riList].reverse() : riList;
+  // 렌더 순서
+  const renderOrder = reverseRounds ? rounds.map((_,i)=>i).reverse() : rounds.map((_,i)=>i);
 
-  // 각 ri별 슬롯(가로위치) 계산 — 항상 ri=0 기준
-  // ri=0: slot=0,1,2,... 순서대로
-  // ri=1: fromA/fromB로 부모 슬롯의 중앙에 배치
-  const slotOf = {}; // `${ri}-${mi}` → slot(float)
+  // ri별 가로 슬롯 위치 계산 (ri=0 기준, fromA/fromB 우선)
+  const slotOf = {};
   rounds[0].forEach((_,mi)=>{ slotOf[`0-${mi}`]=mi; });
-  for(let ri=1;ri<rounds.length;ri++){
+  for(let ri=1;ri<T;ri++){
     rounds[ri].forEach((m,mi)=>{
       let sA=-1,sB=-1;
       if(m.fromA){ const [r,mm]=m.fromA.split('-').map(Number); if(slotOf[`${r}-${mm}`]!=null) sA=slotOf[`${r}-${mm}`]; }
       if(m.fromB){ const [r,mm]=m.fromB.split('-').map(Number); if(slotOf[`${r}-${mm}`]!=null) sB=slotOf[`${r}-${mm}`]; }
-      if(sA<0){ sA=mi*2; sB=mi*2+1<rounds[ri-1].length?mi*2+1:-1; }
-      slotOf[`${ri}-${mi}`] = sB>=0 ? (sA+sB)/2 : sA;
+      if(sA<0){ sA=mi*2; sB=(mi*2+1)<rounds[ri-1].length?mi*2+1:-1; }
+      slotOf[`${ri}-${mi}`] = sB>=0?(sA+sB)/2:sA;
     });
   }
 
-  // 라운드별 row 엘리먼트 저장 (선 그리기용)
-  const rowEls = {};
-
-  renderOrder.forEach((ri, rowIdx)=>{
+  renderOrder.forEach((ri)=>{
     const matches = rounds[ri];
-    const T = rounds.length;
     const rName = ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
 
     const roundBlock = document.createElement('div');
@@ -776,8 +777,7 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
     roundBlock.appendChild(rHdr);
 
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;position:relative;';
-    rowEls[ri] = row;
+    row.style.cssText = 'display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;';
 
     matches.forEach((m, mi)=>{
       const isBye = m.p1&&!m.p2;
@@ -786,10 +786,9 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       const p1=m.p1, p2=m.p2;
 
       const slot = slotOf[`${ri}-${mi}`]||0;
-      // 이전에 배치된 카드 우측 끝 기준으로 marginLeft 계산
-      const targetLeft = slot * SLOT_W;
-      const prevRight = mi===0 ? 0 : (slotOf[`${ri}-${mi-1}`]||0)*SLOT_W + BRACKET_CARD_W + BRACKET_CARD_GAP;
-      const marginLeft = Math.max(0, targetLeft - prevRight);
+      const prevSlot = mi===0 ? -1 : (slotOf[`${ri}-${mi-1}`]||0);
+      const prevRight = mi===0 ? 0 : prevSlot*SLOT_W + BRACKET_CARD_W + BRACKET_CARD_GAP;
+      const marginLeft = Math.max(0, slot*SLOT_W - prevRight);
 
       let borderColor = isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#1a4a2a':isBye?'#444444':'#ffffff';
 
@@ -798,16 +797,10 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       const _matchId = `${ri}-${mi}-${Math.random().toString(36).slice(2,7)}`;
       box.dataset.matchId = _matchId;
       m._domId = _matchId;
-      box.style.cssText = `
-        width:${BRACKET_CARD_W}px;flex-shrink:0;
-        border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};
-        border-radius:6px;overflow:hidden;cursor:pointer;
-        margin-left:${marginLeft}px;margin-right:${BRACKET_CARD_GAP}px;
-        ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
-      `;
+      box.style.cssText = `width:${BRACKET_CARD_W}px;flex-shrink:0;border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};border-radius:6px;overflow:hidden;cursor:pointer;margin-left:${marginLeft}px;margin-right:${BRACKET_CARD_GAP}px;${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}`;
       box.addEventListener('click', ()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi,m));
 
-      // 헤더 (D와 동일)
+      // 헤더 — _renderBracketHTML과 동일
       const header = document.createElement('div');
       header.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
       const _courtNum = (m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
@@ -818,39 +811,28 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       box.appendChild(header);
 
       if(isBye){
-        const row2 = document.createElement('div');
-        row2.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
-        if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row2.appendChild(dot);}
-        const nm = document.createElement('span');
-        nm.style.cssText = 'font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;white-space:nowrap;';
-        const _hn = window._hideNames||false;
-        nm.textContent = p1?(_hn?p1.name.replace(/\s*\(.+\)/,''):p1.name):'?';
-        row2.appendChild(nm);
-        const byeBadge = document.createElement('span');
-        byeBadge.style.cssText = 'font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;flex-shrink:0;';
-        byeBadge.textContent = 'BYE';
-        row2.appendChild(byeBadge);
-        box.appendChild(row2);
+        const r2=document.createElement('div');
+        r2.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
+        if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;r2.appendChild(dot);}
+        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;white-space:nowrap;';
+        const _hn=window._hideNames||false;
+        nm.textContent=p1?(_hn?p1.name.replace(/\s*\(.+\)/,''):p1.name):'?';
+        r2.appendChild(nm);
+        const byeBadge=document.createElement('span');byeBadge.style.cssText='font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;flex-shrink:0;';byeBadge.textContent='BYE';
+        r2.appendChild(byeBadge);
+        box.appendChild(r2);
       } else {
-        const row2 = document.createElement('div');
-        row2.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#0d0d1a;width:100%;box-sizing:border-box;';
-        const mkName=(p,isWin,isLose)=>{
-          const span=document.createElement('span');
-          span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
-          const _hn=window._hideNames||false;
-          span.textContent=p?(_hn?p.name.replace(/\s*\(.+\)/,''):p.name):'?';
-          return span;
-        };
-        const isW1=m.winner&&m.winner===p1, isW2=m.winner&&m.winner===p2;
-        const vs=document.createElement('span');
-        vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';
-        vs.textContent='VS';
-        if(p1&&p1.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p1.color};margin-right:4px;vertical-align:middle;`;row2.appendChild(d);}
-        row2.appendChild(mkName(p1,isW1,!isW1&&!!m.winner));
-        row2.appendChild(vs);
-        if(p2&&p2.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p2.color};margin-right:4px;vertical-align:middle;`;row2.appendChild(d);}
-        row2.appendChild(mkName(p2,isW2,!isW2&&!!m.winner));
-        box.appendChild(row2);
+        const r2=document.createElement('div');
+        r2.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#0d0d1a;width:100%;box-sizing:border-box;';
+        const mkName=(p,isWin,isLose)=>{const span=document.createElement('span');span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;const _hn=window._hideNames||false;span.textContent=p?(_hn?p.name.replace(/\s*\(.+\)/,''):p.name):'?';return span;};
+        const isW1=m.winner&&m.winner===p1,isW2=m.winner&&m.winner===p2;
+        const vs=document.createElement('span');vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';vs.textContent='VS';
+        if(p1&&p1.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p1.color};margin-right:4px;vertical-align:middle;`;r2.appendChild(d);}
+        r2.appendChild(mkName(p1,isW1,!isW1&&!!m.winner));
+        r2.appendChild(vs);
+        if(p2&&p2.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p2.color};margin-right:4px;vertical-align:middle;`;r2.appendChild(d);}
+        r2.appendChild(mkName(p2,isW2,!isW2&&!!m.winner));
+        box.appendChild(r2);
       }
       row.appendChild(box);
     });
@@ -861,7 +843,7 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
 
   wrap.appendChild(container);
 
-  // 연결선: DOM 렌더 후 실측 (D 레이아웃과 동일 방식)
+  // 연결선 — DOM 렌더 후 실측 (D 레이아웃 _renderBracketHTML과 동일 방식)
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const W=container.scrollWidth+200, H=container.scrollHeight+200;
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -873,51 +855,30 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       const el=container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
       if(!el) return null;
       const r=el.getBoundingClientRect();
-      return{
-        left:r.left-cr.left, right:r.right-cr.left,
-        top:r.top-cr.top, bottom:r.bottom-cr.top,
-        cx:r.left-cr.left+r.width/2, cy:r.top-cr.top+r.height/2,
-      };
+      return{cx:r.left-cr.left+r.width/2, top:r.top-cr.top, bottom:r.bottom-cr.top};
     };
 
     const PATH=(d)=>{
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
-      p.setAttribute('d',d);
-      p.setAttribute('stroke','#ffffff');
-      p.setAttribute('stroke-width','2');
-      p.setAttribute('fill','none');
-      p.setAttribute('stroke-linecap','square');
-      p.setAttribute('stroke-linejoin','miter');
+      p.setAttribute('d',d);p.setAttribute('stroke','#ffffff');p.setAttribute('stroke-width','2');
+      p.setAttribute('fill','none');p.setAttribute('stroke-linecap','square');p.setAttribute('stroke-linejoin','miter');
       svg.appendChild(p);
     };
 
-    // renderOrder 기준으로 인접한 두 라운드 사이에 선 그리기
-    // 경기장1(reverseRounds=false): ri=0(위)→ri=1(아래), 카드 하단→다음 카드 상단
-    // 경기장2(reverseRounds=true):  ri=1(위)→ri=0(아래), 카드 하단→다음 카드 상단
-    for(let rowIdx=0; rowIdx<renderOrder.length-1; rowIdx++){
-      const curRi  = renderOrder[rowIdx];
-      const nextRi = renderOrder[rowIdx+1];
-      const nextMatches = rounds[nextRi];
-
-      nextMatches.forEach((nm, nmi)=>{
-        let srcA=-1, srcB=-1;
-        if(nm.fromA){ const [r,mm]=nm.fromA.split('-').map(Number); if(r===curRi) srcA=mm; }
-        if(nm.fromB){ const [r,mm]=nm.fromB.split('-').map(Number); if(r===curRi) srcB=mm; }
-        // fromA/B 없으면 수학 폴백
-        if(srcA<0){ srcA=nmi*2; srcB=nmi*2+1<rounds[curRi].length?nmi*2+1:-1; }
-        const hasB = srcB>=0 && srcB<rounds[curRi].length;
-
-        const a = getBox(curRi, srcA);
-        const b = hasB ? getBox(curRi, srcB) : null;
-        const t = getBox(nextRi, nmi);
+    // renderOrder 기준 인접 라운드 사이 선 그리기
+    for(let i=0;i<renderOrder.length-1;i++){
+      const curRi  = renderOrder[i];
+      const nextRi = renderOrder[i+1];
+      rounds[nextRi].forEach((nm,nmi)=>{
+        let srcA=-1,srcB=-1;
+        if(nm.fromA){const [r,mm]=nm.fromA.split('-').map(Number);if(r===curRi)srcA=mm;}
+        if(nm.fromB){const [r,mm]=nm.fromB.split('-').map(Number);if(r===curRi)srcB=mm;}
+        if(srcA<0){srcA=nmi*2;srcB=nmi*2+1<rounds[curRi].length?nmi*2+1:-1;}
+        const hasB=srcB>=0&&srcB<rounds[curRi].length;
+        const a=getBox(curRi,srcA), b=hasB?getBox(curRi,srcB):null, t=getBox(nextRi,nmi);
         if(!a||!t) return;
-
-        // 세로 연결: 현재 카드 하단→다음 카드 상단
-        const ax=a.cx, ay=a.bottom;
-        const bx=b?b.cx:null, by_=b?b.bottom:null;
-        const tx=t.cx, ty=t.top;
-        const midY=(Math.max(ay, by_||ay)+ty)/2;
-
+        const ax=a.cx, ay=a.bottom, bx=b?b.cx:null, by_=b?b.bottom:null, tx=t.cx, ty=t.top;
+        const midY=(Math.max(ay,by_||ay)+ty)/2;
         if(b){
           const midX=(ax+bx)/2;
           PATH(`M${ax},${ay} V${midY}`);
@@ -925,16 +886,14 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
           PATH(`M${ax},${midY} H${bx}`);
           PATH(`M${midX},${midY} V${ty}`);
         } else {
-          if(Math.abs(ax-tx)<1){ PATH(`M${ax},${ay} V${ty}`); }
-          else { PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`); }
+          if(Math.abs(ax-tx)<1){PATH(`M${ax},${ay} V${ty}`);}
+          else{PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`);}
         }
       });
     }
-
     container.appendChild(svg);
   }));
 }
-
 
 
 /* ────────────────────────────────────────────────
