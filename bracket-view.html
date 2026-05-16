@@ -1903,8 +1903,77 @@ function _redrawBracketViewTree(){
     }
 
     view.appendChild(outerWrap);
+  } else if(_bracketLayout==='E' && courts>=2){
+    // ── E 다경기장 — bw-bracket.js의 renderCourtSection과 동일 로직 ──
+    view.style.overflow='auto';
+    view.style.padding='12px';
+    _computeSeqOffsets();
+
+    const outerWrap=document.createElement('div');
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;min-height:100%;';
+
+    const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
+    const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
+
+    const _renderECourtSection=(groups,courtLabel,reverseRounds)=>{
+      if(!groups.length) return null;
+      const sec=document.createElement('div');
+      sec.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:max-content;position:relative;${reverseRounds?'margin-top:auto;':'margin-bottom:40px;'}`;
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;';
+      lbl.textContent=courtLabel;
+      sec.appendChild(lbl);
+
+      const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
+
+      // fromA/fromB를 merged 배열 인덱스로 remapping (그룹 local → merged)
+      const _gmo={};
+      for(let ri=0;ri<maxRi;ri++){
+        let cursor=0;
+        groups.forEach((g,gi)=>{
+          if(!_gmo[gi]) _gmo[gi]={};
+          _gmo[gi][ri]=cursor;
+          if(g.matches[ri]) cursor+=g.matches[ri].length;
+        });
+      }
+
+      const rounds=[];
+      for(let ri=0;ri<maxRi;ri++){
+        const matches=[];
+        groups.forEach((g,gi)=>{
+          if(g.matches[ri]){
+            const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
+            const remapKey=(key)=>{
+              if(!key) return key;
+              const [kr,km]=key.split('-').map(Number);
+              const off=(_gmo[gi]&&_gmo[gi][kr]!=null)?_gmo[gi][kr]:0;
+              return `${kr}-${km+off}`;
+            };
+            g.matches[ri].forEach((m,mi)=>{
+              matches.push({...m,
+                fromA:remapKey(m.fromA),fromB:remapKey(m.fromB),
+                _groupObj:g,_origMi:mi,_origRi:ri,
+                _groupLabel:shortLabel,
+                _seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi
+              });
+            });
+          }
+        });
+        rounds.push(matches);
+      }
+
+      _renderBracketVert(sec,rounds,reverseRounds);
+      return sec;
+    };
+
+    const _tSec=_renderECourtSection(tGroups,'// 경기장 1',false);
+    if(_tSec) outerWrap.appendChild(_tSec);
+    const _bSec=_renderECourtSection(bGroups,'// 경기장 2',true);
+    if(_bSec) outerWrap.appendChild(_bSec);
+
+    view.appendChild(outerWrap);
   } else {
-    // A/B/C/E형 — 그룹별로 태깅해서 렌더링 (D형과 동일하게 _groupObj/_origRi/_origMi 보존)
+    // A/B/C/E형(단일 경기장) — 그룹별로 태깅해서 렌더링
     view.style.overflow='auto';
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='padding:8px;min-width:max-content;';
