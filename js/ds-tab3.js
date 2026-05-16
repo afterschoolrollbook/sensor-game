@@ -408,6 +408,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     mbody.appendChild(lbl3);
     if(m.p1) mbody.appendChild(mkBtn('🏆', `${p1n} 승리`, 'var(--green)', 'rgba(6,214,160,.1)', () => _t3RecordWinner(g, gi, ri, mi, 'p1', courtNum, label, shortLabel)));
     if(m.p2) mbody.appendChild(mkBtn('🏆', `${p2n} 승리`, 'var(--yellow)', 'rgba(255,214,10,.08)', () => _t3RecordWinner(g, gi, ri, mi, 'p2', courtNum, label, shortLabel)));
+    mbody.appendChild(mkBtn('↩', '결과 취소', 'var(--red)', 'rgba(230,57,70,.1)', () => _t3CancelWinner(g, gi, ri, mi, courtNum)));
   }
 
   modal.appendChild(mbody);
