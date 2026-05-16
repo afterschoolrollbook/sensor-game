@@ -229,57 +229,222 @@ function _redrawBracketView(){
   if(_bracketLayout==='E' && courts>=2){
     view.style.overflow='auto';
     view.style.padding='12px';
+    _computeSeqOffsets();
 
     const outerWrap=document.createElement('div');
     outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;';
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
+    const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
-    const mkLabel=(txt)=>{
-      const d=document.createElement('div');
-      d.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
-      d.textContent=txt;
-      return d;
+    // 경기 카드 (세로 가운데 정렬: 경기명 / 선수1 / VS / 선수2)
+    const mkCard=(m,g,ri,mi)=>{
+      const courtN=g.court||1;
+      const offset=(g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0;
+      const seqNum=offset+mi+1;
+      const label=`${courtN}-${ri+1}-${seqNum}`;
+      const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
+      const p1n=(m.p1&&m.p1.name)||'?';
+      const p2n=(m.p2&&m.p2.name)||'?';
+      const isBye=m.p1&&!m.p2;
+      const isDone=!!m.winner;
+      const isW1=isDone&&m.winner&&m.winner.name===p1n;
+      const isW2=isDone&&m.winner&&m.winner.name===p2n;
+
+      const card=document.createElement('div');
+      card.dataset.ri=ri; card.dataset.mi=mi;
+      card.style.cssText=`width:190px;flex-shrink:0;border:1.5px solid ${isDone?'#06d6a0':'var(--border2)'};background:${isDone?'rgba(6,214,160,.04)':'var(--card)'};border-radius:8px;padding:8px;margin-right:10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;`;
+
+      // 경기명
+      const hdr=document.createElement('div');
+      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:.5px;white-space:nowrap;width:100%;text-align:center;';
+      hdr.textContent=`${label}  ${shortLabel}`;
+      card.appendChild(hdr);
+
+      if(isBye){
+        const sp=document.createElement('div');
+        sp.style.cssText='font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;';
+        sp.textContent=p1n;
+        const bye=document.createElement('div');
+        bye.style.cssText='font-size:9px;color:var(--accent);';
+        bye.textContent='BYE';
+        card.appendChild(sp);
+        card.appendChild(bye);
+      } else {
+        // 선수1
+        const sp1=document.createElement('div');
+        sp1.style.cssText=`font-size:12px;font-weight:${isW1?'700':'500'};color:${isW1?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
+        sp1.textContent=(isW1?'🏆 ':'')+p1n;
+
+        // VS
+        const vs=document.createElement('div');
+        vs.style.cssText="font-family:'Bebas Neue',cursive;font-size:13px;color:var(--red);line-height:1;";
+        vs.textContent='VS';
+
+        // 선수2
+        const sp2=document.createElement('div');
+        sp2.style.cssText=`font-size:12px;font-weight:${isW2?'700':'500'};color:${isW2?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
+        sp2.textContent=(isW2?'🏆 ':'')+p2n;
+
+        card.appendChild(sp1);
+        card.appendChild(vs);
+        card.appendChild(sp2);
+      }
+      return card;
     };
 
-    // 그룹별 top-down 브라켓 트리: 1라운드가 위에 가로 한 줄, 아래로 수렴, 연결선 자동
-    const mkSection=(g)=>{
-      const labelParts=g.label.split('/').map(s=>s.trim());
-      const shortLabel=labelParts.map((p,pi)=>pi===0?p:p.replace('부','')).join('·');
+    // 경기장 섹션: 라운드별로 전체 경기를 가로 한 줄 + 연결선 + 2라운드 위치
+    const SLOT=200, CARD_W=190; // 카드 190px + 우측여백 10px
+    const renderCourtSection=(groups, courtLabel, reverseRounds)=>{
+      if(!groups.length) return null;
       const sec=document.createElement('div');
-      sec.style.cssText='display:inline-flex;flex-direction:column;flex-shrink:0;min-width:max-content;margin-right:24px;';
-      const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
-      hdr.textContent=shortLabel;
-      sec.appendChild(hdr);
-      const groupWrap=document.createElement('div');
-      groupWrap.style.cssText='min-width:max-content;position:relative;';
-      const taggedMatches=g.matches.map((round,ri)=>
-        round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel,_seqMi:(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+mi}))
-      );
-      S.matches=taggedMatches;
-      _renderBracketHTML(groupWrap, taggedMatches, 'top-down', false);
-      _stripInnerScroll(groupWrap);
-      sec.appendChild(groupWrap);
+      sec.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;margin-bottom:8px;position:relative;';
+
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;';
+      lbl.textContent=courtLabel;
+      sec.appendChild(lbl);
+
+      const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
+      const riList=Array.from({length:maxRi},(_,i)=>i);
+      if(reverseRounds) riList.reverse();
+
+      // 라운드별 전체 경기 + 각 경기의 globalSlot 계산
+      const roundData=[]; // [{allMatches:[{m,g,ri,mi,slot}], globalSlotMap}]
+      riList.forEach(ri=>{
+        let slot=0;
+        const allMatches=[];
+        groups.forEach(g=>{
+          if(g.matches[ri]){
+            g.matches[ri].forEach((m,mi)=>{
+              allMatches.push({m,g,ri,mi,slot});
+              slot++;
+            });
+          }
+        });
+        if(allMatches.length) roundData.push(allMatches);
+      });
+
+      roundData.forEach((allMatches, rowIdx)=>{
+        const ri=allMatches[0].ri;
+        const rName=ri===maxRi-1&&maxRi>1?'결승':ri===maxRi-2&&maxRi>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
+
+        const roundBlock=document.createElement('div');
+        roundBlock.style.cssText='margin-bottom:0;min-width:max-content;position:relative;';
+
+        const rHdr=document.createElement('div');
+        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
+        rHdr.textContent=rName.toUpperCase();
+        roundBlock.appendChild(rHdr);
+
+        // 이 라운드 카드들의 margin-left 계산 (이전 라운드 부모 위치 기준)
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;position:relative;';
+
+        if(rowIdx===0){
+          // 1라운드: 순서대로 나열
+          allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
+        } else {
+          // 2라운드+: 부모 슬롯 기반으로 위치 계산
+          const prevRound=roundData[rowIdx-1];
+          // 이전 라운드 슬롯맵 (groupLabel+ri+mi → slot)
+          const prevSlotMap={};
+          prevRound.forEach(({g,ri,mi,slot})=>{
+            prevSlotMap[`${g.label}-${ri}-${mi}`]=slot;
+          });
+
+          let prevSlot=-1;
+          allMatches.forEach(({m,g,ri,mi})=>{
+            const card=mkCard(m,g,ri,mi);
+            // fromA/fromB로 부모 슬롯 찾기
+            const fromA=m.fromA, fromB=m.fromB;
+            let slotA=-1, slotB=-1;
+            if(fromA){
+              const [pRi,pMi]=fromA.split('-').map(Number);
+              const key=`${g.label}-${pRi}-${pMi}`;
+              if(prevSlotMap[key]!=null) slotA=prevSlotMap[key];
+            }
+            if(fromB){
+              const [pRi,pMi]=fromB.split('-').map(Number);
+              const key=`${g.label}-${pRi}-${pMi}`;
+              if(prevSlotMap[key]!=null) slotB=prevSlotMap[key];
+            }
+            // fromA/B 없으면 수학 폴백 (2:1 페어링)
+            if(slotA<0){
+              // 이전 라운드에서 같은 그룹의 첫 슬롯 찾기
+              const groupPrev=prevRound.filter(x=>x.g===g);
+              if(groupPrev.length){
+                const base=groupPrev[0].slot;
+                const localMi=allMatches.filter(x=>x.g===g).indexOf(allMatches.find(x=>x.g===g&&x.mi===mi));
+                slotA=base+localMi*2;
+                slotB=base+localMi*2+1<groupPrev.length?base+localMi*2+1:-1;
+              }
+            }
+            // 카드 중앙 x 계산
+            let centerX;
+            if(slotA>=0&&slotB>=0) centerX=(slotA*SLOT+95+slotB*SLOT+95)/2;
+            else if(slotA>=0) centerX=slotA*SLOT+95;
+            else centerX=(prevSlot+1)*SLOT+95;
+
+            const marginLeft=Math.max(0,centerX-95-(prevSlot+1>=0?(prevSlot+1)*SLOT:0));
+            card.style.marginLeft=(prevSlot<0?Math.max(0,centerX-95):Math.max(0,centerX-95-( (prevSlot+1)*SLOT )))+'px';
+            prevSlot=slotA>=0?(slotB>=0?slotB:slotA):prevSlot+1;
+            row.appendChild(card);
+          });
+        }
+        roundBlock.appendChild(row);
+
+        // ── 연결선 SVG (이 라운드와 다음 라운드 사이) ──
+        if(rowIdx<roundData.length-1){
+          const nextRound=roundData[rowIdx+1];
+          const SVG_H=32;
+          const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+          svg.style.cssText=`display:block;width:100%;height:${SVG_H}px;overflow:visible;margin:0;`;
+          svg.setAttribute('height',SVG_H);
+
+          // 현재 라운드 슬롯맵
+          const curSlotMap={};
+          allMatches.forEach(({g,ri,mi,slot})=>{ curSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
+
+          nextRound.forEach(({m,g})=>{
+            const fromA=m.fromA, fromB=m.fromB;
+            let slotA=-1, slotB=-1;
+            if(fromA){const [r,mm]=fromA.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotA=curSlotMap[k];}
+            if(fromB){const [r,mm]=fromB.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotB=curSlotMap[k];}
+            if(slotA<0&&slotB<0) return;
+            const childCx=slotA>=0&&slotB>=0?(slotA*SLOT+95+slotB*SLOT+95)/2:slotA>=0?slotA*SLOT+95:slotB*SLOT+95;
+            if(slotA>=0){
+              const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+              line.setAttribute('x1',slotA*SLOT+95); line.setAttribute('y1',0);
+              line.setAttribute('x2',childCx); line.setAttribute('y2',SVG_H);
+              line.setAttribute('stroke','rgba(90,90,122,.7)'); line.setAttribute('stroke-width','1.5');
+              svg.appendChild(line);
+            }
+            if(slotB>=0&&slotB!==slotA){
+              const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+              line.setAttribute('x1',slotB*SLOT+95); line.setAttribute('y1',0);
+              line.setAttribute('x2',childCx); line.setAttribute('y2',SVG_H);
+              line.setAttribute('stroke','rgba(90,90,122,.7)'); line.setAttribute('stroke-width','1.5');
+              svg.appendChild(line);
+            }
+          });
+          roundBlock.appendChild(svg);
+        } else {
+          roundBlock.style.marginBottom='16px';
+        }
+
+        sec.appendChild(roundBlock);
+      });
       return sec;
     };
 
-    // 경기장 1 (위)
-    outerWrap.appendChild(mkLabel('// 경기장 1'));
-    const topRow=document.createElement('div');
-    topRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;margin-bottom:32px;';
-    tGroups.forEach(g=>topRow.appendChild(mkSection(g)));
-    outerWrap.appendChild(topRow);
+    const topSec=renderCourtSection(tGroups,'// 경기장 1', false);
+    if(topSec) outerWrap.appendChild(topSec);
 
-    // 경기장 2 (아래) — 점선 없이 바로
-    if(bGroups.length){
-      outerWrap.appendChild(mkLabel('// 경기장 2'));
-      const botRow=document.createElement('div');
-      botRow.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;min-width:max-content;';
-      bGroups.forEach(g=>botRow.appendChild(mkSection(g)));
-      outerWrap.appendChild(botRow);
-    }
+    // 점선 없이 경기장 2 바로 배치
+    const botSec=renderCourtSection(bGroups,'// 경기장 2', true);
+    if(botSec) outerWrap.appendChild(botSec);
 
     view.appendChild(outerWrap);
   } else if(_bracketLayout==='D' && courts>=2){
