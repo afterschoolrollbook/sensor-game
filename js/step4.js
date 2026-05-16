@@ -1,5 +1,13 @@
 // ══ STEP 4: 진행방식 ══
 
+// ── 브라켓 카드 공통 상수 ──
+// bw-bracket.js(E 레이아웃)와 이 파일(_renderBracketHTML)이 함께 참조
+// 카드 크기/간겜 변경은 여기서만 하면 됨
+const BRACKET_CARD_W   = 180; // 카드 너비(px)
+const BRACKET_CARD_GAP  = 40; // 카드 사이 가로 간겜(px)
+const BRACKET_SLOT_H    = 90; // 세로 슬롯 높이(px) — _renderBracketHTML 전용
+
+
 /* ── PROC 선택 + 대진표 트리 ── */
 function buildProc(){
   const w=document.getElementById('proclist');
@@ -433,7 +441,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   // 1라운드 매치 수 → 전체 슬롯 깊이 기준
   const r0len=rounds[0].length;
   // 슬롯 1개당 고정 높이 (px). 박스 높이 ~70px + 위아래 여백
-  const SLOT_H=90;
+  const SLOT_H=BRACKET_SLOT_H; // ← step4.js 상단 BRACKET_SLOT_H 참조
 
   const outerWrap=document.createElement('div');
   outerWrap.style.cssText='position:relative;overflow:auto;padding-bottom:8px;';
@@ -441,7 +449,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   const container=document.createElement('div');
   // 전체 높이 = 1라운드 슬롯 수 × SLOT_H + 라벨 높이
   const totalH=r0len*SLOT_H+32;
-  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:40px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;position:relative;`;
+  container.style.cssText=`display:flex;flex-direction:${reversed?'row-reverse':'row'};gap:${BRACKET_CARD_GAP}px;align-items:flex-start;padding:8px 8px 24px 8px;min-width:max-content;height:${totalH}px;position:relative;` // ← step4.js 상단 BRACKET_CARD_GAP 참조;
 
   // 재귀 cy 계산: fromA/fromB 우선, 없으면 mi*2 폴백
   const calcCy=(ri,mi)=>{
@@ -468,7 +476,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
   rounds.forEach((matches,ri)=>{
     const col=document.createElement('div');
     col.dataset.col=ri;
-    col.style.cssText=`display:flex;flex-direction:column;height:100%;width:180px;flex-shrink:0;`;
+    col.style.cssText=`display:flex;flex-direction:column;height:100%;width:${BRACKET_CARD_W}px;flex-shrink:0;`; // ← step4.js 상단 BRACKET_CARD_W 참조
 
     // 라운드 라벨
     const lbl=document.createElement('div');
@@ -506,7 +514,7 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
         top:${slotCenterY}px;
         border-radius:6px;overflow:hidden;cursor:pointer;
         border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};
-        width:180px;
+        width:${BRACKET_CARD_W}px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
       const _capturedMatch=m;

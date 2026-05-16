@@ -227,86 +227,94 @@ function _redrawBracketView(){
   view.style.flexDirection='column';
 
   if(_bracketLayout==='E' && courts>=2){
-    view.style.overflow='auto'; // 가로+세로 스크롤 모두 허용
-    view.style.height='100%';   // outerWrap의 min-height:100%가 작동하려면 부모 높이 필요
+    view.style.overflow='auto';
     view.style.padding='12px';
-    view.style.boxSizing='border-box';
     _computeSeqOffsets();
 
     const outerWrap=document.createElement('div');
-    // min-height:100%로 경기장2가 창 하단에 붙도록 컨테이너를 뷰 전체 높이로 확장
-    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;min-height:100%;';
+    outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;';
 
     const tGroups=(S.groupBrackets||[]).filter(g=>g.court===1);
     const bGroups=(S.groupBrackets||[]).filter(g=>g.court===2);
     const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
-    // 경기 카드 (세로 가운데 정렬: 경기명 / 선수1 / VS / 선수2)
+    // 경기 카드 — D 레이아웃(_renderBracketHTML)과 동일한 스타일
     const mkCard=(m,g,ri,mi)=>{
       const courtN=g.court||1;
       const offset=(g._roundOffset&&g._roundOffset[ri]!=null)?g._roundOffset[ri]:0;
       const seqNum=offset+mi+1;
-      const label=`${courtN}-${ri+1}-${seqNum}`;
       const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
       const hiding=!!window._hideNames;
-      const stripName=n=>hiding?(n||'').replace(/\s*\(.*\)$/,'').trim()||n:n;
-      const p1n=stripName((m.p1&&m.p1.name)||'?');
-      const p2n=stripName((m.p2&&m.p2.name)||'?');
-      const isBye=m.p1&&!m.p2;
+      const p1=m.p1, p2=m.p2;
+      const isBye=p1&&!p2;
       const isDone=!!m.winner;
-      const isW1=isDone&&m.winner&&m.winner.name===p1n;
-      const isW2=isDone&&m.winner&&m.winner.name===p2n;
+      const isW1=isDone&&m.winner&&m.winner.name===(p1&&p1.name);
+      const isW2=isDone&&m.winner&&m.winner.name===(p2&&p2.name);
+      const borderColor=isDone?'#06d6a0':'var(--border2)';
 
       const card=document.createElement('div');
       card.dataset.ri=ri; card.dataset.mi=mi;
-      card.style.cssText=`width:190px;flex-shrink:0;border:1.5px solid ${isDone?'#06d6a0':'var(--border2)'};background:${isDone?'rgba(6,214,160,.04)':'var(--card)'};border-radius:8px;padding:8px;margin-right:10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;`;
+      // 카드 크기/간격: step4.js 상단 BRACKET_CARD_W, BRACKET_CARD_GAP 참조
+      card.style.cssText=`width:${BRACKET_CARD_W}px;flex-shrink:0;border:2px solid ${borderColor};border-radius:6px;overflow:hidden;margin-right:${BRACKET_CARD_GAP}px;cursor:pointer;`;
 
-      // 경기명
-      const hdr=document.createElement('div');
-      hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:.5px;white-space:nowrap;width:100%;text-align:center;';
-      hdr.textContent=`${label}  ${shortLabel}`;
-      card.appendChild(hdr);
+      // 헤더: D 레이아웃과 동일
+      const header=document.createElement('div');
+      header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
+      const lSpan=document.createElement('span');
+      lSpan.style.cssText='font-size:9px;color:#aaaaaa;font-weight:700;font-family:Share Tech Mono,monospace;';
+      lSpan.textContent=`${courtN}-${ri+1}-${seqNum}`;
+      const rSpan=document.createElement('span');
+      rSpan.style.cssText='font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;';
+      rSpan.textContent=`${shortLabel} ${seqNum}경기`;
+      header.appendChild(lSpan);
+      header.appendChild(rSpan);
+      card.appendChild(header);
+
+      const getName=(p)=>{
+        if(!p) return '?';
+        return hiding ? p.name.replace(/\s*\(.+\)/,'') : p.name;
+      };
 
       if(isBye){
-        const sp=document.createElement('div');
-        sp.style.cssText='font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;';
-        sp.textContent=p1n;
-        const bye=document.createElement('div');
-        bye.style.cssText='font-size:9px;color:var(--accent);';
-        bye.textContent='BYE';
-        card.appendChild(sp);
-        card.appendChild(bye);
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;background:#0a0a14;';
+        if(p1&&p1.color){const dot=document.createElement('div');dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${p1.color};flex-shrink:0;`;row.appendChild(dot);}
+        const nm=document.createElement('span');nm.style.cssText='font-size:13px;font-weight:600;color:#d0d0d0;text-align:center;white-space:nowrap;';
+        nm.textContent=getName(p1);
+        row.appendChild(nm);
+        const byeBadge=document.createElement('span');
+        byeBadge.style.cssText='font-size:9px;color:#4cc9f0;font-family:Share Tech Mono,monospace;flex-shrink:0;';
+        byeBadge.textContent='BYE';
+        row.appendChild(byeBadge);
+        card.appendChild(row);
       } else {
-        // 선수1
-        const sp1=document.createElement('div');
-        sp1.style.cssText=`font-size:12px;font-weight:${isW1?'700':'500'};color:${isW1?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
-        sp1.textContent=(isW1?'🏆 ':'')+p1n;
-
-        // VS
-        const vs=document.createElement('div');
-        vs.style.cssText="font-family:'Bebas Neue',cursive;font-size:13px;color:var(--red);line-height:1;";
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#0d0d1a;width:100%;box-sizing:border-box;';
+        const mkName=(p,isWin,isLose)=>{
+          const span=document.createElement('span');
+          span.style.cssText=`font-size:12px;font-weight:${isWin?'700':'500'};color:${p?(isWin?'#fff':isLose?'#555':'#d0d0d0'):'#2a2a3e'};white-space:nowrap;`;
+          span.textContent=getName(p);
+          return span;
+        };
+        const vs=document.createElement('span');
+        vs.style.cssText='font-size:11px;color:#e63946;font-family:Bebas Neue,cursive;letter-spacing:1px;flex-shrink:0;padding:0 2px;';
         vs.textContent='VS';
-
-        // 선수2
-        const sp2=document.createElement('div');
-        sp2.style.cssText=`font-size:12px;font-weight:${isW2?'700':'500'};color:${isW2?'var(--green)':isDone?'#444':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;`;
-        sp2.textContent=(isW2?'🏆 ':'')+p2n;
-
-        card.appendChild(sp1);
-        card.appendChild(vs);
-        card.appendChild(sp2);
+        if(p1&&p1.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p1.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
+        row.appendChild(mkName(p1,isW1,!isW1&&isDone));
+        row.appendChild(vs);
+        if(p2&&p2.color){const d=document.createElement('span');d.style.cssText=`display:inline-block;width:6px;height:6px;border-radius:50%;background:${p2.color};margin-right:4px;vertical-align:middle;`;row.appendChild(d);}
+        row.appendChild(mkName(p2,isW2,!isW2&&isDone));
+        card.appendChild(row);
       }
       return card;
     };
 
-    // 경기장 섹션: 라운드별로 전체 경기를 가로 한 줄 + 연결선 + 2라운드 위치
-    const SLOT=200, CARD_W=190; // 카드 190px + 우측여백 10px
-    const SVG_H=36, MID=18; // 연결선 SVG 높이 (카드와 딱 붙도록)
+    // SLOT/CARD_W: step4.js 상단 BRACKET_CARD_W + BRACKET_CARD_GAP 참조
+    const SLOT=BRACKET_CARD_W+BRACKET_CARD_GAP, CARD_W=BRACKET_CARD_W;
     const renderCourtSection=(groups, courtLabel, reverseRounds)=>{
       if(!groups.length) return null;
       const sec=document.createElement('div');
-      // reverseRounds(경기장 2): 1라운드가 창 하단에 고정되도록 flex-end + margin-top:auto
-      sec.style.cssText=`display:flex;flex-direction:column;gap:0;min-width:max-content;position:relative;${reverseRounds?'margin-top:auto;':'margin-bottom:40px;'}`;
+      sec.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;margin-bottom:8px;position:relative;';
 
       const lbl=document.createElement('div');
       lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:10px;';
@@ -334,6 +342,7 @@ function _redrawBracketView(){
       });
 
       // reverseRounds면 화면에 뒤집어서 렌더 (경기장 2: 2라운드→1라운드 순서)
+      // 연결선은 항상 "더 작은 ri(상위 라운드)" → "더 큰 ri(하위 라운드)" 방향
       const renderOrder=reverseRounds?[...roundData].reverse():roundData;
 
       renderOrder.forEach((allMatches, rowIdx)=>{
@@ -343,30 +352,30 @@ function _redrawBracketView(){
         const roundBlock=document.createElement('div');
         roundBlock.style.cssText='margin-bottom:0;min-width:max-content;position:relative;';
 
-        // 경기장 2(reverseRounds): 마지막 행(1라운드)은 레이블 없애고 아래 고정
-        const showHdr=!(reverseRounds && rowIdx===renderOrder.length-1);
-        if(showHdr){
-          const rHdr=document.createElement('div');
-          rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:4px;white-space:nowrap;';
-          rHdr.textContent=rName.toUpperCase();
-          roundBlock.appendChild(rHdr);
-        }
+        const rHdr=document.createElement('div');
+        rHdr.style.cssText='font-size:9px;color:var(--text3);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;white-space:nowrap;';
+        rHdr.textContent=rName.toUpperCase();
+        roundBlock.appendChild(rHdr);
 
         const row=document.createElement('div');
+        // 수정1: align-items:center → 카드 세로 중앙정렬
         row.style.cssText='display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;position:relative;';
 
-        // "1라운드"는 roundData 기준 ri===0인 행
+        // "1라운드"는 roundData 기준 ri===0인 행 (reverseRounds와 무관하게 slot 기반 나열)
         const isFirstRound=(ri===0);
         if(isFirstRound){
+          // 1라운드: 순서대로 나열 (빈자리 없이 연속)
           allMatches.forEach(({m,g,ri,mi})=>row.appendChild(mkCard(m,g,ri,mi)));
         } else {
+          // 2라운드+: 부모 슬롯(ri-1) 기반으로 위치 계산
+          // prevRoundData = roundData에서 ri-1에 해당하는 항목
           const prevRoundData=roundData.find(rd=>rd.length>0&&rd[0].ri===ri-1)||[];
           const prevSlotMap={};
           prevRoundData.forEach(({g,ri:pRi,mi,slot})=>{
             prevSlotMap[`${g.label}-${pRi}-${mi}`]=slot;
           });
 
-          let placedUntilX=-SLOT;
+          let placedUntilX=-SLOT; // 마지막으로 배치된 카드의 절대 우측 끝 x
           allMatches.forEach(({m,g,ri,mi})=>{
             const card=mkCard(m,g,ri,mi);
             const fromA=m.fromA, fromB=m.fromB;
@@ -381,6 +390,7 @@ function _redrawBracketView(){
               const key=`${g.label}-${pRi}-${pMi}`;
               if(prevSlotMap[key]!=null) slotB=prevSlotMap[key];
             }
+            // fromA/B 없으면 수학 폴백
             if(slotA<0){
               const groupPrev=prevRoundData.filter(x=>x.g===g);
               if(groupPrev.length){
@@ -390,38 +400,35 @@ function _redrawBracketView(){
                 slotB=(base+localMi*2+1)<groupPrev.length?base+localMi*2+1:-1;
               }
             }
+            // 카드 중앙 절대 x 계산
             let centerX;
-            if(slotA>=0&&slotB>=0) centerX=(slotA*SLOT+95+slotB*SLOT+95)/2;
-            else if(slotA>=0) centerX=slotA*SLOT+95;
-            else centerX=placedUntilX+SLOT+95;
+            if(slotA>=0&&slotB>=0) centerX=(slotA*SLOT+90+slotB*SLOT+90)/2;
+            else if(slotA>=0) centerX=slotA*SLOT+90;
+            else centerX=placedUntilX+SLOT+90;
 
-            const cardLeft=centerX-95;
+            // 카드 왼쪽 끝 절대 x
+            const cardLeft=centerX-90;
+            // 이전 카드 우측 끝 이후로부터의 margin
             const marginLeft=Math.max(0, cardLeft-(placedUntilX+SLOT));
             card.style.marginLeft=marginLeft+'px';
-            placedUntilX=cardLeft;
+            placedUntilX=cardLeft; // 이 카드 왼쪽 기준 (다음 카드는 +SLOT 이후)
             row.appendChild(card);
           });
         }
+        roundBlock.appendChild(row);
 
         // ── 연결선 SVG ──
-        // 경기장 1: 카드 아래에 SVG 붙임 (선이 아래 다음 라운드로)
-        // 경기장 2: 카드 위에 SVG 붙임 (선이 위 이전 라운드로) → roundBlock에 row보다 먼저 SVG 삽입
-
+        // reverseRounds(경기장 2): 2라운드가 위에, 1라운드가 아래 → 선은 위에서 아래로(1라운드→2라운드 방향)
+        // 경기장 2의 경우 현재 row가 2라운드면 다음 row(아래)가 1라운드이므로
+        // "현재 라운드의 부모(1라운드) 슬롯"을 기준으로 선을 그려야 함
         const hasNextRow=rowIdx<renderOrder.length-1;
+        if(hasNextRow){
+          // 경기장 1(reverseRounds=false): 현재=1라운드, 다음=2라운드 → 현재→다음 방향 선
+          // 경기장 2(reverseRounds=true):  현재=2라운드, 다음=1라운드 → 다음(1라운드)에서 현재(2라운드)로 올라오는 선
+          const SVG_H=40, MID=20;
 
-        const mkSvgLine=(svg,x1,y1,x2,y2)=>{
-          const l=document.createElementNS('http://www.w3.org/2000/svg','line');
-          l.setAttribute('x1',x1);l.setAttribute('y1',y1);
-          l.setAttribute('x2',x2);l.setAttribute('y2',y2);
-          l.setAttribute('stroke','rgba(90,90,122,.8)');
-          l.setAttribute('stroke-width','1.5');
-          svg.appendChild(l);
-        };
-
-        if(!reverseRounds){
-          // 경기장 1: row → svg 순서 (선이 아래로)
-          roundBlock.appendChild(row);
-          if(hasNextRow){
+          if(!reverseRounds){
+            // 경기장 1: 기존 방식 (1라운드 → 2라운드, 선이 아래로)
             const nextRound=renderOrder[rowIdx+1];
             const svgW=allMatches.length*SLOT+200;
             const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -432,72 +439,85 @@ function _redrawBracketView(){
             const curSlotMap={};
             allMatches.forEach(({g,ri,mi,slot})=>{ curSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
 
+            const mkLine=(x1,y1,x2,y2)=>{
+              const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+              l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+              l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+              l.setAttribute('stroke','rgba(90,90,122,.8)');
+              l.setAttribute('stroke-width','1.5');
+              svg.appendChild(l);
+            };
+
             nextRound.forEach(({m,g})=>{
               const fromA=m.fromA, fromB=m.fromB;
               let slotA=-1, slotB=-1;
               if(fromA){const [r,mm]=fromA.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotA=curSlotMap[k];}
               if(fromB){const [r,mm]=fromB.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(curSlotMap[k]!=null) slotB=curSlotMap[k];}
               if(slotA<0&&slotB<0) return;
-              const cxA=slotA>=0?slotA*SLOT+95:-1;
-              const cxB=slotB>=0?slotB*SLOT+95:-1;
+              const cxA=slotA>=0?slotA*SLOT+90:-1;
+              const cxB=slotB>=0?slotB*SLOT+90:-1;
               const childCx=(cxA>=0&&cxB>=0)?(cxA+cxB)/2:cxA>=0?cxA:cxB;
               if(cxA>=0&&cxB>=0){
-                mkSvgLine(svg,cxA,0,cxA,MID);
-                mkSvgLine(svg,cxB,0,cxB,MID);
-                mkSvgLine(svg,cxA,MID,cxB,MID);
-                mkSvgLine(svg,childCx,MID,childCx,SVG_H);
+                mkLine(cxA,0,cxA,MID);
+                mkLine(cxB,0,cxB,MID);
+                mkLine(cxA,MID,cxB,MID);
+                mkLine(childCx,MID,childCx,SVG_H);
               } else {
-                mkSvgLine(svg,childCx,0,childCx,SVG_H);
+                mkLine(childCx,0,childCx,SVG_H);
               }
             });
             roundBlock.appendChild(svg);
-          } else {
-            roundBlock.style.marginBottom='16px';
-          }
 
-        } else {
-          // 경기장 2: svg → row 순서 (선이 위 카드와 붙도록 카드 위에 SVG)
-          // 현재 row가 2라운드: 아래쪽 1라운드 카드 위에 SVG를 그려야 하므로
-          // SVG는 다음 roundBlock(1라운드) 맨 위에 붙임 → 여기서는 현재 2라운드 row를 먼저 그리고
-          // SVG는 현재 roundBlock 하단에 붙여서 1라운드 카드와 맞닿게 함
-          if(hasNextRow){
-            // 다음 행 = 1라운드. 1라운드 슬롯맵
-            const nextRowData=renderOrder[rowIdx+1];
+          } else {
+            // 경기장 2: 현재 행=2라운드, 다음 행=1라운드
+            // 선은 현재 2라운드 카드 아래에서 → 아래 1라운드 카드 두 개 위로 올라가는 방향
+            // 즉 현재 roundData(2라운드) 기준으로 fromA/fromB가 가리키는 1라운드 슬롯을 기준으로 선 그리기
+            // 1라운드 슬롯맵
+            const nextRowData=renderOrder[rowIdx+1]; // 1라운드
             const nextSlotMap={};
             nextRowData.forEach(({g,ri,mi,slot})=>{ nextSlotMap[`${g.label}-${ri}-${mi}`]=slot; });
 
             const svgW=nextRowData.length*SLOT+200;
             const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+            // 선이 위(2라운드 카드 아래)에서 아래(1라운드 카드 위)로 → SVG는 현재 roundBlock 하단에 붙음
             svg.style.cssText=`display:block;min-width:max-content;height:${SVG_H}px;overflow:visible;`;
             svg.setAttribute('width', svgW);
             svg.setAttribute('height', SVG_H);
 
-            // 2라운드 각 카드에서 1라운드 두 카드로 선 내리기
+            const mkLine=(x1,y1,x2,y2)=>{
+              const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+              l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+              l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+              l.setAttribute('stroke','rgba(90,90,122,.8)');
+              l.setAttribute('stroke-width','1.5');
+              svg.appendChild(l);
+            };
+
+            // 현재 행(2라운드) 각 카드의 절대 centerX 계산
+            // 2라운드 카드는 fromA/fromB로 1라운드 슬롯을 알 수 있음
             allMatches.forEach(({m,g})=>{
               const fromA=m.fromA, fromB=m.fromB;
               let slotA=-1, slotB=-1;
               if(fromA){const [r,mm]=fromA.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(nextSlotMap[k]!=null) slotA=nextSlotMap[k];}
               if(fromB){const [r,mm]=fromB.split('-').map(Number); const k=`${g.label}-${r}-${mm}`; if(nextSlotMap[k]!=null) slotB=nextSlotMap[k];}
               if(slotA<0&&slotB<0) return;
-              const cxA=slotA>=0?slotA*SLOT+95:-1;
-              const cxB=slotB>=0?slotB*SLOT+95:-1;
+              const cxA=slotA>=0?slotA*SLOT+90:-1;
+              const cxB=slotB>=0?slotB*SLOT+90:-1;
               const parentCx=(cxA>=0&&cxB>=0)?(cxA+cxB)/2:cxA>=0?cxA:cxB;
+              // 선: 2라운드 카드 중앙(y=0, parentCx) → 아래로 → 1라운드 카드들 위쪽(y=SVG_H)
               if(cxA>=0&&cxB>=0){
-                mkSvgLine(svg,parentCx,0,parentCx,MID);
-                mkSvgLine(svg,cxA,MID,cxB,MID);
-                mkSvgLine(svg,cxA,MID,cxA,SVG_H);
-                mkSvgLine(svg,cxB,MID,cxB,SVG_H);
+                mkLine(parentCx,0,parentCx,MID);
+                mkLine(cxA,MID,cxB,MID);
+                mkLine(cxA,MID,cxA,SVG_H);
+                mkLine(cxB,MID,cxB,SVG_H);
               } else {
-                mkSvgLine(svg,parentCx,0,parentCx,SVG_H);
+                mkLine(parentCx,0,parentCx,SVG_H);
               }
             });
-            roundBlock.appendChild(row);
             roundBlock.appendChild(svg);
-          } else {
-            // 마지막 행(1라운드): SVG 없이 카드만
-            roundBlock.appendChild(row);
-            roundBlock.style.marginBottom='0';
           }
+        } else {
+          roundBlock.style.marginBottom='16px';
         }
 
         sec.appendChild(roundBlock);
