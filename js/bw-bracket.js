@@ -460,19 +460,15 @@ function _redrawBracketView(){
           };
         };
 
-        // 경기장1(reverseRounds=false): 위→아래, 카드 오른쪽→다음 카드 왼쪽
-        // 경기장2(reverseRounds=true):  아래→위, 카드 왼쪽→다음 카드 오른쪽 (뒤집힌 방향)
+        // E 레이아웃: 세로 방향 (1라운드 위/아래, 2라운드 아래/위)
+        // 경기장1: 1라운드 카드 하단→2라운드 카드 상단
+        // 경기장2: 2라운드 카드 하단→1라운드 카드 상단 (reverseRounds이므로 renderOrder상 위→아래)
         renderOrder.forEach((allMatches, rowIdx)=>{
           const hasNext=rowIdx<renderOrder.length-1;
           if(!hasNext) return;
 
           const nextRound=renderOrder[rowIdx+1];
-          const curRi=allMatches[0].ri;
           const nextRi=nextRound[0].ri;
-
-          // curSlotMap: 현재 라운드 g.label+ri+mi → {ri,mi}
-          const curMap={};
-          allMatches.forEach(({g,ri,mi})=>{ curMap[`${g.label}-${ri}-${mi}`]={ri,mi}; });
 
           nextRound.forEach(({m,g,mi:nmi})=>{
             const fromA=m.fromA, fromB=m.fromB;
@@ -482,38 +478,23 @@ function _redrawBracketView(){
             const t=getCard(nextRi, nmi);
             if(!a||!t) return;
 
-            if(!reverseRounds){
-              // 경기장1: 카드 오른쪽에서 나가서 다음 카드 왼쪽으로
-              const ax=a.right, bx=b?b.right:a.right;
-              const tx=t.left;
-              const ay=a.cy, by=b?b.cy:a.cy, ty=t.cy;
-              const midX=(ax+tx)/2;
-              if(b){
-                const midY=(ay+by)/2;
-                PATH(`M${ax},${ay} H${midX}`);
-                PATH(`M${bx},${by} H${midX}`);
-                PATH(`M${midX},${ay} V${by}`);
-                PATH(`M${midX},${midY} H${tx}`);
-              } else {
-                if(Math.abs(ay-ty)<1){ PATH(`M${ax},${ay} H${tx}`); }
-                else { PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`); }
-              }
+            // 현재 라운드 카드 하단→다음 라운드 카드 상단 (세로 연결)
+            const ay=a.bottom, by_=b?b.bottom:a.bottom;
+            const ty=t.top;
+            const ax=a.cx, bx=b?b.cx:a.cx, tx=t.cx;
+            const midY=(ay+ty)/2;
+
+            if(b){
+              const midX=(ax+bx)/2;
+              // a 하단→midY, b 하단→midY, 수평 연결, 중앙→t 상단
+              PATH(`M${ax},${ay} V${midY}`);
+              PATH(`M${bx},${by_} V${midY}`);
+              PATH(`M${ax},${midY} H${bx}`);
+              PATH(`M${midX},${midY} V${ty}`);
             } else {
-              // 경기장2: 카드 왼쪽에서 나가서 다음(아래) 카드 오른쪽으로
-              const ax=a.left, bx=b?b.left:a.left;
-              const tx=t.right;
-              const ay=a.cy, by=b?b.cy:a.cy, ty=t.cy;
-              const midX=(ax+tx)/2;
-              if(b){
-                const midY=(ay+by)/2;
-                PATH(`M${ax},${ay} H${midX}`);
-                PATH(`M${bx},${by} H${midX}`);
-                PATH(`M${midX},${ay} V${by}`);
-                PATH(`M${midX},${midY} H${tx}`);
-              } else {
-                if(Math.abs(ay-ty)<1){ PATH(`M${ax},${ay} H${tx}`); }
-                else { PATH(`M${ax},${ay} H${midX} V${ty} H${tx}`); }
-              }
+              // BYE: 직선
+              if(Math.abs(ax-tx)<1){ PATH(`M${ax},${ay} V${ty}`); }
+              else { PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`); }
             }
           });
         });
