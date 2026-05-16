@@ -314,9 +314,12 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
   // 모달 헤더
   const mhdr = document.createElement('div');
-  mhdr.style.cssText = `padding:12px 16px 10px;border-bottom:1px solid var(--border);background:${isDone?'rgba(6,214,160,.06)':isCur?'rgba(230,57,70,.08)':'var(--bg2)'};`;
+  mhdr.style.cssText = `padding:12px 16px 10px;border-bottom:1px solid var(--border);background:${isDone?'rgba(6,214,160,.06)':isCur?'rgba(230,57,70,.08)':'var(--bg2)'};position:relative;`;
   mhdr.innerHTML = `
-    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:5px;">// ${label} · ${shortLabel}</div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:5px;">// ${label} · ${shortLabel}</div>
+      <button id="t3-modal-close" style="background:transparent;border:none;color:var(--text3);font-size:16px;line-height:1;cursor:pointer;padding:0 0 0 8px;flex-shrink:0;margin-top:-2px;" title="닫기">✕</button>
+    </div>
     ${!isBye ? `
     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
       <span style="font-size:13px;font-weight:700;color:${winnerN===p1n?'var(--green)':'var(--text)'};flex:1;text-align:right;">${winnerN===p1n?'🏆 ':''}${p1n}</span>
@@ -325,6 +328,12 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
     </div>` : `<div style="font-size:13px;font-weight:700;color:var(--text);">${p1n} <span style="font-size:9px;color:var(--accent);">BYE</span></div>`}
   `;
   modal.appendChild(mhdr);
+
+  // X 버튼 클릭 → 모달 닫기
+  modal.querySelector('#t3-modal-close').onclick = (ev) => {
+    ev.stopPropagation();
+    modal.remove();
+  };
 
   // 버튼 헬퍼
   const mkBtn = (icon, text, color, bgHover, fn, sub='') => {
