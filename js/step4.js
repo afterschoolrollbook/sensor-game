@@ -737,77 +737,91 @@ function _renderBracketHTML(wrap, rounds, direction, reversed){
    _renderBracketHTML과 동일한 카드/클릭/승자/선택 기능
 ──────────────────────────────────────────────── */
 function _renderBracketVert(wrap, rounds, reverseRounds){
+  // _renderBracketHTML 완전 대칭 버전 (가로↔세로)
   if(!rounds||!rounds.length||!rounds[0].length) return;
+  const T=rounds.length;
+  const r0len=rounds[0].length;
+  const SLOT_W=BRACKET_CARD_W+BRACKET_CARD_GAP; // D의 SLOT_H 대응
 
-  const SLOT_W = BRACKET_CARD_W + BRACKET_CARD_GAP; // step4.js 상단 상수 참조
-  const ROUND_GAP = 16;
-  const roundNames = ['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
-  const T = rounds.length;
+  const outerWrap=document.createElement('div');
+  outerWrap.style.cssText='position:relative;overflow:visible;padding-bottom:8px;';
 
-  const container = document.createElement('div');
-  container.style.cssText = 'position:relative;min-width:max-content;';
+  const container=document.createElement('div');
+  const totalW=r0len*SLOT_W; // D의 totalH 대응
+  const renderOrder=reverseRounds?rounds.map((_,i)=>i).reverse():rounds.map((_,i)=>i);
+  container.style.cssText=`display:flex;flex-direction:column;gap:0;position:relative;min-width:${totalW}px;`;
 
-  // 렌더 순서
-  const renderOrder = reverseRounds ? rounds.map((_,i)=>i).reverse() : rounds.map((_,i)=>i);
+  // D의 calcCy와 완전히 동일 — x방향으로만 전환
+  const calcCx=(ri,mi)=>{
+    if(ri===0) return mi*SLOT_W+SLOT_W/2;
+    const m=rounds[ri][mi];
+    let srcA,srcB;
+    if(m&&m.fromA){const [r,mm]=m.fromA.split('-').map(Number);srcA=r===ri-1?mm:mi*2;}
+    else{srcA=mi*2;}
+    if(m&&m.fromB){const [r,mm]=m.fromB.split('-').map(Number);srcB=r===ri-1?mm:mi*2+1;}
+    else{srcB=null;}
+    const cxA=calcCx(ri-1,srcA);
+    if(srcB===null) return cxA;
+    const cxB=srcB<rounds[ri-1].length?calcCx(ri-1,srcB):cxA;
+    return(cxA+cxB)/2;
+  };
 
-  // ri별 가로 슬롯 위치 계산 (ri=0 기준, fromA/fromB 우선)
-  const slotOf = {};
-  rounds[0].forEach((_,mi)=>{ slotOf[`0-${mi}`]=mi; });
-  for(let ri=1;ri<T;ri++){
-    rounds[ri].forEach((m,mi)=>{
-      let sA=-1,sB=-1;
-      if(m.fromA){ const [r,mm]=m.fromA.split('-').map(Number); if(slotOf[`${r}-${mm}`]!=null) sA=slotOf[`${r}-${mm}`]; }
-      if(m.fromB){ const [r,mm]=m.fromB.split('-').map(Number); if(slotOf[`${r}-${mm}`]!=null) sB=slotOf[`${r}-${mm}`]; }
-      if(sA<0){ sA=mi*2; sB=(mi*2+1)<rounds[ri-1].length?mi*2+1:-1; }
-      slotOf[`${ri}-${mi}`] = sB>=0?(sA+sB)/2:sA;
-    });
-  }
+  const roundNames=['1라운드','2라운드','3라운드','4라운드','5라운드','준결승','결승'];
 
   renderOrder.forEach((ri)=>{
-    const matches = rounds[ri];
-    const rName = ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
+    const matches=rounds[ri];
+    const rName=ri===T-1&&T>1?'결승':ri===T-2&&T>2?'준결승':roundNames[ri]||`${ri+1}라운드`;
 
-    const roundBlock = document.createElement('div');
-    roundBlock.dataset.ri = ri;
-    roundBlock.style.cssText = `margin-bottom:${ROUND_GAP}px;min-width:max-content;position:relative;`;
+    const rowWrap=document.createElement('div');
+    rowWrap.dataset.row=ri;
+    rowWrap.style.cssText='position:relative;margin-bottom:16px;flex-shrink:0;';
 
-    const rHdr = document.createElement('div');
-    rHdr.style.cssText = 'font-size:9px;color:#aaaaaa;letter-spacing:2px;font-family:Share Tech Mono,monospace;margin-bottom:6px;white-space:nowrap;';
-    rHdr.textContent = rName.toUpperCase();
-    roundBlock.appendChild(rHdr);
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:9px;color:#aaaaaa;letter-spacing:2px;font-family:Share Tech Mono,monospace;height:24px;line-height:24px;flex-shrink:0;';
+    lbl.textContent=rName.toUpperCase();
+    rowWrap.appendChild(lbl);
 
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;min-width:max-content;';
+    // D의 matchArea: position:relative, height 고정
+    // E의 matchArea: position:relative, width 고정, 카드를 absolute(left)로 배치
+    const matchArea=document.createElement('div');
+    matchArea.style.cssText=`position:relative;height:52px;min-width:${totalW}px;`;
 
-    matches.forEach((m, mi)=>{
-      const isBye = m.p1&&!m.p2;
-      const isSel = typeof _linkSel!=='undefined'&&_linkSel&&_linkSel.matchObj&&_linkSel.matchObj._domId===m._domId;
-      const isCur = typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
-      const p1=m.p1, p2=m.p2;
+    matches.forEach((m,mi)=>{
+      const isBye=m.p1&&!m.p2;
+      const isSel=typeof _linkSel!=='undefined'&&_linkSel&&_linkSel.matchObj&&_linkSel.matchObj._domId===m._domId;
+      const isCur=typeof isCurrentMatchIdx==='function'&&isCurrentMatchIdx(ri,mi);
+      const p1=m.p1,p2=m.p2;
 
-      const slot = slotOf[`${ri}-${mi}`]||0;
-      const prevSlot = mi===0 ? -1 : (slotOf[`${ri}-${mi-1}`]||0);
-      const prevRight = mi===0 ? 0 : prevSlot*SLOT_W + BRACKET_CARD_W + BRACKET_CARD_GAP;
-      const marginLeft = Math.max(0, slot*SLOT_W - prevRight);
+      const slotCenterX=calcCx(ri,mi); // D의 slotCenterY 대응
 
-      let borderColor = isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#1a4a2a':isBye?'#444444':'#ffffff';
+      const box=document.createElement('div');
+      box.dataset.ri=ri;box.dataset.mi=mi;
+      const _matchId=`${ri}-${mi}-${Math.random().toString(36).slice(2,7)}`;
+      box.dataset.matchId=_matchId;
+      m._domId=_matchId;
+      box.addEventListener('click',()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi,m));
 
-      const box = document.createElement('div');
-      box.dataset.ri = ri; box.dataset.mi = mi;
-      const _matchId = `${ri}-${mi}-${Math.random().toString(36).slice(2,7)}`;
-      box.dataset.matchId = _matchId;
-      m._domId = _matchId;
-      box.style.cssText = `width:${BRACKET_CARD_W}px;flex-shrink:0;border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};border-radius:6px;overflow:hidden;cursor:pointer;margin-left:${marginLeft}px;margin-right:${BRACKET_CARD_GAP}px;${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}`;
-      box.addEventListener('click', ()=>typeof onMatchClick==='function'&&onMatchClick(ri,mi,m));
+      let borderColor=isSel?'#4cc9f0':isCur?'#e63946':m.winner?'#1a4a2a':isBye?'#444444':'#ffffff';
+      // D: position:absolute;top:${cy}px;transform:translateY(-50%)
+      // E: position:absolute;left:${cx}px;transform:translateX(-50%)
+      box.style.cssText=`
+        position:absolute;top:0;bottom:0;
+        left:${slotCenterX}px;
+        transform:translateX(-50%);
+        border-radius:6px;overflow:hidden;cursor:pointer;
+        border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};
+        width:${BRACKET_CARD_W}px;
+        ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
+      `;
 
-      // 헤더 — _renderBracketHTML과 동일
-      const header = document.createElement('div');
-      header.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
-      const _courtNum = (m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
-      const _seqNum = (m._seqMi!=null?m._seqMi:mi)+1;
-      const grpLabel = m._groupLabel||null;
-      const gameCountLabel = grpLabel?`${grpLabel} ${_seqNum}경기`:`${_seqNum}경기`;
-      header.innerHTML = `<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${_courtNum}-${ri+1}-${_seqNum}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
+      const header=document.createElement('div');
+      header.style.cssText='display:flex;justify-content:center;align-items:center;gap:8px;padding:3px 6px;background:#080810;';
+      const _courtNum=(m._groupObj&&m._groupObj.court)?m._groupObj.court:1;
+      const _seqNum=(m._seqMi!=null?m._seqMi:mi)+1;
+      const grpLabel=m._groupLabel||null;
+      const grpIdx=(m._matchIdx!=null)?m._matchIdx:_seqNum;
+      const gameCountLabel=grpLabel?`${grpLabel} ${grpIdx}경기`:`${_seqNum}경기`;
+      header.innerHTML=`<span style="font-size:9px;color:${isCur?'#e63946':'#aaaaaa'};font-weight:700;font-family:Share Tech Mono,monospace;">${_courtNum}-${ri+1}-${_seqNum}</span><span style="font-size:9px;color:#ffffff;font-weight:700;font-family:Share Tech Mono,monospace;">${gameCountLabel}</span>`;
       box.appendChild(header);
 
       if(isBye){
@@ -834,32 +848,36 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
         r2.appendChild(mkName(p2,isW2,!isW2&&!!m.winner));
         box.appendChild(r2);
       }
-      row.appendChild(box);
+      matchArea.appendChild(box);
     });
 
-    roundBlock.appendChild(row);
-    container.appendChild(roundBlock);
+    rowWrap.appendChild(matchArea);
+    container.appendChild(rowWrap);
   });
 
-  wrap.appendChild(container);
+  outerWrap.appendChild(container);
+  wrap.appendChild(outerWrap);
 
-  // 연결선: 박스 하단 중앙→아래→다음 박스 상단 중앙
-  // D의 fromA/fromB 로직 동일, 방향만 세로
+  // 연결선 — D의 _renderBracketHTML과 완전 동일 로직, 가로↔세로만 전환
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const W=container.scrollWidth+200, H=container.scrollHeight+200;
+    const W=container.scrollWidth+200,H=container.scrollHeight+200;
     const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;';
-    svg.setAttribute('width',W); svg.setAttribute('height',H);
+    svg.setAttribute('width',W);svg.setAttribute('height',H);
     const cr=container.getBoundingClientRect();
 
+    // D의 getBox: data-col(ri) → boxEl → left/right/cy(DOM실측)
+    // E의 getBox: data-row(ri) → boxEl → top/bottom/cx(DOM실측)
     const getBox=(ri,mi)=>{
-      const m=rounds[ri]&&rounds[ri][mi];
-      const el=m&&m._domId
-        ? container.querySelector(`[data-match-id="${m._domId}"]`)
-        : container.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`);
-      if(!el) return null;
-      const r=el.getBoundingClientRect();
-      return{cx:r.left-cr.left+r.width/2, top:r.top-cr.top, bottom:r.bottom-cr.top};
+      const rowEl=container.querySelector(`[data-row="${ri}"]`);
+      const boxEl=rowEl?rowEl.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`):null;
+      if(!boxEl) return null;
+      const r=boxEl.getBoundingClientRect();
+      return{
+        top:   r.top-cr.top,
+        bottom:r.bottom-cr.top,
+        cx:    r.left-cr.left+r.width/2,
+      };
     };
 
     const PATH=(d)=>{
@@ -869,49 +887,45 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       svg.appendChild(p);
     };
 
-    // fromA/fromB 우선, 없으면 mi*2 폴백 (D와 동일 로직)
-    for(let i=0;i<renderOrder.length-1;i++){
-      const curRi  = renderOrder[i];
-      const nextRi = renderOrder[i+1];
-      const curMatches = rounds[curRi];
-      rounds[nextRi].forEach((nm,nmi)=>{
+    // D와 완전히 동일: rounds 순서(0→T) 고정, fromA/fromB 우선 mi*2 폴백
+    // D: right→left(가로) / E: bottom→top(세로)
+    rounds.forEach((matches,ri)=>{
+      if(ri>=rounds.length-1) return;
+      const nextMatches=rounds[ri+1];
+      nextMatches.forEach((nm,nmi)=>{
         let srcA,srcB;
-        if(nm.fromA){const [r,mm]=nm.fromA.split('-').map(Number);srcA=r===curRi?mm:nmi*2;}
+        if(nm.fromA){const [r,mm]=nm.fromA.split('-').map(Number);srcA=r===ri?mm:nmi*2;}
         else{srcA=nmi*2;}
-        if(nm.fromB){const [r,mm]=nm.fromB.split('-').map(Number);srcB=r===curRi?mm:nmi*2+1;}
+        if(nm.fromB){const [r,mm]=nm.fromB.split('-').map(Number);srcB=r===ri?mm:nmi*2+1;}
         else{srcB=nmi*2+1;}
-        const hasB=nm.fromB!=null&&srcB<curMatches.length;
-        const a=getBox(curRi,srcA);
-        const b=hasB?getBox(curRi,srcB):null;
-        const t=getBox(nextRi,nmi);
+        const hasB=nm.fromB!=null&&srcB<matches.length;
+        const a=getBox(ri,srcA);
+        const b=hasB?getBox(ri,srcB):null;
+        const t=getBox(ri+1,nmi);
         if(!a||!t) return;
 
-        // 박스 하단 중앙→아래 수직→수평 연결→다음 박스 상단 중앙
+        // D reversed=false: right→left, H선
+        // E: bottom→top, V선
         const ax=a.cx, ay=a.bottom;
         const tx=t.cx, ty=t.top;
         const midY=(ay+ty)/2;
         if(b){
-          const bx=b.cx, by=b.bottom;
+          const bx=b.cx,by=b.bottom;
           const midX=(ax+bx)/2;
           PATH(`M${ax},${ay} V${midY}`);
           PATH(`M${bx},${by} V${midY}`);
           PATH(`M${ax},${midY} H${bx}`);
           PATH(`M${midX},${midY} V${ty}`);
         } else {
-          if(Math.abs(ax-tx)<1){ PATH(`M${ax},${ay} V${ty}`); }
-          else{ PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`); }
+          if(Math.abs(ax-tx)<1){PATH(`M${ax},${ay} V${ty}`);}
+          else{PATH(`M${ax},${ay} V${midY} H${tx} V${ty}`);}
         }
       });
-    }
+    });
     container.appendChild(svg);
   }));
 }
 
-
-/* ────────────────────────────────────────────────
-   가로 트리 렌더러 (B: 아래→위, C: 위→아래)
-   1라운드가 가로로 나열, 다음 라운드가 위 or 아래로 쌓임
-──────────────────────────────────────────────── */
 function _renderBracketHoriz(wrap, rounds, direction){
   const BOX_W=160, BOX_H=52, ROW_GAP=48, COL_GAP=20, PAD=16, LABEL_H=20;
   const T=rounds.length;
