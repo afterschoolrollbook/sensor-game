@@ -855,7 +855,15 @@ function _applyBracketBadges(view, groups){
       if(!raw) continue;
       const mv=JSON.parse(raw);
       if(mv.ri==null||mv.mi==null) continue;
-      const courtWrap=view.querySelector(`[data-court="${c}"]`);
+      // groupLabel로 정확한 wrapper 탐색 (같은 경기장 내 다른 체급 혼동 방지)
+      let courtWrap=null;
+      if(mv.groupLabel){
+        const sl=mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        view.querySelectorAll(`[data-court="${c}"]`).forEach(w=>{
+          if(w.dataset.groupLabel===sl||w.dataset.groupLabel===mv.groupLabel) courtWrap=w;
+        });
+      }
+      if(!courtWrap) courtWrap=view.querySelector(`[data-court="${c}"]`);
       const box=courtWrap?courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`):null;
       if(!box) continue;
       box.style.borderColor='#e63946';
@@ -1169,6 +1177,11 @@ function handleCmd(cmd){
 
     // 경기장별 localStorage 저장 (수동 선택 기록) — ri/mi/groupLabel 포함
     if(cmd.court){
+      // 다른 경기장의 기존 LIVE 항목 제거 (한 번에 하나만 LIVE)
+      for(let _c=1;_c<=8;_c++){
+        if(_c===cmd.court) continue;
+        try{ localStorage.removeItem(`sgp_display_vs_court_${_c}`); }catch(e){}
+      }
       try{ localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({p1:cmd.p1||'—',p2:cmd.p2||'—',label:cmd.label||'',matchLabel:cmd.matchLabel||'',court:cmd.court,ri:cmd.ri,mi:cmd.mi,groupLabel:cmd.groupLabel||cmd.label||''})); }catch(e){}
     }
 
