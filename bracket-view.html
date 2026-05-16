@@ -5063,8 +5063,15 @@ function _applyMatchStates(){
       if(!raw) continue;
       const mv = JSON.parse(raw);
       if(mv.ri==null || mv.mi==null) continue;
-      // 해당 경기장 wrapper 안에서 박스 찾기
-      const courtWrap = view.querySelector(`[data-court="${c}"]`);
+      // groupLabel로 정확한 wrapper 탐색 (같은 경기장 내 다른 체급 혼동 방지)
+      let courtWrap = null;
+      if(mv.groupLabel){
+        const sl = mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+        view.querySelectorAll(`[data-court="${c}"]`).forEach(w=>{
+          if(w.dataset.groupLabel===sl || w.dataset.groupLabel===mv.groupLabel) courtWrap=w;
+        });
+      }
+      if(!courtWrap) courtWrap = view.querySelector(`[data-court="${c}"]`);
       const box = courtWrap ? courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)
                             : view.querySelectorAll(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)[c-1];
       if(!box) continue;

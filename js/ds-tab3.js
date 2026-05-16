@@ -181,7 +181,10 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   // isDone이면 현재경기에서 즉시 해제
   if(isDone && _t3CurrentMatch[courtNum]){
     const _c = _t3CurrentMatch[courtNum];
-    if(_c.gi===gi && _c.ri===ri && _c.mi===mi) delete _t3CurrentMatch[courtNum];
+    if(_c.gi===gi && _c.ri===ri && _c.mi===mi){
+      delete _t3CurrentMatch[courtNum];
+      try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    }
   }
   const cur = _t3CurrentMatch[courtNum];
   const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
@@ -360,7 +363,10 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   // 승자 있는데 현재경기로 설정돼 있으면 즉시 해제
   if(isDone && _t3CurrentMatch[courtNum]){
     const _c = _t3CurrentMatch[courtNum];
-    if(_c.gi===gi && _c.ri===ri && _c.mi===mi) delete _t3CurrentMatch[courtNum];
+    if(_c.gi===gi && _c.ri===ri && _c.mi===mi){
+      delete _t3CurrentMatch[courtNum];
+      try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    }
   }
   const _cur = _t3CurrentMatch[courtNum];
   const isCur = _cur && _cur.gi===gi && _cur.ri===ri && _cur.mi===mi;
@@ -497,6 +503,19 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
+  // ── 다른 경기장의 기존 선택 전부 해제 (한 번에 하나만 LIVE) ──
+  for(let _c = 1; _c <= 8; _c++){
+    if(_c === courtNum) continue;
+    if(!_t3CurrentMatch[_c] && !localStorage.getItem(`sgp_display_vs_court_${_c}`)) continue;
+    delete _t3CurrentMatch[_c];
+    try{ localStorage.removeItem(`sgp_display_vs_court_${_c}`); } catch(ex){}
+    // bracket-view 새창에도 해제 알림
+    try{
+      const _bc = new BroadcastChannel('sgp_cmd');
+      _bc.postMessage({ type:'clear_match', court: _c });
+      _bc.close();
+    } catch(ex){}
+  }
   _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
   const _cn = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim() || n : '—';
   const p1n = _cn((m.p1 && m.p1.name) || '—');
