@@ -1423,17 +1423,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Tab'){e.preventDefault();switchScreen();}
 });
 
+refreshVisible();
 startClock();
 // 초기: 1번 화면 티커 활성화
 document.getElementById('screen-1').classList.add('visible');
 // 저장된 2번 모드 복원
 try{ const m=localStorage.getItem('sgp_d2_mode'); _d2ApplyMode(m&&m!=='single'?m:'court_1'); }catch(e){}
-// 저장된 화면 복원 — 새로고침 후 이전 화면(2번/3번)으로 돌아오고 데이터도 다시 불러옴
-try{
-  const _ss=parseInt(localStorage.getItem('sgp_screen')||'1');
-  if(_ss===2||_ss===3){ switchScreen(_ss); }
-  else { refreshVisible(); }
-}catch(e){ refreshVisible(); }
 
 // ── 페이지 로드 시 localStorage → _d3LastMatch 복원 ──
 // (새로고침/재시작 후에도 경기 정보 유지)
