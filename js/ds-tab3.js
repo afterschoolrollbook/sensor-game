@@ -651,6 +651,8 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
   } catch(ex){}
 
   _t3Render();
+  // pv2 즉시 갱신 (3번탭에서 선택 시 updatePv2 누락 버그 수정)
+  try{ if(typeof updatePv2==='function') updatePv2(); }catch(ex){}
   // pv3 즉시 갱신 (_pv3SelectedMatches 이미 세팅돼 있으므로 타이밍 무관)
   try{ if(typeof updatePv3==='function') updatePv3(); }catch(ex){}
 }
