@@ -1904,7 +1904,7 @@ function _redrawBracketViewTree(){
 
     view.appendChild(outerWrap);
   } else if(_bracketLayout==='E' && courts>=2){
-    // ── E 다경기장 — bw-bracket.js의 renderCourtSection과 동일 로직 ──
+    // ── E 다경기장 ──
     view.style.overflow='auto';
     view.style.padding='12px';
     _computeSeqOffsets();
@@ -1925,8 +1925,6 @@ function _redrawBracketViewTree(){
       sec.appendChild(lbl);
 
       const maxRi=Math.max(...groups.map(g=>g.matches?g.matches.length:0));
-
-      // fromA/fromB를 merged 배열 인덱스로 remapping (그룹 local → merged)
       const _gmo={};
       for(let ri=0;ri<maxRi;ri++){
         let cursor=0;
@@ -1936,7 +1934,6 @@ function _redrawBracketViewTree(){
           if(g.matches[ri]) cursor+=g.matches[ri].length;
         });
       }
-
       const rounds=[];
       for(let ri=0;ri<maxRi;ri++){
         const matches=[];
@@ -1961,7 +1958,6 @@ function _redrawBracketViewTree(){
         });
         rounds.push(matches);
       }
-
       _renderBracketVert(sec,rounds,reverseRounds);
       return sec;
     };
@@ -1972,21 +1968,6 @@ function _redrawBracketViewTree(){
     if(_bSec) outerWrap.appendChild(_bSec);
 
     view.appendChild(outerWrap);
-
-    // ── E 동적 크기 조절 ──
-    // SVG 연결선이 rAF 2회 후 그려지므로 3회 후에 측정
-    // zoom: 레이아웃 공간도 함께 줄어들어 여백 처리가 깔끔
-    requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const viewW=view.clientWidth-32;
-      [_tSec,_bSec].filter(Boolean).forEach(sec=>{
-        sec.style.zoom=''; // 이전 zoom 초기화
-        const secW=sec.scrollWidth;
-        if(secW>0&&viewW>0&&secW>viewW){
-          sec.style.zoom=String((viewW/secW).toFixed(4));
-        }
-      });
-    })));
-
   } else {
     // A/B/C/E형(단일 경기장) — 그룹별로 태깅해서 렌더링
     view.style.overflow='auto';
