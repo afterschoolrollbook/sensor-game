@@ -1,3 +1,42 @@
+/* ════════════════════════════════════════════════════════════════
+   ds-tab3.js — 3번 탭 (대진표 경기 운영)
+   ════════════════════════════════════════════════════════════════
+
+   ■ 이 파일이 하는 일
+     - 3번 탭 대진표 경기 목록 렌더 (경기장별 2열 레이아웃)
+     - 경기 클릭 → 현재경기 선택 → sgp_display_vs_court_N 저장 → pv2/전광판 반영
+     - 승자 선택 → 다음 라운드 자동 배치 → sgp_groupBrackets 저장
+     - 결과 취소 → cascade 취소 (다중 라운드 연쇄)
+
+   ■ 핵심 변수
+     _t3CurrentMatch  → 경기장별 현재 선택 경기 { [courtNum]: {gi,ri,mi,courtNum} }
+                        새로고침 시 sgp_display_vs_court_N 읽어서 복원 (_t3Load)
+     _t3Data          → S.groupBrackets 복사본 (직접 조작)
+
+   ■ 핵심 함수
+     buildTab3()      → dspanel.js dstab(3)에서 호출
+     _t3Load()        → sgp_groupBrackets + sgp_display_vs_court_N 읽어서 상태 복원
+     _t3Render()      → 전체 경기 목록 다시 그리기
+     _t3BuildCard()   → 경기 카드 1개 생성 + 클릭 이벤트
+     _t3SelectMatch() → 경기 선택 처리 → sgp_display_vs_court_N 저장 + pv2/전광판 broadcast
+     _t3Save()        → sgp_groupBrackets + sgp_bracket_temp 저장 + BroadcastChannel 전파
+
+   ■ 읽는 localStorage 키
+     sgp_groupBrackets       → 대진표 전체 데이터
+     sgp_display_vs_court_N  → 경기장N 선택 경기 복원용 (새로고침 시)
+
+   ■ 쓰는 localStorage 키
+     sgp_groupBrackets       → 승자 확정 시 업데이트
+     sgp_bracket_temp        → 동기화 백업
+     sgp_display_vs_court_N  → 경기 선택 시 저장 / 선택 해제 시 삭제
+
+   ■ 연관 파일
+     setup-core.js → updatePv2/3, _bc, onMatchClick
+     ds-tab2.js    → sgp_display_vs_court_N 읽어서 pv2 미리보기 표시
+     display.html  → BroadcastChannel 'sgp_cmd' 수신 → 전광판 반영
+
+   ════════════════════════════════════════════════════════════════ */
+
 // ══ DS TAB 3: 대진표 경기 운영 ══
 // sgp_groupBrackets 직접 읽어서 경기장/라운드별 경기 목록 렌더
 // 승자 선택 → 다음 라운드 자동 반영 → localStorage 저장 → 새창 대진표 동기화
@@ -13,14 +52,26 @@ function buildTab3(){
   container.innerHTML = '';
   container.style.cssText = 'flex-direction:column;flex:1;min-height:0;padding:0;gap:0;';
 
-  // 툴바
+  // 툴바 — 1행: 타이틀+설명 / 2행: 버튼들
   const toolbar = document.createElement('div');
-  toolbar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);flex-wrap:wrap;';
+  toolbar.style.cssText = 'display:flex;flex-direction:column;gap:0;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);';
   toolbar.innerHTML = `
-    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;">// BRACKET</span>
-    <span style="font-size:11px;color:var(--text3);flex:1;">경기 선택 후 2번 전광판에 표시 · 승자 선택 시 다음 라운드 자동 반영</span>
-    <button id="t3-reload-btn" onclick="_t3Reload(this)" style="padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;">↺ 새로고침</button>
-    <button onclick="window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no')" style="padding:3px 10px;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;">⤢ 크게 보기</button>
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 12px 4px;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;white-space:nowrap;">// BRACKET</span>
+      <span style="font-size:11px;color:var(--text3);white-space:nowrap;">경기 선택 후 2번 전광판에 표시 · 승자 선택 시 다음 라운드 자동 반영</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 12px 7px;flex-wrap:nowrap;">
+      <button id="t3-reload-btn" onclick="_t3Reload(this)" style="padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">↺ 새로고침</button>
+      <div style="width:1px;height:16px;background:var(--border);flex-shrink:0;"></div>
+      <span style="font-size:9px;color:var(--text3);letter-spacing:1px;white-space:nowrap;">레이아웃:</span>
+      <button id="t3-lay-A" onclick="_t3SetLayout('A')" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;flex-shrink:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+      <button id="t3-lay-B" onclick="_t3SetLayout('B')" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;flex-shrink:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+      <button id="t3-lay-C" onclick="_t3SetLayout('C')" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;flex-shrink:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+      <button id="t3-lay-D" onclick="_t3SetLayout('D')" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;flex-shrink:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+      <button id="t3-lay-E" onclick="_t3SetLayout('E')" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;flex-shrink:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+      <div style="flex:1;"></div>
+      <button onclick="window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no')" style="padding:3px 10px;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">⤢ 크게 보기</button>
+    </div>
   `;
   container.appendChild(toolbar);
 
@@ -31,6 +82,53 @@ function buildTab3(){
   container.appendChild(listWrap);
 
   _t3Load();
+  _t3UpdateLayoutBtns();
+}
+
+// ── 레이아웃 선택 ──
+function _t3SetLayout(l){
+  const multiCourt = parseInt(localStorage.getItem('sgp_courtCount')||'1') >= 2;
+  if(multiCourt && ['A','B','C'].includes(l)){
+    // 경기장 2개 이상에서는 A/B/C 사용 불가 — 무시
+    return;
+  }
+  const cur = localStorage.getItem('sgp_layout') || 'A';
+  if(cur === l) return;
+  try{ localStorage.setItem('sgp_layout', l); } catch(e){}
+  _t3UpdateLayoutBtns();
+  try{
+    const bc = new BroadcastChannel('sgp_cmd');
+    bc.postMessage({ type: 'layout_change', layout: l });
+    bc.close();
+  } catch(e){}
+}
+
+function _t3UpdateLayoutBtns(){
+  const cur = localStorage.getItem('sgp_layout') || 'A';
+  const multiCourt = parseInt(localStorage.getItem('sgp_courtCount')||'1') >= 2;
+  ['A','B','C','D','E'].forEach(l => {
+    const btn = document.getElementById('t3-lay-'+l);
+    if(!btn) return;
+    const disabled = multiCourt && ['A','B','C'].includes(l);
+    const active = cur === l && !disabled;
+    if(disabled){
+      btn.style.borderColor = 'var(--border)';
+      btn.style.background  = 'transparent';
+      btn.style.color       = 'var(--text3)';
+      btn.style.opacity     = '.3';
+      btn.style.cursor      = 'not-allowed';
+      btn.title = `${l}: 단방향 — 경기장 2개 이상에서 사용 불가`;
+      btn.onclick = null;
+    } else {
+      btn.style.opacity     = '1';
+      btn.style.cursor      = 'pointer';
+      btn.style.borderColor = active ? 'var(--red)' : 'var(--border2)';
+      btn.style.background  = active ? 'rgba(230,57,70,.2)' : 'transparent';
+      btn.style.color       = active ? 'var(--red)' : 'var(--text2)';
+      btn.title = l==='A'?'A: 좌→우':l==='B'?'B: 아래→위':l==='C'?'C: 위→아래':l==='D'?'D: 양쪽→가운데':'E: 위아래→가운데';
+      btn.onclick = ()=>_t3SetLayout(l);
+    }
+  });
 }
 
 // ── 데이터 로드 ──
@@ -177,30 +275,13 @@ function _t3Render(){
 
 // ── 2줄 경기 카드 ──
 function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
+  const isDone = !!m.winner || _t3HasWinnerInNext(g, ri, mi);
+  // ★ 버그수정: 기존에는 isDone(승자 확정) 경기가 선택된 상태로 새로고침하면
+  //   _t3BuildCard 안에서 즉시 _t3CurrentMatch와 sgp_display_vs_court_N을 삭제해버렸음
+  //   → 선택 유지가 필요한 경우(승자 확정 후에도 LIVE 표시 유지)가 있으므로 자동 삭제 제거
+  //   → 완료된 경기 선택 해제는 사용자가 직접 다른 경기를 클릭할 때만 일어나도록 변경
   const cur = _t3CurrentMatch[courtNum];
   const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
-  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
-  const _nextHasWinner = ()=>{
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(!nextRound) return false;
-    for(let ni=0;ni<nextRound.length;ni++){
-      const nm=nextRound[ni];
-      // fromA/fromB 매칭
-      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-      // fromA/fromB 없을 때 수학 폴백
-      if(!nm.fromA && !nm.fromB){
-        const expMi=Math.floor(mi/2);
-        if(ni===expMi){
-          if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-          if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-        }
-      }
-    }
-    return false;
-  };
-  const isDone = !!m.winner || _nextHasWinner();
   const isBye = m.p1 && !m.p2;
   const p1tbd = m.p1 && m.p1.tbd;
   const p2tbd = m.p2 && m.p2.tbd;
@@ -320,32 +401,67 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 
 
+
+// ── 다음 라운드에서 승자 이름 역추적 ──
+function _t3GetWinnerFromNext(g, ri, mi){
+  const nextRound = g.matches[ri+1];
+  if(!nextRound) return null;
+  const key = `${ri}-${mi}`;
+  for(let ni=0; ni<nextRound.length; ni++){
+    const nm = nextRound[ni];
+    if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+    if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+    if(!nm.fromA && !nm.fromB){
+      const expMi = Math.floor(mi/2);
+      if(ni===expMi){
+        if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+        if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+      }
+    }
+  }
+  return null;
+}
+
+// ── 다음 라운드에 승자가 배정됐는지 여부 ──
+function _t3HasWinnerInNext(g, ri, mi){
+  return !!_t3GetWinnerFromNext(g, ri, mi);
+}
+// ── 다음 라운드에서 승자 이름 역추적 ──
+function _t3GetWinnerFromNext(g, ri, mi){
+  const nextRound = g.matches[ri+1];
+  if(!nextRound) return null;
+  const key = `${ri}-${mi}`;
+  for(let ni=0; ni<nextRound.length; ni++){
+    const nm = nextRound[ni];
+    if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+    if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+    if(!nm.fromA && !nm.fromB){
+      const expMi = Math.floor(mi/2);
+      if(ni===expMi){
+        if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
+        if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
+      }
+    }
+  }
+  return null;
+}
+function _t3HasWinnerInNext(g, ri, mi){ return !!_t3GetWinnerFromNext(g, ri, mi); }
+
 // ── 모달 ──
 function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
   document.getElementById('t3-modal')?.remove();
 
-  // winner가 없어도 다음 라운드에 이름이 채워진 경우 → 이전에 승자 선택됐던 것
-  const _hasWinnerInNextRound = ()=>{
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(!nextRound) return false;
-    for(let ni=0;ni<nextRound.length;ni++){
-      const nm=nextRound[ni];
-      if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-      if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-      if(!nm.fromA && !nm.fromB){
-        const expMi=Math.floor(mi/2);
-        if(ni===expMi){
-          if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return true;
-          if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return true;
-        }
-      }
-    }
-    return false;
-  };
-  const isDone = !!m.winner || _hasWinnerInNextRound();
+  const isDone = !!m.winner || _t3HasWinnerInNext(g, ri, mi);
   const isBye = m.p1 && !m.p2;
   const isPending = !isDone && (m.p1 && m.p1.tbd || m.p2 && m.p2.tbd);
+  // 승자 있는데 현재경기로 설정돼 있으면 즉시 해제
+  if(isDone && _t3CurrentMatch[courtNum]){
+    const _c = _t3CurrentMatch[courtNum];
+    if(_c.gi===gi && _c.ri===ri && _c.mi===mi){
+      delete _t3CurrentMatch[courtNum];
+      try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    }
+  }
   const _cur = _t3CurrentMatch[courtNum];
   const isCur = _cur && _cur.gi===gi && _cur.ri===ri && _cur.mi===mi;
   const p1n = (m.p1 && m.p1.name) || '—';
@@ -481,6 +597,26 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
+  // 같은 경기장의 기존 선택 해제 (다른 경기장 선택은 유지)
+  if(_t3CurrentMatch[courtNum]){
+    delete _t3CurrentMatch[courtNum];
+    try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    try{
+      const _bc = new BroadcastChannel('sgp_cmd');
+      _bc.postMessage({ type:'clear_match', court: courtNum });
+      _bc.close();
+    } catch(ex){}
+  }
+  // 같은 경기장의 기존 선택 해제 — 다른 경기장 선택은 유지 (경기장별 1경기씩 독립 선택)
+  if(_t3CurrentMatch[courtNum]){
+    delete _t3CurrentMatch[courtNum];
+    try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    try{
+      const _bc = new BroadcastChannel('sgp_cmd');
+      _bc.postMessage({ type:'clear_match', court: courtNum });
+      _bc.close();
+    } catch(ex){}
+  }
   _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
   const _cn = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim() || n : '—';
   const p1n = _cn((m.p1 && m.p1.name) || '—');
@@ -529,10 +665,20 @@ function _t3RecordWinner(g, gi, ri, mi, which, courtNum, matchLabel, shortLabel)
   // 다음 라운드 해당 슬롯에 승자 이름 채우기
   const key = `${ri}-${mi}`;
   if(g.matches[ri + 1]){
+    let updated = false;
     g.matches[ri + 1].forEach(nm => {
-      if(nm.fromA === key && nm.p1){ nm.p1.name = winner.name; nm.p1.tbd = false; }
-      if(nm.fromB === key && nm.p2){ nm.p2.name = winner.name; nm.p2.tbd = false; }
+      if(nm.fromA === key && nm.p1){ nm.p1.name = winner.name; nm.p1.tbd = false; updated = true; }
+      if(nm.fromB === key && nm.p2){ nm.p2.name = winner.name; nm.p2.tbd = false; updated = true; }
     });
+    // fromA/fromB 없을 때 수학 폴백
+    if(!updated){
+      const nextMi = Math.floor(mi / 2);
+      const nextMatch = g.matches[ri + 1][nextMi];
+      if(nextMatch){
+        if(mi % 2 === 0 && nextMatch.p1){ nextMatch.p1.name = winner.name; nextMatch.p1.tbd = false; }
+        else if(mi % 2 === 1 && nextMatch.p2){ nextMatch.p2.name = winner.name; nextMatch.p2.tbd = false; }
+      }
+    }
   }
 
   // 현재경기였으면 해당 경기장만 해제
@@ -622,18 +768,8 @@ function _t3AdvanceBye(g, gi, ri, mi, courtNum, matchLabel, shortLabel){
 // ── 결과 취소 (다음 라운드 cascade 취소 포함) ──
 function _t3CancelWinner(g, gi, ri, mi, courtNum){
   const m = g.matches[ri][mi];
-  // winner가 없어도 다음 라운드에서 승자 이름 역추적
-  let cancelledName = m.winner ? m.winner.name : null;
-  if(!cancelledName){
-    const key = `${ri}-${mi}`;
-    const nextRound = g.matches[ri+1];
-    if(nextRound){
-      for(const nm of nextRound){
-        if(nm.fromA===key && nm.p1 && !nm.p1.tbd) { cancelledName = nm.p1.name; break; }
-        if(nm.fromB===key && nm.p2 && !nm.p2.tbd) { cancelledName = nm.p2.name; break; }
-      }
-    }
-  }
+  // winner 없어도 다음 라운드에서 승자 이름 역추적
+  const cancelledName = m.winner ? m.winner.name : _t3GetWinnerFromNext(g, ri, mi);
   if(!cancelledName) return;
   delete m.winner;
 
@@ -654,16 +790,26 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
   if(!g.matches[ri + 1]) return;
   const key = `${ri}-${mi}`;
   const courtN = g.court || 1;
+  // fromA/fromB로 원래 이름 계산
+  const _origName = (fromKey) => {
+    if(!fromKey) return null;
+    const parts = fromKey.split('-');
+    if(parts.length >= 2){
+      const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
+      if(!isNaN(fRi) && !isNaN(fMi)) return `${courtN}-${fRi+1}-${fMi+1} 승자`;
+    }
+    return null;
+  };
 
   g.matches[ri + 1].forEach((nm, nextMi) => {
     let affected = false;
 
-    // fromA/fromB 기반 매칭
+    // fromA/fromB 기반 매칭 → 원래 이름으로 복원
     if(nm.fromA === key && nm.p1){
-      nm.p1.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
+      nm.p1.name = _origName(nm.fromA) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p1.tbd = true; affected = true;
     }
     if(nm.fromB === key && nm.p2){
-      nm.p2.name = `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
+      nm.p2.name = _origName(nm.fromB) || `${courtN}-${ri+1}-${mi+1} 승자`; nm.p2.tbd = true; affected = true;
     }
 
     // fromA/fromB 없을 때 수학 폴백
@@ -679,9 +825,12 @@ function _t3CancelCascade(g, ri, mi, cancelledName){
     }
 
     // 다음 라운드 경기도 이 선수가 승자였다면 연쇄 취소
-    if(affected && nm.winner && nm.winner.name === cancelledName){
-      delete nm.winner;
-      _t3CancelCascade(g, ri + 1, nextMi, cancelledName);
+    if(affected){
+      const nextCancelledName = nm.winner ? nm.winner.name : _t3GetWinnerFromNext(g, ri+1, nextMi);
+      if(nextCancelledName){
+        delete nm.winner;
+        _t3CancelCascade(g, ri + 1, nextMi, nextCancelledName);
+      }
     }
   });
 }
@@ -693,24 +842,17 @@ function _t3Save(){
       ...g,
       matches: g.matches.map(round => round.map(m => {
         const { _t3Offset, _groupObj, ...rest } = m;
-        // fromA/fromB 기반으로 tbd 이름 보정 (경기장 번호 누락 방어)
         const courtN = g.court || 1;
         const fixName = (p, fromKey) => {
           if(!p || !p.tbd || !fromKey) return p;
           const parts = fromKey.split('-');
           if(parts.length >= 2){
             const fRi = parseInt(parts[0]), fMi = parseInt(parts[1]);
-            if(!isNaN(fRi) && !isNaN(fMi)){
-              return { ...p, name: `${courtN}-${fRi+1}-${fMi+1} 승자` };
-            }
+            if(!isNaN(fRi) && !isNaN(fMi)) return { ...p, name: `${courtN}-${fRi+1}-${fMi+1} 승자` };
           }
           return p;
         };
-        return {
-          ...rest,
-          p1: fixName(rest.p1, rest.fromA),
-          p2: fixName(rest.p2, rest.fromB),
-        };
+        return { ...rest, p1: fixName(rest.p1, rest.fromA), p2: fixName(rest.p2, rest.fromB) };
       }))
     }));
     localStorage.setItem('sgp_groupBrackets', JSON.stringify(clean));
