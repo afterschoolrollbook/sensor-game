@@ -765,10 +765,11 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
           <div class="g6-ctrl-body collapsed" id="g6-sensor-body">
 
             <!-- 연결 방식 -->
-            <div style="display:flex;gap:6px;margin-bottom:14px;">
-              <label class="g6-snr-radio active" id="g6-snr-lbl-off"  onclick="g6SnrMode('off')"> <span class="g6-snr-dot2"></span>사용 안함</label>
-              <label class="g6-snr-radio"        id="g6-snr-lbl-usb"  onclick="g6SnrMode('usb')"> <span class="g6-snr-dot2"></span>🔌 USB 유선</label>
-              <label class="g6-snr-radio"        id="g6-snr-lbl-ws"   onclick="g6SnrMode('ws')">  <span class="g6-snr-dot2"></span>📡 WiFi</label>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+              <label class="g6-snr-radio active" id="g6-snr-lbl-off"    onclick="g6SnrMode('off')">  <span class="g6-snr-dot2"></span>사용 안함</label>
+              <label class="g6-snr-radio"        id="g6-snr-lbl-usb"    onclick="g6SnrMode('usb')">  <span class="g6-snr-dot2"></span>🔌 USB 유선</label>
+              <label class="g6-snr-radio"        id="g6-snr-lbl-ws"     onclick="g6SnrMode('ws')">   <span class="g6-snr-dot2"></span>📡 WiFi</label>
+              <label class="g6-snr-radio"        id="g6-snr-lbl-espnow" onclick="g6SnrMode('espnow')"><span class="g6-snr-dot2"></span>🔵 동글 (ESP-NOW)</label>
             </div>
 
             <!-- USB 연결 바 -->
@@ -789,6 +790,19 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
                 <button class="g6-ctrl-btn" id="g6-snr-ws-dis" onclick="g6SnrWsDisconnect()" style="flex:0;padding:8px 12px;display:none;">해제</button>
               </div>
               <div id="g6-snr-ws-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-top:6px;">대기중...</div>
+            </div>
+
+            <!-- ESP-NOW 동글 연결 바 -->
+            <div id="g6-snr-espnow-bar" style="display:none;margin-bottom:12px;">
+              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.8;">
+                <b style="color:var(--text);">수신용 ESP32</b>를 USB로 PC에 연결하세요.<br>
+                공유기 없이 동작 — 야외 행사에서 사용하는 방식입니다.
+              </div>
+              <div style="display:flex;gap:7px;align-items:center;">
+                <button class="g6-ctrl-btn primary" id="g6-snr-espnow-btn" onclick="g6SnrEspNowConnect()" style="flex:0;padding:8px 16px;white-space:nowrap;">🔵 동글 포트 연결</button>
+                <button class="g6-ctrl-btn" id="g6-snr-espnow-dis" onclick="g6SnrEspNowDisconnect()" style="flex:0;padding:8px 12px;display:none;">해제</button>
+                <span id="g6-snr-espnow-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);">대기중...</span>
+              </div>
             </div>
 
             <!-- 수신 로그 -->
@@ -1595,21 +1609,25 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
      모드 전환
      ══════════════════════════════ */
   window.g6SnrMode = function(mode){
-    if(_mode==='usb') _usbCleanup();
-    if(_mode==='ws')  _wsCleanup();
+    if(_mode==='usb')    _usbCleanup();
+    if(_mode==='ws')     _wsCleanup();
+    if(_mode==='espnow') _espnowCleanup();
     _mode = mode;
 
-    ['off','usb','ws'].forEach(function(m){
+    ['off','usb','ws','espnow'].forEach(function(m){
       var el = document.getElementById('g6-snr-lbl-'+m);
       if(el) el.classList.toggle('active', m===mode);
     });
 
-    _show('g6-snr-usb-bar',  mode==='usb');
-    _show('g6-snr-ws-bar',   mode==='ws');
-    _show('g6-snr-rxlog-wrap', mode!=='off');
-    _show('g6-snr-test-wrap',  mode!=='off');
+    _show('g6-snr-usb-bar',     mode==='usb');
+    _show('g6-snr-ws-bar',      mode==='ws');
+    _show('g6-snr-espnow-bar',  mode==='espnow');
+    _show('g6-snr-rxlog-wrap',  mode!=='off');
+    _show('g6-snr-test-wrap',   mode!=='off');
 
-    setStatus(false, mode==='off'?'// 미연결':'// 대기중');
+    var statusLabel = mode==='off'?'// 미연결':
+                      mode==='espnow'?'// 동글 대기중':'// 대기중';
+    setStatus(false, statusLabel);
   };
 
   function _show(id, vis){
@@ -1705,10 +1723,73 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
       return;
     }
 
-    var isWifi = (_mode === 'ws');
+    var isWifi   = (_mode === 'ws');
+    var isEspNow = (_mode === 'espnow');
     var lines  = [];
 
-    if(isWifi){
+    if(isEspNow){
+      /* ── ESP-NOW 송신용 코드 (센서 달린 ESP32) ── */
+      lines.push('// ══════════════════════════════════════');
+      lines.push('// SGP 센서 — ESP-NOW 송신용 (센서 ESP32)');
+      lines.push('// 공유기 없이 동작 — 야외 행사용');
+      lines.push('// ══════════════════════════════════════');
+      lines.push('#include <esp_now.h>');
+      lines.push('#include <WiFi.h>');
+      lines.push('');
+      lines.push('// ← 수신용 ESP32(동글)의 MAC 주소로 교체');
+      lines.push('// 시리얼 모니터에서 수신용 ESP32 실행하면 MAC 주소 출력됨');
+      lines.push('uint8_t receiverMac[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};');
+      lines.push('');
+      lines.push('// ── 핀 설정 ──');
+      allPins.forEach(function(p){
+        var sn=SENSORS.find(function(s){return s.v===p.sensor;});
+        lines.push('const int PIN_'+p.cmd+'_'+p.pin+' = '+p.pin+';  // '+ACTION_LABEL[p.action]+' — '+(sn?sn.l:p.sensor));
+      });
+      lines.push('');
+      lines.push('const int DEBOUNCE = 300;');
+      lines.push('');
+      lines.push('void sendSignal(const char* cmd){');
+      lines.push('  esp_now_send(receiverMac, (uint8_t*)cmd, strlen(cmd)+1);');
+      lines.push('}');
+      lines.push('');
+      lines.push('void setup(){');
+      lines.push('  WiFi.mode(WIFI_STA);');
+      lines.push('  esp_now_init();');
+      lines.push('  esp_now_peer_info_t peer={};');
+      lines.push('  memcpy(peer.peer_addr, receiverMac, 6);');
+      lines.push('  peer.channel=0; peer.encrypt=false;');
+      lines.push('  esp_now_add_peer(&peer);');
+      allPins.forEach(function(p){ lines.push('  pinMode(PIN_'+p.cmd+'_'+p.pin+', INPUT_PULLUP);'); });
+      lines.push('}');
+      lines.push('');
+      lines.push('void loop(){');
+      allPins.forEach(function(p){
+        lines.push('  if(!digitalRead(PIN_'+p.cmd+'_'+p.pin+')){sendSignal("'+p.cmd+'");delay(DEBOUNCE);}');
+      });
+      lines.push('}');
+      lines.push('');
+      lines.push('// ══════════════════════════════════════');
+      lines.push('// SGP 센서 — ESP-NOW 수신용 (동글 ESP32)');
+      lines.push('// 이 코드를 PC에 꽂을 ESP32에 업로드');
+      lines.push('// ══════════════════════════════════════');
+      lines.push('/*');
+      lines.push('#include <esp_now.h>');
+      lines.push('#include <WiFi.h>');
+      lines.push('');
+      lines.push('void onReceive(const uint8_t* mac, const uint8_t* data, int len){');
+      lines.push('  Serial.println((char*)data);');
+      lines.push('}');
+      lines.push('');
+      lines.push('void setup(){');
+      lines.push('  Serial.begin(115200);');
+      lines.push('  WiFi.mode(WIFI_STA);');
+      lines.push('  Serial.println(WiFi.macAddress()); // ← 이 MAC을 송신용에 입력');
+      lines.push('  esp_now_init();');
+      lines.push('  esp_now_register_recv_cb(onReceive);');
+      lines.push('}');
+      lines.push('void loop(){}');
+      lines.push('*/');
+    } else if(isWifi){
       /* ── ESP32 WebSocket 코드 ── */
       lines.push('#include <WiFi.h>');
       lines.push('#include <WebSocketsServer.h>');
@@ -1907,6 +1988,61 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 
   function _wsCleanup(){
     if(_ws){ try{ _ws.close(); } catch(e){} _ws = null; }
+  }
+
+  /* ══════════════════════════════
+     ESP-NOW 동글 (수신용 ESP32 USB 연결)
+     공유기 없이 야외 행사에서 사용
+     ══════════════════════════════ */
+  var _espnowPort=null, _espnowReader=null;
+
+  window.g6SnrEspNowConnect = async function(){
+    if(!navigator.serial){
+      alert('Web Serial API는 Chrome / Edge 브라우저에서만 지원됩니다.');
+      return;
+    }
+    try{
+      _espnowPort = await navigator.serial.requestPort();
+      await _espnowPort.open({baudRate:115200});
+      setStatus(true,'// 동글 연결됨');
+      _show('g6-snr-espnow-btn',false);
+      _show('g6-snr-espnow-dis',true);
+      document.getElementById('g6-snr-espnow-log').textContent='✅ 동글 연결됨 — 신호 수신 대기중...';
+      _espnowRead();
+    }catch(e){
+      setStatus(null,'// 동글 연결 실패');
+      document.getElementById('g6-snr-espnow-log').textContent='❌ '+e.message;
+    }
+  };
+
+  async function _espnowRead(){
+    try{
+      var decoder=new TextDecoderStream();
+      _espnowPort.readable.pipeTo(decoder.writable);
+      _espnowReader=decoder.readable.getReader();
+      var buf='';
+      while(true){
+        var r=await _espnowReader.read();
+        if(r.done) break;
+        buf+=r.value;
+        var lines=buf.split('\n'); buf=lines.pop();
+        lines.forEach(function(line){ if(line.trim()) _onSignal(line); });
+      }
+    }catch(e){}
+  }
+
+  window.g6SnrEspNowDisconnect = async function(){
+    await _espnowCleanup();
+    setStatus(false,'// 동글 연결 해제');
+    _show('g6-snr-espnow-btn',true);
+    _show('g6-snr-espnow-dis',false);
+    document.getElementById('g6-snr-espnow-log').textContent='연결 해제됨';
+  };
+
+  async function _espnowCleanup(){
+    try{if(_espnowReader)await _espnowReader.cancel();}catch(e){}
+    try{if(_espnowPort)await _espnowPort.close();}catch(e){}
+    _espnowReader=null; _espnowPort=null;
   }
 
   setStatus(false, '// 미연결');
