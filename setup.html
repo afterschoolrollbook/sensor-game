@@ -277,15 +277,23 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .g6-opendisp:hover{border-color:var(--accent);color:var(--accent);}
 .g6-result-btn{padding:10px 16px;background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;}
 .g6-result-btn:hover{background:#05b88a;}
-/* SENSOR SECTION */
-.g6-snr-radio{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--card2);color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;user-select:none;flex:1;justify-content:center;}
-.g6-snr-radio:hover{color:var(--text2);}
+/* countdown overlay */
+/* SENSOR */
+.g6-snr-radio{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--card2);color:var(--text3);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;user-select:none;flex:1;justify-content:center;}
 .g6-snr-radio.active{border-color:var(--accent);background:rgba(76,201,240,.1);color:var(--accent);}
-.g6-snr-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .2s;}
-.g6-snr-radio.active .g6-snr-dot{background:var(--accent);}
-.g6-snr-maprow{display:flex;flex-direction:column;gap:4px;}
-.g6-snr-maplbl{font-size:10px;color:var(--text3);letter-spacing:1px;}
-.g6-snr-mapinput{width:100%;font-size:12px;padding:6px 8px;}
+.g6-snr-dot2{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .2s;}
+.g6-snr-radio.active .g6-snr-dot2{background:var(--accent);}
+.g6-snr-action-block{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.g6-snr-action-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;}
+.g6-snr-pin-list{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;}
+.g6-snr-pin-row{display:flex;align-items:center;gap:6px;}
+.g6-snr-pin-label{font-size:10px;color:var(--text3);white-space:nowrap;letter-spacing:1px;width:36px;}
+.g6-snr-pin-input{background:var(--card);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:6px 8px;font-size:13px;font-family:'Share Tech Mono',monospace;text-align:center;width:56px;flex-shrink:0;}
+.g6-snr-sensor-sel{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:6px 8px;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
+.g6-snr-del-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.g6-snr-del-btn:hover{border-color:var(--red);color:var(--red);}
+.g6-snr-add-btn{padding:5px 10px;border-radius:6px;border:1px dashed var(--border2);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .2s;font-weight:600;}
+.g6-snr-add-btn:hover{border-color:var(--accent);color:var(--accent);}
 /* countdown overlay */
 #g6-countdown{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;flex-direction:column;}
 #g6-countdown.show{display:flex;}
@@ -750,147 +758,106 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
         <div class="g6-ctrl-section" id="g6-sensor-section">
           <div class="g6-ctrl-label collapsed" id="g6-sensor-header" onclick="g6ToggleSection('sensor')">
             센서 연결
-            <span id="g6-sensor-status-dot" class="g6-sdot" style="margin-left:4px;"></span>
-            <span id="g6-sensor-status-txt" style="font-size:10px;color:var(--text3);font-weight:400;letter-spacing:1px;margin-left:2px;">// 미연결</span>
+            <span id="g6-snr-dot" class="g6-sdot" style="margin-left:4px;"></span>
+            <span id="g6-snr-txt" style="font-size:10px;color:var(--text3);font-weight:400;letter-spacing:1px;margin-left:2px;">// 미연결</span>
             <span class="g6-collapse-arrow">▾</span>
           </div>
           <div class="g6-ctrl-body collapsed" id="g6-sensor-body">
 
-            <!-- 방식 선택 라디오 -->
+            <!-- 연결 방식 -->
             <div style="display:flex;gap:6px;margin-bottom:14px;">
-              <label id="g6-snr-lbl-off"  class="g6-snr-radio active" onclick="g6SensorMode('off')"><input type="radio" name="g6snrmode" value="off"  checked style="display:none;"><span class="g6-snr-dot"></span>사용 안함</label>
-              <label id="g6-snr-lbl-usb"  class="g6-snr-radio"        onclick="g6SensorMode('usb')"><input type="radio" name="g6snrmode" value="usb"         style="display:none;"><span class="g6-snr-dot"></span>🔌 USB 유선</label>
-              <label id="g6-snr-lbl-ws"   class="g6-snr-radio"        onclick="g6SensorMode('ws')"><input type="radio" name="g6snrmode" value="ws"          style="display:none;"><span class="g6-snr-dot"></span>📡 WiFi WebSocket</label>
-              <label id="g6-snr-lbl-http" class="g6-snr-radio"        onclick="g6SensorMode('http')"><input type="radio" name="g6snrmode" value="http"       style="display:none;"><span class="g6-snr-dot"></span>🌐 WiFi HTTP</label>
+              <label class="g6-snr-radio active" id="g6-snr-lbl-off"  onclick="g6SnrMode('off')"> <span class="g6-snr-dot2"></span>사용 안함</label>
+              <label class="g6-snr-radio"        id="g6-snr-lbl-usb"  onclick="g6SnrMode('usb')"> <span class="g6-snr-dot2"></span>🔌 USB 유선</label>
+              <label class="g6-snr-radio"        id="g6-snr-lbl-ws"   onclick="g6SnrMode('ws')">  <span class="g6-snr-dot2"></span>📡 WiFi</label>
             </div>
 
-            <!-- ── USB 패널 ── -->
-            <div id="g6-snr-panel-usb" style="display:none;">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">// Web Serial API — Chrome 브라우저 전용</div>
-              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.7;">
-                <b style="color:var(--text);">Arduino / ESP32</b>를 USB로 연결 후 아래 버튼을 누르세요.<br>시리얼 포트를 선택하면 자동으로 신호를 수신합니다.
+            <!-- USB 연결 바 -->
+            <div id="g6-snr-usb-bar" style="display:none;margin-bottom:12px;">
+              <div style="display:flex;gap:7px;align-items:center;">
+                <button class="g6-ctrl-btn primary" id="g6-snr-usb-btn" onclick="g6SnrUsbConnect()" style="flex:0;padding:8px 16px;white-space:nowrap;">🔌 포트 연결</button>
+                <button class="g6-ctrl-btn" id="g6-snr-usb-dis" onclick="g6SnrUsbDisconnect()" style="flex:0;padding:8px 12px;display:none;">해제</button>
+                <span id="g6-snr-usb-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);">대기중...</span>
               </div>
-              <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;">
-                <button class="g6-ctrl-btn primary" id="g6-usb-connect-btn" onclick="g6UsbConnect()" style="flex:0;padding:9px 18px;white-space:nowrap;">🔌 포트 선택 &amp; 연결</button>
-                <button class="g6-ctrl-btn" id="g6-usb-disconnect-btn" onclick="g6UsbDisconnect()" style="flex:0;padding:9px 14px;display:none;">연결 해제</button>
-                <span id="g6-usb-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);flex:1;">대기중...</span>
-              </div>
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// 신호 맵핑 (Arduino에서 보내는 문자열)</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">▶ 시작</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-start" value="START"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">⏹ 정지</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-stop"  value="STOP"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">💥 퓨즈</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-fuse"  value="FUSE"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">🔵 랩</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-lap"   value="LAP"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">🔄 초기화</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-reset" value="RESET"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">📢 카운트다운</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-usb-map-cd" value="CD"></div>
-              </div>
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:5px;">// 수신 로그</div>
-              <div id="g6-usb-rxlog" style="font-family:'Share Tech Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;min-height:40px;max-height:80px;overflow-y:auto;color:var(--green);line-height:1.6;"></div>
-              <details style="margin-top:10px;">
-                <summary style="font-size:10px;color:var(--text3);letter-spacing:1px;cursor:pointer;user-select:none;">// Arduino 예시 코드 보기 ▸</summary>
-                <pre style="margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;font-size:10px;color:var(--accent);overflow-x:auto;line-height:1.6;">const int PIN_START=2, PIN_STOP=3, PIN_FUSE=4, PIN_LAP=5;
-void setup(){
-  Serial.begin(9600);
-  pinMode(PIN_START,INPUT_PULLUP); pinMode(PIN_STOP,INPUT_PULLUP);
-  pinMode(PIN_FUSE,INPUT_PULLUP);  pinMode(PIN_LAP,INPUT_PULLUP);
-}
-void loop(){
-  if(!digitalRead(PIN_START)){Serial.println("START");delay(300);}
-  if(!digitalRead(PIN_STOP)) {Serial.println("STOP"); delay(300);}
-  if(!digitalRead(PIN_FUSE)) {Serial.println("FUSE"); delay(300);}
-  if(!digitalRead(PIN_LAP))  {Serial.println("LAP");  delay(300);}
-}</pre>
-              </details>
             </div>
 
-            <!-- ── WebSocket 패널 ── -->
-            <div id="g6-snr-panel-ws" style="display:none;">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">// ESP32 WebSocket — 같은 WiFi에 연결 필요</div>
-              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.7;">
-                ESP32의 <b style="color:var(--text);">IP 주소</b>를 입력하고 연결하세요.<br>PC와 ESP32가 <b style="color:var(--text);">같은 공유기</b>에 있어야 합니다.
+            <!-- WiFi 연결 바 -->
+            <div id="g6-snr-ws-bar" style="display:none;margin-bottom:12px;">
+              <div style="display:flex;gap:7px;align-items:center;">
+                <span style="font-size:11px;color:var(--text3);white-space:nowrap;">ESP32 IP</span>
+                <input class="g6-ctrl-input" id="g6-snr-ws-ip" value="192.168.0.100" style="flex:1;width:auto;text-align:left;font-size:12px;">
+                <button class="g6-ctrl-btn primary" id="g6-snr-ws-btn" onclick="g6SnrWsConnect()" style="flex:0;padding:8px 14px;white-space:nowrap;">연결</button>
+                <button class="g6-ctrl-btn" id="g6-snr-ws-dis" onclick="g6SnrWsDisconnect()" style="flex:0;padding:8px 12px;display:none;">해제</button>
               </div>
-              <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;">
-                <span style="font-size:11px;color:var(--text3);white-space:nowrap;">ws://</span>
-                <input class="g6-ctrl-input" id="g6-ws-ip" value="192.168.0.100" style="flex:1;width:auto;text-align:left;">
-                <span style="font-size:11px;color:var(--text3);white-space:nowrap;">:81</span>
-                <button class="g6-ctrl-btn primary" id="g6-ws-connect-btn" onclick="g6WsConnect()" style="flex:0;padding:9px 14px;white-space:nowrap;">연결</button>
-                <button class="g6-ctrl-btn" id="g6-ws-disconnect-btn" onclick="g6WsDisconnect()" style="flex:0;padding:9px 14px;display:none;">해제</button>
-              </div>
-              <div id="g6-ws-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:10px;">대기중...</div>
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// 신호 맵핑 (ESP32에서 보내는 문자열)</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">▶ 시작</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-start" value="START"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">⏹ 정지</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-stop"  value="STOP"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">💥 퓨즈</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-fuse"  value="FUSE"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">🔵 랩</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-lap"   value="LAP"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">🔄 초기화</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-reset" value="RESET"></div>
-                <div class="g6-snr-maprow"><div class="g6-snr-maplbl">📢 카운트다운</div><input class="g6-ctrl-input g6-snr-mapinput" id="g6-ws-map-cd" value="CD"></div>
-              </div>
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:5px;">// 수신 로그</div>
-              <div id="g6-ws-rxlog" style="font-family:'Share Tech Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;min-height:40px;max-height:80px;overflow-y:auto;color:var(--green);line-height:1.6;"></div>
-              <details style="margin-top:10px;">
-                <summary style="font-size:10px;color:var(--text3);letter-spacing:1px;cursor:pointer;user-select:none;">// ESP32 WebSocket 예시 코드 보기 ▸</summary>
-                <pre style="margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;font-size:10px;color:var(--accent);overflow-x:auto;line-height:1.6;">#include &lt;WiFi.h&gt;
-#include &lt;WebSocketsServer.h&gt;
-const char* ssid="공유기이름"; const char* password="비밀번호";
-const int PIN_START=14,PIN_STOP=27,PIN_FUSE=26,PIN_LAP=25;
-WebSocketsServer ws(81);
-void setup(){
-  Serial.begin(115200);
-  WiFi.begin(ssid,password);
-  while(WiFi.status()!=WL_CONNECTED)delay(500);
-  Serial.println(WiFi.localIP()); // ← 이 IP를 위에 입력
-  ws.begin();
-  ws.onEvent([](uint8_t n,WStype_t t,uint8_t* p,size_t l){});
-  pinMode(PIN_START,INPUT_PULLUP); pinMode(PIN_STOP,INPUT_PULLUP);
-  pinMode(PIN_FUSE,INPUT_PULLUP);  pinMode(PIN_LAP,INPUT_PULLUP);
-}
-void loop(){
-  ws.loop();
-  if(!digitalRead(PIN_START)){ws.broadcastTXT("START");delay(300);}
-  if(!digitalRead(PIN_STOP)) {ws.broadcastTXT("STOP"); delay(300);}
-  if(!digitalRead(PIN_FUSE)) {ws.broadcastTXT("FUSE"); delay(300);}
-  if(!digitalRead(PIN_LAP))  {ws.broadcastTXT("LAP");  delay(300);}
-}</pre>
-              </details>
+              <div id="g6-snr-ws-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-top:6px;">대기중...</div>
             </div>
 
-            <!-- ── HTTP 패널 ── -->
-            <div id="g6-snr-panel-http" style="display:none;">
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">// ESP32 HTTP — PC에서 sensor-relay.js 실행 필요</div>
-              <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--text2);line-height:1.7;">
-                PC에서 <b style="color:var(--text);">node sensor-relay.js</b> 를 먼저 실행한 뒤 아래 버튼을 누르세요.
-              </div>
-              <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;">
-                <span style="font-size:11px;color:var(--text3);white-space:nowrap;">포트</span>
-                <input class="g6-ctrl-input" id="g6-http-port" value="8765" style="width:80px;">
-                <button class="g6-ctrl-btn primary" id="g6-http-start-btn" onclick="g6HttpStart()" style="flex:0;padding:9px 14px;white-space:nowrap;">▶ 수신 시작</button>
-                <button class="g6-ctrl-btn" id="g6-http-stop-btn" onclick="g6HttpStop()" style="flex:0;padding:9px 14px;display:none;">■ 중단</button>
-              </div>
-              <div id="g6-http-log" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:10px;">대기중...</div>
-              <div style="background:var(--card2);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
-                <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">// ESP32가 호출할 URL (PC IP로 교체)</div>
-                <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);line-height:1.9;">
-                  http://&lt;PC-IP&gt;:8765/cmd?action=START<br>
-                  http://&lt;PC-IP&gt;:8765/cmd?action=STOP<br>
-                  http://&lt;PC-IP&gt;:8765/cmd?action=FUSE<br>
-                  http://&lt;PC-IP&gt;:8765/cmd?action=LAP
-                </div>
-              </div>
-              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:5px;">// 수신 로그</div>
-              <div id="g6-http-rxlog" style="font-family:'Share Tech Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;min-height:40px;max-height:80px;overflow-y:auto;color:var(--green);line-height:1.6;"></div>
+            <!-- 수신 로그 -->
+            <div id="g6-snr-rxlog-wrap" style="display:none;margin-bottom:12px;">
+              <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:4px;">// 수신 로그</div>
+              <div id="g6-snr-rxlog" style="font-family:'Share Tech Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;min-height:36px;max-height:70px;overflow-y:auto;color:var(--green);line-height:1.6;"></div>
             </div>
 
-            <!-- 공통 테스트 버튼 -->
-            <div id="g6-snr-test" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+            <!-- ═══ 동작별 센서 매핑 ═══ -->
+            <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:10px;">// 동작별 센서 핀 연결</div>
+
+            <!-- 시작 -->
+            <div class="g6-snr-action-block">
+              <div class="g6-snr-action-title" style="color:var(--green);">▶ 시작</div>
+              <div class="g6-snr-pin-list" id="g6-snr-pins-start"></div>
+              <button class="g6-snr-add-btn" onclick="g6SnrAddPin('start')">+ 센서 추가</button>
+            </div>
+
+            <!-- 정지 -->
+            <div class="g6-snr-action-block">
+              <div class="g6-snr-action-title">⏹ 정지</div>
+              <div class="g6-snr-pin-list" id="g6-snr-pins-stop"></div>
+              <button class="g6-snr-add-btn" onclick="g6SnrAddPin('stop')">+ 센서 추가</button>
+            </div>
+
+            <!-- 퓨즈 -->
+            <div class="g6-snr-action-block">
+              <div class="g6-snr-action-title" style="color:var(--yellow);">💥 퓨즈</div>
+              <div class="g6-snr-pin-list" id="g6-snr-pins-fuse"></div>
+              <button class="g6-snr-add-btn" onclick="g6SnrAddPin('fuse')">+ 센서 추가</button>
+            </div>
+
+            <!-- 랩 -->
+            <div class="g6-snr-action-block">
+              <div class="g6-snr-action-title" style="color:var(--accent);">🔵 랩</div>
+              <div class="g6-snr-pin-list" id="g6-snr-pins-lap"></div>
+              <button class="g6-snr-add-btn" onclick="g6SnrAddPin('lap')">+ 센서 추가</button>
+            </div>
+
+            <!-- 초기화 -->
+            <div class="g6-snr-action-block" style="margin-bottom:14px;">
+              <div class="g6-snr-action-title">🔄 초기화</div>
+              <div class="g6-snr-pin-list" id="g6-snr-pins-reset"></div>
+              <button class="g6-snr-add-btn" onclick="g6SnrAddPin('reset')">+ 센서 추가</button>
+            </div>
+
+            <!-- 코드 생성 -->
+            <button onclick="g6SnrGenCode()" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--accent);background:rgba(76,201,240,.08);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:10px;" onmouseover="this.style.background='rgba(76,201,240,.18)'" onmouseout="this.style.background='rgba(76,201,240,.08)'">
+              📋 Arduino / ESP32 코드 자동 생성
+            </button>
+
+            <!-- 생성된 코드 -->
+            <div id="g6-snr-code-wrap" style="display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                <div style="font-size:10px;color:var(--text3);letter-spacing:1px;">// 생성된 코드 — 복사해서 Arduino IDE에 붙여넣기</div>
+                <button onclick="g6SnrCopyCode()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-size:10px;cursor:pointer;">📋 복사</button>
+              </div>
+              <pre id="g6-snr-code" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:10px;color:var(--accent);font-family:'Share Tech Mono',monospace;overflow-x:auto;line-height:1.7;white-space:pre;margin:0;"></pre>
+            </div>
+
+            <!-- 수동 테스트 -->
+            <div id="g6-snr-test-wrap" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
               <div style="font-size:10px;color:var(--text3);letter-spacing:1px;margin-bottom:7px;">// 수동 테스트 (센서 없이 직접 신호 발생)</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('START')" style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(6,214,160,.5);color:var(--green);">▶ START</button>
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('STOP')"  style="flex:0;padding:7px 12px;font-size:11px;">⏹ STOP</button>
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('FUSE')"  style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(255,214,10,.5);color:var(--yellow);">💥 FUSE</button>
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('LAP')"   style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(76,201,240,.5);color:var(--accent);">🔵 LAP</button>
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('RESET')" style="flex:0;padding:7px 12px;font-size:11px;">🔄 RESET</button>
-                <button class="g6-ctrl-btn" onclick="g6SensorDispatch('CD')"    style="flex:0;padding:7px 12px;font-size:11px;">📢 CD</button>
+                <button class="g6-ctrl-btn" onclick="g6SnrDispatch('start')" style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(6,214,160,.4);color:var(--green);">▶ 시작</button>
+                <button class="g6-ctrl-btn" onclick="g6SnrDispatch('stop')"  style="flex:0;padding:7px 12px;font-size:11px;">⏹ 정지</button>
+                <button class="g6-ctrl-btn" onclick="g6SnrDispatch('fuse')"  style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(255,214,10,.4);color:var(--yellow);">💥 퓨즈</button>
+                <button class="g6-ctrl-btn" onclick="g6SnrDispatch('lap')"   style="flex:0;padding:7px 12px;font-size:11px;border-color:rgba(76,201,240,.4);color:var(--accent);">🔵 랩</button>
+                <button class="g6-ctrl-btn" onclick="g6SnrDispatch('reset')" style="flex:0;padding:7px 12px;font-size:11px;">🔄 초기화</button>
               </div>
             </div>
 
@@ -1571,46 +1538,254 @@ void loop(){
 </script>
 
 <script>
-/* ─────────────────────────────────────────────────
-   SGP 센서 연결 모듈  (USB / WebSocket / HTTP)
-   ───────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   SGP 센서 연결 모듈 v2
+   ─ 동작별로 핀을 자유롭게 추가/삭제
+   ─ USB(Web Serial) / WiFi(WebSocket) 자동 처리
+   ─ 설정 완료 후 Arduino/ESP32 코드 자동 생성
+   ═══════════════════════════════════════════════ */
 (function(){
-  let _mode='off', _port=null, _reader=null, _ws=null, _httpEs=null;
 
-  /* 상태 표시 */
-  function setStatus(connected, label){
-    var dot=document.getElementById('g6-sensor-status-dot');
-    var txt=document.getElementById('g6-sensor-status-txt');
+  /* ── 상태 ── */
+  var _mode   = 'off';   // 'off' | 'usb' | 'ws'
+  var _port   = null;
+  var _reader = null;
+  var _ws     = null;
+
+  /* 동작 목록 */
+  var ACTIONS = ['start','stop','fuse','lap','reset'];
+
+  /* 핀 설정 저장소: { start:[{pin,sensor},...], stop:[...], ... } */
+  var _pins = { start:[], stop:[], fuse:[], lap:[], reset:[] };
+
+  /* 센서 종류 목록 */
+  var SENSORS = [
+    { v:'touch',    l:'터치 센서' },
+    { v:'ir',       l:'적외선 센서' },
+    { v:'button',   l:'버튼 (푸시)' },
+    { v:'pressure', l:'압력 센서' },
+    { v:'rfid',     l:'RFID' },
+    { v:'ultra',    l:'초음파 센서' },
+    { v:'custom',   l:'직접 입력' },
+  ];
+
+  /* 동작 이름 */
+  var ACTION_LABEL = { start:'▶ 시작', stop:'⏹ 정지', fuse:'💥 퓨즈', lap:'🔵 랩', reset:'🔄 초기화' };
+  var ACTION_CMD   = { start:'START', stop:'STOP', fuse:'FUSE', lap:'LAP', reset:'RESET' };
+
+  /* ── 상태 표시 ── */
+  function setStatus(conn, label){
+    var dot = document.getElementById('g6-snr-dot');
+    var txt = document.getElementById('g6-snr-txt');
     if(!dot||!txt) return;
-    dot.className='g6-sdot'+(connected===true?' active':connected===null?' alert':'');
-    txt.textContent=label||(connected===true?'// 연결됨':'// 미연결');
-    txt.style.color=connected===true?'var(--green)':connected===null?'var(--red)':'var(--text3)';
+    dot.className = 'g6-sdot' + (conn===true?' active':conn===null?' alert':'');
+    txt.textContent = label || (conn===true?'// 연결됨':'// 미연결');
+    txt.style.color = conn===true?'var(--green)':conn===null?'var(--red)':'var(--text3)';
   }
 
-  /* 수신 로그 */
-  function rxLog(id, msg){
-    var el=document.getElementById(id); if(!el) return;
-    var t=new Date().toTimeString().slice(0,8);
-    el.innerHTML+='<div>['+t+'] '+msg+'</div>';
-    el.scrollTop=el.scrollHeight;
+  /* ── 수신 로그 ── */
+  function rxLog(msg){
+    var el = document.getElementById('g6-snr-rxlog'); if(!el) return;
+    var t  = new Date().toTimeString().slice(0,8);
+    el.innerHTML += '<div>['+t+'] '+msg+'</div>';
+    el.scrollTop  = el.scrollHeight;
   }
 
-  /* 신호 → 타이머 함수 실행 */
-  window.g6SensorDispatch=function(raw){
-    var cmd=(raw||'').trim().toUpperCase();
-    var logId=_mode==='usb'?'g6-usb-rxlog':_mode==='ws'?'g6-ws-rxlog':'g6-http-rxlog';
-    rxLog(logId,'← '+cmd);
-    var prefix=_mode==='usb'?'g6-usb-map-':'g6-ws-map-';
-    function mv(id){return((document.getElementById(prefix+id)||{}).value||'').toUpperCase();}
-    if(cmd===mv('start')||cmd==='START') { _do('start'); return; }
-    if(cmd===mv('stop') ||cmd==='STOP')  { _do('stop');  return; }
-    if(cmd===mv('fuse') ||cmd==='FUSE')  { _do('fuse');  return; }
-    if(cmd===mv('lap')  ||cmd==='LAP')   { _do('lap');   return; }
-    if(cmd===mv('reset')||cmd==='RESET') { _do('reset'); return; }
-    if(cmd===mv('cd')   ||cmd==='CD')    { _do('cd');    return; }
+  /* ══════════════════════════════
+     모드 전환
+     ══════════════════════════════ */
+  window.g6SnrMode = function(mode){
+    if(_mode==='usb') _usbCleanup();
+    if(_mode==='ws')  _wsCleanup();
+    _mode = mode;
+
+    ['off','usb','ws'].forEach(function(m){
+      var el = document.getElementById('g6-snr-lbl-'+m);
+      if(el) el.classList.toggle('active', m===mode);
+    });
+
+    _show('g6-snr-usb-bar',  mode==='usb');
+    _show('g6-snr-ws-bar',   mode==='ws');
+    _show('g6-snr-rxlog-wrap', mode!=='off');
+    _show('g6-snr-test-wrap',  mode!=='off');
+
+    setStatus(false, mode==='off'?'// 미연결':'// 대기중');
   };
 
-  function _do(action){
+  function _show(id, vis){
+    var el = document.getElementById(id);
+    if(el) el.style.display = vis ? '' : 'none';
+  }
+
+  /* ══════════════════════════════
+     핀 추가 / 삭제
+     ══════════════════════════════ */
+  window.g6SnrAddPin = function(action){
+    /* 기본 핀: 2,3,4... 순서대로 자동 배정 */
+    var usedPins = [];
+    ACTIONS.forEach(function(a){ _pins[a].forEach(function(p){ usedPins.push(p.pin); }); });
+    var nextPin = 2;
+    while(usedPins.indexOf(nextPin) !== -1) nextPin++;
+
+    _pins[action].push({ pin: nextPin, sensor: 'touch' });
+    _renderPins(action);
+  };
+
+  window.g6SnrDelPin = function(action, idx){
+    _pins[action].splice(idx, 1);
+    _renderPins(action);
+  };
+
+  window.g6SnrPinChange = function(action, idx, field, val){
+    if(field==='pin') _pins[action][idx].pin = parseInt(val)||2;
+    if(field==='sensor') _pins[action][idx].sensor = val;
+  };
+
+  function _renderPins(action){
+    var wrap = document.getElementById('g6-snr-pins-'+action);
+    if(!wrap) return;
+    wrap.innerHTML = '';
+    _pins[action].forEach(function(p, i){
+      var row = document.createElement('div');
+      row.className = 'g6-snr-pin-row';
+
+      /* 핀 번호 */
+      var pinInput = document.createElement('input');
+      pinInput.className = 'g6-snr-pin-input';
+      pinInput.type = 'number'; pinInput.min = 0; pinInput.max = 40;
+      pinInput.value = p.pin;
+      pinInput.title = '핀 번호';
+      pinInput.oninput = function(){ g6SnrPinChange(action, i, 'pin', this.value); };
+
+      /* 핀 라벨 */
+      var lbl = document.createElement('span');
+      lbl.className = 'g6-snr-pin-label';
+      lbl.textContent = 'PIN';
+
+      /* 센서 종류 */
+      var sel = document.createElement('select');
+      sel.className = 'g6-snr-sensor-sel';
+      SENSORS.forEach(function(s){
+        var opt = document.createElement('option');
+        opt.value = s.v; opt.textContent = s.l;
+        if(s.v === p.sensor) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.onchange = function(){ g6SnrPinChange(action, i, 'sensor', this.value); };
+
+      /* 삭제 */
+      var del = document.createElement('button');
+      del.className = 'g6-snr-del-btn';
+      del.innerHTML = '✕';
+      del.title = '삭제';
+      del.onclick = function(){ g6SnrDelPin(action, i); };
+
+      row.appendChild(lbl);
+      row.appendChild(pinInput);
+      row.appendChild(sel);
+      row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ══════════════════════════════
+     코드 자동 생성
+     ══════════════════════════════ */
+  window.g6SnrGenCode = function(){
+    /* 핀 수집 */
+    var allPins = [];
+    ACTIONS.forEach(function(a){
+      _pins[a].forEach(function(p){
+        allPins.push({ pin: p.pin, sensor: p.sensor, action: a, cmd: ACTION_CMD[a] });
+      });
+    });
+
+    if(!allPins.length){
+      alert('연결된 센서가 없습니다.\n동작별로 + 센서 추가 버튼을 눌러 핀을 등록해주세요.');
+      return;
+    }
+
+    var isWifi = (_mode === 'ws');
+    var lines  = [];
+
+    if(isWifi){
+      /* ── ESP32 WebSocket 코드 ── */
+      lines.push('#include <WiFi.h>');
+      lines.push('#include <WebSocketsServer.h>');
+      lines.push('');
+      lines.push('const char* ssid     = "공유기이름";    // ← WiFi 이름');
+      lines.push('const char* password = "WiFi비밀번호";  // ← WiFi 비밀번호');
+      lines.push('');
+      lines.push('WebSocketsServer ws(81);');
+      lines.push('');
+      lines.push('// ── 핀 설정 ──');
+      allPins.forEach(function(p){
+        var sensorName = SENSORS.find(function(s){ return s.v===p.sensor; });
+        lines.push('const int PIN_'+p.cmd+'_'+p.pin+' = '+p.pin+';  // '+ACTION_LABEL[p.action]+' — '+(sensorName?sensorName.l:p.sensor));
+      });
+      lines.push('');
+      lines.push('// 디바운스 시간 (ms)');
+      lines.push('const int DEBOUNCE = 300;');
+      lines.push('');
+      lines.push('void setup() {');
+      lines.push('  Serial.begin(115200);');
+      lines.push('  WiFi.begin(ssid, password);');
+      lines.push('  while (WiFi.status() != WL_CONNECTED) delay(500);');
+      lines.push('  Serial.println("IP: " + WiFi.localIP().toString()); // ← 이 IP를 SGP에 입력');
+      lines.push('  ws.begin();');
+      lines.push('  ws.onEvent([](uint8_t n, WStype_t t, uint8_t* p, size_t l){});');
+      allPins.forEach(function(p){ lines.push('  pinMode(PIN_'+p.cmd+'_'+p.pin+', INPUT_PULLUP);'); });
+      lines.push('}');
+      lines.push('');
+      lines.push('void loop() {');
+      lines.push('  ws.loop();');
+      allPins.forEach(function(p){
+        lines.push('  if (!digitalRead(PIN_'+p.cmd+'_'+p.pin+')) { ws.broadcastTXT("'+p.cmd+'"); delay(DEBOUNCE); }');
+      });
+      lines.push('}');
+    } else {
+      /* ── Arduino USB 시리얼 코드 ── */
+      lines.push('// ── 핀 설정 ──');
+      allPins.forEach(function(p){
+        var sensorName = SENSORS.find(function(s){ return s.v===p.sensor; });
+        lines.push('const int PIN_'+p.cmd+'_'+p.pin+' = '+p.pin+';  // '+ACTION_LABEL[p.action]+' — '+(sensorName?sensorName.l:p.sensor));
+      });
+      lines.push('');
+      lines.push('// 디바운스 시간 (ms)');
+      lines.push('const int DEBOUNCE = 300;');
+      lines.push('');
+      lines.push('void setup() {');
+      lines.push('  Serial.begin(9600);');
+      allPins.forEach(function(p){ lines.push('  pinMode(PIN_'+p.cmd+'_'+p.pin+', INPUT_PULLUP);'); });
+      lines.push('}');
+      lines.push('');
+      lines.push('void loop() {');
+      allPins.forEach(function(p){
+        lines.push('  if (!digitalRead(PIN_'+p.cmd+'_'+p.pin+')) { Serial.println("'+p.cmd+'"); delay(DEBOUNCE); }');
+      });
+      lines.push('}');
+    }
+
+    var codeEl = document.getElementById('g6-snr-code');
+    var wrapEl = document.getElementById('g6-snr-code-wrap');
+    if(codeEl) codeEl.textContent = lines.join('\n');
+    if(wrapEl) wrapEl.style.display = '';
+  };
+
+  window.g6SnrCopyCode = function(){
+    var el = document.getElementById('g6-snr-code');
+    if(!el) return;
+    navigator.clipboard.writeText(el.textContent).then(function(){
+      var btn = event.target;
+      btn.textContent = '✅ 복사됨!';
+      setTimeout(function(){ btn.textContent = '📋 복사'; }, 1500);
+    });
+  };
+
+  /* ══════════════════════════════
+     신호 → 타이머 동작 실행
+     ══════════════════════════════ */
+  window.g6SnrDispatch = function(action){
     switch(action){
       case 'start':
         if(typeof g6Start==='function') g6Start();
@@ -1627,161 +1802,114 @@ void loop(){
         else if(typeof g6CdLap==='function') g6CdLap();
         break;
       case 'reset': if(typeof g6StopwatchReset==='function') g6StopwatchReset(); break;
-      case 'cd':    if(typeof sendCmd==='function') sendCmd('countdown'); break;
     }
-  }
-
-  /* ── 모드 전환 ── */
-  window.g6SensorMode=function(mode){
-    if(_mode==='usb')  _usbCleanup();
-    if(_mode==='ws')   _wsCleanup();
-    if(_mode==='http') _httpCleanup();
-    _mode=mode;
-    ['off','usb','ws','http'].forEach(function(m){
-      var el=document.getElementById('g6-snr-lbl-'+m);
-      if(el) el.classList.toggle('active',m===mode);
-    });
-    ['usb','ws','http'].forEach(function(m){
-      var p=document.getElementById('g6-snr-panel-'+m);
-      if(p) p.style.display=m===mode?'block':'none';
-    });
-    var tb=document.getElementById('g6-snr-test');
-    if(tb) tb.style.display=mode==='off'?'none':'block';
-    setStatus(false, mode==='off'?'// 미연결':'// 대기중');
   };
 
-  /* ══ USB Web Serial ══ */
-  window.g6UsbConnect=async function(){
+  /* 수신 문자열 → 동작 매핑 */
+  function _onSignal(raw){
+    var cmd = (raw||'').trim().toUpperCase();
+    rxLog('← ' + cmd);
+    var matched = false;
+    ACTIONS.forEach(function(a){
+      if(cmd === ACTION_CMD[a]){ g6SnrDispatch(a); matched = true; }
+    });
+    if(!matched) rxLog('⚠️ 알 수 없는 신호: ' + cmd);
+  }
+
+  /* ══════════════════════════════
+     USB Web Serial
+     ══════════════════════════════ */
+  window.g6SnrUsbConnect = async function(){
     if(!navigator.serial){
-      alert('Web Serial API는 Chrome 89+ 에서만 지원됩니다.\nChrome 브라우저를 사용해주세요.');
+      alert('Web Serial API는 Chrome / Edge 브라우저에서만 지원됩니다.');
       return;
     }
     try{
-      _port=await navigator.serial.requestPort();
-      await _port.open({baudRate:9600});
+      _port = await navigator.serial.requestPort();
+      await _port.open({ baudRate: 9600 });
       setStatus(true);
-      document.getElementById('g6-usb-connect-btn').style.display='none';
-      document.getElementById('g6-usb-disconnect-btn').style.display='';
-      document.getElementById('g6-usb-log').textContent='✅ 연결됨 — 신호 수신 대기중...';
+      _show('g6-snr-usb-btn', false);
+      _show('g6-snr-usb-dis', true);
+      document.getElementById('g6-snr-usb-log').textContent = '✅ 연결됨 — 신호 수신 대기중...';
       _usbRead();
-    }catch(e){
-      setStatus(null,'// 연결 실패');
-      document.getElementById('g6-usb-log').textContent='❌ '+e.message;
+    } catch(e){
+      setStatus(null, '// 연결 실패');
+      document.getElementById('g6-snr-usb-log').textContent = '❌ ' + e.message;
     }
   };
 
   async function _usbRead(){
     try{
-      var decoder=new TextDecoderStream();
+      var decoder = new TextDecoderStream();
       _port.readable.pipeTo(decoder.writable);
-      _reader=decoder.readable.getReader();
-      var buf='';
+      _reader = decoder.readable.getReader();
+      var buf = '';
       while(true){
-        var r=await _reader.read();
+        var r = await _reader.read();
         if(r.done) break;
-        buf+=r.value;
-        var lines=buf.split('\n'); buf=lines.pop();
-        lines.forEach(function(line){
-          line=line.trim(); if(!line) return;
-          g6SensorDispatch(line);
-        });
+        buf += r.value;
+        var lines = buf.split('\n'); buf = lines.pop();
+        lines.forEach(function(line){ if(line.trim()) _onSignal(line); });
       }
-    }catch(e){}
+    } catch(e){}
   }
 
-  window.g6UsbDisconnect=async function(){
+  window.g6SnrUsbDisconnect = async function(){
     await _usbCleanup();
-    setStatus(false,'// 연결 해제됨');
-    document.getElementById('g6-usb-connect-btn').style.display='';
-    document.getElementById('g6-usb-disconnect-btn').style.display='none';
-    document.getElementById('g6-usb-log').textContent='연결 해제됨';
+    setStatus(false, '// 연결 해제됨');
+    _show('g6-snr-usb-btn', true);
+    _show('g6-snr-usb-dis', false);
+    document.getElementById('g6-snr-usb-log').textContent = '연결 해제됨';
   };
 
   async function _usbCleanup(){
-    try{if(_reader)await _reader.cancel();}catch(e){}
-    try{if(_port)await _port.close();}catch(e){}
-    _reader=null; _port=null;
+    try{ if(_reader) await _reader.cancel(); } catch(e){}
+    try{ if(_port)   await _port.close();   } catch(e){}
+    _reader = null; _port = null;
   }
 
-  /* ══ WebSocket ══ */
-  window.g6WsConnect=function(){
+  /* ══════════════════════════════
+     WiFi WebSocket
+     ══════════════════════════════ */
+  window.g6SnrWsConnect = function(){
     _wsCleanup();
-    var ip=(document.getElementById('g6-ws-ip')||{}).value||'192.168.0.100';
-    var url='ws://'+ip+':81';
-    var logEl=document.getElementById('g6-ws-log');
-    if(logEl) logEl.textContent='⏳ 연결 중... '+url;
-    _ws=new WebSocket(url);
-    _ws.onopen=function(){
+    var ip  = (document.getElementById('g6-snr-ws-ip')||{}).value || '192.168.0.100';
+    var log = document.getElementById('g6-snr-ws-log');
+    if(log) log.textContent = '⏳ 연결 중... ws://'+ip+':81';
+    _ws = new WebSocket('ws://'+ip+':81');
+    _ws.onopen = function(){
       setStatus(true);
-      if(logEl) logEl.textContent='✅ 연결됨 — '+url;
-      document.getElementById('g6-ws-connect-btn').style.display='none';
-      document.getElementById('g6-ws-disconnect-btn').style.display='';
+      if(log) log.textContent = '✅ 연결됨 — ws://'+ip+':81';
+      _show('g6-snr-ws-btn', false);
+      _show('g6-snr-ws-dis', true);
     };
-    _ws.onmessage=function(e){ g6SensorDispatch((e.data||'').trim()); };
-    _ws.onerror=function(){
-      setStatus(null,'// 연결 오류');
-      if(logEl) logEl.textContent='❌ 연결 실패 — IP/포트를 확인하세요';
+    _ws.onmessage = function(e){ _onSignal(e.data); };
+    _ws.onerror   = function(){
+      setStatus(null, '// 연결 오류');
+      if(log) log.textContent = '❌ 연결 실패 — IP를 확인해주세요';
     };
-    _ws.onclose=function(){
-      setStatus(false,'// 연결 끊김');
-      if(logEl) logEl.textContent='⚠️ 연결 끊김';
-      document.getElementById('g6-ws-connect-btn').style.display='';
-      document.getElementById('g6-ws-disconnect-btn').style.display='none';
+    _ws.onclose   = function(){
+      setStatus(false, '// 연결 끊김');
+      if(log) log.textContent = '⚠️ 연결 끊김';
+      _show('g6-snr-ws-btn', true);
+      _show('g6-snr-ws-dis', false);
     };
   };
 
-  window.g6WsDisconnect=function(){
+  window.g6SnrWsDisconnect = function(){
     _wsCleanup();
-    setStatus(false,'// 연결 해제됨');
-    document.getElementById('g6-ws-connect-btn').style.display='';
-    document.getElementById('g6-ws-disconnect-btn').style.display='none';
-    var logEl=document.getElementById('g6-ws-log');
-    if(logEl) logEl.textContent='연결 해제됨';
+    setStatus(false, '// 연결 해제됨');
+    _show('g6-snr-ws-btn', true);
+    _show('g6-snr-ws-dis', false);
+    var log = document.getElementById('g6-snr-ws-log');
+    if(log) log.textContent = '연결 해제됨';
   };
 
   function _wsCleanup(){
-    if(_ws){try{_ws.close();}catch(e){} _ws=null;}
+    if(_ws){ try{ _ws.close(); } catch(e){} _ws = null; }
   }
 
-  /* ══ HTTP (EventSource via relay) ══ */
-  window.g6HttpStart=function(){
-    _httpCleanup();
-    var port=(document.getElementById('g6-http-port')||{}).value||'8765';
-    var logEl=document.getElementById('g6-http-log');
-    if(logEl) logEl.textContent='⏳ 릴레이 서버 연결 중... (localhost:'+port+')';
-    try{
-      _httpEs=new EventSource('http://localhost:'+port+'/events');
-      _httpEs.onopen=function(){
-        setStatus(true,'// 릴레이 연결됨');
-        if(logEl) logEl.textContent='✅ 릴레이 서버 연결됨 (포트 '+port+')';
-        document.getElementById('g6-http-start-btn').style.display='none';
-        document.getElementById('g6-http-stop-btn').style.display='';
-      };
-      _httpEs.onmessage=function(e){ g6SensorDispatch((e.data||'').trim()); };
-      _httpEs.onerror=function(){
-        setStatus(null,'// 릴레이 없음');
-        if(logEl) logEl.textContent='❌ 릴레이 서버 없음 — node sensor-relay.js 를 먼저 실행해주세요';
-      };
-    }catch(e){
-      setStatus(null,'// 오류');
-      if(logEl) logEl.textContent='❌ '+e.message;
-    }
-  };
-
-  window.g6HttpStop=function(){
-    _httpCleanup();
-    setStatus(false,'// 중단됨');
-    document.getElementById('g6-http-start-btn').style.display='';
-    document.getElementById('g6-http-stop-btn').style.display='none';
-    var logEl=document.getElementById('g6-http-log');
-    if(logEl) logEl.textContent='수신 중단됨';
-  };
-
-  function _httpCleanup(){
-    if(_httpEs){try{_httpEs.close();}catch(e){} _httpEs=null;}
-  }
-
-  setStatus(false,'// 미연결');
+  setStatus(false, '// 미연결');
 })();
 </script>
 </body>
