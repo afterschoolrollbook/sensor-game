@@ -1961,9 +1961,10 @@ function _redrawBracketViewTree(){
       _renderBracketVert(sec,rounds,reverseRounds);
 
       // bracket-view.html E 전용 — matchArea 높이 80px 고정
-      // SVG 그리기(rAF) 전에 동기적으로 적용 → 박스(top:0;bottom:0)도 같이 80px
-      sec.querySelectorAll('[style*="height:52px"]').forEach(el=>{
-        el.style.height='80px';
+      // data-row의 두 번째 자식이 matchArea (style 문자열과 무관하게 선택)
+      sec.querySelectorAll('[data-row]').forEach(rowWrap=>{
+        const matchArea=rowWrap.children[1];
+        if(matchArea) matchArea.style.height='80px';
       });
 
       return sec;
