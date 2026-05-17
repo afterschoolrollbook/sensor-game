@@ -1203,8 +1203,8 @@ function handleCmd(cmd){
       window._d3LastMatchCourt = cmd.court;
     }
 
-    // 2번 전광판 갱신
-    if(_d2Mode===`court_${cmd.court}`){
+    // 2번 전광판 갱신 — court_N 모드: 해당 경기장만, random 모드: 현재 표시 중인 경기장이면 갱신
+    if(_d2Mode===`court_${cmd.court}` || (_d2Mode==='random' && _d2RandomCourt-1===cmd.court)){
       _d2ShowCourt(cmd.court);
     }
 
@@ -1286,8 +1286,7 @@ startClock();
 document.getElementById('screen-1').classList.add('visible');
 // 저장된 2번 모드 복원
 try{ const m=localStorage.getItem('sgp_d2_mode'); _d2ApplyMode(m||'court_1'); }catch(e){}
-// 초기 로드 시 setup에 현재 선택 경기 데이터 요청
-try{ const bc=new BroadcastChannel('sgp_cmd'); bc.postMessage({type:'request_sync'}); bc.close(); }catch(e){}
+
 </script>
 </body>
 </html>
