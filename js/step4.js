@@ -795,7 +795,7 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
     // D의 matchArea: position:relative, height 고정
     // E의 matchArea: position:relative, width 고정, 카드를 absolute(left)로 배치
     const matchArea=document.createElement('div');
-    matchArea.style.cssText=`position:relative;height:52px;min-width:${totalW}px;`;
+    matchArea.style.cssText=`position:relative;min-height:52px;min-width:${totalW}px;`;
 
     matches.forEach((m,mi)=>{
       const isBye=m.p1&&!m.p2;
@@ -816,12 +816,11 @@ function _renderBracketVert(wrap, rounds, reverseRounds){
       // D: position:absolute;top:${cy}px;transform:translateY(-50%)
       // E: position:absolute;left:${cx}px;transform:translateX(-50%)
       box.style.cssText=`
-        position:absolute;top:0;bottom:0;
+        position:absolute;top:50%;transform:translateX(-50%) translateY(-50%);
         left:${slotCenterX}px;
-        transform:translateX(-50%);
         border-radius:6px;overflow:hidden;cursor:pointer;
         border:${isSel||isCur?'2.5px':'2px'} solid ${borderColor};
-        width:${BRACKET_CARD_W}px;
+        min-width:${BRACKET_CARD_W}px;
         ${isSel?'box-shadow:0 0 8px rgba(76,201,240,.4);':isCur?'box-shadow:0 0 10px rgba(230,57,70,.25);':''}
       `;
 
