@@ -503,16 +503,13 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
-  // ── 다른 경기장의 기존 선택 전부 해제 (한 번에 하나만 LIVE) ──
-  for(let _c = 1; _c <= 8; _c++){
-    if(_c === courtNum) continue;
-    if(!_t3CurrentMatch[_c] && !localStorage.getItem(`sgp_display_vs_court_${_c}`)) continue;
-    delete _t3CurrentMatch[_c];
-    try{ localStorage.removeItem(`sgp_display_vs_court_${_c}`); } catch(ex){}
-    // bracket-view 새창에도 해제 알림
+  // 같은 경기장의 기존 선택 해제 — 다른 경기장 선택은 유지 (경기장별 1경기씩 독립 선택)
+  if(_t3CurrentMatch[courtNum]){
+    delete _t3CurrentMatch[courtNum];
+    try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
     try{
       const _bc = new BroadcastChannel('sgp_cmd');
-      _bc.postMessage({ type:'clear_match', court: _c });
+      _bc.postMessage({ type:'clear_match', court: courtNum });
       _bc.close();
     } catch(ex){}
   }
