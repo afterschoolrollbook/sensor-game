@@ -1415,6 +1415,10 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Tab'){e.preventDefault();switchScreen();}
 });
 
+// 페이지 로드 시 이전 경기 캐시 초기화
+for(let _c=1;_c<=8;_c++){try{localStorage.removeItem(`sgp_display_vs_court_${_c}`);}catch(e){}}
+try{localStorage.removeItem('sgp_display_vs');}catch(e){}
+
 refreshVisible();
 startClock();
 // 초기: 1번 화면 티커 활성화
