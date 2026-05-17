@@ -368,9 +368,9 @@ function _d2ShowCourt(courtNum){
         const round=g.matches[ri];
         for(let mi=0;mi<round.length;mi++){
           const m=round[mi];
-          if(!m.winner&&m.p1&&m.p2&&!m.bye){
+          if(!m.winner&&m.p1){
             const p1n=typeof m.p1==='object'?m.p1.name:m.p1;
-            const p2n=typeof m.p2==='object'?m.p2.name:m.p2;
+            const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'—';
             found={p1:p1n,p2:p2n,label:g.label,ri,mi,seqMi:m._seqMi};
             break outer;
           }
