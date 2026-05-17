@@ -1974,6 +1974,23 @@ function _redrawBracketViewTree(){
         });
       });
 
+      // _applyBvColors/_applyMatchStates가 data-court/data-group-label로 박스를 찾을 수 있도록
+      // 각 그룹의 경기 박스에 속성 태깅 (구조/레이아웃은 전혀 변경 없음)
+      groups.forEach((g,gi)=>{
+        const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
+        const courtStr=String(g.court||1);
+        (g.matches||[]).forEach((round,ri)=>{
+          round.forEach((m,origMi)=>{
+            const seqMi=(g._roundOffset&&g._roundOffset[ri]!=null?g._roundOffset[ri]:0)+origMi;
+            const box=sec.querySelector(`[data-ri="${ri}"][data-mi="${seqMi}"]`);
+            if(box){
+              box.dataset.court=courtStr;
+              box.dataset.groupLabel=shortLabel;
+            }
+          });
+        });
+      });
+
       return sec;
     };
 
