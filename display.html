@@ -309,9 +309,12 @@ function _d2ApplyMode(mode){
   if(_d2RandomIv){ clearInterval(_d2RandomIv); _d2RandomIv=null; }
   if(mode==='random'){
     _d2RandomCourt=1;
-    _d2SwitchRandomCourt();
-    const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60')*1000;
-    _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
+    _d2ShowCourt(1); // 항상 1번부터 표시
+    const isRunning=localStorage.getItem('sgp_d2_random_running')==='true';
+    if(isRunning){
+      const iv=parseInt(localStorage.getItem('sgp_d2_random_interval')||'60')*1000;
+      _d2RandomIv=setInterval(_d2SwitchRandomCourt, iv);
+    }
   } else if(mode.startsWith('court_')){
     const c=parseInt(mode.replace('court_',''));
     _d2ShowCourt(c);
