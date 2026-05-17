@@ -243,9 +243,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
     </div>
     <div id="d1-right">
       <div id="d1-vs">
-        <div class="d1vs-pl"><div class="d1vs-nm" id="d1-vs-p1">—</div><div class="d1vs-sub">선수 1</div></div>
+        <div class="d1vs-pl"><div class="d1vs-nm" id="d1-vs-p1">준비중</div><div class="d1vs-sub">선수 1</div></div>
         <div class="d1vs-vs">VS</div>
-        <div class="d1vs-pl"><div class="d1vs-nm" id="d1-vs-p2">—</div><div class="d1vs-sub">선수 2</div></div>
+        <div class="d1vs-pl"><div class="d1vs-nm" id="d1-vs-p2">준비중</div><div class="d1vs-sub">선수 2</div></div>
       </div>
       <div id="d1-rank"></div>
     </div>
@@ -268,9 +268,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   <div id="d2-court"></div>
   <div id="d2-matchnum" style="display:none;font-family:'Share Tech Mono',monospace;font-size:18px;letter-spacing:3px;color:var(--text3);margin-bottom:8px;z-index:2;"></div>
   <div id="d2-row">
-    <div class="d2-pl"><div class="d2-nm" id="d2-p1">—</div></div>
+    <div class="d2-pl"><div class="d2-nm" id="d2-p1">준비중</div></div>
     <div id="d2-vs">VS</div>
-    <div class="d2-pl"><div class="d2-nm" id="d2-p2">—</div></div>
+    <div class="d2-pl"><div class="d2-nm" id="d2-p2">준비중</div></div>
   </div>
   <div id="d2-info"></div>
 </div>
@@ -378,7 +378,7 @@ function _d2ShowCourt(courtNum){
       _set('d2-info',found.label);
       _updateMatchNum(courtNum, found.ri, found.mi, found.seqMi);
     } else {
-      _set('d2-p1','—'); _set('d2-p2','—');
+      _set('d2-p1','준비중'); _set('d2-p2','준비중');
       _set('d2-info','');
       _updateMatchNum(courtNum, null, null, null);
     }
@@ -1251,10 +1251,13 @@ function switchScreen(n){
 }
 
 const cleanName=n=>{
-  if(!n) return '—';
+  if(!n||n==='—') return '준비중';
+  // 미확정 승자 슬롯 (-1 승자, -2 승자, 1-2 승자 등) → 준비중
+  if(/^-?\d+[-\s]*(승자|패자|winner|loser)$/i.test(n.trim())) return '준비중';
+  if(/^\d+-\d+\s*(승자|패자)$/.test(n.trim())) return '준비중';
   const nameOnly=_getD2Cfg().nameOnly;
-  if(nameOnly) return n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||n;
-  return n.replace(/[()[\]]/g,'').trim()||n;
+  if(nameOnly) return n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||'준비중';
+  return n.replace(/[()[\]]/g,'').trim()||'준비중';
 };
 
 // ── 3번탭 동기화: sgp_groupBrackets 강제 로드 ──
