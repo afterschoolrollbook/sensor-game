@@ -619,8 +619,10 @@ function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
   }
   _t3CurrentMatch[courtNum] = { gi, ri, mi, courtNum };
   const _cn = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim() || n : '—';
-  const p1n = _cn((m.p1 && m.p1.name) || '—');
-  const p2n = _cn((m.p2 && m.p2.name) || '—');
+  // ★ 버그수정: m.p1이 문자열인 경우 m.p1.name이 undefined → '—'로 저장되는 문제
+  const _getName = p => p ? (typeof p === 'object' ? p.name : p) : '—';
+  const p1n = _cn(_getName(m.p1));
+  const p2n = _cn(_getName(m.p2));
   const domId = `t3_${gi}_${ri}_${mi}`;
   const seqNum = matchLabel ? matchLabel.split('-').pop() : '';
   const infoLabel = seqNum ? `${shortLabel} · ${seqNum}경기` : shortLabel;
