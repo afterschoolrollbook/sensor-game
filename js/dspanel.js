@@ -1,3 +1,23 @@
+/* ════════════════════════════════════════════════════════════════
+   dspanel.js — 오른쪽 패널 탭 전환 관리
+   ════════════════════════════════════════════════════════════════
+
+   ■ 이 파일이 하는 일
+     - 오른쪽 패널 탭 1/2/3 전환 (dstab)
+     - initDsPanel() → setup-core.js DOMContentLoaded 마지막에 호출됨
+
+   ■ 탭별 실제 UI/로직 담당 파일
+     1번 탭 (전광판 설정) → ds-tab1.js의 buildTab1()
+     2번 탭 (VS 화면)     → ds-tab2.js의 buildTab2()
+       └ 미리보기 갱신    → ds-tab2.js의 _updatePv2ForMode() → setup-core.js updatePv2()로 래핑
+     3번 탭 (대진표)      → ds-tab3.js의 buildTab3()
+
+   ■ 연관 파일
+     setup-core.js → sendCmd, _bc, updatePv2/3, saveCfgNow 정의
+     ds-tab2.js    → 2번탭 전체 로직 + _tab2Mode 변수
+
+   ════════════════════════════════════════════════════════════════ */
+
 // ══ DSPANEL: 탭 공통 관리 ══
 
 let dsCurrentTab=1;

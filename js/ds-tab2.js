@@ -1,3 +1,31 @@
+/* ════════════════════════════════════════════════════════════════
+   ds-tab2.js — 2번 탭 (현재경기 VS 화면) 설정 + 미리보기 처리
+   ════════════════════════════════════════════════════════════════
+
+   ■ 이 파일이 하는 일
+     - 2번 탭 UI 빌드 (경기장 버튼, VS 색상, 폰트, 레이블 크기 등)
+     - pv2 미리보기(#pv2) 갱신 — 가운데 패널 VS 화면
+     - _tab2Mode 상태 관리 (court_1 | court_2 | random)
+
+   ■ 핵심 함수
+     buildTab2()              → dspanel.js dstab(2) 또는 initDsPanel()에서 호출
+     _updatePv2ForMode(mode)  → pv2 미리보기 갱신 진입점
+                                setup-core.js updatePv2()가 이걸 호출함
+     _updatePv2ForCourt(n)    → sgp_display_vs_court_N 읽어서 선수 이름 pv2에 표시
+     _broadcastD2Cfg(extra)   → 설정 변경 시 _bc(BroadcastChannel)로 브로드캐스트
+                                setup-core.js _bc.onmessage d2_cfg 수신부에서 처리
+
+   ■ 읽는 localStorage 키
+     sgp_display_vs_court_N   → 경기장N 선택 경기 (setup-core.js onMatchClick에서 씀)
+     sgp_d2_mode              → 경기장 모드
+     sgp_d2_*                 → 세부 표시 설정 (크기, 표시여부 등)
+
+   ■ 연관 파일
+     setup-core.js → updatePv2() 래퍼, _bc 초기화, onMatchClick, sgp_display_vs_court_N 저장
+     dspanel.js    → buildTab2() 호출 타이밍 관리
+
+   ════════════════════════════════════════════════════════════════ */
+
 // ══ DS TAB 2: 현재경기 VS 화면 설정 ══
 
 let _tab2Mode = 'court_1'; // 기본: 경기장 1

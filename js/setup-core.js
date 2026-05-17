@@ -1,3 +1,57 @@
+/* ════════════════════════════════════════════════════════════════
+   파일 구조 & 역할 분담 — 뭔가 안되면 여기부터 확인
+   ════════════════════════════════════════════════════════════════
+
+   ■ setup-core.js   (이 파일)
+     - 전역 상태 S{} 정의 및 관리
+     - sendCmd()     → display.html로 명령 전송 (BroadcastChannel + localStorage)
+     - _bc           → BroadcastChannel('sgp_cmd') 초기화. 수신 처리도 여기
+     - onMatchClick()→ 대진표 경기 클릭 시 호출. sgp_display_vs_court_N 저장 + pv2/3 갱신
+     - updatePv()    → 1번 미리보기(전광판) 전체 갱신
+     - updatePv2()   → 2번 미리보기(VS 화면) 갱신 래퍼 → ds-tab2.js에 위임
+     - updatePv3()   → 3번 미리보기(대진표) 갱신
+     - saveCfgNow()  → sgp_display_config localStorage 저장 (display.html 즉시 반영)
+     - saveCfgNow는 ds-tab2.js / dspanel.js / step6.js 등 어디서든 호출 가능
+
+   ■ dspanel.js
+     - 오른쪽 패널 탭(1번/2번/3번) 전환 관리
+     - initDsPanel() → 페이지 로드 시 setup-core.js DOMContentLoaded에서 호출
+     - dstab(n)      → 탭 전환 시 buildTab1/2/3() 호출
+
+   ■ ds-tab2.js
+     - 2번 탭(현재경기 VS) 설정 UI + 미리보기 실제 처리
+     - _tab2Mode     → 현재 경기장 모드 ('court_1' | 'court_2' | 'random')
+     - _updatePv2ForMode(mode) → pv2 미리보기 갱신 핵심 함수
+     - _updatePv2ForCourt(n)   → sgp_display_vs_court_N 읽어서 선수 이름 표시
+     - _broadcastD2Cfg()       → d2_cfg 타입으로 _bc 브로드캐스트 → setup-core.js _bc.onmessage 수신
+
+   ■ step6.js
+     - 6번 스텝(게임 진행) UI 및 타이머/스톱워치/카운트다운 로직
+     - g6Init() / g6Refresh() → 스텝6 진입 시 초기화
+     - storage 이벤트로 sgp_display_vs_court_N 변경 감지 → updatePv2() 호출
+
+   ■ dspanel.js + ds-tab1.js / ds-tab3.js
+     - 1번/3번 탭 UI 각각 담당 (이 파일엔 없음)
+
+   ■ display.html
+     - 전광판 화면 (별도 창으로 열림)
+     - BroadcastChannel('sgp_cmd')로 명령 수신 → handleCmd()
+     - sgp_display_vs_court_N → display.html의 handleCmd set_match 수신 시 저장
+       ※ display.html이 닫혀있으면 이 키가 안 써짐
+       → 그래서 setup-core.js onMatchClick / _bc.onmessage에서도 직접 저장함
+
+   ■ 주요 localStorage 키
+     sgp_display_cmd          → sendCmd()가 쓰는 최신 명령 (display.html storage 백업 수신용)
+     sgp_display_config       → saveCfgNow()가 쓰는 전광판 설정 전체
+     sgp_display_vs_court_N   → 경기장N의 선택된 경기 {p1,p2,label,matchLabel,court,ri,mi,groupLabel}
+                                 쓰는 곳: onMatchClick(), _bc.onmessage set_match, display.html handleCmd
+                                 읽는 곳: ds-tab2.js _updatePv2ForCourt(), setup-core.js updatePv3()
+     sgp_d2_mode              → 2번탭 경기장 모드 (court_1 / court_2 / random)
+     sgp_d2_*                 → 2번탭 세부 설정 (크기, 표시여부 등) — ds-tab2.js 관리
+     sgp_courtCount           → 경기장 수
+
+   ════════════════════════════════════════════════════════════════ */
+
 /* ── DATA ── */
 const REGMODES=[
   {id:'ind',    icon:'🧑', name:'개인전',       sub:'개인별 기록'},

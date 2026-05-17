@@ -1,3 +1,27 @@
+/* ════════════════════════════════════════════════════════════════
+   step6.js — 6번 스텝 (게임 진행) UI + 타이머/스톱워치
+   ════════════════════════════════════════════════════════════════
+
+   ■ 이 파일이 하는 일
+     - 스텝6 진행 화면 UI (참가자 큐, 순위, 대진표 매치박스)
+     - 스톱워치 / 카운트다운 타이머 / 휴식시간 타이머 로직
+     - 카운트다운 연출 (반복/커스텀) 시퀀스
+
+   ■ 타이머 명령 전송
+     sendCmd()로 전송 → display.html이 BroadcastChannel로 수신
+     sendCmd는 setup-core.js에 정의됨
+
+   ■ storage 이벤트 감지 (1161줄)
+     sgp_display_vs_court_N 변경 감지 → updatePv2() + updatePv3() 호출
+     ※ updatePv2/3는 setup-core.js에 정의됨
+
+   ■ 연관 파일
+     setup-core.js → sendCmd, _bc, updatePv2/3, S{} 상태, saveCfgNow
+     ds-tab2.js    → updatePv2() 실제 처리 (_updatePv2ForMode)
+     display.html  → 타이머 명령 수신 + 화면 표시
+
+   ════════════════════════════════════════════════════════════════ */
+
 /* ══ STEP 6: 게임 진행 ══ */
 let g6_idx=0, g6_lapCount=0, g6_targetLaps=1, g6_rafId=null, g6_startTs=0, g6_elapsed=0, g6_laps=[], g6_running=false, g6_pendingWinner=null, g6_serialPort=null;
 
