@@ -351,6 +351,7 @@ function _d2ShowCourt(courtNum){
           _set('d2-info', (_seq && !_hasSeq) ? `${mv.label||''} · ${_seq}경기` : (mv.label||''));
         }
         _updateMatchNum(courtNum, mv.ri, mv.mi, mv.seqMi);
+        _applyD2VisualSettings(); // ★ 버그수정: return 전 시각설정 적용 누락 수정
         return;
       }
     }
@@ -1405,7 +1406,13 @@ window.addEventListener('storage',e=>{
   if(e.key==='sgp_groupBrackets') refresh3();
   if(e.key==='sgp_layout'&&currentScreen===3) refresh3();
   if(e.key==='sgp_display_vs'&&currentScreen===3) refresh3();
-  if(e.key&&e.key.startsWith('sgp_display_vs_court_')&&currentScreen===3) refresh3();
+  if(e.key&&e.key.startsWith('sgp_display_vs_court_')){
+    // ★ 버그수정: 기존엔 3번 화면일 때만 refresh3()만 호출
+    //   → 2번 전광판(VS 화면)도 sgp_display_vs_court_N 변경 시 즉시 갱신해야 함
+    if(currentScreen===3) refresh3();
+    const _courtNum=parseInt((e.key||'').replace('sgp_display_vs_court_',''));
+    if(_d2Mode===`court_${_courtNum}`) _d2ShowCourt(_courtNum);
+  }
   if(e.key==='sgp_d2_mode'){ _d2ApplyMode(e.newValue||'single'); }
 });
 
