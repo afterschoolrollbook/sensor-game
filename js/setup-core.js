@@ -727,6 +727,20 @@ if(_bc){
       }catch(err){}
       return;
     }
+
+    // display.html 초기 접속 시 현재 선택 경기 요청 → 각 경기장 데이터 응답
+    if(cmd.type === 'request_sync'){
+      for(let c=1; c<=8; c++){
+        const stored=localStorage.getItem(`sgp_display_vs_court_${c}`);
+        if(!stored) continue;
+        try{
+          const mv=JSON.parse(stored);
+          if(!mv||!mv.p1) continue;
+          _bc.postMessage({ type:'set_match', p1:mv.p1, p2:mv.p2||'—', label:mv.label||'', matchLabel:mv.matchLabel||'', court:mv.court||c, ri:mv.ri, mi:mv.mi, groupLabel:mv.groupLabel||'' });
+        }catch(ex){}
+      }
+      return;
+    }
   };
 }
 // storage 이벤트로도 pv3 갱신 (같은 창 내 ds-tab3 → setup-core 연동)
