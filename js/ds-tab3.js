@@ -1,3 +1,42 @@
+/* ════════════════════════════════════════════════════════════════
+   ds-tab3.js — 3번 탭 (대진표 경기 운영)
+   ════════════════════════════════════════════════════════════════
+
+   ■ 이 파일이 하는 일
+     - 3번 탭 대진표 경기 목록 렌더 (경기장별 2열 레이아웃)
+     - 경기 클릭 → 현재경기 선택 → sgp_display_vs_court_N 저장 → pv2/전광판 반영
+     - 승자 선택 → 다음 라운드 자동 배치 → sgp_groupBrackets 저장
+     - 결과 취소 → cascade 취소 (다중 라운드 연쇄)
+
+   ■ 핵심 변수
+     _t3CurrentMatch  → 경기장별 현재 선택 경기 { [courtNum]: {gi,ri,mi,courtNum} }
+                        새로고침 시 sgp_display_vs_court_N 읽어서 복원 (_t3Load)
+     _t3Data          → S.groupBrackets 복사본 (직접 조작)
+
+   ■ 핵심 함수
+     buildTab3()      → dspanel.js dstab(3)에서 호출
+     _t3Load()        → sgp_groupBrackets + sgp_display_vs_court_N 읽어서 상태 복원
+     _t3Render()      → 전체 경기 목록 다시 그리기
+     _t3BuildCard()   → 경기 카드 1개 생성 + 클릭 이벤트
+     _t3SelectMatch() → 경기 선택 처리 → sgp_display_vs_court_N 저장 + pv2/전광판 broadcast
+     _t3Save()        → sgp_groupBrackets + sgp_bracket_temp 저장 + BroadcastChannel 전파
+
+   ■ 읽는 localStorage 키
+     sgp_groupBrackets       → 대진표 전체 데이터
+     sgp_display_vs_court_N  → 경기장N 선택 경기 복원용 (새로고침 시)
+
+   ■ 쓰는 localStorage 키
+     sgp_groupBrackets       → 승자 확정 시 업데이트
+     sgp_bracket_temp        → 동기화 백업
+     sgp_display_vs_court_N  → 경기 선택 시 저장 / 선택 해제 시 삭제
+
+   ■ 연관 파일
+     setup-core.js → updatePv2/3, _bc, onMatchClick
+     ds-tab2.js    → sgp_display_vs_court_N 읽어서 pv2 미리보기 표시
+     display.html  → BroadcastChannel 'sgp_cmd' 수신 → 전광판 반영
+
+   ════════════════════════════════════════════════════════════════ */
+
 // ══ DS TAB 3: 대진표 경기 운영 ══
 // sgp_groupBrackets 직접 읽어서 경기장/라운드별 경기 목록 렌더
 // 승자 선택 → 다음 라운드 자동 반영 → localStorage 저장 → 새창 대진표 동기화
@@ -237,14 +276,10 @@ function _t3Render(){
 // ── 2줄 경기 카드 ──
 function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   const isDone = !!m.winner || _t3HasWinnerInNext(g, ri, mi);
-  // isDone이면 현재경기에서 즉시 해제
-  if(isDone && _t3CurrentMatch[courtNum]){
-    const _c = _t3CurrentMatch[courtNum];
-    if(_c.gi===gi && _c.ri===ri && _c.mi===mi){
-      delete _t3CurrentMatch[courtNum];
-      try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
-    }
-  }
+  // ★ 버그수정: 기존에는 isDone(승자 확정) 경기가 선택된 상태로 새로고침하면
+  //   _t3BuildCard 안에서 즉시 _t3CurrentMatch와 sgp_display_vs_court_N을 삭제해버렸음
+  //   → 선택 유지가 필요한 경우(승자 확정 후에도 LIVE 표시 유지)가 있으므로 자동 삭제 제거
+  //   → 완료된 경기 선택 해제는 사용자가 직접 다른 경기를 클릭할 때만 일어나도록 변경
   const cur = _t3CurrentMatch[courtNum];
   const isCur = cur && cur.gi === gi && cur.ri === ri && cur.mi === mi;
   const isBye = m.p1 && !m.p2;
