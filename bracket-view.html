@@ -1960,11 +1960,18 @@ function _redrawBracketViewTree(){
       }
       _renderBracketVert(sec,rounds,reverseRounds);
 
-      // bracket-view.html E 전용 — matchArea 높이 80px 고정
-      // data-row의 두 번째 자식이 matchArea (style 문자열과 무관하게 선택)
+      // bracket-view.html E 전용 — matchArea + 박스 높이 80px 직접 고정
+      // (배포된 step4.js 버전과 무관하게 동작)
       sec.querySelectorAll('[data-row]').forEach(rowWrap=>{
         const matchArea=rowWrap.children[1];
-        if(matchArea) matchArea.style.height='80px';
+        if(!matchArea) return;
+        matchArea.style.height='76px';
+        matchArea.querySelectorAll('[data-ri][data-mi]').forEach(box=>{
+          box.style.height='76px';
+          box.style.top='0';
+          box.style.bottom='0';
+          box.style.transform='translateX(-50%)';
+        });
       });
 
       return sec;
