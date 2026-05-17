@@ -771,9 +771,10 @@ function _applyBracketColors(view, groups){
       round.forEach((m,mi)=>{
         const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
         if(!p1ci&&!p2ci) return;
-        const box=wrap
+        let box=wrap
           ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
           : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1];
+        if(!box) box=view.querySelector(`[data-orig-ri="${ri}"][data-orig-mi="${mi}"][data-court="${court}"][data-group-label="${shortLabel}"]`);
         if(!box) return;
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
@@ -816,7 +817,8 @@ function _applyBracketBadges(view, groups){
     (g.matches||[]).forEach((round,ri)=>{
       round.forEach((m,mi)=>{
         if(!m.winner) return;
-        const box=wrap?wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`):null;
+        let box=wrap?wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`):null;
+        if(!box) box=view.querySelector(`[data-orig-ri="${ri}"][data-orig-mi="${mi}"][data-court="${court}"][data-group-label="${shortLabel}"]`);
         if(!box) return;
         box.style.borderColor='#06d6a0';
         box.style.borderWidth='2px';
@@ -864,7 +866,11 @@ function _applyBracketBadges(view, groups){
         });
       }
       if(!courtWrap) courtWrap=view.querySelector(`[data-court="${c}"]`);
-      const box=courtWrap?courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`):null;
+      let box=courtWrap?courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`):null;
+      if(!box){
+        const sl2=mv.groupLabel?(mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·')):null;
+        if(sl2) box=view.querySelector(`[data-orig-ri="${mv.ri}"][data-orig-mi="${mv.mi}"][data-court="${c}"][data-group-label="${sl2}"]`);
+      }
       if(!box) continue;
       box.style.borderColor='#e63946';
       box.style.borderWidth='2.5px';
