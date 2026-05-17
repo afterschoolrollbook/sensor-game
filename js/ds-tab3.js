@@ -20,6 +20,12 @@ function buildTab3(){
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;">// BRACKET</span>
     <span style="font-size:11px;color:var(--text3);flex:1;">경기 선택 후 2번 전광판에 표시 · 승자 선택 시 다음 라운드 자동 반영</span>
     <button id="t3-reload-btn" onclick="_t3Reload(this)" style="padding:3px 10px;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:6px;font-size:11px;cursor:pointer;">↺ 새로고침</button>
+    <span style="font-size:9px;color:var(--text3);letter-spacing:1px;">레이아웃:</span>
+    <button id="t3-lay-A" onclick="_t3SetLayout('A')" title="A: 좌→우" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="1" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="6" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="20" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="27" y="13" width="8" height="5" rx="1" fill="currentColor"/><path d="M10 4.5h2v7.5h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 12h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M10 22.5h2v0h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 8.5h2v7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M23 22.5h2v-7h2" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+    <button id="t3-lay-B" onclick="_t3SetLayout('B')" title="B: 아래→위" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="21" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="13" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 21v-2h10v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 21v-2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 13v-2h7v-2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 13v-2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+    <button id="t3-lay-C" onclick="_t3SetLayout('C')" title="C: 위→아래" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="14" y="2" width="9" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="27" y="2" width="8" height="5" rx="1" fill="currentColor" opacity=".7"/><rect x="7" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="21" y="11" width="9" height="5" rx="1" fill="currentColor" opacity=".85"/><rect x="14" y="21" width="9" height="5" rx="1" fill="currentColor"/><path d="M5.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M18.5 7v2h10v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M31 7v2h-6" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M11.5 16v2h7v2" stroke="currentColor" stroke-width=".8" opacity=".5"/><path d="M25.5 16v2h-7" stroke="currentColor" stroke-width=".8" opacity=".5"/></svg></button>
+    <button id="t3-lay-D" onclick="_t3SetLayout('D')" title="D: 양쪽→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="0" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="0" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="10" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="14.5" y="12" width="7" height="4" rx="1" fill="currentColor"/><rect x="29" y="4" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="11" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="29" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="7" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="19" y="18" width="7" height="4" rx="1" fill="currentColor" opacity=".8"/><path d="M7 6h2v3.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 13h2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M7 20h2v-2.5h2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 9h1.5v5h-4" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M17 20h1.5v-7" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 6h-2v3.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 13h-2v-3.5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M29 20h-2v-2.5h-2" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
+    <button id="t3-lay-E" onclick="_t3SetLayout('E')" title="E: 위아래→가운데" style="padding:3px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;line-height:0;"><svg width="36" height="28" viewBox="0 0 36 28" fill="none"><rect x="1" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="1" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="7" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="18" y="12" width="8" height="4" rx="1" fill="currentColor"/><rect x="10" y="17" width="8" height="4" rx="1" fill="currentColor" opacity=".8"/><rect x="1" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><rect x="19" y="23" width="8" height="4" rx="1" fill="currentColor" opacity=".6"/><path d="M5 5v1.5h9v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 5v1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 11v1h8v1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M14 21v-1h8v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M5 23v-1.5h9v-1" stroke="currentColor" stroke-width=".8" opacity=".45"/><path d="M23 23v-1.5h-5" stroke="currentColor" stroke-width=".8" opacity=".45"/></svg></button>
     <button onclick="window.open('bracket-view.html','sgp_bracket_view','width=1100,height=750,resizable=yes,scrollbars=no')" style="padding:3px 10px;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);color:var(--red);border-radius:6px;font-size:11px;cursor:pointer;">⤢ 크게 보기</button>
   `;
   container.appendChild(toolbar);
@@ -31,6 +37,30 @@ function buildTab3(){
   container.appendChild(listWrap);
 
   _t3Load();
+  _t3UpdateLayoutBtns();
+}
+
+// ── 레이아웃 선택 ──
+function _t3SetLayout(l){
+  try{ localStorage.setItem('sgp_layout', l); } catch(e){}
+  _t3UpdateLayoutBtns();
+  try{
+    const bc = new BroadcastChannel('sgp_cmd');
+    bc.postMessage({ type: 'layout_change', layout: l });
+    bc.close();
+  } catch(e){}
+}
+
+function _t3UpdateLayoutBtns(){
+  const cur = localStorage.getItem('sgp_layout') || 'A';
+  ['A','B','C','D','E'].forEach(l => {
+    const btn = document.getElementById('t3-lay-'+l);
+    if(!btn) return;
+    const active = cur === l;
+    btn.style.borderColor = active ? 'var(--red)' : 'var(--border2)';
+    btn.style.background  = active ? 'rgba(230,57,70,.2)' : 'transparent';
+    btn.style.color       = active ? 'var(--red)' : 'var(--text2)';
+  });
 }
 
 // ── 데이터 로드 ──
@@ -503,6 +533,16 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
+  // 같은 경기장의 기존 선택 해제 (다른 경기장 선택은 유지)
+  if(_t3CurrentMatch[courtNum]){
+    delete _t3CurrentMatch[courtNum];
+    try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
+    try{
+      const _bc = new BroadcastChannel('sgp_cmd');
+      _bc.postMessage({ type:'clear_match', court: courtNum });
+      _bc.close();
+    } catch(ex){}
+  }
   // 같은 경기장의 기존 선택 해제 — 다른 경기장 선택은 유지 (경기장별 1경기씩 독립 선택)
   if(_t3CurrentMatch[courtNum]){
     delete _t3CurrentMatch[courtNum];
