@@ -340,7 +340,8 @@ function _d2ShowCourt(courtNum){
     const manualStr=localStorage.getItem(`sgp_display_vs_court_${courtNum}`);
     if(manualStr){
       const mv=JSON.parse(manualStr);
-      if(mv&&mv.p1&&mv.p2){
+      const _isTbd=n=>!n||/^-?\d+[-\s]*(승자|패자)/.test((n+'').trim())||/^\d+-\d+-\d+\s*(승자|패자)/.test((n+'').trim());
+      if(mv&&mv.p1&&mv.p2&&!_isTbd(mv.p1)&&!_isTbd(mv.p2)){
         _set('d2-p1',cleanName(mv.p1)); _set('d2-p2',cleanName(mv.p2));
         {
           const _seq = mv.matchLabel ? mv.matchLabel.split('-').pop() : '';
@@ -364,7 +365,7 @@ function _d2ShowCourt(courtNum){
         const round=g.matches[ri];
         for(let mi=0;mi<round.length;mi++){
           const m=round[mi];
-          if(!m.winner&&m.p1&&m.p2&&!m.bye){
+          if(!m.winner&&m.p1&&m.p2&&!m.bye&&!m.p1.tbd&&!m.p2.tbd){
             const p1n=typeof m.p1==='object'?m.p1.name:m.p1;
             const p2n=typeof m.p2==='object'?m.p2.name:m.p2;
             found={p1:p1n,p2:p2n,label:g.label,ri,mi,seqMi:m._seqMi};
@@ -378,7 +379,7 @@ function _d2ShowCourt(courtNum){
       _set('d2-info',found.label);
       _updateMatchNum(courtNum, found.ri, found.mi, found.seqMi);
     } else {
-      _set('d2-p1','—'); _set('d2-p2','—');
+      _set('d2-p1','준비중'); _set('d2-p2','준비중');
       _set('d2-info','');
       _updateMatchNum(courtNum, null, null, null);
     }
@@ -1111,17 +1112,17 @@ function updateTicker(cfg,di,ss){
 function getVs(state){
   const pts=state.participants||[];
   const resolveName=v=>{
-    if(!v) return '—';
-    if(typeof v==='object') return cleanName(v.name||'?');
+    if(!v) return '준비중';
+    if(typeof v==='object'){ if(v.tbd) return '준비중'; return cleanName(v.name||'?'); }
     const found=pts.find(p=>p.id===v||p.name===v);
     return cleanName(found?found.name:v);
   };
   const rounds=state.tournament?.rounds||state.matches||[];
   for(const round of rounds)
     for(const m of (Array.isArray(round)?round:[]))
-      if(m.p1&&m.p2&&!m.winner)
+      if(m.p1&&m.p2&&!m.winner&&!m.p1.tbd&&!m.p2.tbd)
         return{p1:resolveName(m.p1), p2:resolveName(m.p2)};
-  return{p1:'—',p2:'—'};
+  return{p1:'준비중',p2:'준비중'};
 }
 
 function _vis(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
@@ -1251,10 +1252,13 @@ function switchScreen(n){
 }
 
 const cleanName=n=>{
-  if(!n) return '—';
+  if(!n||n==='—') return '준비중';
+  // 미확정 승자 슬롯 (예: -1 승자, 1-1-1 승자) → 준비중
+  if(/^-?\d+[-\s]*(승자|패자)/.test(n.trim())) return '준비중';
+  if(/^\d+-\d+-\d+\s*(승자|패자)/.test(n.trim())) return '준비중';
   const nameOnly=_getD2Cfg().nameOnly;
-  if(nameOnly) return n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||n;
-  return n.replace(/[()[\]]/g,'').trim()||n;
+  if(nameOnly) return n.replace(/^\d+번\s*/,'').replace(/^\d+-\d+\s*/,'').replace(/[()[\]]/g,'').trim()||'준비중';
+  return n.replace(/[()[\]]/g,'').trim()||'준비중';
 };
 
 // ── 3번탭 동기화: sgp_groupBrackets 강제 로드 ──
@@ -1419,13 +1423,6 @@ refreshVisible();
 startClock();
 // 초기: 1번 화면 티커 활성화
 document.getElementById('screen-1').classList.add('visible');
-// 저장된 2번 모드 복원
-// 페이지 로드 시 이전 경기 데이터 초기화 → 준비중으로 시작
-for(let _c=1;_c<=8;_c++){ try{localStorage.removeItem(`sgp_display_vs_court_${_c}`);}catch(e){} }
-try{localStorage.removeItem('sgp_display_vs');}catch(e){}
-// 2번 화면 준비중으로 초기화
-document.getElementById('d2-p1').textContent='준비중';
-document.getElementById('d2-p2').textContent='준비중';
 // 저장된 2번 모드 복원
 try{ const m=localStorage.getItem('sgp_d2_mode'); _d2ApplyMode(m&&m!=='single'?m:'court_1'); }catch(e){}
 
