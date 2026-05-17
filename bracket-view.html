@@ -608,9 +608,10 @@ function _applyBvColors(){
       round.forEach((m,mi)=>{
         const p1ci=m.p1ColorIdx||0, p2ci=m.p2ColorIdx||0;
         if(!p1ci&&!p2ci) return;
-        const box=wrap
+        let box=wrap
           ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
           : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1]; // fallback
+        if(!box) box=view.querySelector(`[data-orig-ri="${ri}"][data-orig-mi="${mi}"][data-court="${court}"][data-group-label="${shortLabel}"]`);
         if(!box) return;
         const p1n=m.p1?(typeof m.p1==='object'?m.p1.name:m.p1):'';
         const p2n=m.p2?(typeof m.p2==='object'?m.p2.name:m.p2):'';
@@ -1974,9 +1975,9 @@ function _redrawBracketViewTree(){
         });
       });
 
-      // _applyBvColors/_applyMatchStates가 data-court/data-group-label로 박스를 찾을 수 있도록
-      // 각 그룹의 경기 박스에 속성 태깅 (구조/레이아웃은 전혀 변경 없음)
-      groups.forEach((g,gi)=>{
+      // _applyBvColors/_applyMatchStates가 박스를 찾을 수 있도록
+      // seqMi(통합 순번) 박스에 data-court, data-group-label, data-orig-ri, data-orig-mi 태깅
+      groups.forEach((g)=>{
         const shortLabel=g.label.split('/').map((s,pi)=>pi===0?s.trim():s.trim().replace('부','')).join('·');
         const courtStr=String(g.court||1);
         (g.matches||[]).forEach((round,ri)=>{
@@ -1986,6 +1987,8 @@ function _redrawBracketViewTree(){
             if(box){
               box.dataset.court=courtStr;
               box.dataset.groupLabel=shortLabel;
+              box.dataset.origRi=String(ri);
+              box.dataset.origMi=String(origMi);
             }
           });
         });
@@ -5057,8 +5060,9 @@ function _applyMatchStates(){
     (g.matches||[]).forEach((round, ri)=>{
       round.forEach((m, mi)=>{
         if(!m.winner) return;
-        const box = wrap ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
-                        : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1];
+        let box = wrap ? wrap.querySelector(`[data-ri="${ri}"][data-mi="${mi}"]`)
+                       : view.querySelectorAll(`[data-ri="${ri}"][data-mi="${mi}"]`)[court-1];
+        if(!box) box = view.querySelector(`[data-orig-ri="${ri}"][data-orig-mi="${mi}"][data-court="${court}"][data-group-label="${shortLabel}"]`);
         if(!box) return;
         box.style.borderColor='#06d6a0';
         box.style.borderWidth='2px';
@@ -5111,8 +5115,12 @@ function _applyMatchStates(){
         });
       }
       if(!courtWrap) courtWrap = view.querySelector(`[data-court="${c}"]`);
-      const box = courtWrap ? courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)
-                            : view.querySelectorAll(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)[c-1];
+      let box = courtWrap ? courtWrap.querySelector(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)
+                          : view.querySelectorAll(`[data-ri="${mv.ri}"][data-mi="${mv.mi}"]`)[c-1];
+      if(!box){
+        const sl2=mv.groupLabel?(mv.groupLabel.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·')):null;
+        if(sl2) box=view.querySelector(`[data-orig-ri="${mv.ri}"][data-orig-mi="${mv.mi}"][data-court="${c}"][data-group-label="${sl2}"]`);
+      }
       if(!box) continue;
       box.style.borderColor='#e63946';
       box.style.borderWidth='2.5px';
