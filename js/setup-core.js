@@ -163,7 +163,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   }catch(e){}
   DITEMS.forEach(d=>{if(S.di[d.k]===undefined)S.di[d.k]=d.def;});
   buildNav();buildChips();buildGG();buildMG();buildProc();renderPA();updateNav();updatePv();startClk();initResizer();initDsPanel();initPtsPopupDrag();
-  // pv3 또는 iframe 안 경기 박스 클릭 → bracket-view(새창/iframe) 하이라이트 연동
+  // ── 경기 박스 클릭 핸들러 ──
+  // 호출 경로: pv3 대진표 or bracket-view iframe 안 경기 박스 클릭
+  // 하는 일:
+  //   1) sgp_display_vs_court_N → localStorage 저장 (pv2 미리보기 + display.html 공유)
+  //   2) sgp_display_cmd → localStorage 저장 (display.html storage 이벤트 수신용)
+  //   3) BroadcastChannel 'sgp_cmd' → postMessage (display.html 실시간 반영)
+  //   4) updatePv2() → 가운데 패널 VS 미리보기 즉시 갱신
+  //   5) updatePv3() → 대진표 패널 하이라이트 즉시 갱신
+  // ※ updatePv2()는 setup-core.js의 updatePv2() → ds-tab2.js의 _updatePv2ForMode() 호출
   window.onMatchClick = function(ri, mi, matchObj){
     if(!matchObj||(!matchObj.p1&&!matchObj.p2)) return;
     const cleanN = n => n ? n.replace(/^\d+번\s*/,'').replace(/[()[\]]/g,'').trim()||n : '—';
@@ -501,6 +509,12 @@ function buildTimerColorPicker(){
 }
 function chRank(d){S.rankCount=Math.max(1,Math.min(10,(S.rankCount||6)+d));document.getElementById('ds-rankval').textContent=S.rankCount;buildRanks();saveCfgNow();}
 function setDsPlayer(){const v=document.getElementById('ds-cplayer').value.trim();if(!v)return;try{localStorage.setItem('sgp_display_player',v);}catch(e){}toast('도전자: '+v,'success');document.getElementById('ds-cplayer').value='';}
+// ── sendCmd: display.html로 명령 전송 ──
+// _bc (BroadcastChannel 'sgp_cmd') → 아래 592줄에서 초기화
+// display.html은 _dispBc = new BroadcastChannel('sgp_cmd') 로 수신
+// 동시에 sgp_display_cmd → localStorage 저장 (display.html storage 이벤트 백업 수신)
+// _pvHandleCmd()로 setup.html 미리보기도 동기화
+// ※ set_match 타입은 여기서 보내지 않음 → onMatchClick / _bc.onmessage에서 처리
 function sendCmd(t,extra){
   const payload={type:t,ts:Date.now(),...(extra||{})};
   try{localStorage.setItem('sgp_display_cmd',JSON.stringify(payload));}catch(e){}
@@ -589,19 +603,45 @@ function saveCfgNow(){
     localStorage.setItem('sgp_display_config',JSON.stringify(cfg));
   }catch(e){}
 }
-/* ── BroadcastChannel: storage 이벤트 보완 ── */
+/* ── BroadcastChannel 초기화 ──
+   _bc = BroadcastChannel('sgp_cmd')
+   송신: sendCmd(), onMatchClick(), ds-tab2.js의 _broadcastD2Cfg()
+   수신: 아래 onmessage에서 처리
+   ※ display.html도 동일 채널('sgp_cmd')을 _dispBc로 수신함
+*/
 let _bc=null;
 try{_bc=new BroadcastChannel('sgp_cmd');}catch(e){}
 window.addEventListener('pagehide',()=>{ try{_bc&&_bc.close();}catch(e){} });
-// 3번탭 현재경기 선택 수신 → pv3 하이라이트 갱신
+// _bc 수신 처리
+// ※ 각 cmd.type별 담당 파일:
+//   set_match  → 여기서 처리 (sgp_display_vs_court_N 저장 + updatePv2/3 호출)
+//   d2_cfg     → 여기서 처리 (_applyD2CfgToPv2 호출) — 원본은 ds-tab2.js의 _broadcastD2Cfg()
+//   sgp_d2_mode→ 여기서 처리 (_updatePv2ForMode 호출) — 원본은 ds-tab2.js의 _setTab2Mode()
+//   timer_*    → sendCmd() → _pvHandleCmd()에서 처리
 if(_bc){
   _bc.onmessage = function(e){
     const cmd = e.data;
     if(!cmd) return;
 
-    // 3번탭 현재경기 선택 → pv3 갱신
+    // 3번탭 현재경기 선택 → pv2 + pv3 갱신
+    // ★ 버그수정: 기존엔 updatePv3만 호출하고 updatePv2를 빠뜨려서
+    //   가운데 패널(VS 미리보기)에 선수 정보가 안 뜨는 문제가 있었음
+    // ★ 버그수정: display.html 없이도 pv2가 읽을 수 있도록
+    //   sgp_display_vs_court_N을 setup.html에서도 직접 localStorage에 기록
     if(cmd.type === 'set_match'){
+      // display.html 없이도 pv2가 읽을 수 있도록 setup.html에서도 직접 localStorage에 기록
+      if(cmd.court){
+        try{
+          localStorage.setItem(`sgp_display_vs_court_${cmd.court}`, JSON.stringify({
+            p1: cmd.p1||'—', p2: cmd.p2||'—',
+            label: cmd.label||'', matchLabel: cmd.matchLabel||'',
+            court: cmd.court, ri: cmd.ri, mi: cmd.mi,
+            groupLabel: cmd.groupLabel||cmd.label||''
+          }));
+        }catch(e){}
+      }
       requestAnimationFrame(()=>{
+        try{ if(typeof updatePv2==='function') updatePv2(); }catch(err){}
         try{ if(typeof updatePv3==='function') updatePv3(); }catch(err){}
       });
       return;
@@ -1109,6 +1149,11 @@ const cleanName=n=>{
   if(nameOnly) return r;
   return n.replace(/[()[\]]/g,'').trim()||n;
 };
+// ── updatePv2: 가운데 패널(VS 미리보기) 갱신 래퍼 ──
+// 실제 처리는 ds-tab2.js의 _updatePv2ForMode() 에 위임
+// 읽는 데이터: localStorage의 sgp_display_vs_court_N (경기장별 선택 경기)
+// 쓰는 곳: onMatchClick(), _bc.onmessage set_match 처리부
+// 호출 경로: updatePv() → updatePv2() / onMatchClick() → updatePv2() / _bc set_match → updatePv2()
 function updatePv2(){
   // ds-tab2.js의 _updatePv2ForMode에 위임 (시각설정 포함 모든 처리)
   if(typeof _updatePv2ForMode==='function'){
