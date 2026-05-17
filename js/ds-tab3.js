@@ -399,9 +399,6 @@ function _t3BuildCard(g, gi, ri, mi, m, label, shortLabel, courtNum){
   return card;
 }
 
-
-
-
 // ── 다음 라운드에서 승자 이름 역추적 ──
 function _t3GetWinnerFromNext(g, ri, mi){
   const nextRound = g.matches[ri+1];
@@ -423,28 +420,6 @@ function _t3GetWinnerFromNext(g, ri, mi){
 }
 
 // ── 다음 라운드에 승자가 배정됐는지 여부 ──
-function _t3HasWinnerInNext(g, ri, mi){
-  return !!_t3GetWinnerFromNext(g, ri, mi);
-}
-// ── 다음 라운드에서 승자 이름 역추적 ──
-function _t3GetWinnerFromNext(g, ri, mi){
-  const nextRound = g.matches[ri+1];
-  if(!nextRound) return null;
-  const key = `${ri}-${mi}`;
-  for(let ni=0; ni<nextRound.length; ni++){
-    const nm = nextRound[ni];
-    if(nm.fromA===key && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
-    if(nm.fromB===key && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
-    if(!nm.fromA && !nm.fromB){
-      const expMi = Math.floor(mi/2);
-      if(ni===expMi){
-        if(mi%2===0 && nm.p1 && !nm.p1.tbd && nm.p1.name && !nm.p1.name.includes('승자')) return nm.p1.name;
-        if(mi%2===1 && nm.p2 && !nm.p2.tbd && nm.p2.name && !nm.p2.name.includes('승자')) return nm.p2.name;
-      }
-    }
-  }
-  return null;
-}
 function _t3HasWinnerInNext(g, ri, mi){ return !!_t3GetWinnerFromNext(g, ri, mi); }
 
 // ── 모달 ──
@@ -597,17 +572,7 @@ function _t3ShowModal(e, g, gi, ri, mi, m, label, shortLabel, courtNum){
 
 // ── 현재 경기 선택 → 전광판/미리보기 하이라이트 ──
 function _t3SetCurrentMatch(g, gi, ri, mi, m, shortLabel, matchLabel, courtNum){
-  // 같은 경기장의 기존 선택 해제 (다른 경기장 선택은 유지)
-  if(_t3CurrentMatch[courtNum]){
-    delete _t3CurrentMatch[courtNum];
-    try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
-    try{
-      const _bc = new BroadcastChannel('sgp_cmd');
-      _bc.postMessage({ type:'clear_match', court: courtNum });
-      _bc.close();
-    } catch(ex){}
-  }
-  // 같은 경기장의 기존 선택 해제 — 다른 경기장 선택은 유지 (경기장별 1경기씩 독립 선택)
+  // 같은 경기장의 기존 선택 해제 (다른 경기장 선택은 유지, 경기장별 1경기씩 독립 선택)
   if(_t3CurrentMatch[courtNum]){
     delete _t3CurrentMatch[courtNum];
     try{ localStorage.removeItem(`sgp_display_vs_court_${courtNum}`); } catch(ex){}
