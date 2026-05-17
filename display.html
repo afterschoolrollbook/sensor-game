@@ -935,6 +935,40 @@ function _d3DrawBracket(view, groups, layout, courtCount, selectedMatches){
       outerWrap.appendChild(row);
     }
     view.appendChild(outerWrap);
+  } else if(layout==='E'&&courtCount>=2){
+    // ── E 다경기장: 경기장1 위 / 경기장2 아래, 그룹별 가로 나열 ──
+    const outerWrap=document.createElement('div');outerWrap.style.cssText='display:flex;flex-direction:column;gap:0;min-width:max-content;padding:12px;';
+    const tGroups=groups.filter(g=>g.court===1);
+    const bGroups=groups.filter(g=>g.court===2);
+    const mkESection=(g)=>{
+      const shortLabel=g.label.split('/').map((p,pi)=>pi===0?p.trim():p.trim().replace('부','')).join('·');
+      window._d3CurrentGroupLabel=shortLabel;
+      const sec=document.createElement('div');sec.style.cssText='display:flex;flex-direction:column;flex-shrink:0;min-width:max-content;';
+      const hdr=document.createElement('div');hdr.style.cssText='font-size:9px;color:#555;font-family:"Share Tech Mono",monospace;letter-spacing:1px;margin-bottom:4px;margin-top:8px;flex-shrink:0;white-space:nowrap;';
+      hdr.textContent=shortLabel;sec.appendChild(hdr);
+      const groupWrap=document.createElement('div');groupWrap.style.cssText='min-width:max-content;';
+      groupWrap.dataset.court=String(g.court||1);
+      groupWrap.dataset.groupLabel=shortLabel;
+      const taggedMatches=g.matches.map((round,ri)=>round.map((m,mi)=>({...m,_groupObj:g,_origMi:mi,_origRi:ri,_groupLabel:shortLabel})));
+      window.S.matches=taggedMatches;
+      try{_renderBracketHTML(groupWrap,taggedMatches,'top',false);stripScroll(groupWrap);}catch(e){}
+      sec.appendChild(groupWrap);return sec;
+    };
+    if(tGroups.length){
+      const lbl=document.createElement('div');lbl.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;';
+      lbl.textContent='// 경기장 1';outerWrap.appendChild(lbl);
+      const row=document.createElement('div');row.style.cssText='display:flex;flex-direction:row;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-bottom:40px;';
+      tGroups.forEach(g=>row.appendChild(mkESection(g)));
+      outerWrap.appendChild(row);
+    }
+    if(bGroups.length){
+      const lbl2=document.createElement('div');lbl2.style.cssText='font-size:10px;color:var(--accent);font-family:"Share Tech Mono",monospace;letter-spacing:2px;margin-bottom:6px;';
+      lbl2.textContent='// 경기장 2';outerWrap.appendChild(lbl2);
+      const row2=document.createElement('div');row2.style.cssText='display:flex;flex-direction:row;flex-wrap:wrap;gap:24px;align-items:flex-start;';
+      bGroups.forEach(g=>row2.appendChild(mkESection(g)));
+      outerWrap.appendChild(row2);
+    }
+    view.appendChild(outerWrap);
   } else {
     const outerWrap=document.createElement('div');outerWrap.style.cssText='padding:8px;min-width:max-content;';
     groups.forEach(g=>{
@@ -1223,6 +1257,10 @@ function handleCmd(cmd){
   if(cmd.type==='brackets_update'){
     if(currentScreen===3) refresh3();
   }
+  if(cmd.type==='layout_change'){
+    if(cmd.layout) try{ localStorage.setItem('sgp_layout', cmd.layout); }catch(e){}
+    if(currentScreen===3) refresh3();
+  }
   if(cmd.type==='timer_start'){
     document.getElementById('d1-time').className='running';
     document.getElementById('d1-live').classList.add('active');
@@ -1279,6 +1317,7 @@ window.addEventListener('storage',e=>{
   }
   if(e.key==='sgp_state'||e.key==='sgp_display_config') scheduleRefresh();
   if(e.key==='sgp_groupBrackets') refresh3();
+  if(e.key==='sgp_layout'&&currentScreen===3) refresh3();
   if(e.key==='sgp_display_vs'&&currentScreen===3) refresh3();
   if(e.key&&e.key.startsWith('sgp_display_vs_court_')&&currentScreen===3) refresh3();
   if(e.key==='sgp_d2_mode'){ _d2ApplyMode(e.newValue||'single'); }
