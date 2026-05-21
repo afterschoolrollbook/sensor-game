@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP 스텝6 · ESP32 센서 연결 가이드</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #5b8dff;
+    --accent2: #ff6b6b;
+    --accent3: #43d9ad;
+    --accent4: #f0a500;
+    --text: #dde1f0;
+    --text-muted: #7880a0;
+    --code-bg: #131620;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0d1020 0%, #151929 60%, #1a1f35 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(91,141,255,.07), transparent);
+    pointer-events: none;
+  }
+  .header-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    margin-bottom: 8px;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── LAYOUT ── */
+  .wrapper {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 120px);
+  }
+
+  /* ── SIDEBAR ── */
+  nav {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .nav-group { margin-bottom: 6px; }
+  .nav-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 20px 4px;
+  }
+  nav a {
+    display: block;
+    padding: 7px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all .15s;
+    border-left: 2px solid transparent;
+  }
+  nav a:hover, nav a.active {
+    color: var(--text);
+    background: var(--surface2);
+    border-left-color: var(--accent);
+  }
+
+  /* ── MAIN ── */
+  main {
+    padding: 40px 48px;
+    max-width: 900px;
+  }
+
+  section { margin-bottom: 60px; }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .icon { font-size: 22px; }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 28px 0 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 16px 0 8px;
+  }
+
+  p { margin-bottom: 10px; color: var(--text); }
+
+  /* ── FLOW STEPS ── */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0;
+    align-items: center;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .flow-num {
+    background: var(--accent);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .flow-arrow { color: var(--text-muted); font-size: 12px; }
+
+  /* ── TABLES ── */
+  .table-wrap { overflow-x: auto; margin: 14px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 9px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(91,141,255,.04); }
+  td code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+  }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 10px 0 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    color: #c9d1e8;
+  }
+  pre .kw { color: #82aaff; }
+  pre .str { color: #c3e88d; }
+  pre .num { color: #f78c6c; }
+  pre .cmt { color: #546e7a; font-style: italic; }
+  pre .fn { color: #82aaff; }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .card-body { font-size: 12px; color: var(--text-muted); }
+  .card-body strong { color: var(--text); }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-high { background: rgba(67,217,173,.15); color: var(--accent3); border: 1px solid rgba(67,217,173,.3); }
+  .badge-low  { background: rgba(255,107,107,.15); color: var(--accent2); border: 1px solid rgba(255,107,107,.3); }
+  .badge-analog { background: rgba(240,165,0,.15); color: var(--accent4); border: 1px solid rgba(240,165,0,.3); }
+  .badge-i2c  { background: rgba(91,141,255,.15); color: var(--accent); border: 1px solid rgba(91,141,255,.3); }
+
+  .badge-pin {
+    background: rgba(255,255,255,.06);
+    color: #7880a0;
+    border: 1px solid #2e3350;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 5px;
+    vertical-align: middle;
+  }
+  .badge-spi  { background: rgba(160,100,255,.15); color: #c58aff; border: 1px solid rgba(160,100,255,.3); }
+  .badge-uart { background: rgba(100,180,255,.15); color: #64b4ff; border: 1px solid rgba(100,180,255,.3); }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .callout.warn {
+    background: rgba(240,165,0,.08);
+    border: 1px solid rgba(240,165,0,.25);
+    color: #f0d080;
+  }
+  .callout.info {
+    background: rgba(91,141,255,.07);
+    border: 1px solid rgba(91,141,255,.2);
+    color: #99b5f5;
+  }
+  .callout.tip {
+    background: rgba(67,217,173,.07);
+    border: 1px solid rgba(67,217,173,.2);
+    color: #80dfc0;
+  }
+  .callout-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── CONNECTION MODES ── */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .mode-card.active { border-color: var(--accent); background: rgba(91,141,255,.05); }
+  .mode-icon { font-size: 20px; margin-bottom: 6px; }
+  .mode-name { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .mode-desc { font-size: 11px; color: var(--text-muted); }
+
+  /* ── SENSOR ITEM ── */
+  .sensor-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .sensor-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .sensor-header:hover { background: #262b42; }
+  .sensor-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+  }
+  .sensor-meta { font-size: 11px; color: var(--text-muted); }
+  .sensor-body {
+    padding: 14px 16px;
+    display: none;
+  }
+  .sensor-body.open { display: block; }
+  .wiring {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .wiring span { color: var(--accent3); }
+
+  /* ── SCENARIO CARDS ── */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .scenario {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .scenario-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .scenario-row {
+    display: flex;
+    gap: 6px;
+    font-size: 12px;
+    margin-bottom: 5px;
+    align-items: flex-start;
+  }
+  .scenario-action {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    width: 60px;
+    flex-shrink: 0;
+    font-size: 11px;
+    padding-top: 1px;
+  }
+  .scenario-detail { color: var(--text-muted); }
+
+  /* ── FAQ ── */
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .faq-q {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface);
+  }
+  .faq-q:hover { background: var(--surface2); }
+  .faq-a {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    display: none;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+  .faq-a.open { display: block; }
+  .chevron { transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* ── PIN TABLE ── */
+  .pin-highlight td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent); }
+  
+  /* ── LOG ── */
+  .log-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    margin: 10px 0;
+  }
+  .log-block .ts { color: var(--text-muted); }
+
+  @media (max-width: 720px) {
+    .wrapper { grid-template-columns: 1fr; }
+    nav { display: none; }
+    main { padding: 24px 20px; }
+    header { padding: 28px 20px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">SGP Step 6 · ESP32 통합 가이드</div>
+  <h1>센서 연결 <span>완전 가이드</span></h1>
+  <p>SGP 스텝6 센서 연결 설정 + ESP32-WROOM-32 전체 센서 레퍼런스</p>
+</header>
+
+<div class="wrapper">
+
+  <nav>
+    <div class="nav-group">
+      <div class="nav-label">SGP 설정</div>
+      <a href="#flow">전체 흐름</a>
+      <a href="#open-section">센서 섹션 열기</a>
+      <a href="#connect">연결 방식</a>
+      <a href="#pins">동작별 핀 설정</a>
+      <a href="#codegen">코드 자동 생성</a>
+      <a href="#test">수동 테스트</a>
+      <a href="#scenarios">행사 유형별 설정</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">센서 레퍼런스</div>
+      <a href="#pincount">핀 수별 배선 가이드</a>
+      <a href="#signal">신호 방식</a>
+      <a href="#cat1">접촉·터치</a>
+      <a href="#cat2">거리·근접</a>
+      <a href="#cat3">식별·인식</a>
+      <a href="#cat4">움직임·자세</a>
+      <a href="#cat5">빛·환경</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">참고</div>
+      <a href="#pinmap">핀 배정 권장표</a>
+      <a href="#detect">감지 조건 표</a>
+      <a href="#rules">핀 사용 규칙</a>
+      <a href="#faq">자주 묻는 질문</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="flow">
+      <h2><span class="icon">🔄</span> 전체 흐름</h2>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-num">1</div>센서 구매 &amp; ESP32 배선</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">2</div>Arduino IDE 코드 업로드</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">3</div>SGP 스텝6 → 센서 연결 열기</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">4</div>연결 방식 선택</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">5</div>동작별 센서 핀 추가</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">6</div>코드 자동 생성 &amp; 복사</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="flow-num">7</div>연결 &amp; 테스트</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="open-section">
+      <h2><span class="icon">📂</span> STEP 1 · 센서 연결 섹션 열기</h2>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2.2;">
+        <li>SGP 실행 → <strong style="color:var(--text)">스텝6 (게임 진행)</strong> 으로 이동</li>
+        <li>상단 <strong style="color:var(--text)">"센서 연결"</strong> 섹션 클릭해서 펼치기</li>
+        <li>상태 표시가 <code style="background:rgba(240,165,0,.1);color:var(--accent4);padding:2px 6px;border-radius:4px;font-family:IBM Plex Mono,monospace;font-size:11px;">// 미연결</code> 로 보이면 정상</li>
+      </ol>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="connect">
+      <h2><span class="icon">🔌</span> 연결 방식 선택</h2>
+
+      <div class="mode-grid">
+        <div class="mode-card">
+          <div class="mode-icon">🚫</div>
+          <div class="mode-name">사용 안함</div>
+          <div class="mode-desc">센서 없이 수동 버튼만 사용</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-icon">🔌</div>
+          <div class="mode-name">USB 유선</div>
+          <div class="mode-desc">Arduino/ESP32 USB 케이블 · 실내 테스트</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-icon">📡</div>
+          <div class="mode-name">WiFi</div>
+          <div class="mode-desc">ESP32 무선 · 실내 행사 · 공유기 필요</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-icon">🔵</div>
+          <div class="mode-name">동글 (ESP-NOW)</div>
+          <div class="mode-desc">ESP32 2개 무선 · 야외 행사 · 공유기 불필요</div>
+        </div>
+      </div>
+
+      <h3>🔌 USB 유선 방식</h3>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2;">
+        <li>ESP32를 USB 케이블로 PC에 연결</li>
+        <li><strong style="color:var(--text)">"포트 연결"</strong> 버튼 클릭</li>
+        <li>Chrome 팝업에서 포트 선택 (예: COM5)</li>
+        <li>상태가 <code style="background:rgba(67,217,173,.1);color:var(--accent3);padding:2px 6px;border-radius:4px;font-family:IBM Plex Mono,monospace;font-size:11px;">✅ 연결됨</code> 으로 바뀌면 완료</li>
+      </ol>
+      <div class="callout warn"><div class="callout-icon">⚠️</div>Chrome 또는 Edge 브라우저에서만 작동합니다. Firefox·Safari는 지원하지 않습니다.</div>
+
+      <h3>📡 WiFi 방식</h3>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2;">
+        <li>ESP32에 WiFi 코드 업로드</li>
+        <li>시리얼 모니터 열기 → IP 주소 확인
+          <div style="background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent3);">IP: 192.168.0.105 &nbsp;<span style="color:var(--text-muted);">← 이 숫자 복사</span></div>
+        </li>
+        <li>SGP IP 입력창에 복사한 IP 입력</li>
+        <li><strong style="color:var(--text)">"연결"</strong> 버튼 클릭 → <code style="background:rgba(67,217,173,.1);color:var(--accent3);padding:2px 6px;border-radius:4px;font-family:IBM Plex Mono,monospace;font-size:11px;">✅ 연결됨</code> 확인</li>
+      </ol>
+      <div class="callout info"><div class="callout-icon">ℹ️</div>PC와 ESP32가 반드시 같은 WiFi 공유기에 연결되어 있어야 합니다.</div>
+
+      <h3>🔵 동글 (ESP-NOW) 방식</h3>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2;">
+        <li><strong style="color:var(--text)">수신용 ESP32 (동글)</strong> → 수신 코드 업로드</li>
+        <li>시리얼 모니터에서 MAC 주소 확인 후 복사<br><code style="font-family:IBM Plex Mono,monospace;font-size:11px;color:var(--accent4);">MAC: 24:6F:28:AB:CD:EF</code></li>
+        <li><strong style="color:var(--text)">송신용 ESP32</strong> 코드의 <code style="font-family:IBM Plex Mono,monospace;font-size:11px;">receiverMac</code>에 입력 후 업로드</li>
+        <li>수신용 ESP32를 USB로 PC에 연결</li>
+        <li>SGP에서<strong style="color:var(--text)">"동글 포트 연결"</strong> 클릭 → 포트 선택</li>
+        <li><code style="background:rgba(67,217,173,.1);color:var(--accent3);padding:2px 6px;border-radius:4px;font-family:IBM Plex Mono,monospace;font-size:11px;">✅ 동글 연결됨</code> 확인</li>
+        <li>송신용 ESP32에 보조배터리 연결 → 전원 ON</li>
+      </ol>
+      <div class="callout tip"><div class="callout-icon">✅</div>공유기 없이도 동작! 야외 행사에 최적입니다.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="pins">
+      <h2><span class="icon">📌</span> 동작별 센서 핀 설정</h2>
+      <p>연결 방식 선택 후 아래 5개 동작에 센서를 추가합니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>동작</th><th>역할</th><th>센서 추가</th></tr></thead>
+          <tbody>
+            <tr><td>▶ 시작</td><td>타이머/스톱워치 시작 트리거</td><td>+ 센서 추가 버튼</td></tr>
+            <tr><td>⏹ 정지</td><td>타이머/스톱워치 정지 트리거</td><td>+ 센서 추가 버튼</td></tr>
+            <tr><td>💥 퓨즈</td><td>현재 카운트다운 구간 강제 종료</td><td>+ 센서 추가 버튼</td></tr>
+            <tr><td>🔵 랩</td><td>중간 기록 저장</td><td>+ 센서 추가 버튼</td></tr>
+            <tr><td>🔄 초기화</td><td>스톱워치 초기화</td><td>+ 센서 추가 버튼</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info"><div class="callout-icon">ℹ️</div>같은 동작에 센서를 여러 개 추가 가능합니다. 예: 퓨즈에 적외선 4개 추가 시 어느 한 곳이라도 감지되면 퓨즈가 실행됩니다.</div>
+
+      <h4>센서 추가 방법</h4>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2.2;">
+        <li>원하는 동작의 <strong style="color:var(--text)">"+ 센서 추가"</strong> 버튼 클릭</li>
+        <li><strong style="color:var(--text)">핀 번호</strong> 입력 (실제 ESP32에 꽂은 핀 번호)</li>
+        <li><strong style="color:var(--text)">센서 종류</strong> 드롭다운에서 선택</li>
+        <li>필요 없으면 <strong style="color:var(--accent2)">✕</strong> 버튼으로 삭제</li>
+      </ol>
+
+      <h4>예시 — 로봇 밀어내기</h4>
+      <pre><span class="cmt">▶ 시작</span>
+  PIN 14  터치센서
+
+<span class="cmt">💥 퓨즈</span>
+  PIN 25  적외선센서    <span class="cmt">← 경계선 1</span>
+  PIN 26  적외선센서    <span class="cmt">← 경계선 2</span>
+  PIN 27  적외선센서    <span class="cmt">← 경계선 3</span>
+  PIN 33  적외선센서    <span class="cmt">← 경계선 4</span>
+
+<span class="cmt">⏹ 정지</span>
+  (비워두기 — 퓨즈로 자동 종료)</pre>
+
+      <h4>예시 — 타임어택</h4>
+      <pre><span class="cmt">▶ 시작</span>
+  PIN 2   적외선센서    <span class="cmt">← 출발선 통과</span>
+
+<span class="cmt">⏹ 정지</span>
+  PIN 14  적외선센서    <span class="cmt">← 결승선 통과</span></pre>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="codegen">
+      <h2><span class="icon">⚙️</span> 코드 자동 생성</h2>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-muted);line-height:2.2;">
+        <li>센서 핀 설정 완료 후</li>
+        <li><strong style="color:var(--text)">"📋 Arduino / ESP32 코드 자동 생성"</strong> 버튼 클릭</li>
+        <li><strong style="color:var(--text)">"📋 복사"</strong> 버튼 클릭</li>
+        <li>Arduino IDE에 붙여넣기 → 업로드 (→)</li>
+      </ol>
+
+      <h4>생성 코드 예시 — WiFi 방식 (타임어택)</h4>
+      <pre><span class="kw">#include</span> &lt;WiFi.h&gt;
+<span class="kw">#include</span> &lt;WebSocketsServer.h&gt;
+
+<span class="kw">const char*</span> ssid     = <span class="str">"공유기이름"</span>;    <span class="cmt">// ← 수정</span>
+<span class="kw">const char*</span> password = <span class="str">"WiFi비밀번호"</span>;  <span class="cmt">// ← 수정</span>
+
+WebSocketsServer ws(<span class="num">81</span>);
+
+<span class="kw">const int</span> PIN_START_2  = <span class="num">2</span>;   <span class="cmt">// ▶ 시작 — 적외선센서</span>
+<span class="kw">const int</span> PIN_STOP_14  = <span class="num">14</span>;  <span class="cmt">// ⏹ 정지 — 적외선센서</span>
+<span class="kw">const int</span> DEBOUNCE = <span class="num">300</span>;
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+  WiFi.begin(ssid, password);
+  <span class="kw">while</span> (WiFi.status() != WL_CONNECTED) delay(<span class="num">500</span>);
+  Serial.println(<span class="str">"IP: "</span> + WiFi.localIP().toString()); <span class="cmt">// SGP에 입력!</span>
+  ws.begin();
+  pinMode(PIN_START_2, INPUT_PULLUP);
+  pinMode(PIN_STOP_14, INPUT_PULLUP);
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  ws.loop();
+  <span class="kw">if</span> (!digitalRead(PIN_START_2)) { ws.broadcastTXT(<span class="str">"START"</span>); delay(DEBOUNCE); }
+  <span class="kw">if</span> (!digitalRead(PIN_STOP_14)) { ws.broadcastTXT(<span class="str">"STOP"</span>);  delay(DEBOUNCE); }
+}</pre>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="test">
+      <h2><span class="icon">🧪</span> 수동 테스트 &amp; 수신 로그</h2>
+      <p>센서 없이도 SGP 동작을 테스트할 수 있습니다. 연결 방식 선택 후 하단 버튼 6개를 활용하세요.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>버튼</th><th>기능</th></tr></thead>
+          <tbody>
+            <tr><td>▶ 시작</td><td>타이머/스톱워치 시작</td></tr>
+            <tr><td>⏹ 정지</td><td>타이머/스톱워치 정지</td></tr>
+            <tr><td>💥 퓨즈</td><td>카운트다운 현재 구간 강제 종료</td></tr>
+            <tr><td>🔵 랩</td><td>중간 기록 저장</td></tr>
+            <tr><td>🔄 초기화</td><td>스톱워치 초기화</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>수신 로그 확인</h4>
+      <div class="log-block">
+        <span class="ts">[10:23:11]</span> ← START<br>
+        <span class="ts">[10:23:45]</span> ← STOP<br>
+        <span class="ts">[10:24:02]</span> ← FUSE
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);">로그에 신호가 찍히면 → 센서 정상 작동 ✅ &nbsp;|&nbsp; 로그에 아무것도 없으면 → 배선/연결 문제 ❌</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="scenarios">
+      <h2><span class="icon">🏟️</span> 행사 유형별 설정</h2>
+
+      <div class="scenario-grid">
+        <div class="scenario">
+          <div class="scenario-title">🏃 타임어택 / 달리기</div>
+          <div class="scenario-row"><div class="scenario-action">▶ 시작</div><div class="scenario-detail">적외선 (출발선) — D2</div></div>
+          <div class="scenario-row"><div class="scenario-action">⏹ 정지</div><div class="scenario-detail">적외선 (결승선) — D14</div></div>
+          <div class="scenario-row"><div class="scenario-action">🔵 랩</div><div class="scenario-detail">적외선 (중간체크) — D25 (선택)</div></div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-title">🤖 로봇 밀어내기</div>
+          <div class="scenario-row"><div class="scenario-action">▶ 시작</div><div class="scenario-detail">버튼 (심판) — D2</div></div>
+          <div class="scenario-row"><div class="scenario-action">💥 퓨즈×4</div><div class="scenario-detail">적외선 (경계 1~4) — D25~D33</div></div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-title">🏅 릴레이 경기</div>
+          <div class="scenario-row"><div class="scenario-action">▶ 시작</div><div class="scenario-detail">버튼 (심판) — D2</div></div>
+          <div class="scenario-row"><div class="scenario-action">🔵 랩</div><div class="scenario-detail">터치 (바통 존) — D14</div></div>
+          <div class="scenario-row"><div class="scenario-action">⏹ 정지</div><div class="scenario-detail">버튼 (심판) — D4</div></div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-title">📛 RFID 선수 인식</div>
+          <div class="scenario-row"><div class="scenario-action">▶ 시작</div><div class="scenario-detail">버튼 (심판) — D2</div></div>
+          <div class="scenario-row"><div class="scenario-action">💥 퓨즈</div><div class="scenario-detail">RFID (결승선) — D18/23/19/5</div></div>
+          <div class="scenario-row"><div class="scenario-action">⏹ 정지</div><div class="scenario-detail">버튼 (심판) — D4</div></div>
+        </div>
+        <div class="scenario">
+          <div class="scenario-title">👏 소리로 시작 (박수)</div>
+          <div class="scenario-row"><div class="scenario-action">▶ 시작</div><div class="scenario-detail">소리감지 KY-038 — D25</div></div>
+          <div class="scenario-row"><div class="scenario-action">⏹ 정지</div><div class="scenario-detail">버튼 (심판) — D4</div></div>
+          <div class="scenario-row"><div class="scenario-action">💥 퓨즈</div><div class="scenario-detail">버튼 (심판) — D14</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="pincount">
+      <h2><span class="icon">🔌</span> 핀 수별 배선 한눈에 보기</h2>
+
+      <style>
+        .pc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-top:18px; }
+        .pc-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+
+        /* 카드 헤더 */
+        .pc-head { background:var(--surface2); padding:12px 16px; border-bottom:1px solid var(--border); }
+        .pc-top  { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+        .pc-num  { font-family:"IBM Plex Mono",monospace; font-size:26px; font-weight:700; color:var(--accent); line-height:1; }
+        .pc-name { font-size:13px; font-weight:700; }
+        .pc-tags { display:flex; gap:6px; flex-wrap:wrap; }
+        .pct     { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
+                   padding:2px 8px; border-radius:4px; }
+        .pct-dig   { background:rgba(91,141,255,.12); color:#82aaff; border:1px solid rgba(91,141,255,.25); }
+        .pct-ana   { background:rgba(240,165,0,.12);  color:#f0c040; border:1px solid rgba(240,165,0,.25); }
+        .pct-i2c   { background:rgba(91,141,255,.12); color:#82aaff; border:1px solid rgba(91,141,255,.25); }
+        .pct-spi   { background:rgba(160,100,255,.12);color:#c58aff; border:1px solid rgba(160,100,255,.25); }
+        .pct-pwr-y { background:rgba(255,107,107,.12);color:#ff9898; border:1px solid rgba(255,107,107,.25); }
+        .pct-pwr-n { background:rgba(67,217,173,.12); color:#43d9ad; border:1px solid rgba(67,217,173,.25); }
+
+        /* 배선 */
+        .pc-body { padding:14px 16px; }
+        .pc-wire { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+        .pc-row  { display:flex; align-items:center; font-family:"IBM Plex Mono",monospace; font-size:12px; }
+        .pc-pin  { width:40px; height:22px; border-radius:4px; display:flex; align-items:center;
+                   justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+        .pc-arr  { color:var(--text-muted); margin:0 8px; }
+        .pin-vcc { background:rgba(255,107,107,.15); color:#ff9898; border:1px solid rgba(255,107,107,.3); }
+        .pin-gnd { background:rgba(88,88,88,.2);     color:#7880a0; border:1px solid #2e3350; }
+        .pin-sig { background:rgba(91,141,255,.15);  color:#82aaff; border:1px solid rgba(91,141,255,.3); }
+        .pin-sg2 { background:rgba(67,217,173,.15);  color:#43d9ad; border:1px solid rgba(67,217,173,.3); }
+        .pin-spi { background:rgba(160,100,255,.15); color:#c58aff; border:1px solid rgba(160,100,255,.3); }
+
+        /* 센서 목록 */
+        .pc-sensors { border-top:1px solid var(--border); padding-top:10px; display:flex; flex-wrap:wrap; gap:5px; }
+        .pc-tag { background:var(--surface2); border:1px solid var(--border);
+                  border-radius:4px; padding:2px 7px; font-size:10px; color:var(--text-muted); }
+      </style>
+
+      <div class="pc-grid">
+
+        <!-- ① 2핀 · 디지털 · 전원X -->
+        <div class="pc-card">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">2핀</div>
+              <div class="pc-name">GND + 신호선</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-dig">디지털</span>
+              <span class="pct pct-pwr-n">전원 불필요</span>
+            </div>
+          </div>
+          <div class="pc-body">
+            <div class="pc-wire">
+              <div class="pc-row"><span class="pc-pin pin-gnd">GND</span><span class="pc-arr">→</span><span style="color:#7880a0;">GND</span></div>
+              <div class="pc-row"><span class="pc-pin pin-sig">SIG</span><span class="pc-arr">→</span><span style="color:#82aaff;">D핀 (아무 디지털)</span></div>
+            </div>
+            <div class="callout tip" style="font-size:11px;padding:7px 11px;margin-bottom:10px;">
+              <div class="callout-icon" style="font-size:12px;">💡</div>
+              코드에 <code style="font-size:10px;">INPUT_PULLUP</code> 필수 · 감지 시 <strong>LOW</strong>
+            </div>
+            <div class="pc-sensors">
+              <span class="pc-tag">푸시버튼</span>
+              <span class="pc-tag">리미트 스위치 KW11</span>
+              <span class="pc-tag">리드 스위치 MC-38</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② 2핀+저항 · 아날로그 · 전원X -->
+        <div class="pc-card">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">2핀<span style="font-size:13px;color:var(--accent4);"> +저항</span></div>
+              <div class="pc-name">전압분배 회로</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-ana">아날로그</span>
+              <span class="pct pct-pwr-n">전원 불필요</span>
+            </div>
+          </div>
+          <div class="pc-body">
+            <div class="pc-wire">
+              <div class="pc-row"><span class="pc-pin pin-vcc" style="font-size:9px;">3.3V</span><span class="pc-arr">→</span><span style="color:#ff9898;">3.3V</span></div>
+              <div class="pc-row"><span class="pc-pin pin-sig">SIG</span><span class="pc-arr">→</span><span style="color:#f0c040;">D34~D39 (아날로그 핀)</span></div>
+              <div style="font-size:10px;color:var(--text-muted);margin-left:4px;margin-top:2px;">└ SIG핀에서 10kΩ 저항 → GND</div>
+            </div>
+            <div class="callout warn" style="font-size:11px;padding:7px 11px;margin-bottom:10px;">
+              <div class="callout-icon" style="font-size:12px;">⚠️</div>
+              저항 없으면 값 불안정 · 누를수록 값 <strong>낮아짐</strong>
+            </div>
+            <div class="pc-sensors">
+              <span class="pc-tag">압력센서 FSR402</span>
+              <span class="pc-tag">포토레지스터 CdS</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ③ 3핀 · 디지털 · 전원O -->
+        <div class="pc-card" style="grid-column: 1 / -1;">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">3핀</div>
+              <div class="pc-name">VCC + GND + 신호선</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-dig">디지털</span>
+              <span class="pct pct-pwr-y">전원 필요</span>
+            </div>
+          </div>
+          <div class="pc-body" style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start;">
+            <div class="pc-wire" style="margin-bottom:0;">
+              <div class="pc-row"><span class="pc-pin pin-vcc">VCC</span><span class="pc-arr">→</span><span style="color:#ff9898;">3.3V <span style="color:var(--text-muted)">or</span> 5V <span style="color:var(--text-muted);font-size:10px;">(센서마다 확인!)</span></span></div>
+              <div class="pc-row"><span class="pc-pin pin-gnd">GND</span><span class="pc-arr">→</span><span style="color:#7880a0;">GND</span></div>
+              <div class="pc-row"><span class="pc-pin pin-sig">OUT</span><span class="pc-arr">→</span><span style="color:#82aaff;">D핀 (아무 디지털)</span></div>
+            </div>
+            <div class="pc-sensors" style="border-top:none;padding-top:0;align-content:start;">
+              <span class="pc-tag">터치 TTP223B</span>
+              <span class="pc-tag">진동 SW-420</span>
+              <span class="pc-tag">적외선 KY-032</span>
+              <span class="pc-tag">PIR HC-SR501</span>
+              <span class="pc-tag">레이저수신 KY-008</span>
+              <span class="pc-tag">금속근접 LJ18A3</span>
+              <span class="pc-tag">홀센서 KY-003</span>
+              <span class="pc-tag">소리 KY-038</span>
+              <span class="pc-tag">화염 KY-026</span>
+              <span class="pc-tag">DHT22</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ 4핀 · 디지털 · 전원O (초음파) -->
+        <div class="pc-card">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">4핀</div>
+              <div class="pc-name">TRIG + ECHO</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-dig">디지털 ×2</span>
+              <span class="pct pct-pwr-y">전원 필요</span>
+            </div>
+          </div>
+          <div class="pc-body">
+            <div class="pc-wire">
+              <div class="pc-row"><span class="pc-pin pin-vcc">VCC</span><span class="pc-arr">→</span><span style="color:#ff9898;">5V</span></div>
+              <div class="pc-row"><span class="pc-pin pin-gnd">GND</span><span class="pc-arr">→</span><span style="color:#7880a0;">GND</span></div>
+              <div class="pc-row"><span class="pc-pin pin-sig" style="font-size:9px;">TRIG</span><span class="pc-arr">→</span><span style="color:#82aaff;">D핀 A <span style="color:var(--text-muted);font-size:10px;">(OUTPUT · 발사)</span></span></div>
+              <div class="pc-row"><span class="pc-pin pin-sg2" style="font-size:9px;">ECHO</span><span class="pc-arr">→</span><span style="color:#43d9ad;">D핀 B <span style="color:var(--text-muted);font-size:10px;">(INPUT · 수신)</span></span></div>
+            </div>
+            <div class="pc-sensors">
+              <span class="pc-tag">초음파 HC-SR04</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ 4핀 · I2C · 전원O -->
+        <div class="pc-card">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">4핀</div>
+              <div class="pc-name">SDA + SCL</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-i2c">I²C</span>
+              <span class="pct pct-pwr-y">전원 필요</span>
+            </div>
+          </div>
+          <div class="pc-body">
+            <div class="pc-wire">
+              <div class="pc-row"><span class="pc-pin pin-vcc">VCC</span><span class="pc-arr">→</span><span style="color:#ff9898;">3.3V</span></div>
+              <div class="pc-row"><span class="pc-pin pin-gnd">GND</span><span class="pc-arr">→</span><span style="color:#7880a0;">GND</span></div>
+              <div class="pc-row"><span class="pc-pin pin-sig">SDA</span><span class="pc-arr">→</span><span style="color:#82aaff;"><strong>D21 고정!</strong></span></div>
+              <div class="pc-row"><span class="pc-pin pin-sg2">SCL</span><span class="pc-arr">→</span><span style="color:#43d9ad;"><strong>D22 고정!</strong></span></div>
+            </div>
+            <div class="callout tip" style="font-size:11px;padding:7px 11px;margin-bottom:10px;">
+              <div class="callout-icon" style="font-size:12px;">💡</div>
+              I2C 센서 여러 개를 D21/D22에 동시 연결 가능!
+            </div>
+            <div class="pc-sensors">
+              <span class="pc-tag">MPU-6050 자이로</span>
+              <span class="pc-tag">제스처 APDS-9960</span>
+              <span class="pc-tag">바코드 GM65</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑥ 7핀 · SPI · 전원O -->
+        <div class="pc-card" style="grid-column: 1 / -1;">
+          <div class="pc-head">
+            <div class="pc-top">
+              <div class="pc-num">7핀</div>
+              <div class="pc-name">SPI 통신 · 전핀 고정</div>
+            </div>
+            <div class="pc-tags">
+              <span class="pct pct-spi">SPI</span>
+              <span class="pct pct-pwr-y">전원 필요</span>
+            </div>
+          </div>
+          <div class="pc-body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+            <div class="pc-wire" style="margin-bottom:0;">
+              <div class="pc-row"><span class="pc-pin pin-vcc" style="font-size:9px;">3.3V</span><span class="pc-arr">→</span><span style="color:#ff9898;"><strong>3.3V</strong> <span style="color:var(--text-muted);font-size:10px;">⚠️ 5V 금지!</span></span></div>
+              <div class="pc-row"><span class="pc-pin pin-gnd">GND</span><span class="pc-arr">→</span><span style="color:#7880a0;">GND</span></div>
+              <div class="pc-row"><span class="pc-pin pin-spi" style="font-size:9px;">SCK</span><span class="pc-arr">→</span><span style="color:#c58aff;"><strong>D18 고정!</strong></span></div>
+              <div class="pc-row"><span class="pc-pin pin-spi" style="font-size:9px;">MOSI</span><span class="pc-arr">→</span><span style="color:#c58aff;"><strong>D23 고정!</strong></span></div>
+            </div>
+            <div class="pc-wire" style="margin-bottom:0;">
+              <div class="pc-row" style="visibility:hidden;"><span class="pc-pin">.</span></div>
+              <div class="pc-row" style="visibility:hidden;"><span class="pc-pin">.</span></div>
+              <div class="pc-row"><span class="pc-pin pin-spi" style="font-size:9px;">MISO</span><span class="pc-arr">→</span><span style="color:#c58aff;"><strong>D19 고정!</strong></span></div>
+              <div class="pc-row"><span class="pc-pin pin-spi" style="font-size:9px;">SS</span><span class="pc-arr">→</span><span style="color:#c58aff;"><strong>D5 고정!</strong></span></div>
+              <div class="pc-row"><span class="pc-pin pin-spi" style="font-size:9px;">RST</span><span class="pc-arr">→</span><span style="color:#c58aff;"><strong>D22 고정!</strong></span></div>
+            </div>
+          </div>
+          <div style="padding:0 16px 14px;">
+            <div class="pc-sensors" style="border-top:1px solid var(--border);padding-top:10px;">
+              <span class="pc-tag">RFID RC522</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="signal">
+      <h2><span class="icon">📶</span> 신호 방식</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>방식</th><th>설명</th><th>값 범위</th><th>예시 센서</th><th>핀 제약</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-high">디지털</span></td>
+              <td>ON/OFF 2가지</td>
+              <td><code>0 또는 1</code></td>
+              <td>터치, 적외선, 버튼</td>
+              <td>아무 디지털 핀</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-analog">아날로그</span></td>
+              <td>연속 수치값</td>
+              <td><code>0~4095</code></td>
+              <td>압력, 조도, 마이크</td>
+              <td>D32~D39만 가능</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-i2c">I2C</span></td>
+              <td>SDA+SCL 2선 통신</td>
+              <td>주소 기반</td>
+              <td>MPU-6050, BME280</td>
+              <td>SDA=D21, SCL=D22 <em>고정</em></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-spi">SPI</span></td>
+              <td>4~6선 고속 통신</td>
+              <td>패킷 기반</td>
+              <td>RFID RC522</td>
+              <td>SCK=D18, MISO=D19, MOSI=D23 <em>고정</em></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-uart">UART</span></td>
+              <td>TX/RX 직렬 통신</td>
+              <td>문자열</td>
+              <td>GPS, 바코드</td>
+              <td>TX=D16, RX=D17</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout tip"><div class="callout-icon">💡</div>I2C는 예외적으로 같은 D21/D22 핀에 여러 센서를 동시 연결할 수 있습니다. 각 센서가 I2C 주소로 구분되기 때문입니다.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="cat1">
+      <h2><span class="icon">👆</span> 접촉·터치 감지 센서</h2>
+
+      <!-- TTP223B -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">TTP223B <span class="badge-pin">3핀</span> <span class="badge badge-high">HIGH</span></div>
+          <div class="sensor-meta">터치센서 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / SIG→<span>D2</span></div>
+          <div class="callout warn" style="margin-bottom:10px;"><div class="callout-icon">⚠️</div>터치센서만 유일하게 HIGH! 다른 센서는 대부분 LOW 감지.</div>
+          <pre><span class="kw">const int</span> PIN_TOUCH = <span class="num">2</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_TOUCH, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_TOUCH) == HIGH) { send(<span class="str">"START"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <!-- 푸시버튼 -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">푸시버튼 (방수 12mm) <span class="badge-pin">2핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">버튼 · 디지털 · INPUT_PULLUP</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">한쪽→<span>GND</span> / 반대쪽→<span>D4</span> (외부저항 불필요)</div>
+          <pre><span class="kw">const int</span> PIN_BTN = <span class="num">4</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_BTN, INPUT_PULLUP); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_BTN) == LOW) { send(<span class="str">"FUSE"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <!-- 리미트 스위치 -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">리미트 스위치 KW11 <span class="badge-pin">2핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">물리 충돌 감지 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">COM→<span>GND</span> / NO→<span>D5</span> (INPUT_PULLUP)</div>
+          <pre><span class="kw">const int</span> PIN_LIMIT = <span class="num">5</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_LIMIT, INPUT_PULLUP); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_LIMIT) == LOW) { send(<span class="str">"STOP"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <!-- 마그네틱 리드 스위치 -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">마그네틱 리드 스위치 MC-38 <span class="badge-pin">2핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">자석 근접 감지 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">한쪽→<span>GND</span> / 반대쪽→<span>D16</span> (INPUT_PULLUP)</div>
+          <pre><span class="kw">const int</span> PIN_REED = <span class="num">16</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_REED, INPUT_PULLUP); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_REED) == LOW) { send(<span class="str">"START"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <!-- 압력센서 FSR402 -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">압력센서 (필름) FSR402 <span class="badge-pin">2핀</span> <span class="badge badge-analog">ANALOG</span></div>
+          <div class="sensor-meta">바닥 밟기 감지 · 아날로그</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">한쪽→<span>3.3V</span> / 반대쪽→<span>D34</span> + 10kΩ→GND</div>
+          <div class="callout warn" style="margin-bottom:10px;"><div class="callout-icon">⚠️</div>10kΩ 저항 필수! 누를수록 값이 낮아집니다.</div>
+          <pre><span class="kw">const int</span> PIN_PRESS = <span class="num">34</span>;
+<span class="kw">const int</span> THRESHOLD = <span class="num">2000</span>;
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">int</span> val = analogRead(PIN_PRESS);
+  <span class="kw">if</span> (val &lt; THRESHOLD) { send(<span class="str">"LAP"</span>); delay(<span class="num">300</span>); }
+  delay(<span class="num">100</span>);
+}</pre>
+        </div>
+      </div>
+
+      <!-- 진동 센서 -->
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">진동 센서 SW-420 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">충격·충돌 감지 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / OUT→<span>D17</span></div>
+          <pre><span class="kw">const int</span> PIN_VIB = <span class="num">17</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_VIB, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_VIB) == LOW) { send(<span class="str">"FUSE"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="cat2">
+      <h2><span class="icon">📏</span> 거리·근접 감지 센서</h2>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">적외선 장애물 KY-032 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">결승선·경계선 통과 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / OUT→<span>D14</span></div>
+          <div class="callout info" style="margin-bottom:10px;"><div class="callout-icon">ℹ️</div>모듈 위 가변저항으로 감지 거리 조절 가능합니다.</div>
+          <pre><span class="kw">const int</span> PIN_IR = <span class="num">14</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_IR, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_IR) == LOW) { send(<span class="str">"STOP"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">초음파 거리 HC-SR04 <span class="badge-pin">4핀</span> <span class="badge badge-analog">DIST</span></div>
+          <div class="sensor-meta">2~400cm 거리 측정 · TRIG+ECHO</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>5V</span> / GND→<span>GND</span> / TRIG→<span>D13</span> / ECHO→<span>D12</span></div>
+          <pre><span class="kw">const int</span> TRIG = <span class="num">13</span>, ECHO = <span class="num">12</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(TRIG, OUTPUT); pinMode(ECHO, INPUT); }
+<span class="kw">long</span> <span class="fn">getDistance</span>() {
+  digitalWrite(TRIG, LOW); delayMicroseconds(<span class="num">2</span>);
+  digitalWrite(TRIG, HIGH); delayMicroseconds(<span class="num">10</span>); digitalWrite(TRIG, LOW);
+  <span class="kw">return</span> pulseIn(ECHO, HIGH) / <span class="num">58</span>; <span class="cmt">// cm</span>
+}
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (getDistance() &lt; <span class="num">10</span>) { send(<span class="str">"START"</span>); delay(<span class="num">300</span>); } <span class="cmt">// 10cm 이내</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">PIR 인체감지 HC-SR501 <span class="badge-pin">3핀</span> <span class="badge badge-high">HIGH</span></div>
+          <div class="sensor-meta" style="font-size:10px;color:var(--text-muted);padding:2px 0 0 0;">PIR = Passive InfraRed (수동 적외선 감지)</div>
+          <div class="sensor-meta">사람 접근 자동 감지 · 디지털</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>5V</span> / GND→<span>GND</span> / OUT→<span>D25</span></div>
+          <div class="callout info" style="margin-bottom:10px;"><div class="callout-icon">ℹ️</div>모듈 위 가변저항으로 민감도/딜레이 조절 가능합니다.</div>
+          <pre><span class="kw">const int</span> PIN_PIR = <span class="num">25</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_PIR, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_PIR) == HIGH) { send(<span class="str">"START"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">레이저 수신 KY-008 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">결승선 레이저 빔 차단 감지 (정밀)</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>5V</span> / GND→<span>GND</span> / OUT→<span>D26</span></div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">결승선 양쪽에 레이저 송수신부를 설치합니다. 선수가 지나가면 빔 차단 → 자동 정지!</p>
+          <pre><span class="kw">const int</span> PIN_LASER = <span class="num">26</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_LASER, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_LASER) == LOW) { send(<span class="str">"STOP"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">금속 근접 센서 LJ18A3 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">금속 로봇/물체 경계선 감지</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">갈색→<span>12V</span> / 파랑→<span>GND</span> / 검정→<span>D27</span></div>
+          <div class="callout warn" style="margin-bottom:10px;"><div class="callout-icon">⚠️</div>12V 별도 전원이 필요합니다!</div>
+          <pre><span class="kw">const int</span> PIN_METAL = <span class="num">27</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_METAL, INPUT_PULLUP); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_METAL) == LOW) { send(<span class="str">"FUSE"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="cat3">
+      <h2><span class="icon">🪪</span> 식별·인식 센서</h2>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">RFID 리더 RC522 <span class="badge-pin">7핀</span> <span class="badge badge-spi">SPI</span></div>
+          <div class="sensor-meta">카드/태그 인식 · 3.3V 전용!</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">3.3V→<span>3.3V</span> / GND→<span>GND</span> / SCK→<span>D18</span> / MOSI→<span>D23</span> / MISO→<span>D19</span> / SS→<span>D5</span> / RST→<span>D22</span></div>
+          <div class="callout warn" style="margin-bottom:10px;"><div class="callout-icon">⚠️</div>반드시 3.3V! 5V 연결 시 모듈 손상됩니다. 라이브러리: MFRC522</div>
+          <pre><span class="kw">#include</span> &lt;SPI.h&gt;
+<span class="kw">#include</span> &lt;MFRC522.h&gt;
+MFRC522 rfid(<span class="num">5</span>, <span class="num">22</span>); <span class="cmt">// SS=D5, RST=D22</span>
+<span class="kw">void</span> <span class="fn">setup</span>() { SPI.begin(); rfid.PCD_Init(); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (rfid.PICC_IsNewCardPresent() &amp;&amp; rfid.PICC_ReadCardSerial()) {
+    send(<span class="str">"FUSE"</span>);
+    rfid.PICC_HaltA();
+    delay(<span class="num">300</span>);
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">바코드/QR 리더 GM65 <span class="badge-pin">4핀</span> <span class="badge badge-uart">UART</span></div>
+          <div class="sensor-meta">QR코드로 선수 식별</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>5V</span> / GND→<span>GND</span> / TX→<span>D16</span> / RX→<span>D17</span></div>
+          <pre><span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+  Serial2.begin(<span class="num">9600</span>, SERIAL_8N1, <span class="num">16</span>, <span class="num">17</span>);
+}
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (Serial2.available()) {
+    String code = Serial2.readStringUntil(<span class="str">'\n'</span>);
+    send(<span class="str">"LAP"</span>); <span class="cmt">// QR 스캔되면 랩</span>
+    delay(<span class="num">500</span>);
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">제스처 센서 APDS-9960 <span class="badge-pin">4핀</span> <span class="badge badge-i2c">I2C</span></div>
+          <div class="sensor-meta">손 제스처로 시작/정지</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / SDA→<span>D21</span> / SCL→<span>D22</span></div>
+          <pre><span class="kw">#include</span> &lt;SparkFun_APDS9960.h&gt;
+SparkFun_APDS9960 apds;
+<span class="kw">void</span> <span class="fn">setup</span>() { apds.init(); apds.enableGestureSensor(); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (apds.isGestureAvailable()) {
+    <span class="kw">switch</span>(apds.readGesture()) {
+      <span class="kw">case</span> DIR_UP:    send(<span class="str">"START"</span>); <span class="kw">break</span>;
+      <span class="kw">case</span> DIR_DOWN:  send(<span class="str">"STOP"</span>);  <span class="kw">break</span>;
+      <span class="kw">case</span> DIR_LEFT:  send(<span class="str">"FUSE"</span>);  <span class="kw">break</span>;
+      <span class="kw">case</span> DIR_RIGHT: send(<span class="str">"LAP"</span>);   <span class="kw">break</span>;
+    }
+    delay(<span class="num">300</span>);
+  }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="cat4">
+      <h2><span class="icon">🤸</span> 움직임·자세 센서</h2>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">6축 자이로 MPU-6050 <span class="badge-pin">4핀</span> <span class="badge badge-i2c">I2C</span></div>
+          <div class="sensor-meta">기울기·충격 감지 · 주소 0x68</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / SDA→<span>D21</span> / SCL→<span>D22</span></div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">라이브러리: MPU6050 (라이브러리 매니저)</p>
+          <pre><span class="kw">#include</span> &lt;Wire.h&gt;
+<span class="kw">#include</span> &lt;MPU6050.h&gt;
+MPU6050 mpu;
+<span class="kw">void</span> <span class="fn">setup</span>() { Wire.begin(); mpu.initialize(); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">int16_t</span> ax,ay,az,gx,gy,gz;
+  mpu.getMotion6(&amp;ax,&amp;ay,&amp;az,&amp;gx,&amp;gy,&amp;gz);
+  <span class="kw">if</span> (abs(ax) &gt; <span class="num">15000</span>) { send(<span class="str">"FUSE"</span>); delay(<span class="num">300</span>); } <span class="cmt">// 강한 기울기</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">홀 센서 KY-003 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">자석 감지 · 바퀴 회전 감지</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / OUT→<span>D27</span></div>
+          <pre><span class="kw">const int</span> PIN_HALL = <span class="num">27</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_HALL, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_HALL) == LOW) { send(<span class="str">"LAP"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="cat5">
+      <h2><span class="icon">🌡️</span> 빛·소리·환경 센서</h2>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">소리 감지 KY-038 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">박수/소리로 시작 트리거</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / DO→<span>D25</span></div>
+          <pre><span class="kw">const int</span> PIN_SOUND = <span class="num">25</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_SOUND, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_SOUND) == LOW) { send(<span class="str">"START"</span>); delay(<span class="num">500</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">화염 감지 KY-026 <span class="badge-pin">3핀</span> <span class="badge badge-low">LOW</span></div>
+          <div class="sensor-meta">불꽃 감지 · 특수 행사 연출</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>5V</span> / GND→<span>GND</span> / DO→<span>D26</span></div>
+          <pre><span class="kw">const int</span> PIN_FLAME = <span class="num">26</span>;
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); pinMode(PIN_FLAME, INPUT); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">if</span> (digitalRead(PIN_FLAME) == LOW) { send(<span class="str">"FUSE"</span>); delay(<span class="num">300</span>); }
+}</pre>
+        </div>
+      </div>
+
+      <div class="sensor-item">
+        <div class="sensor-header" onclick="toggle(this)">
+          <div class="sensor-name">온습도 DHT22 <span class="badge-pin">3핀</span> <span class="badge badge-i2c">1-WIRE</span></div>
+          <div class="sensor-meta">온습도 모니터링</div>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="sensor-body">
+          <div class="wiring">VCC→<span>3.3V</span> / GND→<span>GND</span> / DATA→<span>D15</span></div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">라이브러리: DHT sensor library</p>
+          <pre><span class="kw">#include</span> &lt;DHT.h&gt;
+DHT dht(<span class="num">15</span>, DHT22);
+<span class="kw">void</span> <span class="fn">setup</span>() { Serial.begin(<span class="num">115200</span>); dht.begin(); }
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">float</span> temp = dht.readTemperature();
+  <span class="kw">float</span> humi = dht.readHumidity();
+  Serial.printf(<span class="str">"온도: %.1f°C 습도: %.1f%%\n"</span>, temp, humi);
+  delay(<span class="num">2000</span>);
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="pinmap">
+      <h2><span class="icon">🗺️</span> 핀 배정 권장표</h2>
+      <div style="margin-bottom:24px;">
+<svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1100px;display:block;margin:20px auto;">
+<defs>
+  <style>
+    .pn  { font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:700; }
+    .ps  { font-family:"Noto Sans KR","IBM Plex Mono",monospace; font-size:10px; fill:#7880a0; }
+    .leg { font-family:"Noto Sans KR","IBM Plex Mono",monospace; font-size:10px; }
+    .hdr { font-family:"IBM Plex Mono",monospace; }
+  </style>
+</defs>
+<rect width="1100" height="620" fill="#0f1117"/>
+<rect x="330" y="40" width="440" height="540" rx="14" fill="#1a1d27" stroke="#2e3350" stroke-width="2.5"/>
+<rect x="370" y="44" width="360" height="44" rx="6" fill="#22263a" stroke="#2e3350" stroke-width="1"/>
+<text x="550" y="70" text-anchor="middle" fill="#546e7a" font-size="11" class="hdr">▌▌▌ ESP32-WROOM-32 ▌▌▌</text>
+<rect x="385" y="140" width="330" height="360" rx="6" fill="#22263a" stroke="#3e4470" stroke-width="2"/>
+<text x="550" y="300" text-anchor="middle" fill="#7880a0" font-size="22" font-weight="700" class="hdr">ESP32</text>
+<text x="550" y="325"  text-anchor="middle" fill="#546e7a" font-size="11" class="hdr">WROOM-32</text>
+<text x="550" y="344" text-anchor="middle" fill="#3e4470" font-size="9"  class="hdr">Xtensa LX6  240MHz · WiFi · BT</text>
+<text x="550" y="360" text-anchor="middle" fill="#3e4470" font-size="9"  class="hdr">520KB SRAM · 4MB Flash</text>
+<rect x="505" y="562" width="90" height="22" rx="4" fill="#22263a" stroke="#3e4470" stroke-width="1.5"/>
+<text x="550" y="578" text-anchor="middle" fill="#546e7a" font-size="10" class="hdr">USB-Micro</text>
+<circle cx="358" cy="110" r="12" fill="#1e2235" stroke="#3e4470" stroke-width="2"/>
+<text x="358" y="114" text-anchor="middle" fill="#7880a0" font-size="9" class="hdr">EN</text>
+<circle cx="742" cy="110" r="12" fill="#1e2235" stroke="#3e4470" stroke-width="2"/>
+<text x="742" y="114" text-anchor="middle" fill="#7880a0" font-size="9" class="hdr">BOOT</text>
+<circle cx="358" cy="138" r="5" fill="#43d9ad" opacity="0.8"/>
+<text x="358" y="152" text-anchor="middle" fill="#546e7a" font-size="7" class="hdr">LED</text>
+<line x1="5" y1="80" x2="330" y2="80" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="74" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="330" cy="80" r="4" fill="#546e7a"/>
+<text x="314" y="84" text-anchor="end" fill="#546e7a" class="pn">GND</text>
+<line x1="5" y1="111" x2="330" y2="111" stroke="#c58aff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="105" width="14" height="12" rx="2" fill="#c58aff" opacity="0.25" stroke="#c58aff" stroke-width="1"/>
+<circle cx="330" cy="111" r="4" fill="#c58aff"/>
+<text x="314" y="115" text-anchor="end" fill="#c58aff" class="pn">D23</text>
+<text x="314" y="103" text-anchor="end" class="ps">MOSI · SPI</text>
+<line x1="5" y1="142" x2="330" y2="142" stroke="#82aaff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="136" width="14" height="12" rx="2" fill="#82aaff" opacity="0.25" stroke="#82aaff" stroke-width="1"/>
+<circle cx="330" cy="142" r="4" fill="#82aaff"/>
+<text x="314" y="146" text-anchor="end" fill="#82aaff" class="pn">D22</text>
+<text x="314" y="134" text-anchor="end" class="ps">SCL · I2C</text>
+<line x1="5" y1="173" x2="330" y2="173" stroke="#64b4ff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="167" width="14" height="12" rx="2" fill="#64b4ff" opacity="0.25" stroke="#64b4ff" stroke-width="1"/>
+<circle cx="330" cy="173" r="4" fill="#64b4ff"/>
+<text x="314" y="177" text-anchor="end" fill="#64b4ff" class="pn">TX</text>
+<text x="314" y="165" text-anchor="end" class="ps">D1 · UART</text>
+<line x1="5" y1="204" x2="330" y2="204" stroke="#64b4ff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="198" width="14" height="12" rx="2" fill="#64b4ff" opacity="0.25" stroke="#64b4ff" stroke-width="1"/>
+<circle cx="330" cy="204" r="4" fill="#64b4ff"/>
+<text x="314" y="208" text-anchor="end" fill="#64b4ff" class="pn">RX</text>
+<text x="314" y="196" text-anchor="end" class="ps">D3 · UART</text>
+<line x1="5" y1="235" x2="330" y2="235" stroke="#82aaff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="229" width="14" height="12" rx="2" fill="#82aaff" opacity="0.25" stroke="#82aaff" stroke-width="1"/>
+<circle cx="330" cy="235" r="4" fill="#82aaff"/>
+<text x="314" y="239" text-anchor="end" fill="#82aaff" class="pn">D21</text>
+<text x="314" y="227" text-anchor="end" class="ps">SDA · I2C</text>
+<line x1="5" y1="266" x2="330" y2="266" stroke="#c58aff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="260" width="14" height="12" rx="2" fill="#c58aff" opacity="0.25" stroke="#c58aff" stroke-width="1"/>
+<circle cx="330" cy="266" r="4" fill="#c58aff"/>
+<text x="314" y="270" text-anchor="end" fill="#c58aff" class="pn">D19</text>
+<text x="314" y="258" text-anchor="end" class="ps">MISO · SPI</text>
+<line x1="5" y1="297" x2="330" y2="297" stroke="#c58aff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="291" width="14" height="12" rx="2" fill="#c58aff" opacity="0.25" stroke="#c58aff" stroke-width="1"/>
+<circle cx="330" cy="297" r="4" fill="#c58aff"/>
+<text x="314" y="301" text-anchor="end" fill="#c58aff" class="pn">D18</text>
+<text x="314" y="289" text-anchor="end" class="ps">SCK · SPI</text>
+<line x1="5" y1="328" x2="330" y2="328" stroke="#c58aff" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="322" width="14" height="12" rx="2" fill="#c58aff" opacity="0.25" stroke="#c58aff" stroke-width="1"/>
+<circle cx="330" cy="328" r="4" fill="#c58aff"/>
+<text x="314" y="332" text-anchor="end" fill="#c58aff" class="pn">D5</text>
+<text x="314" y="320" text-anchor="end" class="ps">SS · SPI</text>
+<line x1="5" y1="359" x2="330" y2="359" stroke="#ffb347" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="353" width="14" height="12" rx="2" fill="#ffb347" opacity="0.25" stroke="#ffb347" stroke-width="1"/>
+<circle cx="330" cy="359" r="4" fill="#ffb347"/>
+<text x="314" y="363" text-anchor="end" fill="#ffb347" class="pn">D17</text>
+<text x="314" y="351" text-anchor="end" class="ps">경계선 4 / UART RX</text>
+<line x1="5" y1="390" x2="330" y2="390" stroke="#ffb347" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="384" width="14" height="12" rx="2" fill="#ffb347" opacity="0.25" stroke="#ffb347" stroke-width="1"/>
+<circle cx="330" cy="390" r="4" fill="#ffb347"/>
+<text x="314" y="394" text-anchor="end" fill="#ffb347" class="pn">D16</text>
+<text x="314" y="382" text-anchor="end" class="ps">경계선 3 / UART TX</text>
+<line x1="5" y1="421" x2="330" y2="421" stroke="#ff9f4a" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="415" width="14" height="12" rx="2" fill="#ff9f4a" opacity="0.25" stroke="#ff9f4a" stroke-width="1"/>
+<circle cx="330" cy="421" r="4" fill="#ff9f4a"/>
+<text x="314" y="425" text-anchor="end" fill="#ff9f4a" class="pn">D4</text>
+<text x="314" y="413" text-anchor="end" class="ps">💥 퓨즈</text>
+<line x1="5" y1="452" x2="330" y2="452" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="446" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="330" cy="452" r="4" fill="#546e7a"/>
+<text x="314" y="456" text-anchor="end" fill="#546e7a" class="pn">D0</text>
+<text x="314" y="444" text-anchor="end" class="ps">BOOT</text>
+<line x1="5" y1="483" x2="330" y2="483" stroke="#43d9ad" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="477" width="14" height="12" rx="2" fill="#43d9ad" opacity="0.25" stroke="#43d9ad" stroke-width="1"/>
+<circle cx="330" cy="483" r="4" fill="#43d9ad"/>
+<text x="314" y="487" text-anchor="end" fill="#43d9ad" class="pn">D2</text>
+<text x="314" y="475" text-anchor="end" class="ps">▶ 시작</text>
+<line x1="5" y1="514" x2="330" y2="514" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="323" y="508" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="330" cy="514" r="4" fill="#546e7a"/>
+<text x="314" y="518" text-anchor="end" fill="#546e7a" class="pn">D15</text>
+<line x1="770" y1="80" x2="1095" y2="80" stroke="#ff6b6b" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="74" width="14" height="12" rx="2" fill="#ff6b6b" opacity="0.25" stroke="#ff6b6b" stroke-width="1"/>
+<circle cx="770" cy="80" r="4" fill="#ff6b6b"/>
+<text x="786" y="84" text-anchor="start" fill="#ff6b6b" class="pn">3V3</text>
+<text x="786" y="72" text-anchor="start" class="ps">3.3V 전원</text>
+<line x1="770" y1="111" x2="1095" y2="111" stroke="#7880a0" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="105" width="14" height="12" rx="2" fill="#7880a0" opacity="0.25" stroke="#7880a0" stroke-width="1"/>
+<circle cx="770" cy="111" r="4" fill="#7880a0"/>
+<text x="786" y="115" text-anchor="start" fill="#7880a0" class="pn">EN</text>
+<text x="786" y="103" text-anchor="start" class="ps">리셋 버튼</text>
+<line x1="770" y1="142" x2="1095" y2="142" stroke="#f0c040" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="136" width="14" height="12" rx="2" fill="#f0c040" opacity="0.25" stroke="#f0c040" stroke-width="1"/>
+<circle cx="770" cy="142" r="4" fill="#f0c040"/>
+<text x="786" y="146" text-anchor="start" fill="#f0c040" class="pn">VP</text>
+<text x="786" y="134" text-anchor="start" class="ps">D36 · ADC (입력전용)</text>
+<line x1="770" y1="173" x2="1095" y2="173" stroke="#f0c040" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="167" width="14" height="12" rx="2" fill="#f0c040" opacity="0.25" stroke="#f0c040" stroke-width="1"/>
+<circle cx="770" cy="173" r="4" fill="#f0c040"/>
+<text x="786" y="177" text-anchor="start" fill="#f0c040" class="pn">VN</text>
+<text x="786" y="165" text-anchor="start" class="ps">D39 · ADC (입력전용)</text>
+<line x1="770" y1="204" x2="1095" y2="204" stroke="#f0c040" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="198" width="14" height="12" rx="2" fill="#f0c040" opacity="0.25" stroke="#f0c040" stroke-width="1"/>
+<circle cx="770" cy="204" r="4" fill="#f0c040"/>
+<text x="786" y="208" text-anchor="start" fill="#f0c040" class="pn">D34</text>
+<text x="786" y="196" text-anchor="start" class="ps">ADC · 아날로그</text>
+<line x1="770" y1="235" x2="1095" y2="235" stroke="#f0c040" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="229" width="14" height="12" rx="2" fill="#f0c040" opacity="0.25" stroke="#f0c040" stroke-width="1"/>
+<circle cx="770" cy="235" r="4" fill="#f0c040"/>
+<text x="786" y="239" text-anchor="start" fill="#f0c040" class="pn">D35</text>
+<text x="786" y="227" text-anchor="start" class="ps">ADC · 아날로그</text>
+<line x1="770" y1="266" x2="1095" y2="266" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="260" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="770" cy="266" r="4" fill="#546e7a"/>
+<text x="786" y="270" text-anchor="start" fill="#546e7a" class="pn">D32</text>
+<line x1="770" y1="297" x2="1095" y2="297" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="291" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="770" cy="297" r="4" fill="#546e7a"/>
+<text x="786" y="301" text-anchor="start" fill="#546e7a" class="pn">D33</text>
+<line x1="770" y1="328" x2="1095" y2="328" stroke="#7ecfff" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="322" width="14" height="12" rx="2" fill="#7ecfff" opacity="0.25" stroke="#7ecfff" stroke-width="1"/>
+<circle cx="770" cy="328" r="4" fill="#7ecfff"/>
+<text x="786" y="332" text-anchor="start" fill="#7ecfff" class="pn">D25</text>
+<text x="786" y="320" text-anchor="start" class="ps">🔵 랩</text>
+<line x1="770" y1="359" x2="1095" y2="359" stroke="#ffb347" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="353" width="14" height="12" rx="2" fill="#ffb347" opacity="0.25" stroke="#ffb347" stroke-width="1"/>
+<circle cx="770" cy="359" r="4" fill="#ffb347"/>
+<text x="786" y="363" text-anchor="start" fill="#ffb347" class="pn">D26</text>
+<text x="786" y="351" text-anchor="start" class="ps">경계선 1</text>
+<line x1="770" y1="390" x2="1095" y2="390" stroke="#ffb347" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="384" width="14" height="12" rx="2" fill="#ffb347" opacity="0.25" stroke="#ffb347" stroke-width="1"/>
+<circle cx="770" cy="390" r="4" fill="#ffb347"/>
+<text x="786" y="394" text-anchor="start" fill="#ffb347" class="pn">D27</text>
+<text x="786" y="382" text-anchor="start" class="ps">경계선 2</text>
+<line x1="770" y1="421" x2="1095" y2="421" stroke="#ff6b6b" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="415" width="14" height="12" rx="2" fill="#ff6b6b" opacity="0.25" stroke="#ff6b6b" stroke-width="1"/>
+<circle cx="770" cy="421" r="4" fill="#ff6b6b"/>
+<text x="786" y="425" text-anchor="start" fill="#ff6b6b" class="pn">D14</text>
+<text x="786" y="413" text-anchor="start" class="ps">⏹ 정지</text>
+<line x1="770" y1="452" x2="1095" y2="452" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="446" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="770" cy="452" r="4" fill="#546e7a"/>
+<text x="786" y="456" text-anchor="start" fill="#546e7a" class="pn">D12</text>
+<line x1="770" y1="483" x2="1095" y2="483" stroke="#546e7a" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="477" width="14" height="12" rx="2" fill="#546e7a" opacity="0.25" stroke="#546e7a" stroke-width="1"/>
+<circle cx="770" cy="483" r="4" fill="#546e7a"/>
+<text x="786" y="487" text-anchor="start" fill="#546e7a" class="pn">D13</text>
+<line x1="770" y1="514" x2="1095" y2="514" stroke="#ff9898" stroke-width="1.2" opacity="0.35"/>
+<rect x="763" y="508" width="14" height="12" rx="2" fill="#ff9898" opacity="0.25" stroke="#ff9898" stroke-width="1"/>
+<circle cx="770" cy="514" r="4" fill="#ff9898"/>
+<text x="786" y="518" text-anchor="start" fill="#ff9898" class="pn">VIN</text>
+<text x="786" y="506" text-anchor="start" class="ps">5V 전원</text>
+<circle cx="26" cy="597" r="6" fill="#43d9ad"/>
+<text x="37" y="602" fill="#43d9ad" class="leg">▶ 시작</text>
+<circle cx="123" cy="597" r="6" fill="#ff6b6b"/>
+<text x="134" y="602" fill="#ff6b6b" class="leg">⏹ 정지</text>
+<circle cx="220" cy="597" r="6" fill="#ff9f4a"/>
+<text x="231" y="602" fill="#ff9f4a" class="leg">💥 퓨즈</text>
+<circle cx="317" cy="597" r="6" fill="#7ecfff"/>
+<text x="328" y="602" fill="#7ecfff" class="leg">🔵 랩</text>
+<circle cx="414" cy="597" r="6" fill="#ffb347"/>
+<text x="425" y="602" fill="#ffb347" class="leg">경계선</text>
+<circle cx="511" cy="597" r="6" fill="#f0c040"/>
+<text x="522" y="602" fill="#f0c040" class="leg">아날로그 ADC</text>
+<circle cx="608" cy="597" r="6" fill="#82aaff"/>
+<text x="619" y="602" fill="#82aaff" class="leg">I²C</text>
+<circle cx="705" cy="597" r="6" fill="#c58aff"/>
+<text x="716" y="602" fill="#c58aff" class="leg">SPI</text>
+<circle cx="802" cy="597" r="6" fill="#64b4ff"/>
+<text x="813" y="602" fill="#64b4ff" class="leg">UART</text>
+<circle cx="899" cy="597" r="6" fill="#546e7a"/>
+<text x="910" y="602" fill="#546e7a" class="leg">기타</text>
+</svg>
+
+      </div>
+      <div class="table-wrap">
+        <table class="pin-highlight">
+          <thead><tr><th>SGP 동작</th><th>권장 핀</th><th>연결 센서 예시</th></tr></thead>
+          <tbody>
+            <tr><td>▶ 시작</td><td>D2</td><td>터치센서 / 버튼 / PIR</td></tr>
+            <tr><td>⏹ 정지</td><td>D14</td><td>적외선 / 레이저수신 / 초음파</td></tr>
+            <tr><td>💥 퓨즈</td><td>D4</td><td>버튼 / RFID / 진동 / 기울기</td></tr>
+            <tr><td>🔵 랩</td><td>D25</td><td>PIR / 홀센서 / 소리</td></tr>
+            <tr><td>🔄 초기화</td><td>D21</td><td>버튼</td></tr>
+            <tr><td>경계선 1~4</td><td>D26~D17</td><td>적외선 / 레이저 / 홀센서</td></tr>
+            <tr><td>아날로그</td><td>D34~D36</td><td>압력 / 마이크 / CO2 / SHARP</td></tr>
+            <tr><td>I2C SDA/SCL</td><td>D21 / D22</td><td>MPU-6050 / BME280 / BH1750</td></tr>
+            <tr><td>SPI</td><td>D18/D23/D19</td><td>RFID RC522</td></tr>
+            <tr><td>UART TX/RX</td><td>D16 / D17</td><td>GPS / 바코드 / 지문</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="detect">
+      <h2><span class="icon">⚡</span> 감지 조건 빠른 참고</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>센서</th><th>감지 조건</th><th>주의사항</th></tr></thead>
+          <tbody>
+            <tr><td>터치센서 TTP223B</td><td><span class="badge badge-high">HIGH</span></td><td>★ 유일하게 HIGH!</td></tr>
+            <tr><td>적외선 KY-032</td><td><span class="badge badge-low">LOW</span></td><td>감지하면 LOW (반대!)</td></tr>
+            <tr><td>푸시버튼</td><td><span class="badge badge-low">LOW</span></td><td>INPUT_PULLUP 필수</td></tr>
+            <tr><td>리미트스위치</td><td><span class="badge badge-low">LOW</span></td><td>INPUT_PULLUP 필수</td></tr>
+            <tr><td>리드스위치</td><td><span class="badge badge-low">LOW</span></td><td>INPUT_PULLUP 필수</td></tr>
+            <tr><td>PIR HC-SR501<br><span style="font-size:10px;color:var(--text-muted);">Passive InfraRed · 수동 적외선</span></td><td><span class="badge badge-high">HIGH</span></td><td>사람 감지 시 HIGH</td></tr>
+            <tr><td>진동 SW-420</td><td><span class="badge badge-low">LOW</span></td><td>진동 감지 시 LOW</td></tr>
+            <tr><td>홀센서 KY-003</td><td><span class="badge badge-low">LOW</span></td><td>자석 근접 시 LOW</td></tr>
+            <tr><td>화염 KY-026</td><td><span class="badge badge-low">LOW</span></td><td>불꽃 감지 시 LOW</td></tr>
+            <tr><td>소리 KY-038</td><td><span class="badge badge-low">LOW</span></td><td>소리 감지 시 LOW</td></tr>
+            <tr><td>레이저수신 KY-008</td><td><span class="badge badge-low">LOW</span></td><td>빔 차단 시 LOW</td></tr>
+            <tr><td>수위 XKC-Y25</td><td><span class="badge badge-high">HIGH</span></td><td>물 감지 시 HIGH</td></tr>
+            <tr><td>압력 FSR402</td><td><span class="badge badge-analog">analogRead &lt; 임계값</span></td><td>10kΩ 저항 필수</td></tr>
+            <tr><td>초음파 HC-SR04</td><td><span class="badge badge-analog">거리 &lt; 임계값(cm)</span></td><td>TRIG+ECHO 2핀</td></tr>
+            <tr><td>RFID RC522</td><td>카드 인식됨</td><td>3.3V 필수! 5V 금지!</td></tr>
+            <tr><td>MPU-6050</td><td><span class="badge badge-analog">가속도 &gt; 임계값</span></td><td>I2C D21/D22</td></tr>
+            <tr><td>MQ-2 가스</td><td><span class="badge badge-low">LOW</span></td><td>5V 필요, 예열 필요</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="rules">
+      <h2><span class="icon">📐</span> 핀 사용 규칙</h2>
+
+      <div class="callout warn" style="margin-bottom:20px;">
+        <div class="callout-icon">⚠️</div>
+        <div><strong>핵심 규칙 — 핀 하나에 센서 하나!</strong><br>같은 핀에 두 개를 꽂으면 신호 충돌로 오작동합니다.</div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">디지털</div>
+          <div class="card-body">아무 디지털 핀 사용 가능.<br><strong>단, 각각 다른 핀에!</strong><br>D2, D4, D5... 각 센서마다 별도 핀.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">아날로그</div>
+          <div class="card-body">D32~D39 중에서만 사용 가능.<br><strong>각각 다른 핀에!</strong></div>
+        </div>
+        <div class="card">
+          <div class="card-title">I2C (예외)</div>
+          <div class="card-body">D21/D22에 여러 센서 동시 연결 <strong>OK!</strong><br>각 센서가 주소로 구분됩니다.<br>(0x68, 0x76, 0x23...)</div>
+        </div>
+        <div class="card">
+          <div class="card-title">SPI / UART</div>
+          <div class="card-body">고정 핀 사용:<br>SPI: D18/D19/D23<br>UART: D16/D17</div>
+        </div>
+      </div>
+
+      <div class="callout tip" style="margin-top:16px;">
+        <div class="callout-icon">💡</div>
+        ESP32는 디지털 핀이 25개라서 최대 센서 25개까지 동시 연결 가능합니다!
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="faq">
+      <h2><span class="icon">❓</span> 자주 묻는 질문</h2>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">포트 선택 창이 안 떠요<span class="chevron">▾</span></div>
+        <div class="faq-a">Chrome 또는 Edge 브라우저를 사용하세요. Firefox·Safari는 Web Serial API를 지원하지 않습니다.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">WiFi 연결이 안 돼요<span class="chevron">▾</span></div>
+        <div class="faq-a">① ESP32와 PC가 같은 WiFi 공유기에 연결되어 있는지 확인<br>② 시리얼 모니터에서 IP 주소 재확인<br>③ ESP32 코드의 WiFi 이름/비밀번호가 정확히 입력됐는지 확인</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">센서를 눌러도 반응이 없어요<span class="chevron">▾</span></div>
+        <div class="faq-a">① 수신 로그 확인 → 신호가 찍히면 SGP 함수 문제<br>② 신호가 없으면 배선 또는 연결 문제<br>③ 수동 테스트 버튼으로 SGP 자체 동작 먼저 확인</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">동글 연결은 됐는데 신호가 안 와요<span class="chevron">▾</span></div>
+        <div class="faq-a">송신용 ESP32 코드의 receiverMac을 수신용 MAC 주소로 정확히 교체했는지 확인하세요. MAC 주소는 시리얼 모니터에서 확인합니다.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">핀 번호는 마음대로 정해도 되나요?<span class="chevron">▾</span></div>
+        <div class="faq-a">디지털 센서는 아무 디지털 핀이나 가능합니다. 단 각 핀에 센서 하나씩만 연결하세요. 가이드 문서의 핀 번호는 예시이며, 실제로는 본인이 꽂은 핀 번호를 코드에 입력하면 됩니다.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">같은 동작에 센서를 여러 개 추가해도 되나요?<span class="chevron">▾</span></div>
+        <div class="faq-a">네! 예를 들어 퓨즈에 적외선 4개를 추가하면 어느 한 곳이라도 감지되면 퓨즈가 실행됩니다. 단 각 센서는 서로 다른 핀에 연결해야 합니다.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function toggleFaq(q) {
+  const a = q.nextElementSibling;
+  const chevron = q.querySelector('.chevron');
+  a.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+// 사이드바 활성 링크 하이라이트
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`nav a[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
